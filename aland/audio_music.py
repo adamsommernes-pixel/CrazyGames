@@ -182,6 +182,8 @@ def pad(prog, v=60, hi=True, lo=True, bass=True, legato=0.25, tracks=None):
 
 
 def arp(tr, prog, step, v=55, pattern=(0, 1, 2, 1), octave=0, lo_notes=False):
+    step *= 1.6
+    v -= 8
     for (t0, c), (t1, _) in zip(prog[:-1], prog[1:]):
         if c is None:
             continue
@@ -198,6 +200,13 @@ def arp(tr, prog, step, v=55, pattern=(0, 1, 2, 1), octave=0, lo_notes=False):
 
 
 def ostinato(tr, prog, step, v=62, pat=(0, 0, 0, 0), accent=4, octave=0):
+    """Lugnare version: i stället för drivande ostinato, en mjuk långsam puls på grundtonen."""
+    for (t0, c), (t1, _) in zip(prog[:-1], prog[1:]):
+        if c is None:
+            continue
+        root = voicing(c)[1][0] + 12 * octave
+        tr.note(t0, t1 - t0 + 0.2, root, v - 18)
+    return
     for (t0, c), (t1, _) in zip(prog[:-1], prog[1:]):
         if c is None:
             continue
@@ -249,6 +258,7 @@ def timp_roll(t0, t1, pitch="D2", v0=30, v1=100):
 
 
 def snare_roll(t0, t1, v0=20, v1=90):
+    return
     t = t0
     while t < t1:
         u = (t - t0) / (t1 - t0)
@@ -654,6 +664,16 @@ def render():
         print("rendered", name)
 
 
+def calm():
+    """Ta bort drivande slagverk och dämpa slag, så att musiken inte stressar."""
+    TAIKO.notes = [n_ for n_ in TAIKO.notes if n_[3] <= 60 or n_[3] >= 100]
+    for tr in (TIMP, KIT, TAIKO):
+        tr.notes = [(t, d, p, int(v * 0.72)) for t, d, p, v in tr.notes]
+    for tr in (HORN, TBN, TUBA):
+        tr.notes = [(t, d, p, int(v * 0.85)) for t, d, p, v in tr.notes]
+
+
 if __name__ == "__main__":
     compose()
+    calm()
     render()

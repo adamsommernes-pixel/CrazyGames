@@ -20,7 +20,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 MODEL = os.path.join(HERE, "assets/voice/sv-se-nst-medium.onnx")
 OUT = os.path.join(HERE, "build/vo_raw")
 
-LENGTH_SCALE = float(os.environ.get("LS", "0.98"))
+LENGTH_SCALE = float(os.environ.get("LS", "1.08"))
 NOISE = float(os.environ.get("NS", "0.62"))
 NOISE_W = float(os.environ.get("NW", "0.8"))
 TAKES = 3

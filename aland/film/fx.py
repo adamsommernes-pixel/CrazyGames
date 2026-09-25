@@ -51,10 +51,12 @@ class Snow:
         vy = self.wind[1] * self.z + 60 * self.z
         x = (self.x + vx * t + 12 * np.sin(t * 1.3 + self.ph)) % (W + 600) - 300
         y = (self.y + vy * t) % (H + 100) - 50
-        for xi, yi, zi, vxi, vyi in zip(x, y, self.z, vx, vy):
-            L = 0.03
-            p0 = (xi - vxi * L, yi - vyi * L)
-            poly_lines(m, [np.array([p0, (xi, yi)])], 1 if zi < 0.8 else 2, value=float(0.25 + 0.6 * zi))
+        L = 0.03
+        for lo, hi, th in ((0.0, 0.5, 1), (0.5, 0.8, 1), (0.8, 1.01, 2)):
+            sel = (self.z >= lo) & (self.z < hi)
+            segs = np.stack([np.stack([x[sel] - vx[sel] * L, y[sel] - vy[sel] * L], 1),
+                             np.stack([x[sel], y[sel]], 1)], 1)
+            poly_lines(m, list(segs), th, value=float(0.25 + 0.6 * (lo + hi) / 2))
         m = cv2.GaussianBlur(m, (0, 0), 0.8)
         over_color(img, np.asarray(color, np.float32), np.clip(m, 0, 1) * alpha)
         return img

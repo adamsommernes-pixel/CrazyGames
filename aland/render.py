@@ -21,10 +21,86 @@ sys.path.insert(0, HERE)
 from film.common import BUILD, FPS, H, W, grade, to_u8  # noqa: E402
 
 
+_CUES = None
+
+
+def cues():
+    """Undertexter: en post per mening, från tidslinjen och visningstexten."""
+    global _CUES
+    if _CUES is None:
+        import re
+        from narration import LINES, display
+        from film.shots import LINES as TLL
+        out = []
+        for lid, text, _ in LINES:
+            sents = [p for p in re.split(r"(?<=[.!?])\s+", text.strip()) if p]
+            for k, s in enumerate(sents):
+                a, b = TLL[lid]["sents"][k]
+                out.append([a - 0.08, b + 0.45, display(s)])
+        for i in range(len(out) - 1):
+            out[i][1] = min(out[i][1], out[i + 1][0] - 0.06)
+        _CUES = out
+    return _CUES
+
+
+def wrap(text, maxw=1400, size=40):
+    from film.common import text_width
+    words, lines, cur = text.split(), [], ""
+    for w in words:
+        cand = (cur + " " + w).strip()
+        if text_width(cand, "sans_m", size, 0.01) > maxw and cur:
+            lines.append(cur)
+            cur = w
+        else:
+            cur = cand
+    lines.append(cur)
+    if len(lines) == 2:
+        # jämnare radbrytning
+        ws = text.split()
+        best = None
+        for k in range(1, len(ws)):
+            l1, l2 = " ".join(ws[:k]), " ".join(ws[k:])
+            d = max(text_width(l1, "sans_m", size, 0.01), text_width(l2, "sans_m", size, 0.01))
+            if text_width(l1, "sans_m", size, 0.01) <= maxw and text_width(l2, "sans_m", size, 0.01) <= maxw:
+                if best is None or d < best[0]:
+                    best = (d, [l1, l2])
+        if best:
+            lines = best[1]
+    return lines
+
+
+def subtitles(img, t):
+    from film.common import draw_text, smooth, lin
+    for a, b, text in cues():
+        if a <= t < b:
+            al = smooth(lin(t, a, a + 0.15)) * (1 - smooth(lin(t, b - 0.15, b)))
+            lines = wrap(text)
+            y0 = H - 62 - 52 * (len(lines) - 1)
+            for i, ln in enumerate(lines):
+                y = y0 + i * 52
+                draw_text(img, ln, W / 2, y, name="sans_m", size=40, tracking=0.01, anchor="c",
+                          color=(0.96, 0.95, 0.92), alpha=al, shadow=1.3)
+                draw_text(img, ln, W / 2, y, name="sans_m", size=40, tracking=0.01, anchor="c",
+                          color=(0.96, 0.95, 0.92), alpha=al * 0.35)
+    return img
+
+
+def write_srt(path):
+    def ts(x):
+        h, r_ = divmod(max(0.0, x), 3600)
+        mnt, s_ = divmod(r_, 60)
+        return f"{int(h):02d}:{int(mnt):02d}:{int(s_):02d},{int(round((s_ % 1) * 1000)) % 1000:03d}"
+    with open(path, "w", encoding="utf-8") as f:
+        for i, (a, b, text) in enumerate(cues(), 1):
+            f.write(f"{i}\n{ts(a)} --> {ts(b)}\n" + "\n".join(wrap(text)) + "\n\n")
+
+
 def frame(t, fi):
     from film.shots import compose
     img = compose(t)
-    return to_u8(grade(img, fi, grain=0.022, vign=0.5))
+    img = grade(img, fi, grain=0.022, vign=0.5)
+    img = subtitles(img, t)
+    return to_u8(img)
 
 
 def stills(times):
@@ -180,6 +256,8 @@ if __name__ == "__main__":
     elif a.mode == "sheet":
         sheet(a.per, which=set(a.args) if a.args else None,
               out=os.path.join(BUILD, f"sheet_{'_'.join(a.args)[:40] or 'all'}.jpg"))
+    elif a.mode == "srt":
+        write_srt(a.args[0] if a.args else os.path.join(HERE, "Aland_Mellan_tva_riken.sv.srt"))
     elif a.mode == "blocks":
         blocks([int(x) for x in a.args], a.jobs, [int(p) for p in a.wait_pids.split(",") if p])
     elif a.mode == "video":

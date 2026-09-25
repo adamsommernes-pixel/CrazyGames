@@ -17,21 +17,21 @@ from narration import LINES
 from tts import sentences
 
 # Paus mellan meningar inom en replik (s). Tyngre repliker får längre andrum.
-SENT_GAP = 0.42
-SENT_GAP_LINE = {"o4": 0.55, "a3": 0.5, "a5": 0.6, "c2": 0.45, "d3": 0.55, "e9": 0.6,
-                 "g3": 0.5, "g6": 0.5, "g7": 0.55, "h6": 0.65}
+SENT_GAP = 0.7
+SENT_GAP_LINE = {"o4": 0.9, "a3": 0.8, "a5": 0.95, "c2": 0.75, "d3": 0.9, "e9": 1.0,
+                 "g3": 0.8, "g6": 0.8, "g7": 0.9, "h6": 1.05}
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RAW = os.path.join(HERE, "build/vo_raw")
 OUT = os.path.join(HERE, "build/vo")
 SR = 48000
 
-INTRO = 3.6          # tystnad/atmosfär innan första repliken
-OUTRO = 6.5          # efter sista repliken
-PAUSE_SCALE = 0.65
+INTRO = 4.5          # tystnad/atmosfär innan första repliken
+OUTRO = 8.0          # efter sista repliken
+PAUSE_SCALE = 1.1
 # Extra luft vid kapitelskiften (sekunder efter repliken).
-EXTRA = {"o4": 1.8, "a5": 0.4, "b4": 0.4, "c3": 0.6, "d6": 0.4, "e9": 0.6,
-         "f6": 0.4, "g8": 0.4}
+EXTRA = {"o4": 3.0, "a5": 1.4, "b4": 1.4, "c3": 1.6, "d6": 1.4, "e9": 1.6,
+         "f6": 1.4, "g8": 1.4}
 
 CHAIN = Pedalboard([
     HighpassFilter(cutoff_frequency_hz=65),

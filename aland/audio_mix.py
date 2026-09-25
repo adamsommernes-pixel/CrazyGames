@@ -466,7 +466,7 @@ def main():
         print(f"stem {k}: {lvl:.1f} LUFS -> gain {20 * np.log10(g):.1f} dB")
     music = music_dry + reverb(send_bus, ir_hall) * 0.9
     music = Pedalboard([HighpassFilter(30), LowShelfFilter(cutoff_frequency_hz=120, gain_db=1.5),
-                        PeakFilter(cutoff_frequency_hz=2500, gain_db=-2.0, q=0.8)])(music.T.astype(np.float32), SR).T.astype(np.float64)
+                        PeakFilter(cutoff_frequency_hz=2500, gain_db=-4.5, q=0.7)])(music.T.astype(np.float32), SR).T.astype(np.float64)
 
     # --- nivåutjämning av musiken (långsam "gain riding") ---
     mono = hp(music.mean(1), 80)
@@ -509,12 +509,12 @@ def main():
         g += (a - g) * (att_d if a > g else rel_d)
         d_ds[i] = g
     duck = np.interp(np.arange(N), np.arange(len(d_ds)) * hop, d_ds)
-    music *= (1 - duck * (1 - db(-7.5)))[:, None]
+    music *= (1 - duck * (1 - db(-12.0)))[:, None]
 
     # --- effekter ---
     sfx = build_sfx()
     sfx = sfx + reverb(sfx * 0.3, ir_hall) * 0.4
-    sfx *= (1 - duck * (1 - db(-3)))[:, None]
+    sfx *= (1 - duck * (1 - db(-6)))[:, None]
 
     # --- balans ---
     def lufs(x):
@@ -523,7 +523,7 @@ def main():
     lv, lm, ls = lufs(vo2), lufs(music), lufs(sfx)
     print(f"före balans: VO {lv:.1f}  musik {lm:.1f}  sfx {ls:.1f}")
     vo2 *= db(-18 - lv)
-    music *= db(-24.5 - lm)
+    music *= db(-25.5 - lm)
     sfx *= db(-27 - ls)
     mix = vo2 + music + sfx
     mix = Pedalboard([Compressor(threshold_db=-18, ratio=2.0, attack_ms=15, release_ms=250)])(mix.T.astype(np.float32), SR).T

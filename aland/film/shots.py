@@ -96,7 +96,7 @@ def baltic_layers(mpp):
 # --------------------------------------------------------------------------
 # Hjälpare: text, bildtexter, nålar
 # --------------------------------------------------------------------------
-def caption(img, t, t0, t1, text, sub=None, x=120, y=H - 120, size=26, align="l"):
+def caption(img, t, t0, t1, text, sub=None, x=120, y=H - 250, size=26, align="l"):
     a = fade(t, t0, t0 + 0.9, t1 - 0.8, t1)
     if a <= 0:
         return img
@@ -361,9 +361,9 @@ def _(t, lt, sh):
     # koordinater
     ca = fade(t, S("o2") + 1.2, S("o2") + 2.2, S("o3") + 2.5, S("o3") + 3.5)
     if ca > 0:
-        draw_text(img, "60°12′ N   20°01′ E", 120, H - 110, name="mono", size=24, tracking=0.1,
+        draw_text(img, "60°12′ N   20°01′ E", 120, H - 250, name="mono", size=24, tracking=0.1,
                   alpha=ca * 0.8, color=INK)
-        draw_text(img, "ÅLAND", 120, H - 150, name="sans_m", size=22, tracking=0.4, alpha=ca * 0.9, color=INK)
+        draw_text(img, "ÅLAND", 120, H - 290, name="sans_m", size=22, tracking=0.4, alpha=ca * 0.9, color=INK)
     return img
 
 
@@ -437,9 +437,9 @@ def _(t, lt, sh):
     if a > 0:
         yrs = int(round((1 - rise) * 10000 / 100.0)) * 100
         num = "I dag" if rise >= 0.999 else f"{yrs:,}".replace(",", " ")
-        draw_text(img, num, W - 120, H - 118, name="serif", size=64, weight=500, anchor="r", alpha=a, shadow=1.0)
+        draw_text(img, num, W - 120, H - 250, name="serif", size=64, weight=500, anchor="r", alpha=a, shadow=1.0)
         if rise < 0.999:
-            draw_text(img, "ÅR SEDAN", W - 120, H - 76, name="sans_m", size=18, tracking=0.35, anchor="r",
+            draw_text(img, "ÅR SEDAN", W - 120, H - 208, name="sans_m", size=18, tracking=0.35, anchor="r",
                       alpha=a * 0.8, shadow=1.0)
     return img
 
@@ -994,10 +994,10 @@ def _(t, lt, sh):
     a = smooth(lin(t, S("e2") + 1.4, S("e2") + 2.4))
     draw_text(img, "HUVUDFÄSTET", center[0] - 120, center[1] + 8, name="sans_m", size=18, tracking=0.3,
               anchor="c", alpha=a * 0.8)
-    draw_text(img, "Bomarsunds fästning", 120, H - 200, name="serif", size=56, weight=500, alpha=smooth(lin(t, S("e2"), S("e2") + 1)))
-    draw_text(img, "BYGGSTART 1832", 122, H - 158, name="sans_m", size=20, tracking=0.35, alpha=0.8 * smooth(lin(t, S("e2") + 0.4, S("e2") + 1.4)))
+    draw_text(img, "Bomarsunds fästning", 120, H - 330, name="serif", size=56, weight=500, alpha=smooth(lin(t, S("e2"), S("e2") + 1)))
+    draw_text(img, "BYGGSTART 1832", 122, H - 288, name="sans_m", size=20, tracking=0.35, alpha=0.8 * smooth(lin(t, S("e2") + 0.4, S("e2") + 1.4)))
     ua = smooth(lin(t, S("e3") + 0.3, S("e3") + 1.2))
-    draw_text(img, "- - -   aldrig byggt", 122, H - 118, name="sans", size=20, tracking=0.1, alpha=ua * 0.75, color=INK_DIM)
+    draw_text(img, "- - -   aldrig byggt", 122, H - 248, name="sans", size=20, tracking=0.1, alpha=ua * 0.75, color=INK_DIM)
     if s != 1.0:
         M = cv2.getRotationMatrix2D((W / 2, H / 2), 0, s)
         img = cv2.warpAffine(img, M, (W, H), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
@@ -1188,8 +1188,8 @@ def _(t, lt, sh):
     pin(img, p[0], p[1], "Mariehamn", t, S("f1") + 0.8, sh.t1 + 1, sub="grundad 1861")
     ka = fade(t, Wt("f1", "kejsarinnan") - 0.2, Wt("f1", "kejsarinnan") + 0.8, sh.t1, sh.t1 + 1)
     if ka > 0:
-        draw_text(img, "Uppkallad efter kejsarinnan", 120, H - 150, name="sans_m", size=22, tracking=0.12, alpha=ka * 0.85, shadow=0.6)
-        draw_text(img, "Maria Aleksandrovna", 120, H - 108, name="serif_it", size=36, weight=450, alpha=ka, shadow=0.6)
+        draw_text(img, "Uppkallad efter kejsarinnan", 120, H - 290, name="sans_m", size=22, tracking=0.12, alpha=ka * 0.85, shadow=0.6)
+        draw_text(img, "Maria Aleksandrovna", 120, H - 248, name="serif_it", size=36, weight=450, alpha=ka, shadow=0.6)
     return img
 
 
@@ -1235,7 +1235,7 @@ def _(t, lt, sh):
     img = _sunset_frame(t, -260 + lt * 5.5, 1500)
     la = fade(t, S("f3") + 1.4, S("f3") + 2.4, sh.t1 - 0.8, sh.t1 + 0.4)
     if la > 0:
-        x, y = 120, H - 150
+        x, y = 120, H - 290
         m = np.zeros((H, W), np.float32)
         poly_lines(m, [np.array([(x, y - 60), (x + 46 * la, y - 60)])], 1)
         over_color(img, AMBER, m * la)
@@ -1626,7 +1626,7 @@ def _(t, lt, sh):
     a2 = fade(t, S("h2", 1) + 0.1, S("h2", 1) + 0.8, sh.t1 - 0.6, sh.t1)
     a3 = fade(t, S("h3") + 0.2, S("h3") + 0.9, sh.t1 - 0.6, sh.t1)
     for i, (txt, a) in enumerate((("SPRÅK", a1), ("VÄRNPLIKT", a2), ("ÖRLOGSFARTYG", a3))):
-        y = H - 250 + i * 64
+        y = H - 420 + i * 64
         val = ("Svenska", "Nej", "Inga")[i]
         draw_text(img, txt, 120, y, name="sans_m", size=20, tracking=0.35, alpha=a * 0.8, shadow=0.7)
         draw_text(img, val, 420, y + 4, name="serif", size=40, weight=500, alpha=a, shadow=0.7)

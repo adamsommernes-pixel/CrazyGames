@@ -87,9 +87,58 @@ LINES = [
 ]
 
 
+# Ord som espeak betonar fel (svensk betoning, tal i vardagsform).
+WORD_PRON = {
+    "historia": "hɪstˈuːrɪa", "tillbaka": "tɪlbˈɑːka", "millimeter": "mˈɪlɪmˌeːtər",
+    "kronans": "krˈuːnans", "imperiets": "ɪmpˈeːrɪəts", "kanonerna": "kanˈuːnərna",
+    "augusti": "aɡˈɵstɪ", "paris": "parˈiːs", "kejsarinnan": "ɕɛjsarˈɪnan",
+    "segelfartygen": "sˈeːɡəlfɑːtˌyːɡən", "australien": "aʊstrˈɑːlɪən",
+    "fyrtiotalet": "fˈœtɪʊtˌɑːlət", "kulturen": "kɵltˈʉːrən", "neutralt": "nɛʊtrˈɑːlt",
+    "soldater": "sɔldˈɑːtər", "parlament": "parlamˈɛnt", "örlogsfartyg": "ˈœːrlɔɡsfɑːtˌyːɡ",
+    "konflikt": "kɔnflˈɪkt", "granit": "ɡranˈiːt", "granat": "ɡranˈɑːt",
+    "sjöofficer": "sxˈøːɔfɪsˌeːr", "trettiotusen": "trˈɛtɪtˌʉːsən", "omkring": "ɔmkrˈɪŋ",
+    "fjorton": "fjˈuːtɔn", "sjutton": "sxˈɵtɔn", "sextusen": "sˈɛkstˌʉːsən",
+    "sjuhundra": "sxˈʉːhˌɵndra", "tiotusen": "tˈiːʊtˌʉːsən", "sjutusen": "sxˈʉːtˌʉːsən",
+    "trettonhundra": "trˈɛtɔnhˌɵndra", "sextonhundra": "sˈɛkstɔnhˌɵndra",
+    "sjuttonhundra": "sxˈɵtɔnhˌɵndra", "nittonhundra": "nˈɪtɔnhˌɵndra",
+    "tjugoett": "ɕˈʉːɡʊˌɛt", "tjugotvå": "ɕˈʉːɡʊtvˌoː", "tjugofjärde": "ɕˈʉːɡʊfjˌɛːrdə",
+    "sextonde": "sˈɛkstɔndə", "nionde": "nˈiːɔndə", "vikingatiden": "vˈiːkɪŋaˌtiːdən",
+    "självständigt": "sxˈɛlvstˌɛndɪɡt", "nio": "nˈiːʊ",
+}
+
+# Visningstext för undertexter: tal som siffror.
+DISPLAY = [
+    ("{arton} nio", "1809"), ("{arton} {femtiofyra}", "1854"), ("{arton} {femtiosex}", "1856"),
+    ("{arton} {sextioett}", "1861"), ("Trettonhundra {attioatta}", "1388"),
+    ("Sextonhundra {trettioatta}", "1638"), ("Sjuttonhundra fjorton", "1714"),
+    ("Nittonhundra sjutton", "1917"), ("nittonhundra tjugoett", "1921"), ("nittonhundra tjugotvå", "1922"),
+    ("sextusen sjuhundra", "6 700"), ("trettiotusen", "30 000"), ("tiotusen", "10 000"),
+    ("sjutusen", "7 000"), ("fyrtiotalet", "1940-talet"), ("sextonde augusti", "16 augusti"),
+    ("tjugofjärde juni", "24 juni"), ("nionde juni", "9 juni"),
+    ("juni, 1921,", "juni 1921"), ("juni, 1922,", "juni 1922"), ("Paris, 1856,", "Paris 1856"),
+    ("{mariehamn}", "Mariehamn"), ("{geneve}", "Genève"), ("{viktoriakorset}", "Viktoriakorset"),
+    ("{alanningarna}", "ålänningarna"), ("{alanningar}", "ålänningar"),
+    ("{demilitariserat}", "demilitariserat"), ("{ofreden}", "ofreden"), ("{alandsexemplet}", "Ålandsexemplet"),
+]
+
+
+def display(text):
+    out = text
+    for a, b in DISPLAY:
+        out = out.replace(a, b)
+    return out
+
+
 def spoken(text):
     """Text med fonem-ersättningar, redo för TTS."""
+    import re
     out = text
     for key, ipa in PRON.items():
         out = out.replace("{" + key + "}", ipa)
-    return out
+
+    def sub(m):
+        w = m.group(0)
+        ipa = WORD_PRON.get(w.lower())
+        return f"[[{ipa}]]" if ipa else w
+    parts = re.split(r"(\[\[.*?\]\])", out)
+    return "".join(p if p.startswith("[[") else re.sub(r"[A-Za-zÅÄÖåäöéè]+", sub, p) for p in parts)
