@@ -352,7 +352,7 @@ def _(t, lt, sh):
     x = lin(t, sh.t0, sh.t1)
     img = photo_frame("steps", x, (0.5, 0.47, 1.0), (0.49, 0.37, 1.32), par=(0.05, 0, 10))
     img = film_tone(img, 0.02, 0.88, 0.92)
-    caption(img, t, S("a2") - 0.2, E("a2") + 0.9, "DENNIS ERIKSSON", "Mariehamn, Åland")
+    caption(img, t, S("a2") - 0.2, E("a2") + 0.9, "DENNIS ERIKSSON", "Åland")
     return img
 
 
