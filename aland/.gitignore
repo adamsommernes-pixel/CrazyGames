@@ -1,0 +1,11 @@
+build/
+assets/s2/
+assets/voice/
+assets/geo/
+assets/tex/
+assets/piper/
+assets/*.tar.gz
+__pycache__/
+*.mp4
+*.wav
+assets/fonts/
