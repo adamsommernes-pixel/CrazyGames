@@ -103,6 +103,7 @@ class Drawing:
                 if s[4] in group_progress:
                     by_group_len[s[4]] = by_group_len.get(s[4], 0) + polyline_length(s[0])
         g_acc = {}
+        batches = {}  # (färg, alfa, bredd) -> lista av polylinjer
         for pts, width, color, a, group in self.strokes:
             L = polyline_length(pts)
             if group_progress is not None and group in group_progress:
@@ -118,18 +119,20 @@ class Drawing:
             p = partial_polyline(pts, frac) * scale + np.array([ox, oy])
             if len(p) < 2:
                 continue
+            key = (tuple(np.round(color, 4)), round(float(a), 3), round(float(width), 2))
+            batches.setdefault(key, []).append(p)
+            if 0 < frac < 1:
+                tip_pt = p[-1]
+        for (color, a, width), plist in batches.items():
             m = np.zeros((H, W), np.float32)
-            poly_lines(m, [p], width)
+            poly_lines(m, plist, width)
             if width < 1:
                 m *= width
             if sketch and width >= 1:
-                # andra, svagare drag för skissad känsla
-                poly_lines(m, [p + np.array([0.6, -0.4])], 1, value=0.35)
+                poly_lines(m, [p + np.array([0.6, -0.4]) for p in plist], 1, value=0.35)
             m = np.clip(m, 0, 1) * a
-            layer += m[..., None] * color[None, None, :]
-            amask = np.maximum(amask, m)
-            if 0 < frac < 1:
-                tip_pt = p[-1]
+            layer += m[..., None] * np.asarray(color, np.float32)[None, None, :]
+            np.maximum(amask, m, out=amask)
         img *= (1 - amask[..., None] * alpha)
         img += layer * alpha
         if glow > 0:

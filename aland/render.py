@@ -58,10 +58,14 @@ def sheet(per=1, cols=4, out=None, which=None):
     print(out)
 
 
+PRESET = "slow"
+CRF = "15"
+
+
 def worker(idx, f0, f1, path):
     cv2.setNumThreads(1)
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
-           "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-preset", "slow", "-crf", "15",
+           "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-preset", PRESET, "-crf", CRF,
            "-pix_fmt", "yuv420p", "-x264-params", "keyint=50:min-keyint=25", path]
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     t0 = time.time()
@@ -74,6 +78,56 @@ def worker(idx, f0, f1, path):
             print(f"[w{idx}] {done}/{f1 - f0}  {el / done:.2f}s/f", flush=True)
     p.stdin.close()
     p.wait()
+
+
+def _bounds(jobs, t_from, t_to):
+    from film.shots import TOTAL
+    t_to = TOTAL if t_to is None else t_to
+    f0, f1 = int(t_from * FPS), int(t_to * FPS)
+    n = f1 - f0
+    nblk = jobs * 3
+    bounds = [f0 + n * k // nblk for k in range(nblk + 1)]
+    parts = [os.path.join(BUILD, "parts", f"p{k:03d}.mp4") for k in range(nblk)]
+    return bounds, parts
+
+
+def _alive(pid):
+    try:
+        os.kill(pid, 0)
+        with open(f"/proc/{pid}/stat") as f:
+            return f.read().split()[2] != "Z"
+    except (OSError, FileNotFoundError):
+        return False
+
+
+def blocks(ids, jobs, wait_pids):
+    """Rendera valda block; startar nya först när gamla arbetare (wait_pids) blivit klara."""
+    bounds, parts = _bounds(4, 0.0, None)
+    queue = list(ids)
+    running = []
+    while queue or running:
+        old = sum(1 for p in wait_pids if _alive(p))
+        running = [pr for pr in running if pr.is_alive()]
+        while queue and len(running) + old < jobs:
+            k = queue.pop(0)
+            pr = Process(target=worker, args=(k, bounds[k], bounds[k + 1], parts[k]))
+            pr.start()
+            running.append(pr)
+            print(f"start block {k}", flush=True)
+        time.sleep(1.0)
+    while any(_alive(p) for p in wait_pids):
+        time.sleep(1.0)
+    concat(parts, os.path.join(BUILD, "video_only.mp4"))
+
+
+def concat(parts, out):
+    lst = os.path.join(BUILD, "parts", "list.txt")
+    with open(lst, "w") as f:
+        for p in parts:
+            f.write(f"file '{p}'\n")
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lst,
+                    "-c", "copy", out], check=True)
+    print("video ->", out, flush=True)
 
 
 def video(jobs, t_from, t_to, out):
@@ -116,11 +170,17 @@ if __name__ == "__main__":
     ap.add_argument("--to", dest="t_to", type=float, default=None)
     ap.add_argument("--out", default=os.path.join(BUILD, "video_only.mp4"))
     ap.add_argument("--per", type=int, default=1)
+    ap.add_argument("--preset", default="slow")
+    ap.add_argument("--crf", default="15")
+    ap.add_argument("--wait-pids", default="")
     a = ap.parse_args()
+    PRESET, CRF = a.preset, a.crf
     if a.mode == "stills":
         stills(a.args)
     elif a.mode == "sheet":
         sheet(a.per, which=set(a.args) if a.args else None,
               out=os.path.join(BUILD, f"sheet_{'_'.join(a.args)[:40] or 'all'}.jpg"))
+    elif a.mode == "blocks":
+        blocks([int(x) for x in a.args], a.jobs, [int(p) for p in a.wait_pids.split(",") if p])
     elif a.mode == "video":
         video(a.jobs, a.t_from, a.t_to, a.out)
