@@ -83,7 +83,6 @@ def sheet(which=None, per=1, cols=4, out=None):
 
 
 def write_srt(path):
-    import re
     from manus import LINES, sentences
     from film.shots import LINES as TL
 

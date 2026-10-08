@@ -5,7 +5,6 @@ D minor at ~62 BPM, three-note motif (one per window), D major in the synthesis.
 
 Out: build/music/<stem>.wav (48 kHz stereo, dry – room is added in the mix)
 """
-import json
 import os
 import subprocess
 import sys
@@ -20,7 +19,7 @@ SF2 = "/usr/share/sounds/sf2/MuseScore_General_Full.sf2"
 TPB = 960
 RNG = np.random.default_rng(11)
 
-from film.shots import E_, S_, SHOTS, TOTAL, Wt  # noqa: E402
+from film.shots import S_, SHOTS, TOTAL  # noqa: E402
 
 SH = {s.name: s for s in SHOTS}
 

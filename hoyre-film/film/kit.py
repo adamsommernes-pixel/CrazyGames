@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """Reusable diorama pieces. One kit feeds every set, so a house, a figure or a bar
 is modelled once and reused in all 34 shots."""
-import functools
 import math
 
 import numpy as np
 
 from . import mesh as M
 from .common import BLUE
-from .mesh import GRAIN, NOSHADOW, PANELS, UNLIT, WET, box, cbox, cylinder, gable_roof, merge, sphere
+from .mesh import GRAIN, NOSHADOW, PANELS, UNLIT, box, cylinder, gable_roof, merge, sphere
 from .raster import Light
 
 # Materials (sRGB)

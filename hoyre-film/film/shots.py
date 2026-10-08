@@ -5,7 +5,6 @@ import functools
 import json
 import math
 import os
-import re
 
 import cv2
 import numpy as np
@@ -19,9 +18,8 @@ from . import overlay as O
 from . import rooms as Rm
 from . import sets as S
 from . import world as Wd
-from .common import (BLUE, BUILD, GREY, H, INK, INK_DIM, W, catmull, clamp01, dashed, draw_text, ease_in,
-                     ease_io, ease_out, fade, lin, mix, over_color, partial_polyline, poly_lines, smooth,
-                     smoother, text_width)
+from .common import (BLUE, BUILD, H, INK, INK_DIM, W, catmull, clamp01, draw_text, ease_io, ease_out, fade,
+                     lin, over_color, partial_polyline, poly_lines, smooth)
 from .raster import Camera, Decal, Light
 
 TL = json.load(open(os.path.join(BUILD, "timeline.json"), encoding="utf-8"))
@@ -935,7 +933,7 @@ def s29(t, u, d):
     v = t - t_h
     blue = smooth(clamp01(v / 1.5))
     parts = list(Wd.town(police=False)) + [Wd.police_court(blue)]
-    for i, (x, z) in enumerate(((-22, -26), (-9, -27.8), (26, -24.5) if False else (2, -27.8))):
+    for i, (x, z) in enumerate(((-22, -26), (-9, -27.8), (2, -27.8))):
         parts.append(S.village(x, z, 3, seed=70 + i))
     t_m = Wt("c3", "minst")
     for i, route in enumerate(POLICE_ROUTES):

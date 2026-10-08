@@ -2,14 +2,12 @@
 """On-screen text, set in post as 02-shotliste.md asks. One template per kind of
 graphic (stat card, source line, bullet list, chapter card, label, message bubble),
 so a corrected number is a one-line change."""
-import math
-
 import cv2
 import numpy as np
 
 import config
 
-from .common import (BLUE, GREY, H, INK, INK_DIM, W, draw_text, ease_out, fade, fill_polys, lin,
+from .common import (BLUE, H, INK, INK_DIM, W, draw_text, ease_out, fade, fill_polys, lin,
                      over_color, poly_lines, smooth, text_width)
 
 MARGIN = 110
@@ -93,9 +91,6 @@ def bullets(img, t, items, t_end, x=MARGIN, y=200, size=36, gap=64, title=None, 
         return img
     wmax = max(text_width(tx, "sans_m", size) for _, tx in items)
     a0 = smooth(lin(t, items[0][0] - 0.1, items[0][0] + 0.5)) * aend
-    yy = y
-    if title:
-        yy += 0
     shade_panel(img, x - 50, y - size - 40 - (50 if title else 0), x + wmax + 110,
                 y + gap * (len(items) - 1) + 40, a0, 0.55, 60)
     if title:

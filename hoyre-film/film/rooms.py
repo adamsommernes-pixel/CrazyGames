@@ -50,7 +50,7 @@ def kitchen(day=False):
     p.append(box(-1.78, 0.85, -3.0, 0.62, 0.9, -2.42, (0.42, 0.43, 0.45)))
     p.append(box(-1.75, 1.35, -2.98, 0.6, 1.9, -2.7, (0.82, 0.80, 0.76), flags=GRAIN))
     p.append(box(0.75, 0, -2.98, 1.35, 1.75, -2.4, (0.90, 0.90, 0.88)))           # fridge
-    p.append(K.wall_clock(1.2, 1.55, -3.0 + 0.02 + 0.6 if False else -2.98))
+    p.append(K.wall_clock(1.2, 1.55, -2.98))
     p.append(K.table(0.0, -1.3, 1.2, 0.8, 0.75))
     p.append(K.chair(-0.2, -1.95, 0.0))
     p.append(K.chair(0.5, -0.6, math.pi))

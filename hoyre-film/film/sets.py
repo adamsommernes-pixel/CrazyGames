@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw
 
 from . import kit as K
 from . import mesh as M
-from .common import ASSETS, BLUE, INK, font
+from .common import ASSETS, BLUE, font
 from .mesh import GRAIN, NOSHADOW, PANELS, UNLIT, WET, box, cylinder, merge
 from .raster import Env, Light
 
@@ -29,7 +29,6 @@ def studio_env(key=1.0, lights=(), bg=(0.05, 0.055, 0.065), warm=0.0):
 @functools.lru_cache(maxsize=None)
 def glyph_polys(ch, name="sans_b", size=400):
     """Outline polygons of one character (world units = em), and its advance."""
-    import shapely
     from shapely.geometry import Polygon
     f = font(name, size)
     adv = f.getlength(ch)
@@ -427,14 +426,10 @@ def stairs_set(steps=6):
     x0 = -7 + steps * 1.6
     p.append(box(x0, 0, -6, x0 + 9, top, 4, (0.74, 0.72, 0.68), flags=GRAIN))
     p.append(box(x0 + 3, top, -5.5, x0 + 9, top + 4.2, -2.0, (0.86, 0.84, 0.80), flags=GRAIN))
-    for z in (-1.6, -0.1):
-        pass
-    for dz in np.linspace(-1.4, 1.4, 1):
-        pass
     for x in np.linspace(x0 + 3.4, x0 + 8.6, 5):
         p.append(cylinder(x, top, -1.2, 0.2, 0.18, 3.6, (0.92, 0.91, 0.88), n=10))
     p.append(box(x0 + 3, top + 3.6, -2.0, x0 + 9, top + 4.0, -0.8, (0.92, 0.91, 0.88)))
-    p.append(M.gable_roof(x0 + 3, x0 + 9, -2.0, -0.8, top + 4.0, 0.8, (0.92, 0.91, 0.88), over=0.05, along="z").roty(0))
+    p.append(M.gable_roof(x0 + 3, x0 + 9, -2.0, -0.8, top + 4.0, 0.8, (0.92, 0.91, 0.88), over=0.05, along="z"))
     for i, x in enumerate((-12, -10, 12)):
         p.append(K.tree(x, -6 + i, 3.2, "round", seed=i))
     return merge(p), x0, top

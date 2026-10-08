@@ -2,7 +2,7 @@
 """HDR -> display: bloom, depth of field, tone map, gentle grade, vignette, grain."""
 import numpy as np
 
-from .common import H, W, grain_bank, vignette_mask
+from .common import grain_bank, vignette_mask
 from .raster import bloom, dof
 
 

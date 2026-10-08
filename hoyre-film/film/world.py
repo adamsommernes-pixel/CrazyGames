@@ -9,7 +9,7 @@ import numpy as np
 
 from . import kit as K
 from . import mesh as M
-from .mesh import GRAIN, NOSHADOW, PANELS, UNLIT, WET, box, cbox, cylinder, merge
+from .mesh import GRAIN, NOSHADOW, UNLIT, WET, box, cylinder, merge
 from .raster import Env, Light
 
 # --------------------------------------------------------------------------

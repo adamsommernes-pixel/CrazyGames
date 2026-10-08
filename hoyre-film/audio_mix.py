@@ -11,14 +11,14 @@ import sys
 import numpy as np
 import pyloudnorm as pyln
 import soundfile as sf
-from pedalboard import Compressor, HighpassFilter, LowpassFilter, LowShelfFilter, Pedalboard, PeakFilter
+from pedalboard import Compressor, HighpassFilter, LowpassFilter, Pedalboard, PeakFilter
 from scipy.signal import butter, oaconvolve, sosfilt
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 SR = 48000
 
-from film.shots import E_, LINES, S_, SHOTS, TOTAL, Wt  # noqa: E402
+from film.shots import S_, SHOTS, TOTAL, Wt  # noqa: E402
 
 SH = {s.name: s for s in SHOTS}
 N = int(TOTAL * SR) + SR
