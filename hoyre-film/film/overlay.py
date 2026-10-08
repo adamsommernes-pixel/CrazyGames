@@ -2,6 +2,8 @@
 """On-screen text, set in post as 02-shotliste.md asks. One template per kind of
 graphic (stat card, source line, bullet list, chapter card, label, message bubble),
 so a corrected number is a one-line change."""
+import math
+
 import cv2
 import numpy as np
 
@@ -14,14 +16,48 @@ MARGIN = 110
 SRC_Y = H - 58
 
 
+def _soft_box(n, a, b, sigma):
+    """1D profile of a filled box [a, b] (pixel indices, inclusive) blurred with a Gaussian,
+    with the same mirrored borders (BORDER_REFLECT_101) as cv2.GaussianBlur."""
+    from scipy.special import erf
+    i = np.arange(n, dtype=np.float64)
+    k = 1.0 / (math.sqrt(2) * sigma)
+
+    def box(lo, hi):
+        return 0.5 * (erf((hi + 0.5 - i) * k) - erf((lo - 0.5 - i) * k))
+    a, b = max(a, 0), min(b, n - 1)
+    if b < a:
+        return np.zeros(n)
+    out = box(a, b) + box(-b, -a) + box(2 * (n - 1) - b, 2 * (n - 1) - a)
+    return out
+
+
+def blur_roi(m, sigma, x0, y0, x1, y1):
+    """GaussianBlur of a mask that is zero outside [x0, x1] x [y0, y1]: blurs only the region
+    the kernel can reach (same result as blurring the whole frame)."""
+    r = int(math.ceil(sigma * 4)) + 2
+    a, b = max(int(x0) - r, 0), min(int(x1) + r + 1, m.shape[1])
+    c, d = max(int(y0) - r, 0), min(int(y1) + r + 1, m.shape[0])
+    if b <= a or d <= c:
+        return m
+    m[c:d, a:b] = cv2.GaussianBlur(np.ascontiguousarray(m[c:d, a:b]), (0, 0), sigma)
+    return m
+
+
 def shade_panel(img, x0, y0, x1, y1, alpha, strength=0.45, soft=60):
-    """Soft dark gradient behind text so it reads on any picture."""
+    """Soft dark gradient behind text so it reads on any picture (a blurred rectangle,
+    computed analytically per axis instead of blurring a full-frame mask)."""
     if alpha <= 0:
         return img
-    m = np.zeros((H, W), np.float32)
-    cv2.rectangle(m, (int(x0), int(y0)), (int(x1), int(y1)), 1.0, -1)
-    m = cv2.GaussianBlur(m, (0, 0), soft)
-    img *= (1 - m * strength * alpha)[..., None]
+    px = _soft_box(W, int(x0), int(x1), soft)
+    py = _soft_box(H, int(y0), int(y1), soft)
+    xs = np.nonzero(px > 1e-4)[0]
+    ys = np.nonzero(py > 1e-4)[0]
+    if len(xs) == 0 or len(ys) == 0:
+        return img
+    a, b, c, d = xs[0], xs[-1] + 1, ys[0], ys[-1] + 1
+    m = np.outer(py[c:d], px[a:b]).astype(np.float32)
+    img[c:d, a:b] *= (1 - m * strength * alpha)[..., None]
     return img
 
 
@@ -160,8 +196,8 @@ def bubble(img, t, t0, x, y, sender, text, t1=1e9):
         cv2.circle(m, (int(cx), int(cy)), r, 1, -1, cv2.LINE_AA)
     tail = np.array([(x0 + 18, y0 + bh - 12), (x0 + 6, y0 + bh + 18), (x0 + 48, y0 + bh - 2)])
     fill_polys(m, [tail])
-    m = cv2.GaussianBlur(m, (0, 0), 0.8)
-    sh = cv2.GaussianBlur(m, (0, 0), 14)
+    blur_roi(m, 0.8, x0, y0, x0 + bw, y0 + bh + 20)
+    sh = blur_roi(m.copy(), 14, x0, y0, x0 + bw, y0 + bh + 20)
     img *= (1 - np.roll(sh, 8, 0) * 0.45 * a)[..., None]
     over_color(img, (0.97, 0.97, 0.96), m * a)
     draw_text(img, sender, x0 + 32, y0 + 38, name="sans_m", size=24, color=(0.45, 0.46, 0.48), alpha=a)
@@ -179,7 +215,7 @@ def counter(img, value, x, y, a, digits=3, size=110):
     for i in range(digits):
         cx = x + i * (cw + 10)
         cv2.rectangle(m, (int(cx), int(y - size)), (int(cx + cw), int(y + 20)), 1, -1)
-    img *= (1 - cv2.GaussianBlur(m, (0, 0), 3) * 0.75 * a)[..., None]
+    img *= (1 - blur_roi(m, 3, x, y - size, x + digits * (cw + 10), y + 20) * 0.75 * a)[..., None]
     for i, ch in enumerate(s):
         cx = x + i * (cw + 10) + cw / 2
         draw_text(img, ch, cx, y, name="mono_r", size=size, color=INK, alpha=a, anchor="c")

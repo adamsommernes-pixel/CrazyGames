@@ -365,10 +365,37 @@ class Env:
         self.bloom, self.bloom_thr = bloom, bloom_thr
 
 
-def _shadow_map(V, F, skip, env, res):
-    """Orthographic depth map along the sun direction, fit to the scene bounds."""
+_SHADOW_CACHE = {}
+_BUFFERS = {}
+
+
+def _buf(name, shape, dtype):
+    """Per-process frame buffers, reused instead of reallocated every frame."""
+    b = _BUFFERS.get(name)
+    if b is None or b.shape != shape:
+        b = _BUFFERS[name] = np.empty(shape, dtype)
+    return b
+
+
+def _shadow_map(V, F, noshadow, env, res, static=None, static_key=None):
+    """Orthographic depth map along the sun direction, fit to the scene bounds.
+    static/static_key: triangles that did not change since the last frame. Their depth map
+    is cached and only the moving triangles are rasterized on top. Depth-only, so the
+    result is identical to rasterizing everything."""
     d = -env.sun.astype(np.float64)
     lo, hi = V.min(0), V.max(0)
+    ck = None
+    if static is not None and static_key is not None:
+        ck = (static_key, tuple(np.round(env.sun, 6)), res)
+        hit = _SHADOW_CACHE.get(ck)
+        if hit is not None and np.array_equal(hit[0], lo) and np.array_equal(hit[1], hi):
+            zb, smc = hit[2].copy(), hit[3]
+            o, R, U, F_, f = smc[0:3], smc[3:6], smc[6:9], smc[9:12], smc[12]
+            Q = V - o
+            Vv = np.stack([Q @ R, Q @ U, Q @ F_], -1).astype(np.float32)
+            ib = _buf("sm_ib", (res, res), np.int32)
+            raster(Vv, F, zb, ib, f, res / 2, res / 2, 0.0, False, noshadow | static)
+            return zb, smc
     c = (lo + hi) / 2
     r = np.linalg.norm(hi - lo) / 2 + 1e-3
     F_ = d / np.linalg.norm(d)
@@ -381,26 +408,38 @@ def _shadow_map(V, F, skip, env, res):
     Vv = np.stack([Q @ R, Q @ U, Q @ F_], -1).astype(np.float32)
     f = res / (2 * r)
     zb = np.full((res, res), np.inf, np.float32)
-    ib = np.full((res, res), -1, np.int32)
-    raster(Vv, F, zb, ib, f, res / 2, res / 2, 0.0, False, skip)
+    ib = _buf("sm_ib", (res, res), np.int32)
     smc = np.array([*o, *R, *U, *F_, f, res / 2, res / 2, 1.6 / f + r * 2e-4, 1.0], np.float64)
+    if ck is not None:
+        raster(Vv, F, zb, ib, f, res / 2, res / 2, 0.0, False, noshadow | ~static)
+        if len(_SHADOW_CACHE) > 6:
+            _SHADOW_CACHE.clear()
+        _SHADOW_CACHE[ck] = (lo.copy(), hi.copy(), zb.copy(), smc)
+        raster(Vv, F, zb, ib, f, res / 2, res / 2, 0.0, False, noshadow | static)
+    else:
+        raster(Vv, F, zb, ib, f, res / 2, res / 2, 0.0, False, noshadow)
     return zb, smc
 
 
-def render(scene, cam, env, w, h, ss=2, decals=(), return_ids=False):
-    """scene: dict from mesh.Scene.build(). Returns HDR (h, w, 3) float32 and depth (h, w)."""
+def render(scene, cam, env, w, h, ss=2, decals=(), return_ids=False, static=None, static_key=None):
+    """scene: dict from mesh.build(). Returns HDR (h, w, 3) float32 and depth (h, w).
+    static/static_key (optional): mask of triangles unchanged since the last frame, for the
+    shadow-map cache."""
     W2, H2 = w * ss, h * ss
     V = scene["V"]
     F = scene["F"]
     f = cam.focal(H2)
     Vv = cam.to_view(V).astype(np.float32)
-    zb = np.full((H2, W2), np.inf, np.float32)
-    ib = np.full((H2, W2), -1, np.int32)
+    zb = _buf("zb", (H2, W2), np.float32)
+    zb.fill(np.inf)
+    ib = _buf("ib", (H2, W2), np.int32)
+    ib.fill(-1)
     noskip = np.zeros(len(F), np.bool_)
     raster(Vv, F, zb, ib, f, W2 / 2, H2 / 2, 0.02, True, noskip)
 
-    alb = np.zeros((H2, W2, 3), np.float32)
-    emi = np.zeros((H2, W2, 3), np.float32)
+    # only pixels with ib >= 0 are read from alb/emi, so no clearing is needed
+    alb = _buf("alb", (H2, W2, 3), np.float32)
+    emi = _buf("emi", (H2, W2, 3), np.float32)
     gather(ib, scene["C"], scene["E"], alb, emi)
     if decals:
         obj = np.where(ib >= 0, scene["O"][np.maximum(ib, 0)], -1)
@@ -408,12 +447,13 @@ def render(scene, cam, env, w, h, ss=2, decals=(), return_ids=False):
             dc.apply(alb, emi, obj, cam, W2, H2)
 
     if np.any(env.sun_col > 0):
-        sm, smc = _shadow_map(V.astype(np.float64), F, scene["G"] & NOSHADOW > 0, env, env.shadow_res)
+        sm, smc = _shadow_map(V.astype(np.float64), F, scene["G"] & NOSHADOW > 0, env, env.shadow_res,
+                              static, static_key)
     else:
         sm, smc = np.zeros((1, 1), np.float32), np.zeros(17, np.float64)
     camv = np.array([*cam.eye, *cam.R, *cam.U, *cam.F, f, W2 / 2, H2 / 2], np.float64)
     L = np.array([l.row() for l in env.lights], np.float32).reshape(-1, 13)
-    out = np.empty((H2, W2, 3), np.float32)
+    out = _buf("out", (H2, W2, 3), np.float32)
     g = np.linspace(0, 1, H2, dtype=np.float32)[:, None, None]
     out[:] = env.bg_top * (1 - g) + env.bg_bot * g
     shade(zb, ib, alb, emi, out, scene["N"], scene["G"], camv, env.sky, env.gnd, env.sun,
@@ -426,8 +466,9 @@ def render(scene, cam, env, w, h, ss=2, decals=(), return_ids=False):
         if return_ids:
             ids = ib[::ss, ::ss]
     else:
+        out = out.copy()
         z = np.where(np.isfinite(zb), zb, 1e4).astype(np.float32)
-        ids = ib
+        ids = ib.copy()
     out *= env.exposure
     if env.fog_density > 0:
         k = 1 - np.exp(-env.fog_density * np.maximum(z - env.fog_start, 0))
@@ -476,14 +517,17 @@ class Decal:
 # Post
 # --------------------------------------------------------------------------
 def bloom(img, thr=0.85, amount=0.35):
+    """Glow from bright pixels. The wide radii are blurred at lower resolution (same look, far cheaper)."""
     if amount <= 0:
         return img
     b = np.maximum(img - thr, 0)
     h, w = img.shape[:2]
-    small = cv2.resize(b, (w // 2, h // 2), interpolation=cv2.INTER_AREA)
-    acc = np.zeros_like(small)
-    for s, k in ((3, 0.5), (9, 0.35), (24, 0.25)):
-        acc += cv2.GaussianBlur(small, (0, 0), s) * k
+    s2 = cv2.resize(b, (w // 2, h // 2), interpolation=cv2.INTER_AREA)
+    s4 = cv2.resize(s2, (w // 4, h // 4), interpolation=cv2.INTER_AREA)
+    s8 = cv2.resize(s4, (w // 8, h // 8), interpolation=cv2.INTER_AREA)
+    acc = cv2.GaussianBlur(s2, (0, 0), 3) * 0.5
+    acc += cv2.resize(cv2.GaussianBlur(s4, (0, 0), 4.5) * 0.35, (w // 2, h // 2), interpolation=cv2.INTER_LINEAR)
+    acc += cv2.resize(cv2.GaussianBlur(s8, (0, 0), 6) * 0.25, (w // 2, h // 2), interpolation=cv2.INTER_LINEAR)
     return img + cv2.resize(acc, (w, h), interpolation=cv2.INTER_LINEAR) * amount
 
 
@@ -500,7 +544,10 @@ def dof(img, z, focus, aperture=1.0, max_blur=7.0, tilt=None):
     coc = np.clip(coc, 0, max_blur)
     coc = cv2.GaussianBlur(coc, (0, 0), 2.0)
     levels = [0.0, 1.5, 3.5, 7.0]
-    blurs = [img] + [cv2.GaussianBlur(img, (0, 0), s) for s in levels[1:]]
+    h, w = img.shape[:2]
+    half = cv2.resize(img, (w // 2, h // 2), interpolation=cv2.INTER_AREA)
+    blurs = [img, cv2.GaussianBlur(img, (0, 0), 1.5)] + [
+        cv2.resize(cv2.GaussianBlur(half, (0, 0), s / 2), (w, h), interpolation=cv2.INTER_LINEAR) for s in levels[2:]]
     out = np.zeros_like(img)
     wsum = np.zeros(z.shape, np.float32)
     for i, s in enumerate(levels):

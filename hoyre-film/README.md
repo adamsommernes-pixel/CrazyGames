@@ -53,7 +53,7 @@ pip install numpy scipy numba opencv-python-headless pillow shapely piper-tts li
 LS=1.08 python3 tts.py && python3 audio_vo.py         # voice + timeline (~1 min)
 python3 audio_music.py && python3 audio_mix.py         # score + mix (~2 min)
 python3 render.py sheet --ss 1                         # one frame per shot, for review (~1 min)
-python3 render.py video --jobs 4 > build/render.log    # picture (~95 min on 4 cores)
+python3 render.py video --jobs 4 > build/render.log    # picture (~65 min on 4 cores)
 ./finalize.sh                                          # master + 720p (<30 MB) + subtitles
 ```
 

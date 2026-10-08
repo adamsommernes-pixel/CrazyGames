@@ -406,7 +406,7 @@ def _calendar(img, x, y, day, a):
         return
     m = np.zeros((H, W), np.float32)
     cv2.rectangle(m, (x, y), (x + 210, y + 230), 1, -1)
-    img *= (1 - cv2.GaussianBlur(m, (0, 0), 10) * 0.4 * a)[..., None]
+    img *= (1 - O.blur_roi(m.copy(), 10, x, y, x + 210, y + 230) * 0.4 * a)[..., None]
     over_color(img, (0.95, 0.94, 0.9), m * a)
     hm = np.zeros((H, W), np.float32)
     cv2.rectangle(hm, (x, y), (x + 210, y + 52), 1, -1)
@@ -697,7 +697,7 @@ def _icon(img, kind, cx, cy, a, s=46):
     m = np.zeros((H, W), np.float32)
     bg = np.zeros((H, W), np.float32)
     cv2.circle(bg, (int(cx), int(cy)), int(s * 0.95), 1, -1, cv2.LINE_AA)
-    img *= (1 - cv2.GaussianBlur(bg, (0, 0), 6) * 0.45 * a)[..., None]
+    img *= (1 - O.blur_roi(bg.copy(), 6, cx - s, cy - s, cx + s, cy + s) * 0.45 * a)[..., None]
     over_color(img, BLUE, bg * a * 0.9)
     k = s * 0.45
     if kind == "bolig":

@@ -4,10 +4,10 @@
 
 | | Conventional production | This pipeline |
 |---|---|---|
-| Making the film (voice, 34 shots, graphics, music, sound, edit) | **3–5 weeks** (AI image-to-video + After Effects) or **6–10 weeks** (3D animator in Blender) | **≈ 2.5 hours** wall clock: about 1 hour of building and about 1.5 hours of unattended rendering |
+| Making the film (voice, 34 shots, graphics, music, sound, edit) | **3–5 weeks** (AI image-to-video + After Effects) or **6–10 weeks** (3D animator in Blender) | **≈ 2 hours** wall clock: about 1 hour of building and about 1 hour of unattended rendering |
 | Fact check + Høyre approval | 1–2 weeks of calendar time | Same. This cannot be automated, and the film stays marked **UTKAST** until it is done |
 | One corrected number after review | 0.5–1 day (re-composite and re-export) | Edit one line, then re-render that 10-second block: **≈ 10 min** |
-| Add the missing K8 sentence | 1–2 days (re-record, re-cut, re-time graphics) | Edit `manus.py` and re-run voice + render: **≈ 1.5 h**, all unattended |
+| Add the missing K8 sentence | 1–2 days (re-record, re-cut, re-time graphics) | Edit `manus.py` and re-run voice + render: **≈ 1 h**, all unattended |
 
 The 1–2 weeks for fact checking and approval are calendar time on Høyre's side, not production time. They sit on top of either column.
 
@@ -28,7 +28,14 @@ The 1–2 weeks for fact checking and approval are calendar time on Høyre's sid
 6. **Reuse from the Åland film.** The DSP helpers, mix chain, loudness targeting, render driver and delivery scripts were already written and tested.
 7. **1080p master, not 4K.** 4K is about 4× the render time for a film that will be watched on phones. It is a setting (`config.SCALE`) if it is ever needed.
 8. **Resumable 10-second render blocks.** A change re-renders only the blocks it touches, and the render runs unattended on 4 cores.
-9. **Review from a contact sheet.** `render.py sheet --ss 1` shows one frame of every shot in about 40 seconds, so problems are caught before the long render.
+9. **A faster renderer, with checked output.** Profiling showed that a third of each frame went on work that does not change the picture:
+   - The soft panels behind text blurred a full-frame mask. They are now computed analytically.
+   - The town's shadow map was rebuilt every frame. Static geometry is now cached and only moving objects are drawn on top.
+   - Bloom and depth of field blurred their wide radii at full resolution.
+   - Large buffers were reallocated every frame.
+
+   Frames went from 2.3 to 1.6 s, and old and new frames differ by at most a few levels out of 255.
+10. **Review from a contact sheet.** `render.py sheet --ss 1` shows one frame of every shot in about 40 seconds, so problems are caught before the long render.
 
 ## What was not cut (and should not be)
 
@@ -46,7 +53,8 @@ The 1–2 weeks for fact checking and approval are calendar time on Høyre's sid
 | 19:40 | Renderer working (first test street) |
 | 19:56 | All 34 shots render; first contact sheet |
 | 20:00 | Full-quality render started (≈ 10 200 frames, 4 workers) |
+| 20:19 | Render restarted with the profiled speedups (≈ 30 % faster); finished blocks kept |
 | 20:12 | Score and mix done (−16 LUFS) |
-| ≈ 21:35 | Render finished, master + 720p + subtitles |
+| ≈ 21:20 | Render finished, master + 720p + subtitles |
 
 For comparison, the estimate given before starting was 6–8 hours. It came in well under that, because the shared town set and the Åland code covered more than expected.

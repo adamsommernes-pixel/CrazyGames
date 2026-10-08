@@ -23,6 +23,22 @@ import config  # noqa: E402
 from film.common import BUILD, FPS, H, W, smooth, lin, to_u8  # noqa: E402
 
 SS = config.SUPERSAMPLE
+_PREV = {"parts": ()}
+
+
+def _static(parts):
+    """Triangles of parts that are the very same objects as in the previous frame (cached sets).
+    The previous frame's parts are kept alive, so an id can never be reused by a new object."""
+    prev = {id(p) for p in _PREV["parts"]}
+    flags = [id(p) in prev for p in parts]
+    _PREV["parts"] = tuple(parts)
+    if not any(flags):
+        return None, None
+    counts = [len(p.F) for p in parts if p is not None and len(p.F)]
+    fl = [f for p, f in zip(parts, flags) if p is not None and len(p.F)]
+    mask = np.repeat(np.array(fl, bool), counts)
+    key = tuple((id(p), len(p.F)) for p, f in zip(parts, flags) if f and p is not None and len(p.F))
+    return mask, key
 
 
 def frame(t, fi):
@@ -37,7 +53,9 @@ def frame(t, fi):
         img = np.zeros((H, W, 3), np.float32)
         fr.draw(img)
     else:
-        hdr, z = render(M.build(fr.parts), fr.cam, fr.env, W, H, ss=SS, decals=fr.decals)
+        parts = [p for p in fr.parts if p is not None]
+        mask, key = _static(parts)
+        hdr, z = render(M.build(parts), fr.cam, fr.env, W, H, ss=SS, decals=fr.decals, static=mask, static_key=key)
         if fr.pre:
             fr.pre(hdr, fr.cam)
         img = finish(hdr, z, fi, focus=fr.focus, aperture=fr.aperture, tilt=fr.tilt, exposure=fr.exposure,
