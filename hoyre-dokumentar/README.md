@@ -10,6 +10,7 @@ En animert minidokumentar på ca. 7 minutter fra **Høyre** om rus, integrering 
 | `04-musikk-og-lyd.md` | Musikk og lyddesign per kapittel |
 | `05-kildeliste.md` | Kilde og år for hvert tall (K1–K27), med verifiseringsstatus |
 | `06-titler-og-thumbnails.md` | Tre titler og tre thumbnail-konsepter |
+| `../hoyre-film/` | Filmen laget i kode fra denne pakken (utkast), med produksjonstid i `PRODUCTION-TIME.md` |
 
 Kapittel 3 (det valgfrie temaet) handler om **trygghet**: kriminelle nettverk som rekrutterer unge. Temaet er valgt fordi det binder sammen de to andre kapitlene.
 

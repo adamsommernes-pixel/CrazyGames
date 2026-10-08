@@ -1,0 +1,8 @@
+build/
+assets/voice/
+assets/geo/
+assets/fonts/
+assets/*.tar.gz
+__pycache__/
+*.mp4
+*.wav
