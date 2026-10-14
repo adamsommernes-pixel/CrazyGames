@@ -48,4 +48,12 @@ This is an independent explainer and is not affiliated with Seiko.
 
 ## Rendering frames
 
-`index.html?capture=1` disables the animation loop and exposes `window.__seek(seconds)`, which rebuilds the exact state of the tour at any time. The tour is deterministic, so a headless browser can seek frame by frame and screenshot each one to make a video.
+`index.html?capture=1` disables the animation loop and exposes `window.__seek(seconds)`, which rebuilds the exact state of the tour at any time. The tour is deterministic, so a headless browser can seek frame by frame and screenshot each one to make a video. `render_video.js` does this:
+
+```bash
+npm i playwright-core                              # plus a Chromium build (CHROMIUM_PATH=... if needed)
+node render_video.js frames 30 1280 720            # 4,680 JPEG frames for the 2:36 tour
+ffmpeg -framerate 30 -i frames/f%05d.jpg -c:v libx264 -crf 18 -pix_fmt yuv420p seiko-8t63.mp4
+```
+
+Optional arguments 5 and 6 set a first and last frame, so several processes can each render part of the tour in parallel.
