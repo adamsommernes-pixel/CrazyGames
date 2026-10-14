@@ -1,13 +1,14 @@
 <title>Inside the Seiko 8T63</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="An animated 3D walkthrough of the Seiko 8T63 meca-quartz chronograph movement (case 8T63-00T0).">
+<meta name="description" content="A narrated, deep-dive 3D film about how the Seiko 8T63 meca-quartz chronograph works, from the quartz crystal to the heart-cam reset.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Michroma&display=swap">
+<link rel="stylesheet" href="css/stage-overlay.css">
 <style>
 :root {
-  /* Layout: full-bleed 3D stage. Brand top-left, mode switch + live readouts top-right,
-     caption and chapter rail docked along the bottom edge. One dark "watch bench" look. */
+  /* Layout: full-bleed 3D stage, like a cinema screen. Brand top-left, mode switch and live readouts
+     top-right, chapter card lower-left, subtitles bottom-centre, a thin transport bar along the bottom. */
   --stage-hi: #1c232c;
   --stage-lo: #07090c;
   --panel: rgba(11, 14, 19, 0.8);
@@ -23,31 +24,28 @@
   --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --gl: max(16px, env(safe-area-inset-left, 0px));
   --gr: max(16px, env(safe-area-inset-right, 0px));
+  --subs-bottom: 64px;
   color-scheme: dark;
 }
 html, body { height: 100%; }
 body { margin: 0; background: var(--stage-lo); color: var(--text); font-family: var(--body); font-size: 14px; overflow: hidden; -webkit-font-smoothing: antialiased; }
-#stage {
-  position: relative; height: 100%; overflow: hidden;
-  padding-left: var(--gl); padding-right: var(--gr); box-sizing: border-box;
-  background: radial-gradient(110% 85% at 50% 36%, var(--stage-hi) 0%, #11161c 48%, var(--stage-lo) 100%);
-}
+#stage { position: relative; height: 100%; overflow: hidden; padding-left: var(--gl); padding-right: var(--gr); box-sizing: border-box;
+  background: radial-gradient(110% 85% at 50% 36%, var(--stage-hi) 0%, #11161c 48%, var(--stage-lo) 100%); }
 #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; outline: none; }
 #gl.dragging { cursor: grabbing; }
+#overlays, #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+#fade { position: absolute; inset: 0; background: #050608; opacity: 0; pointer-events: none; }
 button { font: inherit; color: inherit; }
 button:focus-visible, [role="tab"]:focus-visible, input:focus-visible { outline: 2px solid var(--copper); outline-offset: 2px; }
 
-/* brand */
 .brand { position: absolute; top: 14px; left: var(--gl); pointer-events: none; max-width: min(48ch, 56vw); }
 .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-.brand h1 { font-family: var(--display); font-weight: 400; font-size: clamp(14px, 1.9vw, 19px); letter-spacing: 0.06em; margin: 6px 0 0; text-wrap: balance; line-height: 1.35; }
-
-/* mode switch */
+.brand h1 { font-family: var(--display); font-weight: 400; font-size: clamp(14px, 1.7vw, 18px); letter-spacing: 0.06em; margin: 6px 0 0; text-wrap: balance; line-height: 1.35; }
 .modes { position: absolute; top: 14px; right: var(--gr); display: flex; padding: 3px; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
 .modes button { background: none; border: 0; padding: 6px 12px; border-radius: 6px; cursor: pointer; color: var(--muted); font-size: 13px; }
 .modes button[aria-selected="true"] { background: rgba(227, 154, 92, 0.16); color: var(--text); }
 
-/* HUD */
+/* live readouts */
 .hud { position: absolute; top: 62px; right: var(--gr); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none; }
 .chip { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; padding: 4px 9px; border-radius: 999px; border: 1px solid rgba(227, 154, 92, 0.5); color: var(--copper); background: var(--panel); }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
@@ -57,1484 +55,158 @@ button:focus-visible, [role="tab"]:focus-visible, input:focus-visible { outline:
 .sw-state { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
 .sw-state b { color: var(--pulse); font-weight: 500; }
 #scope { display: block; width: 210px; height: 74px; margin-top: 4px; }
-.specs { position: absolute; top: 62px; right: var(--gr); width: min(310px, calc(100vw - 32px)); box-sizing: border-box; }
-@media (min-width: 1000px) and (min-height: 700px) { .specs { right: auto; left: var(--gl); top: 100px; width: 392px; } }
-.capture .modes, .capture .play { display: none; }
+.specs { position: absolute; top: 96px; left: var(--gl); width: min(360px, calc(100vw - 32px)); box-sizing: border-box; }
 .specs dl { display: grid; grid-template-columns: auto 1fr; gap: 5px 14px; margin: 6px 0 0; font-size: 12.5px; }
 .specs dt { color: var(--muted); }
 .specs dd { margin: 0; font-variant-numeric: tabular-nums; }
 
-/* divider chain (quartz chapter) */
-.chain { position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; max-width: min(760px, calc(100% - 32px)); pointer-events: none; }
-.chain .cell { font-family: var(--mono); font-size: 10.5px; font-variant-numeric: tabular-nums; padding: 4px 6px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); transition: background 0.2s, color 0.2s, border-color 0.2s; }
-.chain .cell.on { color: var(--text); border-color: rgba(120, 195, 255, 0.55); }
-.chain .cell.out { color: #0b0e13; background: var(--pulse); border-color: var(--pulse); }
-.chain .div { color: var(--muted); font-family: var(--mono); font-size: 10px; align-self: center; }
+/* chapter card + subtitles */
+.chapter { position: absolute; left: var(--gl); top: 50%; transform: translateY(-50%); pointer-events: none; opacity: 0; max-width: min(420px, 44vw); padding: 16px 20px 18px; background: rgba(8, 10, 14, 0.72); border-radius: 8px; backdrop-filter: blur(6px); }
+.chapter .n { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; color: var(--copper); font-variant-numeric: tabular-nums; }
+.chapter .t { font-family: var(--display); font-size: clamp(18px, 2.4vw, 28px); letter-spacing: 0.04em; line-height: 1.3; margin-top: 8px; text-wrap: balance; }
+.chapter .rule { width: 56px; height: 2px; background: var(--copper); margin-top: 14px; }
+.subs { position: absolute; left: 50%; transform: translateX(-50%); bottom: var(--subs-bottom); width: min(880px, calc(100% - 32px)); text-align: center; pointer-events: none; transition: opacity 0.18s; }
+.subs span { display: inline; font-size: clamp(14px, 1.55vw, 19px); line-height: 1.5; padding: 3px 10px; background: rgba(6, 8, 11, 0.72); border-radius: 4px; -webkit-box-decoration-break: clone; box-decoration-break: clone; text-wrap: balance; }
+
+/* timed info card on watch shots */
+.shotcard { position: absolute; top: 96px; max-width: min(380px, 40vw); pointer-events: none; background: rgba(11, 14, 19, 0.82); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; backdrop-filter: blur(8px); }
+.shotcard.left { left: var(--gl); }
+.shotcard.right { right: var(--gr); top: 62px; }
+.shotcard .k { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.shotcard .eq { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; line-height: 1.75; margin-top: 6px; }
+.shotcard .eq b { color: var(--copper); font-weight: 500; }
+.shotcard .eq i { color: var(--muted); font-style: normal; }
+.shotcard .eq .hl { color: var(--text); background: rgba(227, 154, 92, 0.16); border-radius: 3px; padding: 0 3px; }
+.shotcard .fine { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.4; }
 
 /* labels */
-#labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .lab { position: absolute; left: 0; top: 0; width: 0; height: 0; opacity: 0; will-change: transform, opacity; }
 .lab .dot { position: absolute; left: -3.5px; top: -3.5px; width: 7px; height: 7px; border-radius: 50%; background: var(--copper); box-shadow: 0 0 0 3px rgba(227, 154, 92, 0.22); }
 .lab .lead { position: absolute; left: 0; top: 0; width: 26px; height: 1px; background: rgba(236, 235, 230, 0.6); transform-origin: 0 0; transform: rotate(-35deg); }
-.lab .txt { position: absolute; white-space: nowrap; font-size: 12px; line-height: 1.2; padding: 4px 7px; border-radius: 4px; background: rgba(9, 12, 16, 0.78); border: 1px solid var(--line); color: var(--text); top: -15px; transform: translateY(-50%); left: 21px; }
+.lab .txt { position: absolute; white-space: nowrap; font-size: 12.5px; line-height: 1.2; padding: 4px 7px; border-radius: 4px; background: rgba(9, 12, 16, 0.8); border: 1px solid var(--line); color: var(--text); top: -15px; transform: translateY(-50%); left: 21px; }
 .lab.l .lead { transform: rotate(-145deg); }
 .lab.l .txt { left: auto; right: 21px; }
 .lab.d .lead { transform: rotate(35deg); }
 .lab.d.l .lead { transform: rotate(145deg); }
 .lab.d .txt { top: 15px; }
 
-/* dock */
-.dock { position: absolute; left: var(--gl); right: var(--gr); bottom: 14px; padding: 14px 18px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; flex-direction: column; gap: 10px; }
-.caption { min-width: 0; }
-.chap-meta { font-family: var(--mono); font-size: 11px; color: var(--copper); letter-spacing: 0.08em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
-.caption h2 { font-family: var(--display); font-weight: 400; font-size: 15px; letter-spacing: 0.04em; margin: 6px 0 6px; text-wrap: balance; }
-.caption p { margin: 0; color: var(--soft); line-height: 1.55; max-width: 74ch; font-size: 14px; min-height: 3.1em; }
-.transport { display: flex; align-items: center; gap: 12px; }
-.play { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; border: 1px solid var(--line-strong); background: rgba(255, 255, 255, 0.04); display: grid; place-items: center; cursor: pointer; }
-.play:hover { border-color: var(--copper); }
-.play svg { width: 14px; height: 14px; fill: var(--text); }
+/* transport */
+.bar { position: absolute; left: var(--gl); right: var(--gr); bottom: 12px; display: flex; align-items: center; gap: 12px; }
+.play, .iconbtn { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; border: 1px solid var(--line-strong); background: rgba(11, 14, 19, 0.6); display: grid; place-items: center; cursor: pointer; }
+.play:hover, .iconbtn:hover { border-color: var(--copper); }
+.play svg, .iconbtn svg { width: 14px; height: 14px; fill: var(--text); }
+.iconbtn.off svg { opacity: 0.45; }
 .rail { flex: 1; min-width: 0; display: flex; gap: 3px; }
 .seg { flex: var(--w) 1 0; min-width: 0; height: 22px; padding: 0; border: 0; background: none; cursor: pointer; position: relative; }
-.seg::before { content: ""; position: absolute; left: 0; right: 0; top: 9px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.13); }
+.seg::before { content: ""; position: absolute; left: 0; right: 0; top: 9px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.14); }
 .seg i { position: absolute; left: 0; top: 9px; height: 4px; border-radius: 2px; background: var(--copper); width: 0; }
-.seg:hover::before { background: rgba(255, 255, 255, 0.26); }
+.seg:hover::before { background: rgba(255, 255, 255, 0.28); }
 .clock { font-family: var(--mono); font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.note { font-size: 11px; color: var(--muted); line-height: 1.45; }
+.bigplay { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 12px; padding: 14px 22px 14px 16px; border-radius: 999px; border: 1px solid rgba(227, 154, 92, 0.6); background: rgba(11, 14, 19, 0.82); cursor: pointer; font-size: 15px; backdrop-filter: blur(8px); }
+.bigplay svg { width: 26px; height: 26px; fill: var(--copper); }
+.bigplay:hover { border-color: var(--copper); }
 
-/* explore panel */
+/* explore */
+.explorePanel { position: absolute; left: var(--gl); right: var(--gr); bottom: 12px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; backdrop-filter: blur(10px); }
 .explore { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 22px; align-items: start; }
 .explore h3 { margin: 0 0 7px; font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .row { display: flex; flex-wrap: wrap; gap: 6px; }
 .btn { border: 1px solid var(--line-strong); background: rgba(255, 255, 255, 0.04); border-radius: 6px; padding: 7px 11px; cursor: pointer; font-size: 13px; line-height: 1.2; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
 .btn:hover { border-color: var(--copper); }
-.btn.big { padding: 9px 13px; }
 .btn[aria-pressed="true"] { background: rgba(227, 154, 92, 0.18); border-color: var(--copper); }
 .btn .sub { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
 .slider { display: flex; align-items: center; gap: 10px; }
 .slider input { flex: 1; accent-color: var(--copper); min-width: 0; }
-.toast { position: absolute; left: 50%; transform: translateX(-50%); padding: 7px 12px; border-radius: 6px; background: var(--panel); border: 1px solid rgba(227, 154, 92, 0.5); font-size: 13px; pointer-events: none; transition: opacity 0.25s; }
+.toast { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); padding: 7px 12px; border-radius: 6px; background: var(--panel); border: 1px solid rgba(227, 154, 92, 0.5); font-size: 13px; pointer-events: none; transition: opacity 0.25s; }
+.note { position: absolute; right: var(--gr); bottom: 52px; max-width: 360px; font-size: 10.5px; line-height: 1.45; color: var(--muted); text-align: right; pointer-events: none; }
 
-@media (min-width: 1000px) {
-  .dock { right: auto; width: 392px; }
-  .caption p { min-height: 0; }
-  .explore { grid-template-columns: 1fr; gap: 12px; }
-}
+.capture .modes, .capture .bar, .capture .bigplay, .capture .note { display: none !important; }
+.capture { --subs-bottom: 26px; }
+.capture .subs, .capture .toast { transition: none; }
+
 @media (max-width: 720px) {
   .brand { max-width: calc(100% - 214px); }
   .brand h1 { font-size: 14px; }
   .eyebrow { font-size: 10px; }
   .eyebrow span { display: block; }
   .eyebrow .sep { display: none; }
-  .specs { top: auto; left: var(--gl); right: var(--gr); width: auto; padding: 8px 10px; }
   .hud { top: 58px; gap: 6px; }
   .sw { font-size: 18px; }
   #scope { width: 160px; height: 58px; }
-  .caption h2 { font-size: 13px; margin: 4px 0; }
-  .caption p { font-size: 13px; line-height: 1.5; }
-  .dock { padding: 11px 13px 8px; gap: 8px; bottom: 10px; }
   .lab .txt { font-size: 11px; padding: 3px 6px; }
   .lab.minor { display: none; }
-  .note { display: none; }
   .modes button { padding: 5px 9px; font-size: 12px; }
-  .specs dl { font-size: 11.5px; gap: 3px 10px; }
+  .chapter { top: auto; bottom: 150px; transform: none; max-width: 70vw; }
+  .note { display: none; }
   .explore { grid-template-columns: 1fr 1fr; gap: 10px 14px; }
-  .chain .cell { font-size: 9.5px; padding: 3px 4px; }
+  .specs { top: auto; bottom: 130px; }
 }
-@media (max-width: 420px) {
-  .explore { grid-template-columns: 1fr; }
-  .hud .card.scopecard { display: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .chain .cell { transition: none; }
-}
+@media (max-width: 420px) { .explore { grid-template-columns: 1fr; } .hud .card.scopecard { display: none; } }
+@media (prefers-reduced-motion: reduce) { .subs { transition: none; } }
 </style>
 
 <main id="stage">
-  <canvas id="gl" tabindex="0" aria-label="3D model of the Seiko 8T63 watch. Drag to rotate, scroll or pinch to zoom."></canvas>
+  <canvas id="gl" tabindex="0" aria-label="3D model of the Seiko 8T63 watch and its movement. Drag to rotate, scroll or pinch to zoom."></canvas>
+  <div id="overlays"></div>
   <div id="labels" aria-hidden="true"></div>
+  <div id="fade"></div>
 
   <header class="brand">
     <div class="eyebrow"><span>Caliber 8T63</span><span class="sep"> · </span><span>case 8T63-00T0</span></div>
     <h1>Inside the Seiko 8T63</h1>
   </header>
-
   <div class="modes" role="tablist" aria-label="Mode">
-    <button role="tab" id="modeTour" aria-selected="true">Guided tour</button>
+    <button role="tab" id="modeTour" aria-selected="true">Film</button>
     <button role="tab" id="modeExplore" aria-selected="false">Explore</button>
   </div>
-
-  <div class="hud" id="hud">
+  <div class="hud">
     <div class="chip" id="badge" hidden></div>
-    <div class="card" id="swCard" hidden>
-      <div class="k">Stopwatch</div>
-      <div class="sw" id="swTime">00:00<small>.0</small></div>
-      <div class="sw-state" id="swState">Reset</div>
-    </div>
-    <div class="card scopecard" id="scopeCard" hidden>
-      <div class="k">Motor pulses</div>
-      <canvas id="scope" width="420" height="148"></canvas>
-    </div>
+    <div class="card" id="swCard" hidden><div class="k">Stopwatch</div><div class="sw" id="swTime">00:00<small>.0</small></div><div class="sw-state" id="swState">Reset</div></div>
+    <div class="card scopecard" id="scopeCard" hidden><div class="k">Motor pulses</div><canvas id="scope" width="420" height="148"></canvas></div>
   </div>
-
   <div class="card specs" id="specs" hidden>
     <div class="k">Caliber 8T63 at a glance</div>
-    <dl>
-      <dt>Type</dt><dd>Quartz chronograph, mechanical reset</dd>
-      <dt>Oscillator</dt><dd>32,768 Hz quartz</dd>
-      <dt>Motors</dt><dd>2 stepping motors</dd>
-      <dt>Stopwatch</dt><dd>1/5 s steps, up to 60 min, stops by itself at 60</dd>
-      <dt>Accuracy</dt><dd>±15 s per month</dd>
-      <dt>Battery</dt><dd>SR936SW, about 3 years</dd>
-      <dt>Movement</dt><dd>30.8 mm across, 0 jewels</dd>
-      <dt>Case 00T0</dt><dd>SSB397, 41 mm steel, 100 m</dd>
-    </dl>
+    <dl id="specList"></dl>
   </div>
-  <div class="chain" id="chain" hidden aria-hidden="true"></div>
+  <div class="chapter" id="chapterCard" aria-hidden="true"><div class="n" id="chN"></div><div class="t" id="chTitle"></div><div class="rule"></div></div>
+  <div class="shotcard left" id="shotCard" style="opacity:0"></div>
+  <div class="subs" id="subs" aria-live="polite"><span></span></div>
   <div class="toast" id="toast" style="opacity:0" role="status"></div>
+  <button class="bigplay" id="bigPlay"><svg viewBox="0 0 16 16"><path d="M4 2.2v11.6c0 .6.7 1 1.2.7l9-5.8c.5-.3.5-1 0-1.3l-9-5.8C4.7 1.2 4 1.6 4 2.2z"/></svg><span>Play the film</span></button>
 
-  <footer class="dock" id="dock">
-    <div id="tourUI">
-      <div class="caption" aria-live="polite">
-        <div class="chap-meta" id="capMeta">01 / 12</div>
-        <h2 id="capTitle">The watch</h2>
-        <p id="capText"></p>
-      </div>
+  <div class="bar" id="bar">
+    <button class="play" id="play" aria-label="Play"><svg viewBox="0 0 16 16" id="playIcon"></svg></button>
+    <div class="rail" id="rail" role="group" aria-label="Chapters"></div>
+    <span class="clock" id="clock">0:00 / 0:00</span>
+    <button class="iconbtn" id="mute" aria-label="Mute narration" aria-pressed="false"><svg viewBox="0 0 16 16"><path d="M2 6h2.5L8 3v10L4.5 10H2z"/><path d="M10.5 5.2a3.6 3.6 0 0 1 0 5.6l-.9-.9a2.4 2.4 0 0 0 0-3.8zM12.3 3.4a6.1 6.1 0 0 1 0 9.2l-.9-.9a4.8 4.8 0 0 0 0-7.4z"/></svg></button>
+  </div>
+  <div class="note">Simplified model: part shapes and layout are illustrative. Brass marks timekeeping parts, steel the stopwatch, blue the reset parts, copper the coils. Independent explainer, not affiliated with Seiko.</div>
+
+  <div class="explorePanel" id="exploreUI" hidden>
+    <div class="explore">
+      <div><h3>Pushers</h3><div class="row">
+        <button class="btn" id="btnA">Pusher A<span class="sub">start / stop</span></button>
+        <button class="btn" id="btnB">Pusher B<span class="sub">reset</span></button></div></div>
+      <div><h3>Crown</h3><div class="row" role="group" aria-label="Crown position">
+        <button class="btn" id="crown0" aria-pressed="true">In</button>
+        <button class="btn" id="crown1" aria-pressed="false">1st click · date</button>
+        <button class="btn" id="crown2" aria-pressed="false">2nd click · time</button>
+        <button class="btn" id="crownTurn">Hold to turn</button></div></div>
+      <div><h3>View</h3>
+        <div class="slider"><label for="explode" style="font-size:12px;color:var(--muted)">Explode</label><input id="explode" type="range" min="0" max="100" value="0"></div>
+        <div class="row" style="margin-top:6px"><button class="btn" id="xray" aria-pressed="false">X-ray</button><button class="btn" id="vFront">Front</button><button class="btn" id="vBack">Back</button><button class="btn" id="vSide">Side</button></div></div>
+      <div><h3>Time speed</h3><div class="row" role="group" aria-label="Time speed">
+        <button class="btn" id="sp1" aria-pressed="true">Real time</button><button class="btn" id="sp60" aria-pressed="false">×60</button><button class="btn" id="sp600" aria-pressed="false">×600</button></div></div>
     </div>
-    <div id="exploreUI" hidden>
-      <div class="explore">
-        <div>
-          <h3>Pushers</h3>
-          <div class="row">
-            <button class="btn big" id="btnA">Pusher A<span class="sub">start / stop</span></button>
-            <button class="btn big" id="btnB">Pusher B<span class="sub">reset</span></button>
-          </div>
-        </div>
-        <div>
-          <h3>Crown</h3>
-          <div class="row" role="group" aria-label="Crown position">
-            <button class="btn" id="crown0" aria-pressed="true">In</button>
-            <button class="btn" id="crown1" aria-pressed="false">1st click · date</button>
-            <button class="btn" id="crown2" aria-pressed="false">2nd click · time</button>
-            <button class="btn" id="crownTurn">Hold to turn</button>
-          </div>
-        </div>
-        <div>
-          <h3>View</h3>
-          <div class="slider"><label for="explode" class="note" style="display:block">Explode</label><input id="explode" type="range" min="0" max="100" value="0"></div>
-          <div class="row" style="margin-top:6px">
-            <button class="btn" id="xray" aria-pressed="false">X-ray</button>
-            <button class="btn" id="vFront">Front</button>
-            <button class="btn" id="vBack">Back</button>
-            <button class="btn" id="vSide">Side</button>
-          </div>
-        </div>
-        <div>
-          <h3>Time speed</h3>
-          <div class="row" role="group" aria-label="Time speed">
-            <button class="btn" id="sp1" aria-pressed="true">Real time</button>
-            <button class="btn" id="sp60" aria-pressed="false">×60</button>
-            <button class="btn" id="sp600" aria-pressed="false">×600</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="transport">
-      <button class="play" id="play" aria-label="Pause"><svg viewBox="0 0 16 16" id="playIcon"><rect x="3" y="2" width="3.6" height="12" rx="1"/><rect x="9.4" y="2" width="3.6" height="12" rx="1"/></svg></button>
-      <div class="rail" id="rail" role="group" aria-label="Chapters"></div>
-      <span class="clock" id="clock">0:00 / 0:00</span>
-    </div>
-    <div class="note">Simplified model: part shapes and layout are illustrative, not a service drawing. Brass marks timekeeping parts, steel the stopwatch, blue the reset parts, copper the motor coils; magnet poles are coloured red and blue for clarity. Independent explainer, not affiliated with Seiko.</div>
-  </footer>
+  </div>
+  <audio id="vo" preload="auto" src="audio/film.m4a"></audio>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
-<script>
-(function () {
-'use strict';
-
-// ───────────────────────────── helpers ─────────────────────────────
-const TAU = Math.PI * 2;
-const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
-const lerp = (a, b, t) => a + (b - a) * t;
-const smooth = t => { t = clamp(t); return t * t * (3 - 2 * t); };
-const ease = t => { t = clamp(t); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
-const deg = d => d * Math.PI / 180;
-const wrapPi = a => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
-const qs = new URLSearchParams(location.search);
-const CAPTURE = qs.has('capture');
-const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-const $ = id => document.getElementById(id);
-
-// ───────────────────────────── renderer ─────────────────────────────
-if (THREE.ColorManagement) THREE.ColorManagement.legacyMode = false;
-const canvas = $('gl');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: CAPTURE, powerPreference: 'high-performance' });
-renderer.setClearColor(0x000000, 0);
-renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
-renderer.physicallyCorrectLights = true;
-const maxAniso = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(30, 1, 2, 4000);
-
-(function makeEnvironment() {
-  const env = new THREE.Scene();
-  env.add(new THREE.Mesh(new THREE.BoxGeometry(24, 24, 24), new THREE.MeshBasicMaterial({ color: 0x1a1e24, side: THREE.BackSide })));
-  const panel = (w, h, pos, color, k) => {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(k), side: THREE.DoubleSide }));
-    m.position.set(pos[0], pos[1], pos[2]); m.lookAt(0, 0, 0); env.add(m);
-  };
-  panel(11, 3.2, [0, 10, 4], 0xffffff, 5.0);
-  panel(3, 9, [-10.5, 1, 3], 0xdfe9ff, 3.0);
-  panel(3, 9, [10.5, 0, -2], 0xffecd9, 2.4);
-  panel(9, 1.8, [0, -7, 9], 0xffffff, 1.5);
-  panel(7, 7, [0, 2, -11], 0x8a98ad, 0.7);
-  panel(4, 2, [7, -8, 6], 0xffffff, 1.2);
-  const pm = new THREE.PMREMGenerator(renderer);
-  scene.environment = pm.fromScene(env, 0.03).texture;
-  pm.dispose();
-})();
-
-const keyLight = new THREE.DirectionalLight(0xfff1e3, 2.2); keyLight.position.set(40, 70, 90); scene.add(keyLight);
-const rimLight = new THREE.DirectionalLight(0xcfe0ff, 1.1); rimLight.position.set(-70, -30, -50); scene.add(rimLight);
-scene.add(new THREE.HemisphereLight(0xdfe6ee, 0x101215, 0.35));
-
-// ───────────────────────────── canvas textures ─────────────────────────────
-const PLEX = '"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif';
-const MICRO = 'Michroma, "Eurostile", "Arial Black", sans-serif';
-const textures = [];
-function canvasTex(w, h, draw) {
-  const c = document.createElement('canvas'); c.width = w; c.height = h;
-  const ctx = c.getContext('2d');
-  const t = new THREE.CanvasTexture(c);
-  t.encoding = THREE.sRGBEncoding; t.anisotropy = maxAniso;
-  t.userData.redraw = () => { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, w, h); draw(ctx, w, h); t.needsUpdate = true; };
-  t.userData.redraw();
-  textures.push(t);
-  return t;
-}
-// mm-space painter for a square canvas covering [-R, R]²
-function painter(ctx, N, R) {
-  const s = N / (2 * R), c = N / 2;
-  return {
-    s,
-    mm() { ctx.setTransform(s, 0, 0, -s, c, c); },
-    px() { ctx.setTransform(1, 0, 0, 1, 0, 0); },
-    text(str, x, y, size, o = {}) {
-      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.translate(c + x * s, c - y * s); if (o.rot) ctx.rotate(-o.rot);
-      ctx.font = `${o.weight || 500} ${size * s}px ${o.family || PLEX}`;
-      ctx.fillStyle = o.color || '#e9e9e4'; ctx.textAlign = o.align || 'center'; ctx.textBaseline = 'middle';
-      if (o.spacing && 'letterSpacing' in ctx) ctx.letterSpacing = (o.spacing * s) + 'px';
-      ctx.fillText(str, 0, 0); ctx.restore();
-    },
-    circle(x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); },
-  };
-}
-const DIAL_R = 16.3;
-const SUB = { min: [-7.6, 0], sec: [0, -7.6], h24: [7.6, 0] };
-const DATE_C = [11.6 * Math.cos(deg(-45)), 11.6 * Math.sin(deg(-45))];
-
-const TEX = {};
-TEX.dial = canvasTex(2048, 2048, (ctx, N) => {
-  const P = painter(ctx, N, DIAL_R);
-  ctx.fillStyle = '#0b0c0e'; ctx.fillRect(0, 0, N, N);
-  P.mm();
-  // pressed waffle pattern
-  for (const dir of [1, -1]) {
-    for (let k = -2 * DIAL_R; k <= 2 * DIAL_R; k += 0.62) {
-      ctx.beginPath(); ctx.moveTo(-DIAL_R, -DIAL_R * dir + k); ctx.lineTo(DIAL_R, DIAL_R * dir + k);
-      ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 0.06; ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-DIAL_R, -DIAL_R * dir + k + 0.09); ctx.lineTo(DIAL_R, DIAL_R * dir + k + 0.09);
-      ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 0.07; ctx.stroke();
-    }
-  }
-  const vg = ctx.createRadialGradient(0, 0, 2, 0, 0, DIAL_R);
-  vg.addColorStop(0, 'rgba(40,44,50,0.25)'); vg.addColorStop(1, 'rgba(0,0,0,0.45)');
-  ctx.fillStyle = vg; ctx.fillRect(-DIAL_R, -DIAL_R, 2 * DIAL_R, 2 * DIAL_R);
-  // 1/5-second chapter ring: 300 marks
-  for (let i = 0; i < 300; i++) {
-    const a = Math.PI / 2 - i * TAU / 300, five = i % 25 === 0, sec = i % 5 === 0;
-    const r0 = five ? 14.8 : sec ? 15.2 : 15.55;
-    ctx.beginPath(); ctx.moveTo(r0 * Math.cos(a), r0 * Math.sin(a)); ctx.lineTo(16.05 * Math.cos(a), 16.05 * Math.sin(a));
-    ctx.strokeStyle = five ? 'rgba(240,240,236,0.95)' : sec ? 'rgba(240,240,236,0.82)' : 'rgba(240,240,236,0.5)';
-    ctx.lineWidth = five ? 0.2 : sec ? 0.1 : 0.05; ctx.stroke();
-  }
-  // subdials
-  const subdial = (cx, cy, kind) => {
-    P.mm();
-    ctx.fillStyle = '#16181b'; P.circle(cx, cy, 3.95); ctx.fill();
-    for (let r = 0.25; r < 3.9; r += 0.07) {
-      P.circle(cx, cy, r); ctx.strokeStyle = (Math.round(r / 0.07) % 2) ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.35)'; ctx.lineWidth = 0.03; ctx.stroke();
-    }
-    P.circle(cx, cy, 3.95); ctx.strokeStyle = 'rgba(235,235,230,0.6)'; ctx.lineWidth = 0.06; ctx.stroke();
-    const n = kind === 'h24' ? 24 : 60;
-    for (let i = 0; i < n; i++) {
-      const a = Math.PI / 2 - i * TAU / n, major = kind === 'h24' ? i % 6 === 0 : i % 5 === 0;
-      if (kind !== 'h24' && !major && i % 1 !== 0) continue;
-      const r0 = major ? 3.1 : 3.45;
-      ctx.beginPath(); ctx.moveTo(cx + r0 * Math.cos(a), cy + r0 * Math.sin(a)); ctx.lineTo(cx + 3.8 * Math.cos(a), cy + 3.8 * Math.sin(a));
-      ctx.strokeStyle = major ? 'rgba(240,240,236,0.9)' : 'rgba(240,240,236,0.55)'; ctx.lineWidth = major ? 0.11 : 0.05; ctx.stroke();
-    }
-    const nums = kind === 'h24' ? [[24, 0], [6, 6], [12, 12], [18, 18]] : kind === 'min' ? [[60, 0], [10, 10], [20, 20], [30, 30], [40, 40], [50, 50]] : [[60, 0], [20, 20], [40, 40]];
-    const div = kind === 'h24' ? 24 : 60;
-    for (const [label, v] of nums) {
-      const a = Math.PI / 2 - v / div * TAU;
-      P.text(String(label), cx + 2.42 * Math.cos(a), cy + 2.42 * Math.sin(a), 0.62, { weight: 500 });
-    }
-    const tag = kind === 'h24' ? '24H' : kind === 'min' ? 'MIN' : 'SEC';
-    P.text(tag, cx, cy - 1.25, 0.42, { family: MICRO, weight: 400, color: 'rgba(233,233,228,0.75)', spacing: 0.05 });
-  };
-  subdial(SUB.min[0], SUB.min[1], 'min');
-  subdial(SUB.sec[0], SUB.sec[1], 'sec');
-  subdial(SUB.h24[0], SUB.h24[1], 'h24');
-  // printing
-  P.text('CHRONOGRAPH', 0, 6.4, 0.66, { family: MICRO, weight: 400, spacing: 0.12 });
-  P.text('100M', 0, -12.55, 0.52, { family: MICRO, weight: 400, color: 'rgba(233,233,228,0.8)', spacing: 0.08 });
-  // date window frame
-  P.mm(); ctx.save(); ctx.translate(DATE_C[0], DATE_C[1]); ctx.rotate(deg(45));
-  ctx.strokeStyle = 'rgba(240,240,236,0.85)'; ctx.lineWidth = 0.12; ctx.strokeRect(-1.08, -1.32, 2.16, 2.64); ctx.restore();
-  P.px();
-});
-
-TEX.date = canvasTex(1024, 1024, (ctx, N) => {
-  const R = 13.2, P = painter(ctx, N, R);
-  ctx.fillStyle = '#efeee9'; ctx.fillRect(0, 0, N, N);
-  for (let n = 1; n <= 31; n++) {
-    const a = deg(-45) + (n - 1) * TAU / 31;
-    P.text(String(n), 11.6 * Math.cos(a), 11.6 * Math.sin(a), 1.32, { weight: 600, color: '#111214', rot: a });
-  }
-});
-
-TEX.bezel = canvasTex(2048, 2048, (ctx, N) => {
-  const R = 20.0, P = painter(ctx, N, R);
-  ctx.fillStyle = '#121315'; ctx.fillRect(0, 0, N, N);
-  P.mm();
-  for (let i = 0; i < 900; i++) {
-    const a = i / 900 * TAU;
-    ctx.beginPath(); ctx.moveTo(16.7 * Math.cos(a), 16.7 * Math.sin(a)); ctx.lineTo(20.0 * Math.cos(a), 20.0 * Math.sin(a));
-    ctx.strokeStyle = `rgba(255,255,255,${0.015 + 0.02 * ((i * 7919) % 5) / 5})`; ctx.lineWidth = 0.03; ctx.stroke();
-  }
-  const vals = [500, 400, 300, 250, 200, 180, 160, 150, 140, 130, 120, 110, 100, 90, 85, 80, 75, 70, 65, 60];
-  const numbered = new Set([500, 400, 300, 250, 200, 180, 150, 120, 100, 90, 80, 70, 60]);
-  for (const v of vals) {
-    const t = 3600 / v, a = Math.PI / 2 - t / 60 * TAU;
-    ctx.beginPath(); ctx.moveTo(19.4 * Math.cos(a), 19.4 * Math.sin(a)); ctx.lineTo(19.92 * Math.cos(a), 19.92 * Math.sin(a));
-    ctx.strokeStyle = 'rgba(236,236,232,0.9)'; ctx.lineWidth = numbered.has(v) ? 0.14 : 0.08; ctx.stroke();
-    if (numbered.has(v)) P.text(String(v), 18.2 * Math.cos(a), 18.2 * Math.sin(a), 1.0, { weight: 500, rot: a - Math.PI / 2 });
-  }
-  const word = 'TACHYMETER';
-  for (let i = 0; i < word.length; i++) {
-    const a = deg(90 - 9 - i * 3.0);
-    P.text(word[i], 18.2 * Math.cos(a), 18.2 * Math.sin(a), 0.78, { family: MICRO, weight: 400, rot: a - Math.PI / 2, color: 'rgba(236,236,232,0.85)' });
-  }
-  P.mm(); P.circle(0, 0, 16.95); ctx.strokeStyle = 'rgba(236,236,232,0.35)'; ctx.lineWidth = 0.05; ctx.stroke();
-});
-
-TEX.caseback = canvasTex(1024, 1024, (ctx, N) => {
-  const R = 17.6, P = painter(ctx, N, R);
-  ctx.fillStyle = '#b9bec4'; ctx.fillRect(0, 0, N, N);
-  P.mm();
-  for (let r = 0.2; r < R; r += 0.09) { P.circle(0, 0, r); ctx.strokeStyle = `rgba(${(r * 97) % 2 > 1 ? '255,255,255' : '40,44,50'},0.08)`; ctx.lineWidth = 0.05; ctx.stroke(); }
-  P.circle(0, 0, 9.5); ctx.strokeStyle = 'rgba(30,32,36,0.6)'; ctx.lineWidth = 0.12; ctx.stroke();
-  P.circle(0, 0, 16.8); ctx.strokeStyle = 'rgba(30,32,36,0.5)'; ctx.lineWidth = 0.1; ctx.stroke();
-  // ring text, reading clockwise from the top
-  const ring = 'STAINLESS STEEL  ·  WATER RESISTANT 10 BAR  ·  ';
-  const step = 360 / (ring.length * 1.15);
-  for (let i = 0; i < ring.length; i++) {
-    const a = deg(90 - i * step * 1.15 * 0.87);
-    P.text(ring[i], 13.2 * Math.cos(a), 13.2 * Math.sin(a), 1.0, { family: MICRO, weight: 400, color: 'rgba(36,38,42,0.85)', rot: a - Math.PI / 2 });
-  }
-  P.text('8T63-00T0', 0, 0.8, 1.7, { family: MICRO, weight: 400, color: 'rgba(30,32,36,0.9)', spacing: 0.08 });
-  P.text('CAL. 8T63', 0, -2.2, 1.0, { family: MICRO, weight: 400, color: 'rgba(30,32,36,0.7)', spacing: 0.1 });
-});
-
-TEX.battery = canvasTex(512, 512, (ctx, N) => {
-  const R = 4.75, P = painter(ctx, N, R);
-  const g = ctx.createRadialGradient(N * 0.42, N * 0.4, 10, N / 2, N / 2, N / 2);
-  g.addColorStop(0, '#f2f4f6'); g.addColorStop(1, '#a9b0b7');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, N, N);
-  P.text('SR936SW', 0, 0.9, 1.25, { weight: 600, color: '#2c3036' });
-  P.text('1.55 V  ·  silver oxide', 0, -0.75, 0.62, { weight: 500, color: '#3a3f46' });
-  P.text('+', 0, -2.55, 1.4, { weight: 500, color: '#3a3f46' });
-});
-
-TEX.coil = canvasTex(64, 256, (ctx, w, h) => {
-  ctx.fillStyle = '#b86a38'; ctx.fillRect(0, 0, w, h);
-  for (let y = 0; y < h; y += 4) { ctx.fillStyle = 'rgba(255,214,170,0.35)'; ctx.fillRect(0, y, w, 1.4); ctx.fillStyle = 'rgba(60,24,6,0.45)'; ctx.fillRect(0, y + 2.6, w, 1.2); }
-});
-TEX.coil.wrapS = TEX.coil.wrapT = THREE.RepeatWrapping; TEX.coil.repeat.set(1, 5);
-
-// circuit traces are shared with the current-flow animation
-const TRACE = {
-  main: [[13.2, -4.6], [14.0, 0.4], [12.7, 6.2], [7.6, 11.9], [0, 13.7], [-4.6, 10.6]],
-  toA: [[-6.6, 8.0], [-10.4, 7.6], [-13.2, 3.4], [-13.5, -0.6]],
-  toB: [[-4.7, 10.3], [-0.4, 12.8], [3.2, 12.9]],
-  toX: [[-7.4, 9.4], [-9.6, 6.6]],
-};
-TEX.circuit = canvasTex(1024, 1024, (ctx, N) => {
-  const R = 15.2, P = painter(ctx, N, R);
-  const g = ctx.createLinearGradient(0, 0, N, N); g.addColorStop(0, '#a5611f'); g.addColorStop(1, '#7b4314');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, N, N);
-  P.mm(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  const line = (pts, w) => { ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.lineWidth = w; ctx.stroke(); };
-  ctx.strokeStyle = '#d9a64b';
-  line(TRACE.main, 0.42); line(TRACE.toA, 0.32); line(TRACE.toB, 0.32); line(TRACE.toX, 0.26);
-  ctx.strokeStyle = 'rgba(217,166,75,0.55)';
-  for (let i = 0; i < 7; i++) { const a = deg(30 + i * 22); line([[10.2 * Math.cos(a), 10.2 * Math.sin(a)], [14.3 * Math.cos(a + 0.05), 14.3 * Math.sin(a + 0.05)]], 0.16); }
-  line([[-3.2, 12.6], [-1.0, 14.4], [9.6, 11.4], [12.0, 8.2]], 0.18);
-  ctx.fillStyle = '#e8c16b';
-  for (const p of [...TRACE.main, ...TRACE.toA, ...TRACE.toB]) { P.circle(p[0], p[1], 0.32); ctx.fill(); }
-});
-
-// ───────────────────────────── layers & materials ─────────────────────────────
-const LAYER_EX = { bracelet: 0, case: 0, crown: 0, caseback: -16, chands: 19.6, bezel: 24, crystal: 30, hands: 19, dial: 14.5, date: 11, chrono: 7.5, motion: 4, plate: 0, drive: -4, circuit: -8, battery: -10.5, flow: 0, fork: 0 };
-const LAYER_NAMES = Object.keys(LAYER_EX);
-const watch = new THREE.Group(); scene.add(watch);
-const L = {};
-for (const n of LAYER_NAMES) { const g = new THREE.Group(); g.name = n; L[n] = { g, ex: LAYER_EX[n], mats: new Set(), op: -1 }; }
-for (const n of LAYER_NAMES) (n === 'flow' || n === 'fork' ? L.circuit.g : watch).add(L[n].g);
-
-const MATS = {
-  steel: () => new THREE.MeshStandardMaterial({ color: 0xe3e7eb, metalness: 1, roughness: 0.15 }),
-  brushed: () => new THREE.MeshStandardMaterial({ color: 0xc7cdd4, metalness: 1, roughness: 0.34 }),
-  dark: () => new THREE.MeshStandardMaterial({ color: 0x17191c, metalness: 0.5, roughness: 0.4 }),
-  bezelInsert: () => new THREE.MeshStandardMaterial({ map: TEX.bezel, metalness: 0.35, roughness: 0.4 }),
-  caseback: () => new THREE.MeshStandardMaterial({ map: TEX.caseback, metalness: 1, roughness: 0.3 }),
-  glass: () => new THREE.MeshPhysicalMaterial({ color: 0xf4f8ff, metalness: 0, roughness: 0.04, transparent: true, opacity: 0.13, clearcoat: 1, clearcoatRoughness: 0.04, depthWrite: false, envMapIntensity: 1.6 }),
-  dial: () => new THREE.MeshStandardMaterial({ map: TEX.dial, metalness: 0.12, roughness: 0.55 }),
-  dialEdge: () => new THREE.MeshStandardMaterial({ color: 0x0b0c0e, roughness: 0.6 }),
-  lume: () => new THREE.MeshStandardMaterial({ color: 0xe9f1ea, roughness: 0.55, emissive: 0x9fe6c9, emissiveIntensity: 0.14 }),
-  dateRing: () => new THREE.MeshStandardMaterial({ map: TEX.date, roughness: 0.6 }),
-  brass: () => new THREE.MeshStandardMaterial({ color: 0xf2cf86, metalness: 1, roughness: 0.3 }),
-  nickel: () => new THREE.MeshStandardMaterial({ color: 0xe9eef3, metalness: 0.85, roughness: 0.34 }),
-  blued: () => new THREE.MeshStandardMaterial({ color: 0x4f78c8, metalness: 0.85, roughness: 0.28 }),
-  plate: () => new THREE.MeshStandardMaterial({ color: 0x2c3138, metalness: 0.3, roughness: 0.66, envMapIntensity: 0.6 }),
-  pin: () => new THREE.MeshStandardMaterial({ color: 0xbfc5cb, metalness: 1, roughness: 0.22 }),
-  stator: () => new THREE.MeshStandardMaterial({ color: 0x8e959c, metalness: 0.9, roughness: 0.36, emissive: 0x000000 }),
-  coil: () => new THREE.MeshStandardMaterial({ color: 0xffffff, map: TEX.coil, metalness: 0.9, roughness: 0.32, emissive: 0x000000 }),
-  magN: () => new THREE.MeshStandardMaterial({ color: 0xc4473d, metalness: 0.3, roughness: 0.45 }),
-  magS: () => new THREE.MeshStandardMaterial({ color: 0x3d6fc4, metalness: 0.3, roughness: 0.45 }),
-  pcb: () => new THREE.MeshStandardMaterial({ map: TEX.circuit, metalness: 0.3, roughness: 0.5 }),
-  chip: () => new THREE.MeshStandardMaterial({ color: 0x15171a, metalness: 0.2, roughness: 0.38, emissive: 0x000000 }),
-  gold: () => new THREE.MeshStandardMaterial({ color: 0xe6c06a, metalness: 1, roughness: 0.26, emissive: 0x000000 }),
-  battery: () => new THREE.MeshStandardMaterial({ color: 0xdfe3e7, metalness: 1, roughness: 0.18 }),
-  batteryFace: () => new THREE.MeshStandardMaterial({ map: TEX.battery, metalness: 0.9, roughness: 0.22 }),
-  quartz: () => new THREE.MeshPhysicalMaterial({ color: 0xe8f0f4, metalness: 0, roughness: 0.15, clearcoat: 1, transparent: true, opacity: 0.88 }),
-  glow: () => new THREE.MeshBasicMaterial({ color: 0x78c3ff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }),
-  leader: () => new THREE.LineDashedMaterial({ color: 0xe39a5c, dashSize: 0.9, gapSize: 0.6, transparent: true }),
-};
-const matCache = {};
-function reg(layer, m) { m.userData.baseOpacity = m.opacity; m.userData.baseTransparent = m.transparent; L[layer].mats.add(m); return m; }
-function M(layer, kind) { const k = layer + ':' + kind; return matCache[k] || (matCache[k] = reg(layer, MATS[kind]())); }
-function MU(layer, kind) { return reg(layer, MATS[kind]()); }
-
-function setLayerOpacity(name, op) {
-  const l = L[name];
-  if (Math.abs(l.op - op) < 1e-4) return;
-  l.op = op;
-  l.g.visible = op > 0.004;
-  for (const m of l.mats) {
-    const wantT = m.userData.baseTransparent || op < 0.995;
-    if (m.transparent !== wantT) { m.transparent = wantT; m.needsUpdate = true; }
-    m.opacity = m.userData.baseOpacity * op;
-    if (!m.userData.baseTransparent) m.depthWrite = op > 0.6;
-  }
-}
-
-// ───────────────────────────── geometry helpers ─────────────────────────────
-function cylGeo(r, z0, z1, seg = 28) { const g = new THREE.CylinderGeometry(r, r, z1 - z0, seg); g.rotateX(Math.PI / 2); g.translate(0, 0, (z0 + z1) / 2); return g; }
-function cylY(r, y0, y1, seg = 32) { const g = new THREE.CylinderGeometry(r, r, y1 - y0, seg); g.translate(0, (y0 + y1) / 2, 0); return g; }
-function ringShape(rIn, rOut) { const s = new THREE.Shape(); s.absarc(0, 0, rOut, 0, TAU, false); const h = new THREE.Path(); h.absarc(0, 0, rIn, 0, TAU, true); s.holes.push(h); return s; }
-function extrude(shape, z0, z1, curve = 48, bevel = 0) {
-  const depth = Math.max(0.001, z1 - z0 - 2 * bevel);
-  const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, curveSegments: curve });
-  g.translate(0, 0, z0 + bevel); return g;
-}
-function polyShape(pts) { const s = new THREE.Shape(); pts.forEach((p, i) => i ? s.lineTo(p[0], p[1]) : s.moveTo(p[0], p[1])); s.closePath(); return s; }
-function barShape(pts, w) {
-  const left = [], right = [], n = pts.length;
-  const nrm = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [-dy / l, dx / l]; };
-  for (let i = 0; i < n; i++) {
-    let nx, ny, k = 1;
-    if (i === 0) [nx, ny] = nrm(pts[0], pts[1]);
-    else if (i === n - 1) [nx, ny] = nrm(pts[n - 2], pts[n - 1]);
-    else {
-      const a = nrm(pts[i - 1], pts[i]), b = nrm(pts[i], pts[i + 1]);
-      nx = a[0] + b[0]; ny = a[1] + b[1]; const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l;
-      k = 1 / Math.max(0.35, nx * a[0] + ny * a[1]);
-    }
-    left.push([pts[i][0] + nx * w / 2 * k, pts[i][1] + ny * w / 2 * k]);
-    right.push([pts[i][0] - nx * w / 2 * k, pts[i][1] - ny * w / 2 * k]);
-  }
-  return polyShape(left.concat(right.reverse()));
-}
-function roundRect(w, h, r) {
-  const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
-  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r);
-  s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
-  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s;
-}
-function add(layer, geo, kind, x = 0, y = 0, z = 0, parent) {
-  const m = new THREE.Mesh(geo, typeof kind === 'string' ? M(layer, kind) : kind);
-  m.position.set(x, y, z); (parent || L[layer].g).add(m); return m;
-}
-const A = {};
-function anchor(key, parent, x, y, z) { const o = new THREE.Object3D(); o.position.set(x, y, z); (L[parent] ? L[parent].g : parent).add(o); A[key] = o; return o; }
-
-// gears ───
-const MOD = 0.12;
-const pr = z => MOD * z / 2;
-const gearCache = {};
-function gearGeo(z, thick, spokes = 0) {
-  const key = `${z}|${thick}|${spokes}`;
-  if (gearCache[key]) return gearCache[key];
-  const r = pr(z), ra = r + MOD * 0.9, rf = r - MOD * 1.15, st = TAU / z, s = new THREE.Shape();
-  const P = (rad, a) => [rad * Math.cos(a), rad * Math.sin(a)];
-  for (let i = 0; i < z; i++) {
-    const a = i * st;
-    const pts = [P(rf, a), P(rf, a + st * 0.14), P(ra, a + st * 0.31), P(ra, a + st * 0.49), P(rf, a + st * 0.66)];
-    pts.forEach((p, j) => (i === 0 && j === 0) ? s.moveTo(p[0], p[1]) : s.lineTo(p[0], p[1]));
-  }
-  s.closePath();
-  const hole = new THREE.Path(); hole.absarc(0, 0, Math.min(0.11, rf * 0.3), 0, TAU, true); s.holes.push(hole);
-  if (spokes && rf > 1.4) {
-    const rim = Math.max(0.3, rf * 0.13), rin = Math.max(0.5, rf * 0.27), rout = rf - rim, sw = 0.34;
-    for (let k = 0; k < spokes; k++) {
-      const a0 = k * TAU / spokes + 0.3, a1 = a0 + TAU / spokes;
-      const wi = (sw / 2) / rin, wo = (sw / 2) / rout;
-      const p = new THREE.Path();
-      p.moveTo(rout * Math.cos(a0 + wo), rout * Math.sin(a0 + wo));
-      p.absarc(0, 0, rout, a0 + wo, a1 - wo, false);
-      p.lineTo(rin * Math.cos(a1 - wi), rin * Math.sin(a1 - wi));
-      p.absarc(0, 0, rin, a1 - wi, a0 + wi, true);
-      p.closePath(); s.holes.push(p);
-    }
-  }
-  const g = new THREE.ExtrudeGeometry(s, { depth: thick, bevelEnabled: false, curveSegments: 10 });
-  g.translate(0, 0, -thick / 2);
-  return (gearCache[key] = g);
-}
-const GEARS = {};
-function arbor(id, layer, pos, o, matKind) {
-  const g = new THREE.Group(); g.position.set(pos[0], pos[1], 0); L[layer].g.add(g);
-  if (o.w) {
-    add(layer, gearGeo(o.w, 0.12, o.spokes || 0), matKind, 0, 0, o.wz, g);
-    add(layer, cylGeo(Math.max(0.3, pr(o.w) * 0.12), o.wz - 0.1, o.wz + 0.1, 20), matKind, 0, 0, 0, g);
-  }
-  if (o.p) add(layer, gearGeo(o.p, 0.3, 0), matKind, 0, 0, o.pz, g);
-  if (o.a) add(layer, cylGeo(o.ar || 0.1, o.a[0], o.a[1], 12), 'pin', 0, 0, 0, g);
-  const gear = { id, g, x: pos[0], y: pos[1], w: o.w || 0, p: o.p || 0, ang: 0 };
-  GEARS[id] = gear; return gear;
-}
-const LINKS = [];
-function link(a, ag, b, bg) {
-  const z1 = a[ag], z2 = b[bg], beta = Math.atan2(b.y - a.y, b.x - a.x);
-  LINKS.push({ a, b, k: -z1 / z2, Phi: beta * (1 + z1 / z2) + Math.PI - 1.3 * TAU / z2 });
-}
-function runLinks() { for (const l of LINKS) { l.b.ang = l.a.ang * l.k + l.Phi; l.b.g.rotation.z = l.b.ang; } }
-const polar = (c, d, aDeg) => [c[0] + d * Math.cos(deg(aDeg)), c[1] + d * Math.sin(deg(aDeg))];
-function inter(c1, r1, c2, r2, pick) {
-  const dx = c2[0] - c1[0], dy = c2[1] - c1[1], d = Math.hypot(dx, dy);
-  const a = (r1 * r1 - r2 * r2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, r1 * r1 - a * a));
-  const mx = c1[0] + a * dx / d, my = c1[1] + a * dy / d;
-  const p1 = [mx - h * dy / d, my + h * dx / d], p2 = [mx + h * dy / d, my - h * dx / d];
-  return pick(p1) ? p1 : p2;
-}
-
-// ───────────────────────────── the case ─────────────────────────────
-const PUSH_ANG = 34;
-const parts = {};
-(function buildCase() {
-  const V = (r, z) => new THREE.Vector2(r, z);
-  const prof = [V(16.0, -4.0), V(18.9, -4.0), V(19.9, -3.6), V(20.45, -2.6), V(20.6, -1.0), V(20.6, 3.4), V(20.45, 4.2), V(20.1, 4.6), V(16.45, 4.6), V(16.45, 2.7), V(16.0, 2.7), V(16.0, -4.0)];
-  const caseGeo = new THREE.LatheGeometry(prof, 160); caseGeo.rotateX(Math.PI / 2);
-  const cm = M('case', 'steel'); cm.side = THREE.DoubleSide;
-  add('case', caseGeo, cm);
-  // lugs: side profile in (y, z), extruded along x
-  const lugShape = polyShape([[13.5, -2.9], [21.8, -2.6], [24.4, -1.9], [24.9, -0.6], [24.7, 1.2], [23.6, 2.3], [19.5, 3.2], [13.5, 3.5]]);
-  const lugGeo = new THREE.ExtrudeGeometry(lugShape, { depth: 1.7, bevelEnabled: true, bevelThickness: 0.35, bevelSize: 0.35, bevelSegments: 3, curveSegments: 8 });
-  const perm = new THREE.Matrix4().set(0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1);
-  lugGeo.applyMatrix4(perm);
-  for (const flip of [0, 1]) {
-    const lg = new THREE.Group(); lg.rotation.z = flip * Math.PI; L.case.g.add(lg);
-    add('case', lugGeo, 'steel', 10.45, 0, 0, lg);
-    add('case', lugGeo, 'steel', -12.15, 0, 0, lg);
-  }
-  // pushers at 2 and 4 o'clock
-  for (const [key, ang] of [['A', PUSH_ANG], ['B', -PUSH_ANG]]) {
-    const g = new THREE.Group(); g.rotation.z = deg(ang) - Math.PI / 2; g.position.z = 2.3; L.case.g.add(g);
-    add('case', cylY(1.35, 19.9, 21.5), 'steel', 0, 0, 0, g);
-    const mov = new THREE.Group(); g.add(mov);
-    add('case', cylY(0.95, 21.0, 23.1), 'brushed', 0, 0, 0, mov);
-    add('case', cylY(1.42, 22.9, 24.1, 40), 'steel', 0, 0, 0, mov);
-    add('case', cylY(0.32, 14.6, 21.0, 12), 'pin', 0, 0, 0, mov);
-    parts['pusher' + key] = mov;
-    anchor('pusher' + key, mov, 0, 24.1, 0);
-  }
-  // crown at 3 o'clock
-  const cg = new THREE.Group(); cg.rotation.z = -Math.PI / 2; cg.position.z = 0.75; L.crown.g.add(cg);
-  add('crown', cylY(1.55, 20.2, 21.4), 'steel', 0, 0, 0, cg);
-  const crownMov = new THREE.Group(); cg.add(crownMov);
-  const ks = new THREE.Shape(); const nk = 44;
-  for (let i = 0; i <= nk * 2; i++) { const a = i / (nk * 2) * TAU, r = i % 2 ? 2.78 : 2.98; i ? ks.lineTo(r * Math.cos(a), r * Math.sin(a)) : ks.moveTo(r * Math.cos(a), r * Math.sin(a)); }
-  const kg = new THREE.ExtrudeGeometry(ks, { depth: 3.0, bevelEnabled: true, bevelThickness: 0.2, bevelSize: 0.15, bevelSegments: 2 });
-  kg.rotateX(-Math.PI / 2); kg.translate(0, 21.4, 0);
-  const knurl = add('crown', kg, 'steel', 0, 0, 0, crownMov);
-  add('crown', cylY(2.2, 24.55, 24.75, 40), 'brushed', 0, 0, 0, crownMov);
-  parts.crownMov = crownMov; parts.knurl = knurl;
-  anchor('crown', crownMov, 0, 24.7, 0);
-  anchor('bezel', L.bezel.g, -18.3 * Math.cos(deg(30)), 18.3 * Math.sin(deg(30)), 5.7);
-})();
-
-(function buildBracelet() {
-  const links = [];
-  const pieceGeo = (w, l) => { const g = new THREE.ExtrudeGeometry(roundRect(w, l, 0.6), { depth: 2.3, bevelEnabled: true, bevelThickness: 0.35, bevelSize: 0.35, bevelSegments: 3, curveSegments: 6 }); g.translate(0, 0, -1.15); return g; };
-  const outer = pieceGeo(5.9, 4.5), center = pieceGeo(6.2, 4.5), endOuter = pieceGeo(5.9, 4.3), endCenter = pieceGeo(6.2, 4.3);
-  for (const flip of [0, 1]) {
-    const side = new THREE.Group(); side.rotation.z = flip * Math.PI; L.bracelet.g.add(side);
-    const R = 21, y0 = 25.0;
-    for (let i = 0; i < 8; i++) {
-      const lk = new THREE.Group(); side.add(lk);
-      if (i === 0) { lk.position.set(0, 22.7, 0.15); }
-      else {
-        const a = (i - 0.5) * 0.235;
-        lk.position.set(0, y0 + R * Math.sin(a), -R + R * Math.cos(a) + 0.15); lk.rotation.x = -a;
-      }
-      const o = i === 0 ? endOuter : outer, c = i === 0 ? endCenter : center;
-      add('bracelet', o, 'brushed', -6.75, 0, 0, lk); add('bracelet', o, 'brushed', 6.75, 0, 0, lk);
-      add('bracelet', c, 'steel', 0, 0, 0, lk);
-      links.push(lk);
-    }
-  }
-})();
-
-(function buildBezelCrystalBack() {
-  const V = (r, z) => new THREE.Vector2(r, z);
-  const prof = [V(16.7, 5.6), V(16.7, 4.6), V(20.55, 4.6), V(20.72, 4.9), V(20.62, 5.42), V(20.32, 5.62), V(16.7, 5.6)];
-  const bg = new THREE.LatheGeometry(prof, 160); bg.rotateX(Math.PI / 2);
-  const bm = M('bezel', 'steel'); bm.side = THREE.DoubleSide;
-  add('bezel', bg, bm);
-  add('bezel', new THREE.RingGeometry(16.95, 20.0, 160, 1), 'bezelInsert', 0, 0, 5.625);
-  add('crystal', cylGeo(16.68, 5.0, 5.9, 120), 'glass');
-  add('caseback', cylGeo(18.6, -5.0, -4.0, 120), 'brushed');
-  const face = new THREE.CircleGeometry(17.6, 120); face.rotateY(Math.PI);
-  add('caseback', face, 'caseback', 0, 0, -5.01);
-  anchor('L_crystal', 'crystal', 5, 15.8, 5.9);
-  anchor('L_bezel', 'bezel', 6, -19.4, 5.6);
-  anchor('L_caseback', 'caseback', 6, -17.6, -4.5);
-})();
-
-// ───────────────────────────── dial, hands, date ─────────────────────────────
-(function buildDial() {
-  const s = new THREE.Shape(); s.absarc(0, 0, DIAL_R, 0, TAU, false);
-  const c = DATE_C, t = [Math.cos(deg(45)), Math.sin(deg(45))], r = [Math.cos(deg(-45)), Math.sin(deg(-45))];
-  const hw = 0.9, hh = 1.12;
-  const corner = (a, b) => [c[0] + t[0] * a + r[0] * b, c[1] + t[1] * a + r[1] * b];
-  const win = new THREE.Path(); [corner(-hw, -hh), corner(hw, -hh), corner(hw, hh), corner(-hw, hh)].forEach((p, i) => i ? win.lineTo(p[0], p[1]) : win.moveTo(p[0], p[1])); win.closePath();
-  s.holes.push(win);
-  const hole = new THREE.Path(); hole.absarc(0, 0, 0.45, 0, TAU, true); s.holes.push(hole);
-  const g = extrude(s, 2.8, 3.1, 160);
-  TEX.dial.repeat.set(1 / (2 * DIAL_R), 1 / (2 * DIAL_R)); TEX.dial.offset.set(0.5, 0.5);
-  add('dial', g, [M('dial', 'dial'), M('dial', 'dialEdge')]);
-  // applied indices
-  const bar = new THREE.BoxGeometry(0.82, 2.3, 0.32), lumeBar = new THREE.BoxGeometry(0.36, 1.8, 0.06);
-  for (const h of [12, 1, 2, 4, 5, 7, 8, 10, 11]) {
-    const a = deg(90 - 30 * h), rr = 13.55;
-    const offs = h === 12 ? [-0.62, 0.62] : [0];
-    for (const o of offs) {
-      const px = rr * Math.cos(a) - o * Math.sin(a), py = rr * Math.sin(a) + o * Math.cos(a);
-      const m = add('dial', bar, 'steel', px, py, 3.26); m.rotation.z = a - Math.PI / 2;
-      const lm = add('dial', lumeBar, 'lume', px, py, 3.44); lm.rotation.z = a - Math.PI / 2;
-    }
-  }
-  const ringGeo = new THREE.TorusGeometry(3.98, 0.06, 8, 96);
-  for (const k of ['min', 'sec', 'h24']) add('dial', ringGeo, 'steel', SUB[k][0], SUB[k][1], 3.12);
-  anchor('subMin', 'dial', SUB.min[0] - 2.6, SUB.min[1] + 2.4, 3.1);
-  anchor('subSec', 'dial', SUB.sec[0] - 2.8, SUB.sec[1] - 2.2, 3.1);
-  anchor('sub24', 'dial', SUB.h24[0] + 2.6, SUB.h24[1] + 2.4, 3.1);
-  anchor('date', 'dial', DATE_C[0] + 0.6, DATE_C[1] - 0.6, 3.1);
-  anchor('L_dial', 'dial', 6, -15.0, 3.1);
-})();
-
-const HANDS = {};
-(function buildHands() {
-  const hand = (key, pts, lumePts, z, x = 0, y = 0, hub = 0.9, layer = 'hands') => {
-    const g = new THREE.Group(); g.position.set(x, y, 0); L[layer].g.add(g);
-    add(layer, extrude(polyShape(pts), z, z + 0.1, 8), 'steel', 0, 0, 0, g);
-    if (lumePts) add(layer, extrude(polyShape(lumePts), z + 0.1, z + 0.14, 8), 'lume', 0, 0, 0, g);
-    add(layer, cylGeo(hub, z - 0.05, z + 0.14, 28), 'steel', 0, 0, 0, g);
-    HANDS[key] = g; return g;
-  };
-  hand('hour', [[-0.78, 0], [-0.72, 7.4], [0, 9.2], [0.72, 7.4], [0.78, 0], [0.42, -1.5], [-0.42, -1.5]], [[-0.42, 1.8], [-0.4, 7.1], [0, 8.4], [0.4, 7.1], [0.42, 1.8]], 3.42, 0, 0, 1.0);
-  hand('minute', [[-0.62, 0], [-0.55, 13.0], [0, 14.9], [0.55, 13.0], [0.62, 0], [0.36, -2.0], [-0.36, -2.0]], [[-0.32, 2.2], [-0.3, 12.6], [0, 13.9], [0.3, 12.6], [0.32, 2.2]], 3.62, 0, 0, 0.8);
-  const ch = hand('chrono', [[-0.16, -4.4], [-0.2, 0], [-0.07, 15.6], [0.07, 15.6], [0.2, 0], [0.16, -4.4]], null, 3.86, 0, 0, 0.5, 'chands');
-  add('chands', cylGeo(0.62, 3.86, 3.98, 28), 'steel', 0, -3.3, 0, ch);
-  add('chands', cylGeo(0.3, 3.86, 4.12, 20), 'steel', 0, 0, 0, ch);
-  const sub = [[-0.13, -0.9], [-0.16, 0], [-0.045, 3.45], [0.045, 3.45], [0.16, 0], [0.13, -0.9]];
-  hand('subMin', sub, null, 3.3, SUB.min[0], SUB.min[1], 0.34, 'chands');
-  hand('subSec', sub, null, 3.3, SUB.sec[0], SUB.sec[1], 0.34);
-  hand('sub24', sub, null, 3.3, SUB.h24[0], SUB.h24[1], 0.34);
-  anchor('chronoTip', 'chands', 0, 15.3, 3.9);
-  anchor('L_hands', 'hands', 4.4, 9.0, 3.7);
-})();
-
-(function buildDate() {
-  TEX.date.center.set(0.5, 0.5);
-  const m = add('date', new THREE.RingGeometry(10.2, 13.2, 160, 1), 'dateRing', 0, 0, 2.62);
-  parts.dateRing = m;
-  anchor('L_date', 'date', 6, 11.6, 2.62);
-  anchor('dateRing', 'date', 9.6, -10.6, 2.62);
-})();
-
-// ───────────────────────────── movement ─────────────────────────────
-const POS = {};
-POS.center = [0, 0];
-POS.fourth = [SUB.sec[0], SUB.sec[1]];
-POS.third = inter(POS.center, pr(75) + pr(10), POS.fourth, pr(64) + pr(8), p => p[0] < 0);
-POS.fifth = polar(POS.fourth, pr(60) + pr(10), 200);
-POS.rotorA = polar(POS.fifth, pr(50) + pr(10), 160);
-POS.B2 = polar(POS.center, pr(60) + pr(10), 40);
-POS.B1 = polar(POS.B2, pr(50) + pr(10), 20);
-POS.rotorB = polar(POS.B1, pr(50) + pr(10), 60);
-POS.MC = [SUB.min[0], SUB.min[1]];
-POS.M1 = inter(POS.center, pr(8) + pr(48), POS.MC, pr(8) + pr(80), p => p[1] < 0);
-POS.MW = polar(POS.center, pr(10) + pr(30), -20);
-POS.W24 = [SUB.h24[0], SUB.h24[1]];
-POS.I24 = inter(POS.center, pr(32) + pr(20), POS.W24, pr(64) + pr(20), p => p[1] > 0);
-POS.SW = [POS.MW[0] + Math.sqrt(Math.pow(pr(30) + pr(20), 2) - Math.pow(-0.9 - POS.MW[1], 2)), -0.9];
-POS.battery = [8.6, -6.2];
-const HAMMER = { px: 10.5, py: 0.4, rest: -0.14, travel: 0.14, cs: { rmin: 0.4, rmax: 1.6 }, mc: { rmin: 0.4, rmax: 1.9 } };
-const OPL = { px: 13.68, py: -5.61, travel: -0.152 };
-const SWA = { px: 8.5, py: 12.3, travel: -0.1 };
-
-(function buildPlate() {
-  const s = new THREE.Shape(); s.absarc(0, 0, 15.4, 0, TAU, false);
-  const bh = new THREE.Path(); bh.absarc(POS.battery[0], POS.battery[1], 4.9, 0, TAU, true); s.holes.push(bh);
-  add('plate', extrude(s, -0.6, 0.6, 120), 'plate');
-  const screw = cylGeo(0.75, 0.6, 0.85, 24), slot = new THREE.BoxGeometry(1.3, 0.22, 0.2);
-  for (const [x, y] of [[-12.2, 7.6], [4.0, -13.6], [-2.5, 14.3], [13.6, 4.8]]) {
-    add('plate', screw, 'pin', x, y, 0); add('plate', slot, 'dark', x, y, 0.85);
-    add('plate', cylGeo(0.75, -0.85, -0.6, 24), 'pin', x, y, 0);
-  }
-  anchor('L_plate', 'plate', 6, -14.2, 0.6);
-})();
-
-const COILS = {};
-function buildMotor(key, rotorPos, coilCenter, coilAngle, midPt, pinionZ, armTop) {
-  const dir = [Math.cos(deg(coilAngle)), Math.sin(deg(coilAngle))];
-  const half = 3.0;
-  const e1 = [coilCenter[0] + dir[0] * half, coilCenter[1] + dir[1] * half];
-  const e2 = [coilCenter[0] - dir[0] * half, coilCenter[1] - dir[1] * half];
-  const e1c = [e1[0] + dir[0] * 0.55, e1[1] + dir[1] * 0.55], e2c = [e2[0] - dir[0] * 0.55, e2[1] - dir[1] * 0.55];
-  // coil
-  const cg = new THREE.Group(); cg.position.set(coilCenter[0], coilCenter[1], -1.9); cg.rotation.z = deg(coilAngle) - Math.PI / 2; L.drive.g.add(cg);
-  const coilMat = MU('drive', 'coil');
-  add('drive', cylY(0.85, -half, half, 40), coilMat, 0, 0, 0, cg);
-  add('drive', cylY(0.35, -half - 0.6, half + 0.6, 16), 'stator', 0, 0, 0, cg);
-  for (const y of [-half - 0.05, half + 0.05]) add('drive', cylY(0.95, y - 0.12, y + 0.12, 40), 'dark', 0, 0, 0, cg);
-  // stator: ring around the rotor plus two arms back to the coil core
-  const statMat = MU('drive', 'stator');
-  const toward = (p, q, d) => { const dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy); return [p[0] + dx / l * d, p[1] + dy / l * d]; };
-  add('drive', extrude(ringShape(0.82, 1.45), -1.74, -1.44, 40), statMat, rotorPos[0], rotorPos[1], 0);
-  add('drive', extrude(barShape([e1c, toward(rotorPos, e1c, 1.25)], 1.1), -1.74, -1.44), statMat);
-  const opp = [rotorPos[0] + armTop[0] * 1.25, rotorPos[1] + armTop[1] * 1.25];
-  add('drive', extrude(barShape([e2c, midPt, opp], 1.1), -1.74, -1.44), statMat);
-  for (const p of [e1c, e2c]) add('drive', cylGeo(0.5, -2.2, -1.44, 16), statMat, p[0], p[1], 0);
-  // rotor: two-pole magnet on an arbor with a 10-leaf pinion
-  const rotor = arbor('rotor' + key, 'drive', rotorPos, { p: 10, pz: pinionZ, a: [-2.3, Math.max(-1.2, pinionZ + 0.25)] }, key === 'A' ? 'brass' : 'nickel');
-  const half1 = new THREE.CylinderGeometry(0.7, 0.7, 0.5, 24, 1, false, 0, Math.PI); half1.rotateX(Math.PI / 2);
-  const half2 = new THREE.CylinderGeometry(0.7, 0.7, 0.5, 24, 1, false, Math.PI, Math.PI); half2.rotateX(Math.PI / 2);
-  add('drive', half1, 'magN', 0, 0, -1.59, rotor.g); add('drive', half2, 'magS', 0, 0, -1.59, rotor.g);
-  COILS[key] = { coilMat, statMat };
-  anchor('coil' + key, 'drive', coilCenter[0], coilCenter[1], -1.05);
-  anchor('rotor' + key, 'drive', rotorPos[0], rotorPos[1], -1.3);
-}
-
-(function buildDrive() {
-  // timekeeping train (brass)
-  const rA = POS.rotorA;
-  buildMotor('A', rA, polar([0, 0], 12.6, 197), 287, [-9.7, -3.4], -2.0, [0.2, 0.98]);
-  const fifth = arbor('fifth', 'drive', POS.fifth, { w: 50, wz: -2.0, p: 10, pz: -1.65, a: [-2.3, -1.3], spokes: 4 }, 'brass');
-  const fourth = arbor('fourth', 'drive', POS.fourth, { w: 60, wz: -1.65, p: 8, pz: -1.35, a: [-2.3, 3.32], spokes: 5 }, 'brass');
-  add('drive', cylGeo(0.42, 0.62, 0.95, 20), 'brass', 0, 0, 0, fourth.g);
-  const third = arbor('third', 'drive', POS.third, { w: 64, wz: -1.35, p: 10, pz: -1.0, a: [-2.3, -0.7], spokes: 5 }, 'brass');
-  const center = arbor('center', 'drive', POS.center, { w: 75, wz: -1.0, a: [-2.3, 0.7], ar: 0.2, spokes: 5 }, 'brass');
-  link(GEARS.rotorA, 'p', fifth, 'w'); link(fifth, 'p', fourth, 'w'); link(fourth, 'p', third, 'w'); link(third, 'p', center, 'w');
-  // stopwatch motor (its pinion reaches up through the plate)
-  buildMotor('B', POS.rotorB, polar([0, 0], 12.7, 60), -30, [5.0, 8.4], 1.5, [-1, 0]);
-  anchor('fifth', 'drive', POS.fifth[0] - 2.6, POS.fifth[1] + 0.4, -2.1);
-  anchor('fourth', 'drive', POS.fourth[0] + 2.2, POS.fourth[1] - 2.0, -1.7);
-  anchor('third', 'drive', POS.third[0] - 2.2, POS.third[1] + 1.4, -1.4);
-  anchor('center', 'drive', 2.6, 2.4, -1.0);
-  anchor('L_drive', 'drive', 6.35, 11.9, -1.05);
-})();
-
-(function buildChrono() {
-  const B1 = arbor('B1', 'chrono', POS.B1, { w: 50, wz: 1.5, p: 10, pz: 1.8, a: [0.65, 2.0], spokes: 4 }, 'nickel');
-  const B2 = arbor('B2', 'chrono', POS.B2, { w: 50, wz: 1.8, p: 10, pz: 2.1, a: [0.65, 2.3], spokes: 4 }, 'nickel');
-  const CS = arbor('CS', 'chrono', POS.center, { w: 60, wz: 2.1, p: 8, pz: 1.5, spokes: 5 }, 'nickel');
-  const M1 = arbor('M1', 'chrono', POS.M1, { w: 48, wz: 1.5, p: 8, pz: 1.8, a: [0.65, 2.0], spokes: 4 }, 'nickel');
-  const MC = arbor('MC', 'chrono', POS.MC, { w: 80, wz: 1.8, a: [0.65, 3.32], spokes: 5 }, 'nickel');
-  link(GEARS.rotorB, 'p', B1, 'w'); link(B1, 'p', B2, 'w'); link(B2, 'p', CS, 'w'); link(CS, 'p', M1, 'w'); link(M1, 'p', MC, 'w');
-  add('chrono', cylGeo(0.09, 1.3, 3.95, 10), 'pin');
-  // heart cams (notch toward +y when the hand is at zero)
-  const heart = (rmin, rmax) => {
-    const s = new THREE.Shape(), n = 96;
-    for (let i = 0; i <= n; i++) {
-      const phi = -Math.PI + TAU * i / n, r = rmin + (rmax - rmin) * Math.abs(phi) / Math.PI;
-      const x = -r * Math.sin(phi), y = r * Math.cos(phi);
-      i ? s.lineTo(x, y) : s.moveTo(x, y);
-    }
-    const h = new THREE.Path(); h.absarc(0, 0, 0.14, 0, TAU, true); s.holes.push(h);
-    return extrude(s, 2.23, 2.47, 8);
-  };
-  parts.heartCS = add('chrono', heart(HAMMER.cs.rmin, HAMMER.cs.rmax), 'blued', 0, 0, 0);
-  parts.heartMC = add('chrono', heart(HAMMER.mc.rmin, HAMMER.mc.rmax), 'blued', POS.MC[0], POS.MC[1], 0);
-  // hammer: local x runs from the pivot toward the hearts; striking faces sit on y = 0
-  const hg = new THREE.Group(); hg.position.set(HAMMER.px, HAMMER.py, 0); L.chrono.g.add(hg);
-  add('chrono', extrude(barShape([[0.5, 0.62], [-19.1, 0.62]], 0.8), 2.2, 2.5), 'blued', 0, 0, 0, hg);
-  for (const x of [-10.5, -18.1]) add('chrono', extrude(polyShape([[x - 0.6, 0], [x + 0.6, 0], [x + 0.6, 0.3], [x - 0.6, 0.3]]), 2.2, 2.5), 'blued', 0, 0, 0, hg);
-  add('chrono', extrude(barShape([[0, 0.3], [0.73, -2.9]], 0.75), 2.2, 2.5), 'blued', 0, 0, 0, hg);
-  add('chrono', cylGeo(0.95, 2.15, 2.55, 28), 'blued', 0, 0, 0, hg);
-  add('chrono', cylGeo(0.42, 2.55, 2.7, 20), 'gold', 0, 0, 0, hg);
-  parts.hammer = hg;
-  // hammer operating lever (driven by pusher B)
-  const og = new THREE.Group(); og.position.set(OPL.px, OPL.py, 0); L.chrono.g.add(og);
-  const Lp = [12.0 - OPL.px, -8.1 - OPL.py], Up = [10.2 - OPL.px, -2.75 - OPL.py];
-  add('chrono', extrude(barShape([Lp, [0, 0], Up], 0.7), 2.22, 2.48), 'steel', 0, 0, 0, og);
-  add('chrono', cylGeo(0.8, 2.17, 2.53, 24), 'steel', 0, 0, 0, og);
-  add('chrono', cylGeo(0.36, 2.53, 2.66, 16), 'gold', 0, 0, 0, og);
-  parts.opLever = og;
-  // switch lever A (spring contact for start/stop) and the two contact pads
-  const sg = new THREE.Group(); sg.position.set(SWA.px, SWA.py, 0); L.chrono.g.add(sg);
-  add('chrono', extrude(barShape([[0, 0], [3.4, -3.9]], 0.42), 2.26, 2.42), 'steel', 0, 0, 0, sg);
-  add('chrono', cylGeo(0.55, 2.2, 2.5, 20), 'steel', 0, 0, 0, sg);
-  parts.switchA = sg;
-  parts.padA = MU('chrono', 'gold'); add('chrono', new THREE.BoxGeometry(0.8, 0.8, 0.3), parts.padA, 11.35, 7.85, 2.34);
-  parts.padB = MU('chrono', 'gold'); add('chrono', new THREE.BoxGeometry(0.8, 0.8, 0.3), parts.padB, 11.15, -7.3, 2.34);
-  anchor('switchA', 'chrono', 10.6, 10.2, 2.4);
-  anchor('B1', 'chrono', POS.B1[0] + 1.8, POS.B1[1] - 1.8, 1.55);
-  anchor('B2', 'chrono', POS.B2[0] + 0.6, POS.B2[1] + 2.2, 1.85);
-  anchor('CS', 'chrono', -2.2, -2.6, 2.15);
-  anchor('MC', 'chrono', POS.MC[0] - 3.4, POS.MC[1] - 2.6, 1.85);
-  anchor('heartCS', 'chrono', 0.7, -1.0, 2.47);
-  anchor('heartMC', 'chrono', POS.MC[0] - 0.4, POS.MC[1] - 1.5, 2.47);
-  anchor('hammer', 'chrono', 6.2, 1.25, 2.5);
-  anchor('opLever', 'chrono', 12.9, -6.6, 2.5);
-  anchor('L_chrono', 'chrono', 6, -8.0, 2.3);
-})();
-
-(function buildMotion() {
-  const cannon = arbor('cannon', 'motion', POS.center, { p: 10, pz: 0.9 }, 'brass');
-  add('motion', cylGeo(0.2, 0.7, 3.66, 16), 'brass', 0, 0, 0, cannon.g);
-  const MW = arbor('MW', 'motion', POS.MW, { w: 30, wz: 0.9, p: 8, pz: 1.35, a: [0.65, 1.55], spokes: 3 }, 'brass');
-  const HW = arbor('HW', 'motion', POS.center, { w: 32, wz: 1.35, spokes: 4 }, 'brass');
-  add('motion', cylGeo(0.3, 1.3, 3.46, 20), 'brass', 0, 0, 0, HW.g);
-  const I24 = arbor('I24', 'motion', POS.I24, { w: 20, wz: 1.35, a: [0.65, 1.5] }, 'brass');
-  const W24 = arbor('W24', 'motion', POS.W24, { w: 64, wz: 1.35, a: [0.65, 3.32], spokes: 5 }, 'brass');
-  const SW = arbor('SW', 'motion', POS.SW, { w: 20, wz: 0.9, a: [0.65, 1.1] }, 'brass');
-  link(cannon, 'p', MW, 'w'); link(MW, 'p', HW, 'w'); link(HW, 'w', I24, 'w'); link(I24, 'w', W24, 'w'); link(MW, 'w', SW, 'w');
-  // stem + clutch (moves with the crown)
-  const stem = new THREE.Group(); stem.rotation.z = -Math.PI / 2; stem.position.z = 0.75; L.motion.g.add(stem);
-  add('motion', cylY(0.32, 6.3, 21.4, 16), 'pin', 0, 0, 0, stem);
-  const clutchShape = new THREE.Shape(); const nk = 12;
-  for (let i = 0; i <= nk * 2; i++) { const a = i / (nk * 2) * TAU, r = i % 2 ? 0.42 : 0.52; i ? clutchShape.lineTo(r * Math.cos(a), r * Math.sin(a)) : clutchShape.moveTo(r * Math.cos(a), r * Math.sin(a)); }
-  const clg = new THREE.ExtrudeGeometry(clutchShape, { depth: 0.9, bevelEnabled: false }); clg.rotateX(-Math.PI / 2);
-  const clutch = add('motion', clg, 'nickel', 0, 6.9, 0, stem);
-  parts.stem = stem; parts.clutch = clutch;
-  // train wheel setting lever: touches the seconds-wheel arbor when the crown is at the 2nd click
-  const tg = new THREE.Group(); tg.position.set(4.6, -9.6, 0); L.motion.g.add(tg);
-  parts.trainLeverMat = MU('motion', 'steel');
-  add('motion', extrude(barShape([[0, 0], [-4.12, 2.0]], 0.4), 0.62, 0.86), parts.trainLeverMat, 0, 0, 0, tg);
-  add('motion', cylGeo(0.5, 0.6, 0.9, 16), 'pin', 0, 0, 0, tg);
-  parts.trainLever = tg;
-  anchor('cannon', 'motion', -0.6, 1.0, 1.1);
-  anchor('minuteWheel', 'motion', POS.MW[0] + 0.6, POS.MW[1] - 1.5, 1.0);
-  anchor('hourWheel', 'motion', -1.4, -1.2, 1.4);
-  anchor('wheel24', 'motion', POS.W24[0] + 2.2, POS.W24[1] + 2.6, 1.4);
-  anchor('stem', 'motion', 15.5, 0, 0.75);
-  anchor('clutch', 'motion', 7.4, 0.3, 1.0);
-  anchor('settingWheel', 'motion', POS.SW[0], POS.SW[1] - 1.0, 0.95);
-  anchor('trainLever', 'motion', 2.6, -8.8, 0.8);
-  anchor('L_motion', 'motion', POS.W24[0] + 1.0, POS.W24[1] + 3.6, 1.4);
-})();
-
-(function buildCircuitBattery() {
-  const s = new THREE.Shape(); const a0 = deg(-12), a1 = deg(212);
-  s.absarc(0, 0, 15.0, a0, a1, false); s.absarc(0, 0, 8.8, a1, a0, true); s.closePath();
-  TEX.circuit.repeat.set(1 / 30.4, 1 / 30.4); TEX.circuit.offset.set(0.5, 0.5);
-  add('circuit', extrude(s, -2.9, -2.7, 96), [M('circuit', 'pcb'), M('circuit', 'gold')]);
-  parts.chipMat = MU('circuit', 'chip');
-  add('circuit', extrude(roundRect(2.6, 2.6, 0.2), -3.25, -2.9, 8), parts.chipMat, -6, 9, 0);
-  // quartz crystal unit, lying along the rim
-  const xa = Math.atan2(4, -11.5) + Math.PI / 2;
-  const xg = new THREE.Group(); xg.position.set(-11.5, 4, -3.42); xg.rotation.z = xa - Math.PI / 2; L.circuit.g.add(xg);
-  add('circuit', cylY(0.5, -2.5, 2.5, 28), 'steel', 0, 0, 0, xg);
-  add('circuit', cylY(0.56, 2.2, 2.55, 28), 'brushed', 0, 0, 0, xg);
-  add('circuit', cylY(0.05, -3.6, -2.4, 6), 'gold', 0.18, 0, 0, xg);
-  add('circuit', cylY(0.05, -3.6, -2.4, 6), 'gold', -0.18, 0, 0, xg);
-  // battery strap
-  add('circuit', extrude(barShape([[13.4, -3.6], [11.6, -6.2], [8.6, -6.2]], 1.2), -3.75, -3.62), 'gold');
-  anchor('ic', 'circuit', -6, 9, -3.25);
-  anchor('xtal', 'circuit', -11.5, 4, -3.9);
-  anchor('circuit', 'circuit', 11.2, 8.4, -2.9);
-  anchor('L_circuit', 'circuit', 9.0, -11.6, -2.9);
-  // battery: can faces the case back
-  add('battery', cylGeo(4.75, -3.6, -0.05, 64), 'battery', POS.battery[0], POS.battery[1], 0);
-  add('battery', cylGeo(4.0, -0.05, 0.08, 64), 'brushed', POS.battery[0], POS.battery[1], 0);
-  const face = new THREE.CircleGeometry(4.7, 64); face.rotateY(Math.PI);
-  add('battery', face, 'batteryFace', POS.battery[0], POS.battery[1], -3.61);
-  anchor('battery', 'battery', POS.battery[0] + 3.4, POS.battery[1] - 3.4, -3.6);
-  anchor('L_battery', 'battery', POS.battery[0], POS.battery[1] + 4.75, -1.8);
-})();
-
-// current flow + magnified tuning fork
-const FLOW = [];
-(function buildFx() {
-  const curve = pts => new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(p[0], p[1], -3.05)));
-  const paths = [
-    { c: curve([[11.6, -6.2], ...TRACE.main]), n: 16 },
-    { c: curve([[-6.0, 9.0], ...TRACE.toA]), n: 9 },
-    { c: curve([[-6.0, 9.0], ...TRACE.toB]), n: 8 },
-  ];
-  const dot = new THREE.SphereGeometry(0.13, 10, 6), halo = new THREE.SphereGeometry(0.34, 10, 6);
-  const gm = M('flow', 'glow');
-  const hm = reg('flow', new THREE.MeshBasicMaterial({ color: 0x78c3ff, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false }));
-  for (const p of paths) for (let i = 0; i < p.n; i++) {
-    const m = new THREE.Mesh(dot, gm); m.add(new THREE.Mesh(halo, hm)); L.flow.g.add(m);
-    FLOW.push({ m, c: p.c, off: i / p.n, len: p.c.getLength() });
-  }
-  // magnified fork inset (billboarded toward the camera)
-  const f = new THREE.Group(); f.position.set(-19.5, 9.5, -8.5); f.scale.setScalar(0.82); L.fork.g.add(f);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(5.4, 0.08, 8, 96), M('fork', 'steel')); f.add(ring);
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(5.35, 64), reg('fork', new THREE.MeshBasicMaterial({ color: 0x0b0f14, transparent: true, opacity: 0.72, depthWrite: false })));
-  disc.position.z = -0.3; f.add(disc);
-  const qm = M('fork', 'quartz');
-  const base = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.5, 0.55), qm); base.position.y = -2.9; f.add(base);
-  const prongs = [];
-  for (const sx of [-0.72, 0.72]) {
-    const pg = new THREE.Group(); pg.position.set(sx, -2.15, 0); f.add(pg);
-    const prong = new THREE.Mesh(new THREE.BoxGeometry(0.72, 6.0, 0.55), qm); prong.position.y = 3.0; pg.add(prong);
-    const el = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4.6, 0.06), M('fork', 'gold')); el.position.set(0, 2.9, 0.31); pg.add(el);
-    prongs.push(pg);
-  }
-  parts.fork = f; parts.prongs = prongs;
-  const lg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-11.5, 4, -3.42), new THREE.Vector3(-19.5, 9.5, -8.5)]);
-  const line = new THREE.Line(lg, M('fork', 'leader')); line.computeLineDistances(); L.fork.g.add(line);
-  anchor('fork', f, 4.0, 4.0, 0);
-})();
-
-// ───────────────────────────── simulation ─────────────────────────────
-const BASE_TIME = 10 * 3600 + 8 * 60 + 37;
-const S = {};
-function resetSim() {
-  Object.assign(S, {
-    t: 0, accA: 0, stepsA: 0, lastA: -9, setOffset: 0,
-    accB: 0, motorB: 0, chrono: 0, lastB: -9, running: false,
-    pA: null, pB: null, hammer: 0, reset: null, cs: 0, mc: 0,
-    crownPos: 0, crownAnim: 0, crownTurn: 0, crownAcc: 0, dateCount: 13, dateAnim: 13,
-    pulses: [], toastMsg: null,
-  });
-}
-resetSim();
-function stepEase(a) { if (a <= 0) return 0; if (a > 0.14) return 1; return 1 - Math.exp(-a / 0.011) * Math.cos(a * 95); }
-function disp(count, last) { return count <= 0 ? 0 : count - 1 + stepEase(S.t - last); }
-function pulse(motor, t) { S.pulses.push({ motor, t, pol: motor === 'A' ? S.stepsA % 2 : S.motorB % 2 }); if (S.pulses.length > 600) S.pulses.splice(0, S.pulses.length - 600); }
-function pusherValue(P) {
-  if (!P) return 0;
-  const a = S.t - P.t0, tin = 0.06, tout = 0.08;
-  if (a < 0) return 0;
-  if (a < tin) return ease(a / tin);
-  if (a < tin + P.hold) return 1;
-  if (a < tin + P.hold + tout) return 1 - ease((a - tin - P.hold) / tout);
-  return 0;
-}
-function pressA(hold = 0.12) { if (S.pA && S.t - S.pA.t0 < 0.3) return; S.pA = { t0: S.t, hold, fired: false }; }
-function pressB(hold = 0.14) { if (S.pB && S.t - S.pB.t0 < 0.3) return; S.pB = { t0: S.t, hold, fired: false, blocked: S.running }; if (S.running) S.toastMsg = 'Stop the stopwatch with A before resetting'; }
-function hammerY(theta, x) { return HAMMER.py - (HAMMER.px - x) * Math.tan(theta); }
-function heartLimit(y, h) { return Math.PI * clamp((y - h.rmin) / (h.rmax - h.rmin), 0, 1); }
-
-function simStep(dt, c) {
-  S.t += dt;
-  const rate = c.rate || 1;
-  // pusher A: the switch closes near the bottom of the stroke
-  const pa = pusherValue(S.pA);
-  if (S.pA && !S.pA.fired && pa > 0.85) {
-    S.pA.fired = true;
-    if (S.hammer < 0.02) {
-      if (S.running) { S.running = false; }
-      else if (S.chrono < 18000) { S.running = true; S.accB = 0; }
-    }
-  }
-  // pusher B: drives the hammer through the operating lever (blocked while running)
-  const pbRaw = pusherValue(S.pB);
-  const pb = S.pB && S.pB.blocked ? Math.min(pbRaw, 0.16) : pbRaw;
-  S.pbEff = pb;
-  S.hammer = smooth((pb - 0.28) / 0.55);
-  if (S.hammer > 0 && !(S.pB && S.pB.blocked)) {
-    if (!S.reset && S.chrono > 0) S.reset = { cs0: -TAU * S.chrono / 300, mc0: -TAU * S.chrono / 18000 };
-    if (S.reset) {
-      const th = HAMMER.rest + HAMMER.travel * S.hammer;
-      const yC = hammerY(th, 0), yM = hammerY(th, POS.MC[0]);
-      const apply = (a0, lim) => { const w = wrapPi(a0); const wn = Math.sign(w) * Math.min(Math.abs(w), lim); return a0 - w + wn; };
-      S.reset.csNow = apply(S.reset.cs0, heartLimit(yC, HAMMER.cs));
-      S.reset.mcNow = apply(S.reset.mc0, heartLimit(yM, HAMMER.mc));
-      S.reset.cs0 = S.reset.csNow; S.reset.mc0 = S.reset.mcNow;
-      if (S.hammer > 0.995) { S.chrono = 0; S.accB = 0; S.reset = null; }
-    }
-    if (S.pB && !S.pB.fired && S.hammer > 0.9) { S.pB.fired = true; }
-  }
-  // crown
-  S.crownAnim += (S.crownPos - S.crownAnim) * (1 - Math.exp(-dt / 0.07));
-  const spin = (c.spin || 0) * dt;
-  if (spin) {
-    S.crownTurn += spin;
-    if (S.crownPos === 1) { S.crownAcc += Math.abs(spin); while (S.crownAcc >= Math.PI) { S.crownAcc -= Math.PI; S.dateCount++; } }
-    if (S.crownPos === 2) S.setOffset += spin / TAU * 360;
-  }
-  S.dateAnim += (S.dateCount - S.dateAnim) * (1 - Math.exp(-dt / 0.09));
-  // motor A: one pulse per second unless the crown holds the circuit at the 2nd click
-  if (S.crownPos === 2) { S.accA = 0; }
-  else {
-    S.accA += dt * rate;
-    while (S.accA >= 1) { S.accA -= 1; S.stepsA++; S.lastA = S.t - S.accA / rate; pulse('A', S.lastA); }
-  }
-  // motor B: five pulses per second while running, auto-stop at 60 minutes
-  if (S.running) {
-    S.accB += dt * rate * 5;
-    while (S.accB >= 1) {
-      S.accB -= 1; S.motorB++; S.chrono++; S.lastB = S.t - S.accB / (rate * 5); pulse('B', S.lastB);
-      if (S.chrono >= 18000) { S.running = false; S.accB = 0; break; }
-    }
-  }
-}
-function lastPulseAge(motor) { for (let i = S.pulses.length - 1; i >= 0; i--) if (S.pulses[i].motor === motor) return S.t - S.pulses[i].t; return 99; }
-
-// ───────────────────────────── per-frame scene state ─────────────────────────────
-function applyState(now) {
-  const sA = disp(S.stepsA, S.lastA), sB = disp(S.motorB, S.lastB);
-  const timeSec = BASE_TIME + sA + S.setOffset;
-  HANDS.subSec.rotation.z = -TAU * (sA + 37) / 60;
-  HANDS.minute.rotation.z = -TAU * (timeSec % 3600) / 3600;
-  HANDS.hour.rotation.z = -TAU * (timeSec % 43200) / 43200;
-  HANDS.sub24.rotation.z = -TAU * (timeSec % 86400) / 86400;
-  // stopwatch hands follow the hearts during a reset
-  let cs, mc;
-  if (S.reset && S.reset.csNow !== undefined) { cs = S.reset.csNow; mc = S.reset.mcNow; }
-  else { const c = S.chrono <= 0 ? 0 : S.chrono - 1 + stepEase(S.t - S.lastB); cs = -TAU * c / 300; mc = -TAU * c / 18000; }
-  HANDS.chrono.rotation.z = cs; HANDS.subMin.rotation.z = mc;
-  parts.heartCS.rotation.z = cs; parts.heartMC.rotation.z = mc;
-  // gear trains
-  GEARS.rotorA.ang = -Math.PI * sA; GEARS.rotorA.g.rotation.z = GEARS.rotorA.ang;
-  GEARS.rotorB.ang = Math.PI * sB; GEARS.rotorB.g.rotation.z = GEARS.rotorB.ang;
-  GEARS.cannon.ang = HANDS.minute.rotation.z; GEARS.cannon.g.rotation.z = GEARS.cannon.ang;
-  runLinks();
-  // coils glow with each pulse
-  for (const k of ['A', 'B']) {
-    const age = lastPulseAge(k), I = Math.exp(-Math.max(0, age) / 0.07);
-    COILS[k].coilMat.emissive.setRGB(0.05 * I, 0.18 * I, 0.42 * I);
-    COILS[k].statMat.emissive.setRGB(0.04 * I, 0.12 * I, 0.24 * I);
-  }
-  const ic = Math.exp(-Math.min(lastPulseAge('A'), lastPulseAge('B')) / 0.08);
-  parts.chipMat.emissive.setRGB(0.02 * ic, 0.06 * ic, 0.12 * ic);
-  // pushers, levers, hammer
-  const pa = pusherValue(S.pA), pb = S.pbEff || 0;
-  parts.pusherA.position.y = -0.6 * pa; parts.pusherB.position.y = -0.6 * pb;
-  parts.switchA.rotation.z = SWA.travel * pa;
-  parts.padA.emissive.setRGB(pa > 0.85 ? 0.5 : 0, pa > 0.85 ? 0.75 : 0, pa > 0.85 ? 1.0 : 0);
-  parts.padB.emissive.setRGB(pb > 0.85 ? 0.5 : 0, pb > 0.85 ? 0.75 : 0, pb > 0.85 ? 1.0 : 0);
-  parts.opLever.rotation.z = OPL.travel * clamp(pb / 0.85);
-  parts.hammer.rotation.z = HAMMER.rest + HAMMER.travel * S.hammer;
-  // crown, stem, clutch, date
-  const ca = S.crownAnim;
-  parts.crownMov.position.y = 0.9 * ca; parts.knurl.rotation.y = S.crownTurn;
-  parts.stem.position.x = 0.9 * ca; parts.stem.rotation.y = 0;
-  parts.clutch.position.y = 6.9 - 0.9 * ca - 0.45 * clamp(ca - 1); parts.clutch.rotation.y = S.crownTurn;
-  const engaged = clamp(ca - 1);
-  parts.trainLever.rotation.z = -0.16 * (1 - engaged);
-  parts.trainLeverMat.emissive.setRGB(0.45 * engaged, 0.28 * engaged, 0.12 * engaged);
-  parts.dateRing.rotation.z = -S.dateAnim * TAU / 31;
-  // flow + fork
-  for (const f of FLOW) { const u = (f.off + S.t * 6 / f.len) % 1; f.m.position.copy(f.c.getPointAt(u)); }
-  parts.fork.quaternion.copy(camera.quaternion);
-  const amp = 0.05;
-  parts.prongs[0].rotation.z = amp * Math.sin(TAU * 2.2 * S.t);
-  parts.prongs[1].rotation.z = -amp * Math.sin(TAU * 2.2 * S.t);
-}
-
-// ───────────────────────────── tour script ─────────────────────────────
-const VIS_BACK = { bracelet: 0, case: 0.08, crown: 0.1, caseback: 0, crystal: 0, bezel: 0.18, hands: 0.2, chands: 0.2, dial: 0.2, date: 0.2, chrono: 0.25, motion: 0.25 };
-const VIS_FRONT = { bracelet: 0.14, case: 0.09, crown: 0.4, crystal: 0, bezel: 0.13, dial: 0.05, date: 0.06 };
-const DEFAULT_VIS = { flow: 0, fork: 0 };
-const CH = [
-  { title: 'The watch', dur: 10,
-    text: 'This is case 8T63-00T0, the Seiko SSB397: a 41 mm steel chronograph with a tachymeter bezel. Inside is caliber 8T63, a quartz movement with a mechanically reset stopwatch, the kind of hybrid watch people call meca-quartz.',
-    cam: { t: [0, -1, 0], yaw: -0.72, pitch: 0.36, dist: 128, drift: 0.04 }, trans: 0.01, ex: 0, vis: {},
-    labels: [{ k: 'pusherA', text: 'Pusher A · start / stop', at: 1.2 }, { k: 'crown', text: 'Crown', at: 1.6 }, { k: 'pusherB', text: 'Pusher B · reset', d: 1, at: 2.0 }, { k: 'bezel', text: 'Tachymeter bezel', at: 2.4 }] },
-  { title: 'Reading the dial', dur: 12,
-    text: 'The centre hands tell hours and minutes. Small seconds run at 6 o’clock, and the 24-hour hand at 3 tells day from night. The long centre hand and the counter at 9 belong to the stopwatch: seconds in 1/5-second steps, minutes up to 60.',
-    cam: { t: [0, 0, 3], yaw: 0, pitch: 0.03, dist: 80 }, ex: 0, vis: {},
-    labels: [{ k: 'chronoTip', text: 'Stopwatch seconds · 1/5 s marks', at: 1.0 }, { k: 'subMin', text: 'Stopwatch minutes, 0–60', at: 1.8 }, { k: 'subSec', text: 'Small seconds', d: 1, at: 2.6 }, { k: 'sub24', text: '24-hour hand', at: 3.4 }, { k: 'date', text: 'Date', d: 1, at: 4.2 }] },
-  { title: 'Opening it up', dur: 12,
-    text: 'Pulled apart, the movement is only 30.8 mm across. Under the dial sit the date ring, the stopwatch works and the motion works. Below the main plate are two stepping motors with their gear trains, the circuit block and the battery.',
-    cam: { t: [0, 0, 4], yaw: 1.14, pitch: 0.3, dist: 160, drift: 0.012 }, trans: 3.0, ex: 1, vis: { bracelet: 0, case: 0.12, crown: 0.12 },
-    labels: [{ k: 'L_crystal', text: 'Crystal', minor: 1 }, { k: 'L_bezel', text: 'Bezel', d: 1, minor: 1 }, { k: 'L_hands', text: 'Hands' }, { k: 'L_dial', text: 'Dial', d: 1 }, { k: 'L_date', text: 'Date ring', minor: 1 }, { k: 'L_chrono', text: 'Stopwatch works', d: 1 }, { k: 'L_motion', text: 'Motion works', minor: 1 }, { k: 'L_plate', text: 'Main plate', d: 1, minor: 1 }, { k: 'L_drive', text: 'Motors + gear trains' }, { k: 'L_circuit', text: 'Circuit block', d: 1 }, { k: 'L_battery', text: 'Battery', minor: 1 }, { k: 'L_caseback', text: 'Case back · 8T63-00T0', d: 1 }].map((l, i) => Object.assign(l, { at: 2.6 + i * 0.22 })) },
-  { title: 'Power', dur: 11,
-    text: 'A 1.55-volt silver-oxide cell, type SR936SW, powers everything. It lasts about three years because the motors draw current only in short pulses. The circuit block carries that current to the chip, the IC.',
-    cam: { t: [3, 2, -8], yaw: Math.PI - 0.55, pitch: 0.42, dist: 100 }, ex: 0.55, vis: Object.assign({}, VIS_BACK, { plate: 0.55, drive: 0.45, flow: 1 }),
-    labels: [{ k: 'battery', text: 'SR936SW · 1.55 V', d: 1, at: 1.6 }, { k: 'circuit', text: 'Circuit block', at: 2.2 }, { k: 'ic', text: 'IC', at: 2.8 }] },
-  { title: 'The quartz crystal', dur: 15,
-    text: 'The metal capsule holds a tiny quartz tuning fork. Quartz bends when voltage is applied, and this fork is cut to vibrate exactly 32,768 times a second. The IC halves that rate 15 times (32,768 = 2¹⁵) to get one pulse per second. Accuracy is about ±15 seconds a month.',
-    cam: { t: [-14, 6, -8.5], yaw: Math.PI - 0.32, pitch: 0.26, dist: 80 }, ex: 0.55, vis: Object.assign({}, VIS_BACK, { plate: 0.4, drive: 0.3, battery: 0.6, fork: 1, flow: 0.35 }),
-    labels: [{ k: 'xtal', text: 'Quartz crystal unit', d: 1, at: 1.4 }, { k: 'fork', text: 'Tuning fork, enlarged, slowed ~15,000×', at: 2.2 }, { k: 'ic', text: 'IC divides by 2, fifteen times', at: 4.0 }],
-    hud: { chain: 1 } },
-  { title: 'Motor A runs the time', dur: 17,
-    text: 'Every second the IC pulses coil A, reversing the current each time. The rotor is a small magnet, so it flips half a turn to follow. The gear train turns 30 rotor turns a minute into one turn of the fourth wheel, which carries the small seconds hand. Further on, the centre wheel turns once an hour.',
-    cam: { t: [-5, -5, -3], yaw: Math.PI + 0.42, pitch: -0.22, dist: 72 }, ex: 0.3, vis: Object.assign({}, VIS_BACK, { circuit: 0.1, battery: 0.3 }),
-    ctl: u => (u >= 10 ? { rate: 60, badge: 'Time-lapse ×60' } : {}),
-    labels: [{ k: 'coilA', text: 'Coil A', at: 1.0 }, { k: 'rotorA', text: 'Rotor (magnet)', d: 1, at: 1.6 }, { k: 'fifth', text: 'Fifth wheel', at: 2.6 }, { k: 'fourth', text: 'Fourth wheel · small seconds', d: 1, at: 3.4 }, { k: 'third', text: 'Third wheel', at: 4.2 }, { k: 'center', text: 'Centre wheel · minutes', at: 5.0 }],
-    hud: { scope: 1 } },
-  { title: 'Hours and the 24-hour hand', dur: 11,
-    text: 'On the dial side, the cannon pinion carries the minute hand. A minute wheel and an hour wheel reduce its speed 12 to 1 for the hour hand, and one more pair of wheels turns the 24-hour hand once a day.',
-    cam: { t: [2.6, 0, 3], yaw: 0.1, pitch: 0.24, dist: 58 }, ex: 0.32, vis: Object.assign({}, VIS_FRONT, { chrono: 0.08, chands: 0.12, motion: 1 }),
-    ctl: u => (u >= 1.5 ? { rate: 600, badge: 'Time-lapse ×600' } : {}),
-    labels: [{ k: 'cannon', text: 'Cannon pinion · minute hand', at: 1.0 }, { k: 'minuteWheel', text: 'Minute wheel', d: 1, at: 1.6 }, { k: 'hourWheel', text: 'Hour wheel', d: 1, at: 2.2 }, { k: 'wheel24', text: '24-hour wheel', at: 2.8 }] },
-  { title: 'Pusher A starts the stopwatch', dur: 15,
-    text: 'Pusher A presses a switch lever onto a contact, so starting is purely electrical. The IC answers by sending motor B five pulses a second. Two intermediate wheels carry each step to the stopwatch seconds wheel, and the centre hand moves 1/5 second at a time. A smaller train off that wheel turns the 60-minute counter.',
-    cam: { t: [1, 2, 3], yaw: 0.4, pitch: 0.36, dist: 80 }, ex: 0.28, vis: Object.assign({}, VIS_FRONT, { motion: 0.18, hands: 0.16 }),
-    events: [[1.6, () => pressA()]],
-    ctl: u => (u >= 8.5 && u < 13.5 ? { rate: 40, badge: 'Time-lapse ×40' } : {}),
-    labels: [{ k: 'pusherA', text: 'Pusher A', at: 0.6 }, { k: 'switchA', text: 'Switch lever A', at: 1.2 }, { k: 'rotorB', text: 'Motor B rotor', d: 1, at: 2.6 }, { k: 'B1', text: 'Intermediate wheels', d: 1, at: 3.4 }, { k: 'CS', text: 'Stopwatch seconds wheel', d: 1, at: 4.2 }, { k: 'MC', text: 'Minute counter wheel', at: 5.0 }],
-    hud: { stopwatch: 1, scope: 1 } },
-  { title: 'Pusher A again stops it', dur: 7,
-    text: 'A second press opens the switch and the IC stops pulsing motor B, so the stopwatch hands hold still. Timekeeping never stops: motor A keeps stepping once a second the whole time.',
-    cam: { t: [1, 2, 3], yaw: 0.34, pitch: 0.36, dist: 80 }, trans: 1.2, ex: 0.28, vis: Object.assign({}, VIS_FRONT, { motion: 0.18, hands: 0.16 }),
-    events: [[1.3, () => pressA()]],
-    labels: [{ k: 'switchA', text: 'Contact opens', at: 1.6 }, { k: 'rotorB', text: 'Motor B stops', d: 1, at: 2.2 }],
-    hud: { stopwatch: 1, scope: 1 } },
-  { title: 'Pusher B: hammer and heart cams', dur: 18,
-    text: 'Pusher B swings a hammer onto two heart-shaped cams, one on each stopwatch arbor. A heart cam’s edge is closest to its centre at one point, so the hammer always pushes it round to that point, which is zero. Hands past the halfway mark fly forward and the rest fly back. The same press tells the IC to clear its count.',
-    cam: { t: [-3.4, 0.6, 3.2], yaw: 0.06, pitch: 0.64, dist: 42 }, ex: 0.28, vis: Object.assign({}, VIS_FRONT, { motion: 0.1, hands: 0.12 }),
-    events: [[2.3, () => pressB(0.04)], [12.4, () => pressA()], [14.6, () => pressA()], [15.4, () => pressB()]],
-    ctl: u => (u >= 2.0 && u < 11.4 ? { slow: 0.02, badge: 'Slow motion · 1/50 speed' } : u >= 11.4 ? { badge: 'Real speed' } : {}),
-    labels: [{ k: 'hammer', text: 'Hammer', at: 0.8 }, { k: 'heartCS', text: 'Heart cam · seconds', at: 1.3 }, { k: 'heartMC', text: 'Heart cam · minutes', d: 1, at: 1.8 }, { k: 'opLever', text: 'Operating lever', d: 1, at: 2.3 }],
-    hud: { stopwatch: 1 } },
-  { title: 'The crown', dur: 16,
-    text: 'Pull the crown to the first click and turning it changes the date. At the second click the IC holds back the motor pulses and a lever stops the gear train, so the seconds hand freezes and the hands can be set to the second. Push it back in and the watch starts again.',
-    cam: { t: [9, 0, 2], yaw: 0.62, pitch: 0.34, dist: 72 }, ex: 0.22, vis: { bracelet: 0.14, case: 0.14, crown: 1, crystal: 0, bezel: 0.14, dial: 0.06, date: 0.45, chrono: 0.12, chands: 0.35, motion: 1 },
-    events: [[1.0, () => { S.crownPos = 1; }], [6.6, () => { S.crownPos = 2; }], [14.2, () => { S.crownPos = 0; }]],
-    ctl: u => ({ spin: (u > 1.8 && u < 5.6) ? 2.6 : (u > 7.6 && u < 12.8) ? 3.2 : 0 }),
-    labels: [{ k: 'crown', text: 'Crown', at: 0.6 }, { k: 'stem', text: 'Stem', d: 1, at: 1.0 }, { k: 'dateRing', text: 'Date ring', d: 1, at: 1.8 }, { k: 'clutch', text: 'Clutch wheel', at: 7.0 }, { k: 'settingWheel', text: 'Setting wheel', d: 1, at: 7.6 }, { k: 'trainLever', text: 'Train wheel setting lever', d: 1, at: 8.2 }] },
-  { title: 'The whole picture', dur: 12,
-    text: 'Quartz keeps the time, two stepping motors turn it into motion, and a hammer and two heart cams give the stopwatch a crisp mechanical reset. That is the 8T63.',
-    cam: { t: [4, -1, 0], yaw: -0.5, pitch: 0.3, dist: 132, drift: 0.035 }, trans: 3.0, ex: 0, vis: {},
-    hud: { specs: 1 } },
-];
-const STARTS = []; let TOTAL = 0;
-for (const c of CH) { STARTS.push(TOTAL); TOTAL += c.dur; }
-function chapterAt(T) { let i = CH.length - 1; while (i > 0 && T < STARTS[i]) i--; return i; }
-function ctlAt(T) { const i = chapterAt(T), c = CH[i]; return Object.assign({ rate: 1, slow: 1, spin: 0, badge: null }, c.ctl ? c.ctl(T - STARTS[i]) : {}); }
-
-const tour = { T: 0, playing: !REDUCED && !CAPTURE };
-function advance(dtReal, T) {
-  while (dtReal > 1e-9) {
-    const h = Math.min(dtReal, 1 / 60), c = ctlAt(T + h / 2);
-    simStep(h * c.slow, c); T += h; dtReal -= h;
-  }
-}
-function tourStep(dt) {
-  const T0 = tour.T, T1 = Math.min(TOTAL, T0 + dt);
-  const due = [];
-  CH.forEach((c, i) => (c.events || []).forEach(([u, fn]) => { const te = STARTS[i] + u; if (te > T0 && te <= T1) due.push([te, fn]); }));
-  due.sort((a, b) => a[0] - b[0]);
-  let t = T0;
-  for (const [te, fn] of due) { advance(te - t, t); fn(); t = te; }
-  advance(T1 - t, t);
-  tour.T = T1;
-}
-function seek(T) { resetSim(); tour.T = 0; tourStep(clamp(T, 0, TOTAL)); }
-
-// ───────────────────────────── camera ─────────────────────────────
-const user = { yaw: 0, pitch: 0, zoom: 0 };
-let lastInteract = -1e9;
-function camOf(ch, u) { const c = ch.cam; return { t: c.t, yaw: c.yaw + (c.drift || 0) * u, pitch: c.pitch, dist: c.dist }; }
-function mixCam(a, b, k) { return { t: [lerp(a.t[0], b.t[0], k), lerp(a.t[1], b.t[1], k), lerp(a.t[2], b.t[2], k)], yaw: lerp(a.yaw, b.yaw, k), pitch: lerp(a.pitch, b.pitch, k), dist: lerp(a.dist, b.dist, k) }; }
-let viewW = 1, viewH = 1, dockH = 0, frameK = 1;
-function placeCamera(c) {
-  const yaw = c.yaw + user.yaw, pitch = clamp(c.pitch + user.pitch, -1.35, 1.35), dist = c.dist * frameK * Math.exp(user.zoom);
-  camera.position.set(c.t[0] + dist * Math.cos(pitch) * Math.sin(yaw), c.t[1] + dist * Math.sin(pitch), c.t[2] + dist * Math.cos(pitch) * Math.cos(yaw));
-  camera.up.set(0, 1, 0);
-  camera.lookAt(c.t[0], c.t[1], c.t[2]);
-}
-
-// ───────────────────────────── UI ─────────────────────────────
-const ui = {
-  meta: $('capMeta'), title: $('capTitle'), text: $('capText'), rail: $('rail'), clock: $('clock'), play: $('play'), playIcon: $('playIcon'),
-  badge: $('badge'), sw: $('swCard'), swTime: $('swTime'), swState: $('swState'), scopeCard: $('scopeCard'), scope: $('scope'), specs: $('specs'), chain: $('chain'), toast: $('toast'),
-};
-const segFills = CH.map((c, i) => {
-  const b = document.createElement('button'); b.className = 'seg'; b.style.setProperty('--w', c.dur);
-  b.setAttribute('aria-label', `Chapter ${i + 1}: ${c.title}`); b.title = c.title;
-  const f = document.createElement('i'); b.appendChild(f);
-  b.addEventListener('click', () => { if (mode !== 'tour') setMode('tour'); seek(STARTS[i] + 0.001); tour.playing = true; syncPlay(); });
-  ui.rail.appendChild(b); return f;
-});
-const HZ = []; for (let k = 15; k >= 0; k--) HZ.push(Math.pow(2, k));
-ui.chain.innerHTML = HZ.map((v, i) => `<span class="cell" data-i="${i}">${v.toLocaleString('en-US')} Hz</span>${i < 15 ? '<span class="div">÷2</span>' : ''}`).join('');
-const chainCells = [...ui.chain.querySelectorAll('.cell')];
-const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
-function syncPlay() {
-  const ended = tour.T >= TOTAL - 1e-6;
-  ui.play.setAttribute('aria-label', tour.playing ? 'Pause' : ended ? 'Replay' : 'Play');
-  ui.playIcon.innerHTML = tour.playing ? '<rect x="3" y="2" width="3.6" height="12" rx="1"/><rect x="9.4" y="2" width="3.6" height="12" rx="1"/>'
-    : ended ? '<path d="M8 2.5a5.5 5.5 0 1 1-5.2 3.7l1.6.6A3.8 3.8 0 1 0 8 4.2V6L4.8 3.4 8 .8z"/>' : '<path d="M4 2.2v11.6c0 .6.7 1 1.2.7l9-5.8c.5-.3.5-1 0-1.3l-9-5.8C4.7 1.2 4 1.6 4 2.2z"/>';
-}
-ui.play.addEventListener('click', () => {
-  if (mode !== 'tour') setMode('tour');
-  if (tour.T >= TOTAL - 1e-6) { seek(0); tour.playing = true; } else tour.playing = !tour.playing;
-  syncPlay();
-});
-let shownChapter = -1;
-function showChapter(i) {
-  if (i === shownChapter) return; shownChapter = i;
-  ui.meta.textContent = `${String(i + 1).padStart(2, '0')} / ${CH.length}`;
-  ui.title.textContent = CH[i].title; ui.text.textContent = CH[i].text;
-  measure();
-}
-let toastUntil = 0;
-function toast(msg) { ui.toast.textContent = msg; ui.toast.style.opacity = 1; toastUntil = performance.now() + 2200; }
-
-// scope
-const sctx = ui.scope.getContext('2d');
-function drawScope() {
-  const w = ui.scope.width, h = ui.scope.height, win = 3.0;
-  sctx.clearRect(0, 0, w, h);
-  sctx.font = `500 ${Math.round(h * 0.15)}px ${'IBM Plex Mono'}, monospace`; sctx.textBaseline = 'middle';
-  const rows = [['A', h * 0.3, 'A · time · 1/s'], ['B', h * 0.76, 'B · stopwatch · 5/s']];
-  for (const [m, y, name] of rows) {
-    sctx.strokeStyle = 'rgba(205,218,232,0.22)'; sctx.lineWidth = 1; sctx.beginPath(); sctx.moveTo(0, y); sctx.lineTo(w, y); sctx.stroke();
-    sctx.fillStyle = 'rgba(154,163,173,0.95)'; sctx.fillText(name, 4, y - h * 0.15);
-    sctx.fillStyle = '#78c3ff';
-    for (const p of S.pulses) {
-      if (p.motor !== m) continue; const age = S.t - p.t; if (age > win || age < 0) continue;
-      const x = w * (1 - age / win), pw = Math.max(3, w * 0.025 / win), amp = h * 0.12;
-      sctx.fillRect(x - pw, p.pol ? y - amp : y, pw, amp);
-    }
-  }
-}
-
-// labels
-const labelLayer = $('labels'), labelEls = {}, v3 = new THREE.Vector3();
-function labelEl(k) {
-  if (labelEls[k]) return labelEls[k];
-  const el = document.createElement('div'); el.className = 'lab';
-  el.innerHTML = '<span class="lead"></span><span class="dot"></span><span class="txt"></span>';
-  labelLayer.appendChild(el);
-  return (labelEls[k] = { el, txt: el.querySelector('.txt'), text: '', w: 0 });
-}
-function updateLabels(list) {
-  const seen = new Set();
-  for (const it of list) {
-    const a = A[it.k]; if (!a || it.op <= 0.01) continue;
-    a.getWorldPosition(v3); v3.project(camera);
-    if (v3.z > 1 || Math.abs(v3.x) > 1.05 || Math.abs(v3.y) > 1.05) continue;
-    const x = (v3.x * 0.5 + 0.5) * viewW, y = (-v3.y * 0.5 + 0.5) * viewH;
-    const e = labelEl(it.k); seen.add(it.k);
-    if (e.text !== it.text) { e.text = it.text; e.txt.textContent = it.text; e.w = e.txt.offsetWidth || it.text.length * 7; }
-    let side = x > viewW * 0.5 ? 'r' : 'l';
-    if (side === 'r' && x + e.w + 30 > viewW) side = 'l';
-    else if (side === 'l' && x - e.w - 30 < 0) side = 'r';
-    const cls = 'lab ' + side + (it.d ? ' d' : '') + (it.minor ? ' minor' : '');
-    if (e.el.className !== cls) e.el.className = cls;
-    e.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
-    e.el.style.opacity = it.op.toFixed(3);
-  }
-  for (const k in labelEls) if (!seen.has(k)) labelEls[k].el.style.opacity = 0;
-}
-
-// ───────────────────────────── explore mode ─────────────────────────────
-let mode = 'tour';
-const ex = { explode: 0, xray: false, rate: 1, spin: 0, preset: 'front3q', camFrom: null, camT: 1 };
-const PRESETS = {
-  front3q: { t: [0, 0, 2], yaw: -0.45, pitch: 0.3, dist: 118 },
-  front: { t: [0, 0, 3], yaw: 0, pitch: 0.03, dist: 90 },
-  back: { t: [0, 0, -2], yaw: Math.PI, pitch: 0.05, dist: 90 },
-  side: { t: [0, 0, 3], yaw: 1.15, pitch: 0.3, dist: 160 },
-};
-let currentCam = camOf(CH[0], 0), currentVis = {}, currentEx = 0;
-function setMode(m) {
-  if (m === mode) return;
-  mode = m;
-  $('modeTour').setAttribute('aria-selected', m === 'tour'); $('modeExplore').setAttribute('aria-selected', m === 'explore');
-  $('tourUI').hidden = m !== 'tour'; $('exploreUI').hidden = m !== 'explore';
-  if (m === 'explore') {
-    tour.playing = false; syncPlay();
-    ex.camFrom = currentCam; ex.camT = 0; ex.preset = 'front3q'; user.yaw = user.pitch = user.zoom = 0;
-    ex.explode = 0; $('explode').value = 0; ex.xray = false; $('xray').setAttribute('aria-pressed', 'false');
-  } else {
-    user.yaw = user.pitch = user.zoom = 0;
-  }
-  measure();
-}
-$('modeTour').addEventListener('click', () => setMode('tour'));
-$('modeExplore').addEventListener('click', () => setMode('explore'));
-$('btnA').addEventListener('click', () => pressA());
-$('btnB').addEventListener('click', () => { pressB(); if (S.toastMsg) { toast(S.toastMsg); S.toastMsg = null; } });
-const crownBtns = [0, 1, 2].map(i => $('crown' + i));
-crownBtns.forEach((b, i) => b.addEventListener('click', () => { S.crownPos = i; crownBtns.forEach((c, j) => c.setAttribute('aria-pressed', i === j)); }));
-const turn = $('crownTurn');
-const spinOn = e => { e.preventDefault(); ex.spin = 3.2; if (S.crownPos === 0) toast('Pull the crown out first: 1st click sets the date, 2nd click the time'); };
-const spinOff = () => { ex.spin = 0; };
-turn.addEventListener('pointerdown', spinOn); turn.addEventListener('pointerup', spinOff); turn.addEventListener('pointerleave', spinOff); turn.addEventListener('pointercancel', spinOff);
-turn.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { ex.spin = 3.2; } });
-turn.addEventListener('keyup', spinOff);
-$('explode').addEventListener('input', e => { ex.explode = e.target.value / 100; });
-$('xray').addEventListener('click', e => { ex.xray = !ex.xray; e.currentTarget.setAttribute('aria-pressed', ex.xray); });
-for (const [id, p] of [['vFront', 'front'], ['vBack', 'back'], ['vSide', 'side']]) $(id).addEventListener('click', () => { ex.camFrom = currentCam; ex.camT = 0; ex.preset = p; user.yaw = user.pitch = user.zoom = 0; });
-const speedBtns = [['sp1', 1], ['sp60', 60], ['sp600', 600]];
-speedBtns.forEach(([id, r]) => $(id).addEventListener('click', () => { ex.rate = r; speedBtns.forEach(([j]) => $(j).setAttribute('aria-pressed', j === id)); }));
-
-// pointer orbit
-const pointers = new Map(); let pinch = 0;
-canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); canvas.classList.add('dragging'); lastInteract = performance.now(); });
-canvas.addEventListener('pointermove', e => {
-  const p = pointers.get(e.pointerId); if (!p) return;
-  const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
-  if (pointers.size === 1) { user.yaw -= dx * 0.006; user.pitch += dy * 0.005; user.pitch = clamp(user.pitch, -1.6, 1.6); }
-  else if (pointers.size === 2) { const [a, b] = [...pointers.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) user.zoom = clamp(user.zoom - Math.log(d / pinch), -1.2, 1.3); pinch = d; }
-  lastInteract = performance.now();
-});
-const endPtr = e => { pointers.delete(e.pointerId); if (pointers.size < 2) pinch = 0; if (!pointers.size) canvas.classList.remove('dragging'); };
-canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
-canvas.addEventListener('wheel', e => { e.preventDefault(); user.zoom = clamp(user.zoom + e.deltaY * 0.0012, -1.2, 1.3); lastInteract = performance.now(); }, { passive: false });
-window.addEventListener('keydown', e => {
-  if (e.target.closest && e.target.closest('input, .explore')) return;
-  if (e.key === ' ') { e.preventDefault(); ui.play.click(); }
-  else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-    if (mode !== 'tour') setMode('tour');
-    const i = clamp(chapterAt(tour.T) + (e.key === 'ArrowRight' ? 1 : -1), 0, CH.length - 1);
-    seek(STARTS[i] + 0.001); syncPlay();
-  }
-});
-
-// sizing
-const dock = $('dock');
-function measure() {
-  viewW = stage.clientWidth; viewH = stage.clientHeight;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, CAPTURE ? 1 : 2));
-  renderer.setSize(viewW, viewH, false);
-  // the free rectangle is the part of the stage the dock does not cover
-  const dr = dock.getBoundingClientRect(), sr = stage.getBoundingClientRect();
-  const wide = viewW >= 1000;
-  let x0 = 0, x1 = viewW, y0 = 0, y1 = viewH;
-  if (wide) x0 = dr.right - sr.left + 8; else y1 = dr.top - sr.top - 6;
-  const specs = ui.specs;
-  if (!wide) {
-    specs.style.bottom = (viewH - y1 + 4) + 'px';
-    if (!specs.hidden) y1 -= specs.offsetHeight + 6;
-  } else specs.style.bottom = '';
-  const fw = Math.max(160, x1 - x0), fh = Math.max(160, y1 - y0);
-  const cx = (x0 + x1) / 2 - viewW / 2, cy = (y0 + y1) / 2 - viewH / 2;
-  frameK = Math.max(viewH * 0.8 / fh, viewH * 1.08 / fw, 0.85);
-  camera.aspect = viewW / viewH;
-  camera.setViewOffset(viewW, viewH, -cx, -cy, viewW, viewH);
-  camera.updateProjectionMatrix();
-  dockH = wide ? 0 : viewH - y1;
-  ui.chain.style.bottom = wide ? '18px' : (dockH + 10) + 'px';
-  ui.chain.style.left = wide ? ((x0 + x1) / 2) + 'px' : '50%';
-  ui.toast.style.bottom = wide ? '18px' : (dockH + 10) + 'px';
-  ui.toast.style.left = wide ? ((x0 + x1) / 2) + 'px' : '50%';
-}
-const stage = $('stage');
-window.addEventListener('resize', measure);
-if (window.ResizeObserver) new ResizeObserver(measure).observe(dock);
-
-// ───────────────────────────── frame ─────────────────────────────
-function visOf(ch, n) { const v = ch.vis || {}; return n in v ? v[n] : (n in DEFAULT_VIS ? DEFAULT_VIS[n] : 1); }
-function renderFrame(dtReal) {
-  let labels = [], hud = {}, badge = null;
-  if (mode === 'tour') {
-    const T = tour.T, i = chapterAt(T), u = T - STARTS[i], ch = CH[i], prev = CH[i - 1] || ch;
-    const k = i === 0 ? 1 : ease(u / (ch.trans || 2.4));
-    currentCam = mixCam(camOf(prev, prev.dur), camOf(ch, u), k);
-    currentEx = lerp(prev.ex, ch.ex, k);
-    for (const n of LAYER_NAMES) currentVis[n] = lerp(visOf(prev, n), visOf(ch, n), k);
-    labels = (ch.labels || []).map(l => Object.assign({}, l, { op: smooth((u - (l.at || 0.9)) / 0.5) * (1 - smooth((u - ch.dur + 0.5) / 0.45)) }));
-    hud = ch.hud || {}; badge = ctlAt(T).badge;
-    showChapter(i);
-    for (let j = 0; j < CH.length; j++) segFills[j].style.width = (j < i ? 100 : j > i ? 0 : 100 * u / ch.dur) + '%';
-    ui.clock.textContent = `${fmt(T)} / ${fmt(TOTAL)}`;
-    // chain cells for the quartz chapter
-    if (hud.chain) {
-      const lit = clamp(Math.floor((u - 4.0) / 0.42) + 1, 0, 16), out = lastPulseAge('A') < 0.18;
-      chainCells.forEach((c, j) => { c.classList.toggle('on', j < lit); c.classList.toggle('out', j === 15 && lit >= 16 && out); });
-    }
-    // drift orbit offsets back toward the script
-    if (!pointers.size && performance.now() - lastInteract > 2500) {
-      const kk = 1 - Math.exp(-(dtReal || 0) / 1.4);
-      user.yaw = wrapPi(user.yaw) * (1 - kk); user.pitch *= 1 - kk; user.zoom *= 1 - kk;
-    }
-  } else {
-    ex.camT = Math.min(1, ex.camT + (dtReal || 0) / 1.6);
-    const target = PRESETS[ex.preset];
-    currentCam = ex.camFrom ? mixCam(ex.camFrom, target, ease(ex.camT)) : target;
-    const xr = ex.xray ? { bracelet: 0.5, case: 0.35, crystal: 0, bezel: 0.5, dial: 0.12, date: 0.25, motion: 0.7 } : {};
-    const tgt = {}; for (const n of LAYER_NAMES) tgt[n] = n in xr ? xr[n] : (n in DEFAULT_VIS ? DEFAULT_VIS[n] : 1);
-    if (ex.explode > 0.5) { tgt.bracelet = Math.min(tgt.bracelet, 0.15); tgt.case = Math.min(tgt.case, 0.2); }
-    const kk = 1 - Math.exp(-(dtReal || 0.016) / 0.2);
-    for (const n of LAYER_NAMES) currentVis[n] = lerp(currentVis[n] === undefined ? tgt[n] : currentVis[n], tgt[n], kk);
-    currentEx = lerp(currentEx, ex.explode, kk);
-    labels = [{ k: 'pusherA', text: 'A · start / stop', op: 1 }, { k: 'pusherB', text: 'B · reset', d: 1, op: 1 }, { k: 'crown', text: ['Crown · in', 'Crown · date', 'Crown · time'][S.crownPos], op: 1 }];
-    if (ex.xray) labels.push({ k: 'hammer', text: 'Hammer', op: 1 }, { k: 'heartCS', text: 'Heart cam', d: 1, op: 1 });
-    hud = { stopwatch: 1, scope: 1 };
-    badge = ex.rate > 1 ? `Time-lapse ×${ex.rate}` : null;
-  }
-  for (const n of LAYER_NAMES) { L[n].g.position.z = L[n].ex * currentEx; setLayerOpacity(n, clamp(currentVis[n])); }
-  placeCamera(currentCam);
-  applyState();
-  // HUD
-  ui.badge.hidden = !badge; if (badge) ui.badge.textContent = badge;
-  ui.sw.hidden = !hud.stopwatch; ui.scopeCard.hidden = !hud.scope; ui.chain.hidden = !hud.chain;
-  if (ui.specs.hidden === !!hud.specs) { ui.specs.hidden = !hud.specs; measure(); placeCamera(currentCam); }
-  if (hud.stopwatch) {
-    const c = S.chrono, mm = Math.floor(c / 300), ss = Math.floor((c % 300) / 5), f = (c % 5) * 2;
-    ui.swTime.innerHTML = `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}<small>.${f}</small>`;
-    ui.swState.innerHTML = S.hammer > 0.05 && !(S.pB && S.pB.blocked) ? '<b>Hammer down</b> · resetting' : S.running ? '<b>Running</b> · motor B 5 pulses/s' : c > 0 ? 'Stopped · press B to reset' : 'Reset · press A to start';
-  }
-  if (hud.scope) drawScope();
-  if (performance.now() > toastUntil) ui.toast.style.opacity = 0;
-  renderer.render(scene, camera);
-  updateLabels(labels);
-}
-
-let last = performance.now();
-function loop(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (mode === 'tour') {
-    if (tour.playing) { tourStep(dt); if (tour.T >= TOTAL - 1e-6) { tour.playing = false; syncPlay(); } }
-  } else {
-    simStep(dt, { rate: ex.rate, slow: 1, spin: ex.spin });
-    if (S.toastMsg) { toast(S.toastMsg); S.toastMsg = null; }
-  }
-  renderFrame(dt);
-  requestAnimationFrame(loop);
-}
-
-// fonts arrive late: repaint the printed textures once they are ready
-if (document.fonts && document.fonts.load) {
-  Promise.all([document.fonts.load('400 40px Michroma'), document.fonts.load('500 40px "IBM Plex Sans"'), document.fonts.load('600 40px "IBM Plex Sans"')])
-    .then(() => textures.forEach(t => t.userData.redraw())).catch(() => {});
-}
-
-measure();
-showChapter(0);
-syncPlay();
-window.__seek = T => { if (mode !== 'tour') setMode('tour'); seek(T); renderFrame(0); return chapterAt(T); };
-window.__total = TOTAL;
-window.__ready = Promise.resolve(document.fonts ? document.fonts.ready : null).then(() => textures.forEach(t => t.userData.redraw()));
-if (CAPTURE) { document.body.classList.add('capture'); renderFrame(0); }
-else requestAnimationFrame(t => { last = t; loop(t); });
-})();
-</script>
+<script src="js/core.js"></script>
+<script>WX.init(document.getElementById('gl'), { capture: new URLSearchParams(location.search).has('capture') });</script>
+<script src="js/watch.js"></script>
+<script src="js/stages/example.js"></script>
+<script src="js/narration.js"></script>
+<script src="js/shots.js"></script>
+<script src="js/director.js"></script>

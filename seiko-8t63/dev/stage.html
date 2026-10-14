@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Stage test</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Michroma&display=swap">
+<link rel="stylesheet" href="../css/stage-overlay.css">
+<style>
+  html, body { height: 100%; margin: 0; background: #07090c; color: #ecebe6; font-family: 'IBM Plex Sans', system-ui, sans-serif; overflow: hidden; }
+  #stage { position: relative; width: 100%; height: 100%; background: radial-gradient(110% 85% at 50% 36%, #1c232c 0%, #11161c 48%, #07090c 100%); }
+  #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #overlays { position: absolute; inset: 0; pointer-events: none; }
+  #info { position: absolute; left: 8px; bottom: 6px; font: 11px 'IBM Plex Mono', monospace; color: #9aa3ad; z-index: 3; }
+  #subband { position: absolute; left: 0; right: 0; bottom: 0; height: calc(112 / 720 * 100vh); background: repeating-linear-gradient(135deg, rgba(227,154,92,0.06) 0 10px, transparent 10px 20px); border-top: 1px dashed rgba(227,154,92,0.35); pointer-events: none; }
+  #subband span { position: absolute; left: 50%; top: 40%; transform: translateX(-50%); font: 11px 'IBM Plex Mono', monospace; color: rgba(227,154,92,0.7); }
+</style></head>
+<body><div id="stage"><canvas id="gl"></canvas><div id="overlays"></div><div id="subband"><span>subtitle area: keep key content out of this band</span></div><div id="info"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="../js/core.js"></script>
+<script>
+// Loads one stage by name (?stage=quartz) and renders it at a given time/params via window.__render.
+const q = new URLSearchParams(location.search);
+const name = q.get('stage');
+const s = document.createElement('script'); s.src = '../js/stages/' + name + '.js';
+s.onload = () => {
+  const stageEl = document.getElementById('stage');
+  WX.init(document.getElementById('gl'), { capture: true });
+  WX.buildStages(document.getElementById('overlays'));
+  const st = WX.stages[name];
+  st.group.visible = true; st.overlay.hidden = false;
+  function size() {
+    WX.viewW = stageEl.clientWidth; WX.viewH = stageEl.clientHeight;
+    WX.renderer.setPixelRatio(1); WX.renderer.setSize(WX.viewW, WX.viewH, false);
+    WX.applyFraming(WX.viewW, WX.viewH, WX.SUB_RESERVE * WX.viewH / 720);
+  }
+  size();
+  window.__render = (u, p = {}, camName, T, dur = 10) => {
+    const cams = st.api.cameras || {};
+    const c = typeof camName === 'object' ? camName : (cams[camName] || cams[Object.keys(cams)[0]] || { t: [0, 0, 0], yaw: 0, pitch: 0.2, dist: 100 });
+    WX.placeCam(c, st.origin);
+    if (st.api.update) st.api.update(u, p, T === undefined ? u : T, dur);
+    WX.renderer.render(WX.scene, WX.camera);
+    if (st.api.overlay) st.api.overlay(u, p, T === undefined ? u : T, dur);
+    document.getElementById('info').textContent = `${name} · cam ${typeof camName === 'string' ? camName : 'custom'} · u ${(+u).toFixed(2)}/${dur} · ${JSON.stringify(p)} · calls ${WX.renderer.info.render.calls} · tris ${WX.renderer.info.render.triangles}`;
+    return { cameras: Object.keys(cams), calls: WX.renderer.info.render.calls };
+  };
+  window.__ready = (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => WX.textures.forEach(t => t.userData.redraw()));
+};
+s.onerror = () => { window.__error = 'could not load stage ' + name; };
+document.head.appendChild(s);
+</script></body></html>

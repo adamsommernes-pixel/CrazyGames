@@ -1,0 +1,11 @@
+/* Shared look for 2D diagram overlays drawn by close-up stages (HTML/SVG inside .stage-overlay). */
+.stage-overlay { position: absolute; inset: 0; pointer-events: none; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #ecebe6; }
+.stage-overlay .ov-card { position: absolute; background: rgba(11, 14, 19, 0.82); border: 1px solid rgba(205, 218, 232, 0.14); border-radius: 8px; padding: 10px 12px; backdrop-filter: blur(8px); }
+.stage-overlay .ov-k { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #9aa3ad; }
+.stage-overlay .ov-big { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-size: 22px; }
+.stage-overlay .ov-eq { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-size: 15px; line-height: 1.6; }
+.stage-overlay .ov-accent { color: #e39a5c; }
+.stage-overlay .ov-pulse { color: #78c3ff; }
+.stage-overlay .ov-muted { color: #9aa3ad; }
+.stage-overlay svg { position: absolute; overflow: visible; }
+.stage-overlay svg text { font-family: 'IBM Plex Mono', monospace; fill: #ecebe6; }

@@ -1,0 +1,262 @@
+{
+ "voice": "bm_george",
+ "speed": 0.94,
+ "lines": [
+  {
+   "id": "n01",
+   "text": "Every second, deep inside this watch, a magnet smaller than a grain of rice turns exactly half a turn."
+  },
+  {
+   "id": "n02",
+   "text": "And when the stopwatch is running, a second one does the same, five times a second."
+  },
+  {
+   "id": "n03",
+   "text": "This is the Seiko 8T63, here in case 8T63-00T0, the SSB397: a 41-millimetre steel chronograph.",
+   "say": "This is the Seiko eight T sixty-three, here in case eight T sixty-three, zero zero T zero: the S S B three nine seven. A forty-one millimetre steel chronograph."
+  },
+  {
+   "id": "n04",
+   "text": "It is a hybrid, often called meca-quartz. Quartz keeps the time, but the stopwatch resets the way a mechanical chronograph does: with a hammer and heart-shaped cams.",
+   "say": "It is a hybrid, often called mecha-quartz. Quartz keeps the time, but the stopwatch resets the way a mechanical chronograph does: with a hammer, and heart-shaped cams."
+  },
+  {
+   "id": "n05",
+   "text": "Let's take it apart, and follow the time from a vibrating crystal all the way to the hands."
+  },
+  {
+   "id": "n06",
+   "text": "Hours and minutes in the centre. Small seconds at six. At three, a 24-hour hand tells midnight from noon.",
+   "say": "Hours and minutes in the centre. Small seconds at six. At three, a twenty-four-hour hand tells midnight from noon."
+  },
+  {
+   "id": "n07",
+   "text": "The long centre hand and the counter at nine belong to the stopwatch. It counts in fifths of a second, up to sixty minutes, and then stops by itself."
+  },
+  {
+   "id": "n08",
+   "text": "That's why the outer track has 300 marks: one for every fifth of a second.",
+   "say": "That's why the outer track has three hundred marks: one for every fifth of a second."
+  },
+  {
+   "id": "n09",
+   "text": "Inside, the movement is 30.8 millimetres across and 5.1 thick, and it contains no jewels at all.",
+   "say": "Inside, the movement is thirty point eight millimetres across, and five point one thick. And it contains no jewels at all."
+  },
+  {
+   "id": "n10",
+   "text": "On the dial side sit the date ring, the stopwatch works and the motion works. Below the main plate: two stepping motors, their gear trains, a circuit block carrying the quartz crystal and the chip, and the battery."
+  },
+  {
+   "id": "n11",
+   "text": "Power comes from a silver-oxide button cell, the SR936SW, nine and a half millimetres across.",
+   "say": "Power comes from a silver-oxide button cell, the S R nine three six S W. Nine and a half millimetres across."
+  },
+  {
+   "id": "n12",
+   "text": "Inside, zinc gives up electrons. They travel through the watch and return into the silver oxide, which slowly turns into metallic silver."
+  },
+  {
+   "id": "n13",
+   "text": "Its voltage stays close to 1.55 volts almost to the very end, which is exactly what a watch needs.",
+   "say": "Its voltage stays close to one point five five volts, almost to the very end. Which is exactly what a watch needs."
+  },
+  {
+   "id": "n14",
+   "text": "And the 8T63 barely sips. The whole movement draws less than three millionths of an amp, so the cell lasts about three years, even with an hour of stopwatch use a day.",
+   "say": "And the eight T sixty-three barely sips. The whole movement draws less than three millionths of an amp, so the cell lasts about three years, even with an hour of stopwatch use a day."
+  },
+  {
+   "id": "n15",
+   "text": "When it's nearly empty, the small seconds hand starts jumping two seconds at a time: the watch's way of asking for a new battery."
+  },
+  {
+   "id": "n16",
+   "text": "The timekeeping begins inside this tiny metal capsule: a quartz tuning fork a few millimetres long, sealed in a vacuum."
+  },
+  {
+   "id": "n17",
+   "text": "Quartz is piezoelectric. Squeeze it, and electric charge appears on its surfaces. Apply a voltage, and it bends.",
+   "say": "Quartz is piezo-electric. Squeeze it, and electric charge appears on its surfaces. Apply a voltage, and it bends."
+  },
+  {
+   "id": "n18",
+   "text": "Gold electrodes on the prongs let the chip push the fork, and let the fork push back. The prongs swing towards and away from each other, far too fast and too small to see."
+  },
+  {
+   "id": "n18b",
+   "text": "Each fork is etched from a quartz wafer, made slightly slow on purpose, then tuned with a laser that trims tiny amounts of metal from the tips of its prongs."
+  },
+  {
+   "id": "n19",
+   "text": "An amplifier in the chip keeps topping up that motion at the one frequency the fork wants to ring at: 32,768 times a second.",
+   "say": "An amplifier in the chip keeps topping up that motion, at the one frequency the fork wants to ring at: thirty-two thousand, seven hundred and sixty-eight times a second."
+  },
+  {
+   "id": "n20",
+   "text": "Why that number? It's two to the power of fifteen. Halve it fifteen times and you get exactly one pulse per second."
+  },
+  {
+   "id": "n21",
+   "text": "The frequency shifts slightly with temperature, least of all around 25 °C. On the wrist, Seiko rates the 8T63 within 15 seconds a month: about six parts per million, or half a second a day.",
+   "say": "The frequency shifts slightly with temperature, least of all around twenty-five degrees. On the wrist, Seiko rates the eight T sixty-three within fifteen seconds a month. That's about six parts per million, or half a second a day."
+  },
+  {
+   "id": "n22",
+   "text": "All of this is run by a single CMOS chip. The whole circuit block draws less than a millionth of an amp.",
+   "say": "All of this is run by a single C-MOS chip. The whole circuit block draws less than a millionth of an amp."
+  },
+  {
+   "id": "n23",
+   "text": "A chain of fifteen flip-flops divides the crystal's signal. Each stage changes state once for every two changes of the stage before it, so the frequency halves at every step, down to exactly one hertz."
+  },
+  {
+   "id": "n23b",
+   "text": "No crystal is perfect. So, like most quartz watches, it is calibrated digitally: every few seconds the chip quietly deletes a few of the crystal's pulses before they reach the divider."
+  },
+  {
+   "id": "n24",
+   "text": "Once a second, the chip turns that into a short burst of current, just a few milliseconds long. And every time, the current reverses direction. You'll see why in a moment."
+  },
+  {
+   "id": "n25",
+   "text": "For the stopwatch, the same chip counts out five pulses a second for a second motor, starting and stopping only when the pusher closes a contact."
+  },
+  {
+   "id": "n25b",
+   "text": "Five doesn't divide 32,768 evenly. So the gaps between those pulses differ by a single crystal cycle, and average out to exactly a fifth of a second.",
+   "say": "Five doesn't divide thirty-two thousand, seven hundred and sixty-eight evenly. So the gaps between those pulses differ by a single crystal cycle, and average out to exactly a fifth of a second."
+  },
+  {
+   "id": "n26",
+   "text": "This is the motor that turns pulses into motion, a design patented in 1936 by the French engineer Marius Lavet: a coil of very fine copper wire, a stator of soft iron, and a rotor that is a tiny permanent magnet.",
+   "say": "This is the motor that turns pulses into motion. A design patented in nineteen thirty-six by the French engineer Marius Lavet: a coil of very fine copper wire, a stator of soft iron, and a rotor that is a tiny permanent magnet."
+  },
+  {
+   "id": "n27",
+   "text": "With no current flowing, the rotor rests where its magnet lines up best with the iron. Two small notches in the stator decide exactly where that is."
+  },
+  {
+   "id": "n28",
+   "text": "A pulse of current saturates two thin necks of iron beside the rotor, so the magnetic flux is forced across it. The stator's two halves become north and south poles. Like poles push, opposite poles pull, and the rotor swings round."
+  },
+  {
+   "id": "n29",
+   "text": "Because the notches are offset, it always turns the same way, and settles half a turn later, at the next resting position."
+  },
+  {
+   "id": "n30",
+   "text": "But now the magnet's north pole sits where its south pole was, so the next pulse has to flow the other way. Send the same polarity twice, and the rotor just twitches."
+  },
+  {
+   "id": "n31",
+   "text": "The 8T63 has two of these motors, each with its own coil of about one and a half kilohms. One drives the time; the other drives the stopwatch.",
+   "say": "The eight T sixty-three has two of these motors, each with its own coil of about one and a half kilo-ohms. One drives the time. The other drives the stopwatch."
+  },
+  {
+   "id": "n32",
+   "text": "The time motor's rotor makes half a turn every second: thirty turns a minute."
+  },
+  {
+   "id": "n33",
+   "text": "Through the fifth wheel and the fourth wheel, that is slowed thirty times. The fourth wheel turns once a minute, and carries the small seconds hand."
+  },
+  {
+   "id": "n34",
+   "text": "The third wheel and the centre wheel slow it sixty times more, so the centre wheel turns once an hour."
+  },
+  {
+   "id": "n35",
+   "text": "Each wheel is driven by a small pinion on the wheel before it. The tooth counts here are illustrative, but the ratios have to come out exactly like this."
+  },
+  {
+   "id": "n36",
+   "text": "On the dial side, the cannon pinion carries the minute hand. The minute wheel and the hour wheel reduce its speed twelve to one for the hour hand, and one more pair of wheels halves it again for the 24-hour hand.",
+   "say": "On the dial side, the cannon pinion carries the minute hand. The minute wheel and the hour wheel reduce its speed twelve to one for the hour hand. And one more pair of wheels halves it again, for the twenty-four-hour hand."
+  },
+  {
+   "id": "n37",
+   "text": "The cannon pinion isn't fixed to its arbor. It grips it by friction: tight enough to be driven, loose enough to slip when you set the time, so the hands can move while the gear train stands still."
+  },
+  {
+   "id": "n38",
+   "text": "A wheel that turns once a day carries a finger. Late each evening, the finger meets a tooth on the date ring and starts to push."
+  },
+  {
+   "id": "n39",
+   "text": "A sprung jumper holds the ring back until, around midnight, the tooth rides over the jumper's tip and the ring snaps forward by one date. Thirty-one teeth, one for each day."
+  },
+  {
+   "id": "n40",
+   "text": "Because the finger is engaged for hours before midnight, Seiko's manual says not to set the date between 9 p.m. and 3 a.m.: it might not change the next day.",
+   "say": "Because the finger is engaged for hours before midnight, Seiko's manual says not to set the date between nine in the evening and three in the morning. It might not change the next day."
+  },
+  {
+   "id": "n41",
+   "text": "The crown has three positions. A setting lever follows the stem, and moves the yoke, which slides the clutch wheel into place."
+  },
+  {
+   "id": "n42",
+   "text": "At the first click, turning the crown drives a corrector wheel that moves the date ring."
+  },
+  {
+   "id": "n43",
+   "text": "At the second click, the clutch meshes with the setting wheel and the minute wheel, and the crown turns the hands."
+  },
+  {
+   "id": "n44",
+   "text": "At the same moment, a lever presses on the seconds wheel, and a contact tells the chip to stop sending pulses. The small seconds hand freezes, so you can start the watch exactly on the second."
+  },
+  {
+   "id": "n45",
+   "text": "The stopwatch doesn't care. If it was running, it keeps running."
+  },
+  {
+   "id": "n46",
+   "text": "Pusher A doesn't move a single gear. It presses a switch lever onto a contact, and the chip starts sending the stopwatch motor five pulses a second."
+  },
+  {
+   "id": "n47",
+   "text": "Each pulse turns its rotor half a turn. Two intermediate wheels turn that into one fifth of a second on the centre hand: 300 steps for every turn of the dial.",
+   "say": "Each pulse turns its rotor half a turn. Two intermediate wheels turn that into one fifth of a second on the centre hand: three hundred steps for every turn of the dial."
+  },
+  {
+   "id": "n48",
+   "text": "The same motor also drives the sixty-minute counter at nine. Press A again and the pulses stop. Press it once more and timing carries on from where it left off."
+  },
+  {
+   "id": "n49",
+   "text": "After sixty minutes, the stopwatch stops by itself."
+  },
+  {
+   "id": "n50",
+   "text": "The reset is pure mechanics. Each stopwatch arbor carries a heart-shaped cam. Its edge comes closer to the centre all the way round, until it reaches the notch."
+  },
+  {
+   "id": "n51",
+   "text": "When the hammer's flat face lands on the cam, it pushes off-centre. That twists the cam until its closest point meets the hammer. There is only one such position, and it is zero."
+  },
+  {
+   "id": "n52",
+   "text": "So a hand past the halfway mark flies forward, and one short of it flies back. Both arrive at zero in an instant."
+  },
+  {
+   "id": "n53",
+   "text": "Pusher B works a lever that brings the hammer down. The 8T63's hammer is a single piece of steel with three points, a design taken from Seiko's mechanical 8R28 chronograph. Being one piece, it needs no adjusting, unlike designs with separate hammers.",
+   "say": "Pusher B works a lever that brings the hammer down. The eight T sixty-three's hammer is a single piece of steel with three points: a design taken from Seiko's mechanical eight R twenty-eight chronograph. Being one piece, it needs no adjusting, unlike designs with separate hammers."
+  },
+  {
+   "id": "n54",
+   "text": "Here it is inside the watch, slowed down a hundred times."
+  },
+  {
+   "id": "n55",
+   "text": "So that's the 8T63: a crystal ringing thirty-two thousand times a second, a chip that counts, two tiny motors taking half-turn steps, and, for the stopwatch, a hammer and two hearts.",
+   "say": "So that's the eight T sixty-three. A crystal ringing thirty-two thousand times a second, a chip that counts, two tiny motors taking half-turn steps. And, for the stopwatch, a hammer and two hearts."
+  },
+  {
+   "id": "n56",
+   "text": "Quartz precision, with a little mechanical watchmaking built in."
+  }
+ ]
+}
