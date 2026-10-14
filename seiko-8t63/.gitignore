@@ -4,3 +4,4 @@ node_modules/
 *.wav
 audio/lines/
 .capture.html
+build/

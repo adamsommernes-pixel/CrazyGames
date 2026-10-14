@@ -91,6 +91,21 @@ FX = {
 }
 
 
+def limit(x, ceiling=0.89, look=0.004, release=0.12):
+    """Look-ahead peak limiter: gain follows the peak envelope down instantly and recovers slowly."""
+    from scipy.ndimage import maximum_filter1d
+    pk = maximum_filter1d(np.max(np.abs(x), 1), size=int(look * 2 * SR) + 1)
+    g = np.minimum(1.0, ceiling / np.maximum(pk, 1e-9))
+    a = np.exp(-1.0 / (release * SR))
+    out = np.empty_like(g); cur = 1.0
+    # recursive release smoothing (attack is instant because the envelope already looks ahead)
+    for i in range(0, len(g), 256):
+        blk = g[i:i + 256]; m = blk.min()
+        cur = min(m, cur * a ** 256 + (1 - a ** 256) * 1.0) if m < cur else cur * a ** 256 + (1 - a ** 256) * min(1.0, m)
+        out[i:i + 256] = np.minimum(blk, cur)
+    return x * out[:, None]
+
+
 # ── music bed: slow, warm pad in D minor with a soft sub ──
 def music(total):
     n = int(total * SR); t = np.arange(n) / SR
@@ -154,8 +169,7 @@ def main():
     m = pyln.Meter(SR)
     mix = pyln.normalize.loudness(mix, m.integrated_loudness(mix), -16.0)
     peak = np.max(np.abs(mix))
-    if peak > 0.89:   # soft limit the rare peaks
-        mix = np.tanh(mix / 0.89) * 0.89
+    mix = limit(mix, 0.89)
     sf.write(out_path, mix.astype(np.float32), SR, subtype='PCM_16')
     print(f'{total:.1f}s, {len(cues)} cues, peak {peak:.2f}, -> {out_path}')
 

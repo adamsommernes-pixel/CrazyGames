@@ -470,6 +470,8 @@ function buildMotor(key, rotorPos, coilCenter, coilAngle, midPt, pinionZ, armTop
   const hg = new THREE.Group(); hg.position.set(HAMMER.px, HAMMER.py, 0); L.chrono.g.add(hg);
   add('chrono', extrude(barShape([[0.5, 0.62], [-19.1, 0.62]], 0.8), 2.2, 2.5), 'blued', 0, 0, 0, hg);
   for (const x of [-10.5, -18.1]) add('chrono', extrude(polyShape([[x - 0.6, 0], [x + 0.6, 0], [x + 0.6, 0.3], [x - 0.6, 0.3]]), 2.2, 2.5), 'blued', 0, 0, 0, hg);
+  // third point of Seiko's one-piece, three-pointed hammer (what it acts on is not documented, so it strikes nothing here)
+  add('chrono', extrude(polyShape([[-14.9, 0.15], [-13.9, 0.15], [-14.1, 0.45], [-14.7, 0.45]]), 2.2, 2.5), 'blued', 0, 0, 0, hg);
   add('chrono', extrude(barShape([[0, 0.3], [0.73, -2.9]], 0.75), 2.2, 2.5), 'blued', 0, 0, 0, hg);
   add('chrono', cylGeo(0.95, 2.15, 2.55, 28), 'blued', 0, 0, 0, hg);
   add('chrono', cylGeo(0.42, 2.55, 2.7, 20), 'gold', 0, 0, 0, hg);
