@@ -13,7 +13,7 @@
 // Modes (p.mode): overview | rest | pulse | wrong | twin   (see the update() comments for params)
 WX.registerStage('motor', function (ctx) {
   const { THREE, WX, group, overlay } = ctx;
-  const { TAU, clamp, smooth, ease, easeOut, deg } = WX;
+  const { TAU, clamp, smooth, easeOut, deg } = WX;
 
   // ───────────── layout (stage mm, illustrative sizes) ─────────────
   const RB = 3.9;              // bore radius
@@ -152,11 +152,11 @@ WX.registerStage('motor', function (ctx) {
   function makeMotor(pinKind) {
     const g = new THREE.Group();
     const iron = WX.mat('stator');
-    const tipL = WX.mat('stator'), tipR = WX.mat('stator'), bridgeMat = WX.mat('stator');
+    const tipL = WX.mat('stator'), tipR = WX.mat('stator');
     const coilMat = WX.mat('coil'); coilMat.map = coilTex;
     const add = (geo, mat, x = 0, y = 0, z = 0, parent = g) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); parent.add(m); return m; };
     add(GEO.tipL, tipL); add(GEO.tipR, tipR);
-    add(GEO.brT, bridgeMat); add(GEO.brB, bridgeMat);
+    add(GEO.brT, iron); add(GEO.brB, iron);
     add(GEO.armL, iron); add(GEO.armR, iron);
     add(GEO.core, iron);
     add(GEO.coil, coilMat);
@@ -197,8 +197,8 @@ WX.registerStage('motor', function (ctx) {
     const flux = beadSet(fluxCurves, [15, 17, 19], 0.19, COL_FLUX, { lines: 0.4 });
     const rflux = beadSet(restFluxCurves, [12, 12], 0.16, COL_FLUX, { lines: 0.5 });
     g.add(cur, flux, rflux);
-    const api = { g, rotor, tipL, tipR, bridgeMat, coilMat, iron };
-    // st: { alpha, P (signed pulse level, + = left tip N), t (bead clock), rest (rest-flux opacity), fluxK }
+    const api = { g, rotor };
+    // st: { alpha (magnet N direction), P (signed drive, + = left tip N), t (bead clock), rest (rest-flux opacity), beads }
     api.pose = st => {
       rotor.rotation.z = st.alpha;
       rN.rotation.z = rS.rotation.z = -st.alpha;
@@ -283,15 +283,15 @@ WX.registerStage('motor', function (ctx) {
     for (const q of pulses) { q.step = q.pol === need; if (q.step) need = -need; }
     return { mode, pulses, alpha0 };
   }
+  // rotor angle (steps turn clockwise; a wrong-polarity pulse twitches it back towards the field) and coil drive
   function stateAt(pl, u) {
-    let alpha = pl.alpha0, P = 0, cur = -1;
-    pl.pulses.forEach((q, i) => {
+    let alpha = pl.alpha0, P = 0;
+    for (const q of pl.pulses) {
       const t = u - q.t;
       if (q.step) alpha -= Math.PI * stepS(t); else alpha += TWITCH * twitchS(t);
-      const e = env(t); if (e > 0) { P += q.pol * e; cur = i; }
-      if (t >= 0 && t < 1.0) cur = i;
-    });
-    return { alpha, P: clamp(P, -1, 1), cur };
+      P += q.pol * env(t);
+    }
+    return { alpha, P: clamp(P, -1, 1) };
   }
   // twin: real-speed pulse trains, both alternating polarity, first pulse "+"
   const TW = { A: { t0: 0.45, iv: 1.0 }, B: { t0: 0.25, iv: 0.2 } };
@@ -333,8 +333,8 @@ WX.registerStage('motor', function (ctx) {
   const restCard = $('.mo-rest'), held = $('.mo-held');
   const twinEls = { A: $('.mo-twin[data-m="A"]'), B: $('.mo-twin[data-m="B"]') }, twinNote = $('.mo-twinnote');
   const labLayer = $('.mo-labels');
-  twinEls.A.innerHTML = twinCard('A · time · 1 pulse/s · 1.45–1.65 kΩ');
-  twinEls.B.innerHTML = twinCard('B · stopwatch · 5 pulses/s · 1.65–1.85 kΩ');
+  twinEls.A.innerHTML = twinCard('Time motor · 1 pulse/s');
+  twinEls.B.innerHTML = twinCard('Stopwatch motor · 5 pulses/s');
   function twinCard(title) {
     return `<div class="ov-card" style="position:relative;transform:translate(-50%,0);padding:8px 12px;white-space:nowrap">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:13.5px">${title.replace(/^([AB])/, '<span class="ov-accent">$1</span>')}</div>

@@ -89,7 +89,7 @@ window.SHOTS = [
     labels: [{ k: 'motor:coil', text: 'Coil', at: 'n26+8' }, { k: 'motor:stator', text: 'Stator', at: 'n26+10' }, { k: 'motor:rotor', text: 'Rotor (magnet)', d: 1, at: 'n26+12' }] },
   { id: 's19', stage: 'motor', lines: ['n27'], cam: 'bore', p: { mode: 'rest' }, extra: 0.8,
     labels: [{ k: 'motor:notch', text: 'Notch', at: 'n27+6' }] },
-  { id: 's20', stage: 'motor', lines: ['n28', 'n29'], cam: 'bore', p: (u, d, s) => ({ mode: 'pulse', count: 2, at: s.t('n28+1.0'), interval: s.t('n29') - s.t('n28+1.0'), pol: 1 }), extra: 1.0 },
+  { id: 's20', stage: 'motor', lines: ['n28', 'n29'], cam: 'bore', p: (u, d, s) => ({ mode: 'pulse', count: 4, at: s.t('n28+3.0'), interval: (s.t('n29.end') - s.t('n28+3.0')) / 3.2, pol: 1 }), extra: 1.0 },
   { id: 's21', stage: 'motor', lines: ['n30'], cam: 'bore', p: (u, d, s) => ({ mode: 'wrong', at: 0.6, interval: s.t('n30+6.5') - 0.6 }), extra: 1.5 },
   { id: 's22', stage: 'motor', lines: ['n31'], cam: 'twin', p: { mode: 'twin' }, extra: 1.5 },
 
