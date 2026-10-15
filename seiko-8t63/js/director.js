@@ -232,7 +232,7 @@ function evalTour(T, dt) {
   const fo = s.fadeOut !== undefined ? s.fadeOut : (s.next && !sameStage(s, s.next) ? 0.38 : 0);
   if (fi > 0) fade = Math.max(fade, 1 - smooth(u / fi));
   if (fo > 0) fade = Math.max(fade, smooth((u - (s.dur - fo)) / fo));
-  if (T < 0.6) fade = Math.max(fade, 1 - smooth(T / 0.6));
+  if (T < 0.6 && (CAPTURE || tour.playing)) fade = Math.max(fade, 1 - smooth(T / 0.6));
   ui.fade.style.opacity = fade.toFixed(3);
   // labels
   const labels = (s.labels || []).map(l => Object.assign({}, l, { op: smooth((u - (l.at !== undefined ? tref(s, l.at) : 0.9)) / 0.45) * (1 - smooth((u - (l.until !== undefined ? tref(s, l.until) : s.dur - 0.5)) / 0.4)) }));

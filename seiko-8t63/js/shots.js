@@ -89,9 +89,12 @@ window.SHOTS = [
     labels: [{ k: 'motor:coil', text: 'Coil', at: 'n26+8' }, { k: 'motor:stator', text: 'Stator', at: 'n26+10' }, { k: 'motor:rotor', text: 'Rotor (magnet)', d: 1, at: 'n26+12' }] },
   { id: 's19', stage: 'motor', lines: ['n27'], cam: 'bore', p: { mode: 'rest' }, extra: 0.8,
     labels: [{ k: 'motor:notch', text: 'Notch', at: 'n27+6' }] },
-  { id: 's20', stage: 'motor', lines: ['n28', 'n29'], cam: 'bore', p: (u, d, s) => ({ mode: 'pulse', count: 4, at: s.t('n28+3.0'), interval: (s.t('n29.end') - s.t('n28+3.0')) / 3.2, pol: 1 }), extra: 1.0 },
-  { id: 's21', stage: 'motor', lines: ['n30'], cam: 'bore', p: (u, d, s) => ({ mode: 'wrong', at: 0.6, interval: s.t('n30+6.5') - 0.6 }), extra: 1.5 },
-  { id: 's22', stage: 'motor', lines: ['n31'], cam: 'twin', p: { mode: 'twin' }, extra: 1.5 },
+  { id: 's20', stage: 'motor', lines: ['n28', 'n29'], cam: 'bore', p: (u, d, s) => ({ mode: 'pulse', count: 4, at: s.t('n28+3.0'), interval: (s.t('n29.end') - s.t('n28+3.0')) / 3.2, pol: 1 }), extra: 1.0,
+    sfx: s => { const p = s.p(0, s.dur, s); return Array.from({ length: p.count }, (_, k) => ({ u: p.at + k * p.interval, type: 'pulse' })); } },
+  { id: 's21', stage: 'motor', lines: ['n30'], cam: 'bore', p: (u, d, s) => ({ mode: 'wrong', at: 0.6, interval: s.t('n30+6.5') - 0.6 }), extra: 1.5,
+    sfx: s => { const p = s.p(0, s.dur, s); return [{ u: p.at, type: 'pulse' }, { u: p.at + p.interval, type: 'pulse', gain: 0.6 }]; } },
+  { id: 's22', stage: 'motor', lines: ['n31'], cam: 'twin', p: { mode: 'twin' }, extra: 1.5,
+    sfx: s => { const out = []; for (let u = 0.45; u < s.dur; u += 1.0) out.push({ u, type: 'tick', gain: 1.0 }); for (let u = 0.25; u < s.dur; u += 0.2) out.push({ u, type: 'tick', gain: 0.45 }); return out; } },
 
   // ── 8 · From steps to hands ──
   { id: 's23', chapter: 'From steps to hands', lines: ['n32', 'n33', 'n34'], cam: Object.assign({ drift: 0.01 }, CAM_BACK), ex: 0.3,
@@ -112,7 +115,8 @@ window.SHOTS = [
   { id: 's28', stage: 'calendar', lines: ['n40'], cam: 'overview', p: { mode: 'danger' }, extra: 1.0 },
 
   // ── 11 · The crown ──
-  { id: 's29', stage: 'keyless', chapter: 'The crown', lines: ['n41'], cam: 'overview', p: { mode: 'positions' }, extra: 2.0 },
+  { id: 's29', stage: 'keyless', chapter: 'The crown', lines: ['n41'], cam: 'overview', p: { mode: 'positions' }, extra: 2.0,
+    sfx: s => [0.15, 0.45, 0.85].map(f => ({ u: f * s.dur, type: 'crown' })) },
   { id: 's30', stage: 'keyless', lines: ['n42'], cam: 'wheels', p: { mode: 'date' }, extra: 1.5 },
   { id: 's31', stage: 'keyless', lines: ['n43', 'n44'], cam: 'wheels', p: { mode: 'time' }, extra: 1.0 },
   { id: 's31b', lines: ['n45'], lead: 1.4, extra: 2.6, cam: CAM_DIAL, fadeOut: 0.45,
