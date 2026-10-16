@@ -1,0 +1,11 @@
+build/
+assets/models/
+assets/photos/
+assets/fonts/
+*.mp4
+*.mov
+*.wav
+*.flac
+*.onnx
+*.bin
+__pycache__/
