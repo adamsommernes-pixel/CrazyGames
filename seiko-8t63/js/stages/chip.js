@@ -810,7 +810,7 @@ WX.registerStage('chip', function (ctx) {
 
   // ── board overlay ──
   const OB = modeEl.board;
-  const bCard = el(OB, 'ov-card', `<div class="ov-k">One C-MOS chip runs it all</div><div class="ov-big" style="margin-top:5px">circuit block <span class="ov-accent">&lt; 0.70 µA</span></div><div class="ov-muted" style="font-size:12px;margin-top:5px;line-height:1.45">less than a millionth of an amp<br>Seiko spec, measured at 1.55 V</div>`, 'left:auto;right:28px;top:290px;width:268px');
+  const bCard = el(OB, 'ov-card', `<div class="ov-k">One C-MOS chip runs it all</div><div class="ov-big" style="margin-top:5px;white-space:nowrap">circuit block <span class="ov-accent">&lt; 0.70 µA</span></div><div class="ov-muted" style="font-size:12px;margin-top:5px;line-height:1.45">less than a millionth of an amp<br>Seiko spec, measured at 1.55 V</div>`, 'left:auto;right:28px;top:372px;width:330px');
   const bNote = el(OB, 'cp-l cp-note cp-pill', 'Board and die layout illustrative · not to scale', 'left:auto;right:28px;top:576px;transform:none');
   const bLab = {
     ic: callout(OB, 'C-MOS IC (package)', 70, -70), crystal: callout(OB, 'Quartz crystal<small>32,768 Hz</small>', -50, -74), die: callout(OB, 'Silicon die<small>bond wires to the board</small>', 80, -84),
@@ -900,7 +900,7 @@ WX.registerStage('chip', function (ctx) {
     const outAge = s.tOut !== null ? u - s.tOut : -1;
     const tk = outAge >= -0.7 ? smooth((outAge + 0.7) / 0.3) : 0;
     dTick.style.opacity = tk.toFixed(3);
-    proj(dm.out); place(dOut, pt.x + 4, pt.y + 26, 1, 0);
+    proj(dm.out); place(dOut, pt.x + 4, pt.y + 62, 1, 0);
     fade(dOut, s.tOut !== null ? 0.5 + 0.5 * smooth((outAge + 0.2) / 0.3) * (1 - 0.5 * smooth((outAge - 3.5) / 1)) : 0.5);
     dOut.querySelector('.cp-tag').style.boxShadow = outAge >= 0 ? `0 0 ${(24 * Math.exp(-outAge / 0.8)).toFixed(1)}px rgba(227,154,92,0.7)` : 'none';
     // trim strip
@@ -1041,7 +1041,7 @@ WX.registerStage('chip', function (ctx) {
       die: { t: [IC_X, 0.2, IC_Z + 0.1], yaw: 0.22, pitch: 1.0, dist: 9.5 },
       divider: { t: [-1.5, 0, -258.6], yaw: 0, pitch: 0.55, dist: 126 },
       driver: { t: [244, 0, -259], yaw: 0, pitch: 0.95, dist: 84 },
-      logic: { t: [-236, 0, -255.5], yaw: 0, pitch: 0.92, dist: 112 },
+      logic: { t: [-237, 0, -258], yaw: 0, pitch: 0.92, dist: 121 },
     },
     update(u, p, T, dur) {
       const mode = p.mode || 'board';
