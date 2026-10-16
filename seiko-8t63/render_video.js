@@ -16,7 +16,7 @@ const fps = +fpsArg, W = +wArg, H = +hArg;
   const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
   page.on('pageerror', e => console.error('pageerror', e.message));
   if (process.env.THREE_PATH) await page.route('https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js', r => r.fulfill({ path: process.env.THREE_PATH, contentType: 'application/javascript' }));
-  await page.goto('file://' + page_html + '?capture=1');
+  await page.goto('file://' + page_html + '?capture=1', { timeout: 300000 });
   await page.waitForFunction(() => window.__ready, null, { timeout: 120000 });
   await page.evaluate(() => window.__ready);
   const total = await page.evaluate(() => window.__total);
