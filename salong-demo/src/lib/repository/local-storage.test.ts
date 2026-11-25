@@ -197,14 +197,19 @@ describe("local repository", () => {
     expect(after.every((s) => s.label.endsWith(":00") || s.label.endsWith(":30"))).toBe(true);
   });
 
-  it("checks and changes the admin password", async () => {
+  it("checks and changes the admin and staff passwords", async () => {
     const repo = make();
     expect(await repo.verifyAdminPassword("lyng2026")).toBe(true);
     expect(await repo.verifyAdminPassword("feil")).toBe(false);
     expect(await repo.changeAdminPassword("feil", "nytt-passord")).toBe(false);
     expect(await repo.changeAdminPassword("lyng2026", "nytt-passord")).toBe(true);
     expect(await repo.verifyAdminPassword("nytt-passord")).toBe(true);
+    expect(await repo.verifyStaffPassword("ansatt2026")).toBe(true);
+    expect(await repo.verifyStaffPassword("lyng2026")).toBe(false);
+    await repo.setStaffPassword("nytt-ansatt");
+    expect(await repo.verifyStaffPassword("nytt-ansatt")).toBe(true);
     await repo.resetDemoData();
     expect(await repo.verifyAdminPassword("lyng2026")).toBe(true);
+    expect(await repo.verifyStaffPassword("ansatt2026")).toBe(true);
   });
 });

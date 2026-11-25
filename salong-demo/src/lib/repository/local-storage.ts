@@ -53,6 +53,7 @@ interface DemoState {
   profile: SalonProfile;
   rules: BookingRules;
   adminPasswordHash: string;
+  staffPasswordHash: string;
 }
 
 export class ValidationError extends Error {
@@ -70,7 +71,7 @@ export class CancellationTooLateError extends Error {
 }
 
 /** Bump when the stored shape or the seed changes, to reseed existing browsers. */
-const DATA_VERSION = 4;
+const DATA_VERSION = 5;
 
 /** Cheap stable hash, so a changed config replaces stale demo data automatically. */
 function fingerprint(config: SalonConfig): string {
@@ -119,6 +120,7 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
       }),
       rules: clone(config.booking),
       adminPasswordHash: config.adminPasswordHash,
+      staffPasswordHash: config.staffPasswordHash,
     };
     return {
       version: 1,
@@ -429,6 +431,16 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
 
     async verifyAdminPassword(password) {
       return (await hashPassword(password)) === load().adminPasswordHash;
+    },
+
+    async verifyStaffPassword(password) {
+      return (await hashPassword(password)) === load().staffPasswordHash;
+    },
+
+    async setStaffPassword(next) {
+      const state = load();
+      state.staffPasswordHash = await hashPassword(next);
+      save(state);
     },
 
     async changeAdminPassword(current, next) {

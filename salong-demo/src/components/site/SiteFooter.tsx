@@ -53,10 +53,7 @@ export function SiteFooter() {
           <p>
             © {salon.founded}–{new Date().getFullYear()} <ProfileText field="name" />. {t.footer.demo}
           </p>
-          <span className="flex gap-5">
-            <Link href="/staff" className="link">{t.footer.staff}</Link>
-            <Link href="/admin" className="link">{t.footer.admin}</Link>
-          </span>
+          <Link href="/ansatte" className="link">{t.footer.staff}</Link>
         </div>
       </div>
     </footer>

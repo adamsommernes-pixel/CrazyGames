@@ -259,8 +259,9 @@ export const salon: SalonConfig = {
     pageLead: "Fire frisører og en bryn- og vippeterapeut. Velg en du kjenner, eller la oss finne den som er ledig.",
   },
 
-  // Demo password "lyng2026". See README → Admin.
+  // Demo passwords: Admin "lyng2026", Ansatte "ansatt2026". See README.
   adminPasswordHash: "0c9f57fd5adf627ac05bbcfd150a3232f9749cc5bb5f74e05e804f5375f79909",
+  staffPasswordHash: "a6078a26196662b60e405dd4fa323630f24d77a82671cedd940c2c509cd37c2f",
 
   faq: [
     {

@@ -38,7 +38,7 @@ function App() {
 
   const key = `${route.path}?${route.query.toString()}`;
 
-  if (route.path === "/admin" || route.path === "/staff") {
+  if (route.path === "/admin" || route.path === "/ansatte") {
     return <div className="min-h-dvh bg-paper">{route.path === "/admin" ? <AdminApp /> : <StaffApp />}</div>;
   }
   if (route.path === "/bestill") {

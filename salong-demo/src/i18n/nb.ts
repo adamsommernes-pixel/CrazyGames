@@ -178,14 +178,13 @@ export const nb = {
     noteTooLong: (max: number) => `Meldingen kan ha maks ${max} tegn.`,
   },
   panel: {
-    staffTitle: "Staff",
+    staffTitle: "Ansatte",
     adminTitle: "Admin",
     demoBadge: "Demo",
-    gateHeading: "Staff",
-    gateBody:
-      "For alle som jobber i salongen: dagens bestillinger, stengte dager og fravær, og arbeidstider. I denne demoen er det ingen innlogging; alle som har lenken kommer inn.",
-    gateEnter: "Gå til Staff",
-    gateWarning: "Ikke ekte tilgangskontroll. Data lagres bare i denne nettleseren.",
+    staffLogin: {
+      heading: "Ansatte",
+      body: "For alle som jobber i salongen: dagens bestillinger, stengte dager og fravær, og arbeidstider. Passordet får du av daglig leder.",
+    },
     login: {
       heading: "Admin",
       body: "For eier og daglig leder. Her styrer du ansatte, tjenester og priser, åpningstider, salongens opplysninger og bestillingsreglene.",
@@ -195,7 +194,7 @@ export const nb = {
       required: "Skriv inn passordet.",
       warning: "Demo: passordet sjekkes i nettleseren. Det holder uvedkommende unna, men er ikke ekte tilgangskontroll.",
       logout: "Logg ut",
-      toStaff: "Til Staff",
+      toStaff: "Til Ansatte",
       toAdmin: "Admin",
     },
     tabs: {
@@ -204,7 +203,7 @@ export const nb = {
       staff: "Arbeidstider",
       hours: "Åpningstider",
       closures: "Stengt og fravær",
-      team: "Ansatte",
+      team: "Medarbeidere",
       salon: "Salong",
       rules: "Bestillingsregler",
       security: "Passord",
@@ -285,6 +284,11 @@ export const nb = {
       wrong: "Nåværende passord er feil.",
       changed: "Passordet er byttet.",
       submit: "Bytt passord",
+      adminHeading: "Passord for Admin",
+      staffHeading: "Passord for Ansatte",
+      staffLead: "Passordet alle i salongen bruker for å komme inn på Ansatte. Bare Admin kan endre det.",
+      staffSubmit: "Sett nytt passord for Ansatte",
+      staffChanged: "Passordet for Ansatte er byttet. Gi det nye passordet til de ansatte.",
     },
     closures: {
       lead: "Steng hele salongen eller ta ut en ansatt for en hel dag eller deler av en dag. Tidene forsvinner fra bestillingen på nett med en gang.",
@@ -381,8 +385,7 @@ export const nb = {
   weekdaysShort: ["man", "tir", "ons", "tor", "fre", "lør", "søn"],
   footer: {
     demo: "Demoside. Salongen og personene er oppdiktet.",
-    staff: "Staff",
-    admin: "Admin",
+    staff: "Ansatte",
   },
   notFound: {
     title: "Siden finnes ikke",

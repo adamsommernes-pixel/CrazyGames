@@ -12,7 +12,7 @@ export interface Route {
   anchor: string | null;
 }
 
-const ROUTES = ["/", "/tjenester", "/team", "/galleri", "/om-oss", "/bestill", "/staff", "/admin"];
+const ROUTES = ["/", "/tjenester", "/team", "/galleri", "/om-oss", "/bestill", "/ansatte", "/admin"];
 const BOOKING_PREFIX = "bestilling-";
 
 export function pathToHash(path: string): string {

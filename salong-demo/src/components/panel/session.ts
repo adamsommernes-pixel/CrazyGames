@@ -26,3 +26,8 @@ export function createSessionFlag(key: string) {
     },
   };
 }
+
+/** Logged in to Admin. Also opens Ansatte, so the owner is never locked out of the daily view. */
+export const adminSession = createSessionFlag("salong-demo:admin");
+/** Logged in to Ansatte with the staff password. */
+export const staffSession = createSessionFlag("salong-demo:staff");

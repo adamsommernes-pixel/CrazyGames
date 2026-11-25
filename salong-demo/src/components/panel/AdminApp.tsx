@@ -5,7 +5,6 @@ import { useState, useSyncExternalStore } from "react";
 import { t } from "@/i18n";
 import { getRepository } from "@/lib/repository/client";
 import { Button } from "@/components/ui/Button";
-import { Field, TextInput } from "@/components/ui/Field";
 import { HoursEditor } from "./HoursEditor";
 import { NoticeProvider, useNotice } from "./Notice";
 import { PanelShell } from "./PanelShell";
@@ -13,70 +12,27 @@ import { ProfileEditor } from "./ProfileEditor";
 import { RulesEditor } from "./RulesEditor";
 import { SecurityEditor } from "./SecurityEditor";
 import { ServicesEditor } from "./ServicesEditor";
-import { createSessionFlag } from "./session";
+import { PasswordLogin } from "./PasswordLogin";
+import { adminSession } from "./session";
 import { StaffManager } from "./StaffManager";
-
-const unlocked = createSessionFlag("salong-demo:admin");
 
 /** /admin: owner settings behind a password. */
 export function AdminApp() {
-  const open = useSyncExternalStore(unlocked.subscribe, unlocked.read, () => null);
+  const open = useSyncExternalStore(adminSession.subscribe, adminSession.read, () => null);
   if (open === null) return null;
   return <NoticeProvider>{open ? <AdminPanel /> : <Login />}</NoticeProvider>;
 }
 
 function Login() {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!password) return setError(t.panel.login.required);
-    setBusy(true);
-    const ok = await getRepository().verifyAdminPassword(password);
-    setBusy(false);
-    if (ok) unlocked.set(true);
-    else {
-      setError(t.panel.login.wrong);
-      setPassword("");
-    }
-  }
-
   return (
-    <main className="page-x grid min-h-dvh place-items-center py-16">
-      <div className="w-full max-w-md">
-        <p className="label inline-flex items-center gap-3 border border-accent px-3 py-1.5 text-accent">{t.panel.demoBadge}</p>
-        <h1 className="mt-8 text-d2">{t.panel.login.heading}</h1>
-        <p className="mt-6 text-lead">{t.panel.login.body}</p>
-        <form onSubmit={submit} noValidate className="mt-10 grid gap-6">
-          <Field id="admin-password" label={t.panel.login.password} error={error ?? undefined}>
-            {(aria) => (
-              <TextInput
-                {...aria}
-                type="password"
-                autoComplete="current-password"
-                autoFocus
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError(null);
-                }}
-              />
-            )}
-          </Field>
-          <div className="flex flex-wrap items-center gap-6">
-            <Button type="submit" size="lg" arrow disabled={busy}>
-              {t.panel.login.submit}
-            </Button>
-            <Link href="/staff" className="link">
-              {t.panel.login.toStaff}
-            </Link>
-          </div>
-        </form>
-        <p className="mt-10 border-l-2 border-accent pl-4 text-small">{t.panel.login.warning}</p>
-      </div>
-    </main>
+    <PasswordLogin
+      id="admin"
+      heading={t.panel.login.heading}
+      body={t.panel.login.body}
+      verify={(password) => getRepository().verifyAdminPassword(password)}
+      onSuccess={() => adminSession.set(true)}
+      link={{ href: "/ansatte", label: t.panel.login.toStaff }}
+    />
   );
 }
 
@@ -96,7 +52,7 @@ function AdminPanel() {
       actions={
         <>
           <Link href="/" className="link">{t.panel.viewSite}</Link>
-          <Link href="/staff" className="link">{t.panel.login.toStaff}</Link>
+          <Link href="/ansatte" className="link">{t.panel.login.toStaff}</Link>
           <button
             type="button"
             onClick={() => setConfirmReset(true)}
@@ -106,7 +62,7 @@ function AdminPanel() {
           >
             {t.panel.reset}
           </button>
-          <button type="button" onClick={() => unlocked.set(false)} className="link min-h-11 font-medium">
+          <button type="button" onClick={() => adminSession.set(false)} className="link min-h-11 font-medium">
             {t.panel.login.logout}
           </button>
         </>

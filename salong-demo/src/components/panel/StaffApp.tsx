@@ -3,41 +3,44 @@
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { t } from "@/i18n";
-import { Button } from "@/components/ui/Button";
+import { getRepository } from "@/lib/repository/client";
 import { CalendarView } from "./CalendarView";
 import { ClosuresEditor } from "./ClosuresEditor";
 import { NoticeProvider } from "./Notice";
 import { PanelShell } from "./PanelShell";
 import { ScheduleEditor } from "./ScheduleEditor";
-import { createSessionFlag } from "./session";
+import { PasswordLogin } from "./PasswordLogin";
+import { adminSession, staffSession } from "./session";
 
-const gate = createSessionFlag("salong-demo:staff");
+const subscribe = (listener: () => void) => {
+  const a = staffSession.subscribe(listener);
+  const b = adminSession.subscribe(listener);
+  return () => {
+    a();
+    b();
+  };
+};
+const read = () => staffSession.read() || adminSession.read();
 
-/** /staff: day-to-day work for everyone in the salon. */
+/** /ansatte: day-to-day work for everyone in the salon, behind the staff password. */
 export function StaffApp() {
-  const open = useSyncExternalStore(gate.subscribe, gate.read, () => null);
+  const open = useSyncExternalStore(subscribe, read, () => null);
   if (open === null) return null;
-  return <NoticeProvider>{open ? <StaffPanel /> : <Gate />}</NoticeProvider>;
-}
-
-function Gate() {
   return (
-    <main className="page-x grid min-h-dvh place-items-center py-16">
-      <div className="w-full max-w-lg">
-        <p className="label inline-flex items-center gap-3 border border-accent px-3 py-1.5 text-accent">{t.panel.demoBadge}</p>
-        <h1 className="mt-8 text-d2">{t.panel.gateHeading}</h1>
-        <p className="mt-6 text-lead">{t.panel.gateBody}</p>
-        <p className="mt-6 border-l-2 border-accent pl-4 text-small">{t.panel.gateWarning}</p>
-        <div className="mt-10 flex flex-wrap items-center gap-6">
-          <Button type="button" size="lg" arrow onClick={() => gate.set(true)} autoFocus>
-            {t.panel.gateEnter}
-          </Button>
-          <Link href="/" className="link">
-            {t.panel.viewSite}
-          </Link>
-        </div>
-      </div>
-    </main>
+    <NoticeProvider>
+      {open ? (
+        <StaffPanel />
+      ) : (
+        <PasswordLogin
+          id="staff"
+          heading={t.panel.staffLogin.heading}
+          body={t.panel.staffLogin.body}
+          verify={(password) => getRepository().verifyStaffPassword(password)}
+          onSuccess={() => staffSession.set(true)}
+          link={{ href: "/", label: t.panel.viewSite }}
+        />
+      )}
+    </NoticeProvider>
   );
 }
 
@@ -54,6 +57,16 @@ function StaffPanel() {
           <Link href="/" className="link">{t.panel.viewSite}</Link>
           <Link href="/bestill" className="link">{t.nav.book}</Link>
           <Link href="/admin" className="link font-medium">{t.panel.login.toAdmin}</Link>
+          <button
+            type="button"
+            className="link min-h-11"
+            onClick={() => {
+              staffSession.set(false);
+              adminSession.set(false);
+            }}
+          >
+            {t.panel.login.logout}
+          </button>
         </>
       }
       tabs={[

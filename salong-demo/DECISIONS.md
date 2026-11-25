@@ -31,7 +31,7 @@ A Scandinavian salon as a good print magazine would present it, not a SaaS landi
   - Salon-wide closures are shown to customers under "Avvikende åpningstider"; staff absences stay private.
   - A closure blocks only its own time: the buffer applies between appointments, not around closures.
   - Existing bookings inside a new closure are listed for the owner, not moved or cancelled automatically, because that needs a conversation with the customer.
-- **Two panels by role.** `/staff` holds day-to-day work (calendar, closures, working hours). `/admin` holds owner decisions (staff, services and prices, opening hours, salon details, booking rules, password, demo reset).
+- **Two panels by role.** `/ansatte` (called Ansatte in the UI) holds day-to-day work (calendar, closures, working hours). `/admin` holds owner decisions (staff, services and prices, opening hours, salon details, booking rules, password, demo reset).
 - **Salon details and booking rules are editable data.** The repository stores them, seeded from the config. Pages render from the config on the server and pick up edits after hydration through small client leaves (`ProfileText`, `PhoneLink` …). Page titles, Open Graph and JSON-LD stay build-time; in production they would be revalidated from the database.
 - **Removing a staff member archives them**, like services: refused while they have upcoming bookings, and past bookings keep the name.
 - **Deleting a service archives it.** Past bookings keep the service name. Deletion is refused while the service has upcoming bookings; hiding it is the alternative.
@@ -76,5 +76,5 @@ A Scandinavian salon as a good print magazine would present it, not a SaaS landi
 ## Deliberately left out
 
 - **Real map.** It would bring a third party and cookies. A drawn map placeholder links to OpenStreetMap instead.
-- **Real auth.** `/staff` has a clearly marked demo gate. `/admin` asks for a password, but it is hashed and compared in the browser, so it keeps honest people out without being access control. Both are `noindex`.
+- **Real auth.** `/ansatte` and `/admin` each ask for a password, hashed and compared in the browser. That keeps honest people out but is not access control. Only the admin can set the staff password, and an admin login also opens Ansatte. Admin is linked only from inside Ansatte, not from the public site. Both are `noindex`.
 - **Server-side storage.** Bookings live in the visitor's own browser. The confirmation link therefore only works in the browser that made the booking, and the page says so when it can't find one.

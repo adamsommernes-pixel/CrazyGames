@@ -66,8 +66,9 @@ export type ServiceInput = Omit<Service, "id" | "archived"> & {
 
 export type StaffInput = Omit<StaffMember, "id" | "archived">;
 
-/** Day-to-day work, available in /staff. */
+/** Day-to-day work, available in /ansatte. */
 export interface StaffRepository {
+  verifyStaffPassword(password: string): Promise<boolean>;
   moveBooking(id: string, input: MoveBookingInput): Promise<Booking>;
   updateStaffSchedule(id: string, schedule: WeeklySchedule): Promise<StaffMember>;
   addClosure(input: Omit<Closure, "id">): Promise<Closure>;
@@ -88,6 +89,8 @@ export interface AdminRepository {
   updateProfile(profile: SalonProfile): Promise<SalonProfile>;
   updateRules(patch: Partial<Omit<BookingRules, "closedDates">>): Promise<BookingRules>;
   verifyAdminPassword(password: string): Promise<boolean>;
+  /** Sets the Ansatte password; the admin does not need the old one. */
+  setStaffPassword(next: string): Promise<void>;
   /** Returns false if `current` is wrong. */
   changeAdminPassword(current: string, next: string): Promise<boolean>;
   resetDemoData(): Promise<void>;

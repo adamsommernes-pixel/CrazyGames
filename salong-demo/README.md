@@ -41,8 +41,8 @@ Open http://localhost:3000. Other scripts:
 | `/om-oss` | Address, hours, contact, map placeholder, story, FAQ |
 | `/bestill` | Booking flow: service(s) → person or "Ingen preferanse" → date → time → details → confirmation |
 | `/bestilling/[ref]` | Confirmation with reference code, `.ics` download and cancellation |
-| `/staff` | For everyone in the salon, behind a marked demo gate: day calendar (create, move, cancel bookings), temporary closures and staff absences, working hours |
-| `/admin` | For the owner and managers, behind a password: staff (add, edit, remove), services and prices, opening hours, salon details (name, logo text, front-page texts, contact, address), booking rules, password, "Tilbakestill demodata" |
+| `/ansatte` | For everyone in the salon, behind the staff password: day calendar (create, move, cancel bookings), temporary closures and staff absences, working hours. Links to Admin. |
+| `/admin` | For the owner and managers, behind the admin password (reached from Ansatte, not linked publicly): staff (add, edit, remove), services and prices, opening hours, salon details (name, logo text, front-page texts, contact, address), booking rules, both passwords, "Tilbakestill demodata" |
 
 Also generated from the config: per-page metadata and Open Graph, an OG image, `sitemap.xml`, `robots.txt` and `HairSalon` (LocalBusiness) JSON-LD.
 
@@ -58,7 +58,7 @@ Also generated from the config: per-page metadata and Open Graph, an OG image, `
    - **`staff`:** name, role, bio, `serviceIds`, and a weekly `schedule`. Several ranges per day give a lunch break.
    - **`gallery`, `heroImage`, `introImage` and staff `image`:** set `src` to a file in `/public` to show a photo. Without `src`, a labelled placeholder with the same aspect ratio is shown.
    - **`team`:** the team headings on the home and team pages.
-   - **`adminPasswordHash`:** SHA-256 of `salong-admin:` + the initial admin password, e.g. `node -e 'console.log(require("crypto").createHash("sha256").update("salong-admin:NYTT-PASSORD").digest("hex"))'`.
+   - **`adminPasswordHash` / `staffPasswordHash`:** SHA-256 of `salong-admin:` + the initial admin password, e.g. `node -e 'console.log(require("crypto").createHash("sha256").update("salong-admin:NYTT-PASSORD").digest("hex"))'`.
 2. **Re-skin with `theme`:**
    - `colors`: `paper`, `stone`, `ink`, `muted`, `accent`. Keep `muted` and `accent` at 4.5:1 or more against `paper`.
    - `radius`.
@@ -90,7 +90,7 @@ See `DECISIONS.md` for the reasoning behind the design and architecture.
 | Area | In the demo | To make it real |
 | --- | --- | --- |
 | **Database** | `localStorage`, per browser (`src/lib/repository/local-storage.ts`) | Implement `SalonRepository` against an API or database (e.g. Postgres) and return it from `getRepository()`. Move `createBooking` checks to the server, inside a transaction. |
-| **Auth** | `/staff` has a demo gate; `/admin` has a password checked in the browser (demo password `lyng2026`, changeable under Admin → Passord, restored by "Tilbakestill demodata") | Real logins with roles (staff, owner) and server-side authorization. |
+| **Auth** | Two passwords checked in the browser. Demo passwords: Ansatte `ansatt2026`, Admin `lyng2026`. Both are changed under Admin → Passord (only the admin can change the staff password) and restored by "Tilbakestill demodata". Logging in to Admin also opens Ansatte. | Real logins with roles (staff, owner) and server-side authorization. |
 | **SMS and email** | None; the confirmation page says so | Booking confirmations, reminders 24h before and cancellation receipts (e.g. via a Norwegian SMS gateway and a transactional email service). |
 | **Payments** | None; customers pay in the salon | Optional deposit or no-show fee with Vipps or card. |
 | **Calendar sync** | One-off `.ics` download per booking | Two-way sync for staff (Google/Microsoft calendars) or an ICS feed per person. |

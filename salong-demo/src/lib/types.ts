@@ -179,6 +179,8 @@ export interface SalonConfig {
    * check runs in the browser). Replace with real authentication in production.
    */
   adminPasswordHash: string;
+  /** Same scheme, for the Ansatte page. Only the admin can change it. */
+  staffPasswordHash: string;
 }
 
 /** The salon details the owner can edit in the admin. */
