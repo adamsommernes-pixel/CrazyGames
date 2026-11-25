@@ -52,7 +52,7 @@ export function BookingDialog({ state, onClose }: { state: DialogState; onClose:
 
 function useCatalog() {
   return useRepoQuery("admin-catalog", async (repo) => {
-    const [services, staff] = await Promise.all([repo.listServices({ includeInactive: true }), repo.listStaff()]);
+    const [services, staff] = await Promise.all([repo.listServices({ includeInactive: true, includeArchived: true }), repo.listStaff()]);
     return { services, staff };
   });
 }
@@ -128,7 +128,7 @@ function CreateForm({ date: initialDate, onDone }: { date: string; onDone: () =>
       <fieldset>
         <legend className="text-small font-medium">{t.admin.service}</legend>
         <ul className="mt-2 max-h-52 overflow-y-auto rounded-ctl border border-line-strong">
-          {catalog.services.map((s) => {
+          {catalog.services.filter((s) => !s.archived).map((s) => {
             const checked = serviceIds.includes(s.id);
             return (
               <li key={s.id} className="border-b border-line last:border-b-0">

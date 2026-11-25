@@ -1,12 +1,13 @@
 import { salon } from "@config";
 import { t } from "@/i18n";
-import { formatLocalDateLong, telHref } from "@/lib/format";
+import { telHref } from "@/lib/format";
 import { pageMetadata } from "@/lib/seo";
 import { ImageSlot } from "@/components/ui/ImageSlot";
 import { Section } from "@/components/ui/Section";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { MapPlaceholder } from "@/components/site/MapPlaceholder";
 import { OpeningHoursTable } from "@/components/site/OpeningHoursTable";
+import { UpcomingClosures } from "@/components/site/UpcomingClosures";
 import { PageHeader } from "@/components/site/PageHeader";
 
 export const metadata = pageMetadata(salon, {
@@ -18,7 +19,6 @@ export const metadata = pageMetadata(salon, {
 export default function AboutPage() {
   const { address, phone, email, directions } = salon.contact;
   const lead = t.about.lead(address.street, address.area);
-  const closedDates = salon.booking.closedDates.map((d) => `${d.reason.toLowerCase()} (${formatLocalDateLong(d.date).toLowerCase()})`);
 
   return (
     <>
@@ -48,8 +48,9 @@ export default function AboutPage() {
             </dl>
             <h2 className="label mt-12 text-muted">{t.common.openingHours}</h2>
             <OpeningHoursTable className="mt-3" />
+            <UpcomingClosures className="mt-8" />
             <p className="mt-6 text-small text-muted">
-              {t.about.holidaysBody} {closedDates.join(" og ")}.
+              {t.about.holidaysBody}
             </p>
           </div>
           <div className="col-span-12 md:col-span-7 md:col-start-6 lg:col-span-7 lg:col-start-6">

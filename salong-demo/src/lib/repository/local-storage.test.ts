@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { salon } from "@config";
 import { addDays, todayLocal, weekdayOf, zonedToUtc } from "@/lib/time/zoned";
 import { createLocalRepository, ValidationError, type KeyValueStore } from "./local-storage";
-import { SlotUnavailableError } from "./types";
+import { ServiceInUseError, SlotUnavailableError } from "./types";
 
 const TZ = salon.timeZone;
 
@@ -112,5 +112,47 @@ describe("local repository", () => {
         }
       }
     }
+  });
+
+  it("creates, edits and deletes services, keeping staff assignments in step", async () => {
+    const repo = make();
+    const service = await repo.createService({
+      categoryId: "klipp",
+      name: "Pannelugg",
+      description: "Rask justering av luggen.",
+      durationMin: 15,
+      priceNok: 195,
+      active: true,
+      staffIds: ["marius", "jonas"],
+    });
+    expect(service.id).toBe("pannelugg");
+    const staff = await repo.listStaff();
+    expect(staff.find((m) => m.id === "jonas")!.serviceIds).toContain("pannelugg");
+    expect((await repo.getAvailability({ date: DATE, serviceIds: ["pannelugg"], staffId: "marius" })).length).toBeGreaterThan(0);
+
+    await repo.updateService("pannelugg", { priceNok: 245, staffIds: ["marius"] });
+    expect((await repo.listStaff()).find((m) => m.id === "jonas")!.serviceIds).not.toContain("pannelugg");
+    expect((await repo.listServices()).find((s) => s.id === "pannelugg")!.priceNok).toBe(245);
+
+    const again = await repo.createService({ ...service, staffIds: [] });
+    expect(again.id).toBe("pannelugg-2");
+
+    const [slot] = await repo.getAvailability({ date: DATE, serviceIds: ["pannelugg"], staffId: "marius" });
+    const booking = await repo.createBooking({ serviceIds: ["pannelugg"], staffId: "marius", start: slot!.start, customer });
+    await expect(repo.deleteService("pannelugg")).rejects.toBeInstanceOf(ServiceInUseError);
+    await repo.cancelBooking(booking.reference);
+    await repo.deleteService("pannelugg");
+    expect((await repo.listServices({ includeInactive: true })).map((s) => s.id)).not.toContain("pannelugg");
+    expect((await repo.listServices({ includeInactive: true, includeArchived: true })).map((s) => s.id)).toContain("pannelugg");
+    expect((await repo.listStaff()).some((m) => m.serviceIds.includes("pannelugg"))).toBe(false);
+  });
+
+  it("adds and removes closures that availability respects", async () => {
+    const repo = make();
+    expect((await repo.listClosures()).map((c) => c.reason)).toEqual(["Julaften", "Nyttårsaften"]);
+    const closure = await repo.addClosure({ date: DATE, staffId: "marius", reason: "Kurs" });
+    expect(await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: "marius" })).toEqual([]);
+    await repo.removeClosure(closure.id);
+    expect((await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: "marius" })).length).toBeGreaterThan(0);
   });
 });

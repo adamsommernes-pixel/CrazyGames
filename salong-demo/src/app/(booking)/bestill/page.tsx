@@ -17,7 +17,8 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
   const params = await searchParams;
   const serviceIds = (first(params.tjeneste) ?? "")
     .split(",")
-    .filter((id) => salon.services.some((s) => s.id === id));
+    // Validated against the live catalog in BookingFlow, since services can be added in the admin.
+    .filter((id) => /^[a-z0-9-]{1,60}$/.test(id));
   const staffParam = first(params.frisor);
   const staffId = salon.staff.some((m) => m.id === staffParam) ? staffParam! : null;
   return <BookingFlow key={`${serviceIds.join()}-${staffId}`} initialServiceIds={serviceIds} initialStaffId={staffId} />;

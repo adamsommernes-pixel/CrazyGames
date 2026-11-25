@@ -4,6 +4,7 @@ import { telHref } from "@/lib/format";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { MapPlaceholder } from "@/components/site/MapPlaceholder";
 import { OpeningHoursTable } from "@/components/site/OpeningHoursTable";
+import { UpcomingClosures } from "@/components/site/UpcomingClosures";
 
 export function Visit() {
   const { address, phone, email, directions } = salon.contact;
@@ -25,6 +26,7 @@ export function Visit() {
           </p>
           <h3 className="label mt-12 text-muted">{t.common.openingHours}</h3>
           <OpeningHoursTable className="mt-3" />
+          <UpcomingClosures className="mt-8" />
         </div>
         <div className="col-span-12 md:col-span-7 md:col-start-6 lg:col-span-7 lg:col-start-6">
           <MapPlaceholder className="aspect-[4/5] md:sticky md:top-10 md:aspect-auto md:h-[min(42rem,80vh)]" />

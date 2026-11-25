@@ -8,6 +8,7 @@ import { getRepository } from "@/lib/repository/client";
 import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
 import { CalendarView } from "./CalendarView";
+import { ClosuresEditor } from "./ClosuresEditor";
 import { HoursEditor } from "./HoursEditor";
 import { NoticeProvider, useNotice } from "./Notice";
 import { ScheduleEditor } from "./ScheduleEditor";
@@ -75,11 +76,12 @@ function Gate() {
   );
 }
 
-const TABS = ["calendar", "services", "staff", "hours"] as const;
+const TABS = ["calendar", "closures", "services", "staff", "hours"] as const;
 type Tab = (typeof TABS)[number];
 
 function Dashboard() {
   const [tab, setTab] = useState<Tab>("calendar");
+  const [calendarDate, setCalendarDate] = useState<string | null>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const notify = useNotice();
 
@@ -103,12 +105,12 @@ function Dashboard() {
   return (
     <>
       <header className="page-x border-b border-line">
-        <div className="mx-auto flex min-h-18 max-w-page flex-wrap items-center justify-between gap-x-6 gap-y-3 py-3">
+        <div className="mx-auto flex min-h-18 max-w-page flex-wrap items-center justify-between gap-x-6 gap-y-1 py-3">
           <div className="flex items-center gap-4">
             <span className="font-display text-d4">{salon.name}</span>
             <span className="label border border-accent px-2 py-1 text-accent">{t.admin.demoBadge}</span>
           </div>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-small">
+          <div className="-mx-1 flex w-full items-center gap-x-5 overflow-x-auto px-1 text-small whitespace-nowrap sm:w-auto">
             <Link href="/" className="link">{t.admin.viewSite}</Link>
             <Link href="/bestill" className="link">{t.nav.book}</Link>
             <button
@@ -168,7 +170,15 @@ function Dashboard() {
             ))}
           </div>
           <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="pt-8">
-            {tab === "calendar" && <CalendarView />}
+            {tab === "calendar" && <CalendarView key={calendarDate ?? "today"} initialDate={calendarDate} />}
+            {tab === "closures" && (
+              <ClosuresEditor
+                onOpenDate={(date) => {
+                  setCalendarDate(date);
+                  setTab("calendar");
+                }}
+              />
+            )}
             {tab === "services" && <ServicesEditor />}
             {tab === "staff" && <ScheduleEditor />}
             {tab === "hours" && <HoursEditor />}

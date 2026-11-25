@@ -31,9 +31,13 @@ export function BookingFlow({ initialServiceIds, initialStaffId }: Props) {
   const { services, staff } = useLiveCatalog();
   const top = useRef<HTMLDivElement>(null);
 
-  const [presetStaffId, setPresetStaffId] = useState<string | null>(initialStaffId);
+  // A link can combine a service and a person who doesn't do it; then the person is dropped.
+  const presetFits =
+    !!initialStaffId && qualifiedStaff(staff, initialServiceIds).some((m) => m.id === initialStaffId);
+  const initialStaff = initialStaffId && (initialServiceIds.length === 0 || presetFits) ? initialStaffId : null;
+  const [presetStaffId, setPresetStaffId] = useState<string | null>(initialStaff);
   const [serviceIds, setServiceIds] = useState<string[]>(initialServiceIds);
-  const [staffId, setStaffId] = useState<string | null | undefined>(initialStaffId ?? undefined);
+  const [staffId, setStaffId] = useState<string | null | undefined>(initialStaff ?? undefined);
   const [date, setDate] = useState<LocalDate | null>(null);
   const [slot, setSlot] = useState<Slot | null>(null);
   const [customer, setCustomer] = useState<Customer>(emptyCustomer);
@@ -92,7 +96,7 @@ export function BookingFlow({ initialServiceIds, initialStaffId }: Props) {
 
   const canAdvance = [
     activeIds.length > 0,
-    staffId !== undefined && qualified.length > 0,
+    staffId === null ? qualified.length > 0 : qualified.some((m) => m.id === staffId),
     date !== null,
     slot !== null,
     true,

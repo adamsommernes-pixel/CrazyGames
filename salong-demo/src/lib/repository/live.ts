@@ -9,19 +9,21 @@
  */
 import { useSyncExternalStore } from "react";
 import { salon } from "@config";
-import type { OpeningHours, Service, StaffMember } from "@/lib/types";
+import type { Closure, OpeningHours, Service, StaffMember } from "@/lib/types";
 import { todayLocal } from "@/lib/time/zoned";
 
 export interface Catalog {
   services: Service[];
   staff: StaffMember[];
   openingHours: OpeningHours;
+  closures: Closure[];
 }
 
 const initialCatalog: Catalog = {
   services: salon.services.filter((s) => s.active),
   staff: salon.staff,
   openingHours: salon.openingHours,
+  closures: salon.booking.closedDates.map((d) => ({ id: `config-${d.date}`, date: d.date, reason: d.reason })),
 };
 
 let catalog: Catalog | null = null;
@@ -32,8 +34,13 @@ async function refreshCatalog() {
   // Loaded on demand so content pages ship without the repository code.
   const { getRepository } = await import("./client");
   const repo = getRepository();
-  const [services, staff, openingHours] = await Promise.all([repo.listServices(), repo.listStaff(), repo.getOpeningHours()]);
-  catalog = { services, staff, openingHours };
+  const [services, staff, openingHours, closures] = await Promise.all([
+    repo.listServices(),
+    repo.listStaff(),
+    repo.getOpeningHours(),
+    repo.listClosures(),
+  ]);
+  catalog = { services, staff, openingHours, closures };
   for (const l of catalogListeners) l();
 }
 

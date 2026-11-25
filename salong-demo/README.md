@@ -41,7 +41,7 @@ Open http://localhost:3000. Other scripts:
 | `/om-oss` | Address, hours, contact, map placeholder, story, FAQ |
 | `/bestill` | Booking flow: service(s) → person or "Ingen preferanse" → date → time → details → confirmation |
 | `/bestilling/[ref]` | Confirmation with reference code, `.ics` download and cancellation |
-| `/admin` | Demo admin behind a marked demo gate: day calendar (create, move, cancel), services, staff schedules, opening hours, "Tilbakestill demodata" |
+| `/admin` | Demo admin behind a marked demo gate: day calendar (create, move, cancel), temporary closures and staff absences, services (add, edit, delete, who performs them), staff schedules, opening hours, "Tilbakestill demodata" |
 
 Also generated from the config: per-page metadata and Open Graph, an OG image, `sitemap.xml`, `robots.txt` and `HairSalon` (LocalBusiness) JSON-LD.
 

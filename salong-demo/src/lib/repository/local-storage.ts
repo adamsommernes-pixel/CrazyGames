@@ -3,7 +3,7 @@
  * Every call reads fresh state from storage, so two tabs (e.g. the admin and
  * the public booking page) always see each other's changes.
  */
-import type { Booking, OpeningHours, SalonConfig, Service, StaffMember } from "@/lib/types";
+import type { Booking, Closure, OpeningHours, SalonConfig, Service, StaffMember } from "@/lib/types";
 import {
   assignStaff,
   dayStatus,
@@ -19,6 +19,7 @@ import { toZoned } from "@/lib/time/zoned";
 import { createSeedBookings } from "./seed";
 import {
   NotFoundError,
+  ServiceInUseError,
   SlotUnavailableError,
   type AvailabilityQuery,
   type CreateBookingInput,
@@ -37,6 +38,7 @@ interface DemoState {
   services: Service[];
   staff: StaffMember[];
   openingHours: OpeningHours;
+  closures: Closure[];
   bookings: Booking[];
 }
 
@@ -55,7 +57,7 @@ export class CancellationTooLateError extends Error {
 }
 
 /** Bump when the stored shape or the seed changes, to reseed existing browsers. */
-const DATA_VERSION = 2;
+const DATA_VERSION = 3;
 
 /** Cheap stable hash, so a changed config replaces stale demo data automatically. */
 function fingerprint(config: SalonConfig): string {
@@ -94,6 +96,7 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
       services: clone(config.services),
       staff: clone(config.staff),
       openingHours: clone(config.openingHours),
+      closures: config.booking.closedDates.map((d) => ({ id: `config-${d.date}`, date: d.date, reason: d.reason })),
     };
     return {
       version: 1,
@@ -131,8 +134,33 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
       staff: state.staff,
       services: includeInactive ? state.services : state.services.filter((s) => s.active),
       bookings: state.bookings,
+      closures: state.closures,
       now: now(),
     };
+  }
+
+  /** Keep staff members' service lists in step with a service's `staffIds`. */
+  function setServiceStaff(state: DemoState, serviceId: string, staffIds: string[]) {
+    for (const member of state.staff) {
+      const has = member.serviceIds.includes(serviceId);
+      const should = staffIds.includes(member.id);
+      if (has && !should) member.serviceIds = member.serviceIds.filter((id) => id !== serviceId);
+      if (!has && should) member.serviceIds = [...member.serviceIds, serviceId];
+    }
+  }
+
+  function serviceSlug(state: DemoState, name: string): string {
+    const base =
+      name
+        .toLowerCase()
+        .replace(/æ/g, "ae")
+        .replace(/ø/g, "o")
+        .replace(/å/g, "a")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") || "tjeneste";
+    let id = base;
+    for (let i = 2; state.services.some((s) => s.id === id); i++) id = `${base}-${i}`;
+    return id;
   }
 
   function requireBooking(state: DemoState, predicate: (b: Booking) => boolean, label: string): Booking {
@@ -148,7 +176,11 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
 
     async listServices(opts) {
       const { services } = load();
-      return opts?.includeInactive ? services : services.filter((s) => s.active);
+      return services.filter((s) => (opts?.includeArchived || !s.archived) && (opts?.includeInactive || s.active));
+    },
+
+    async listClosures() {
+      return [...load().closures].sort((a, b) => (a.date + (a.start ?? "")).localeCompare(b.date + (b.start ?? "")));
     },
 
     async listStaff() {
@@ -254,13 +286,53 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
       return booking;
     },
 
-    async updateService(id, patch) {
+    async createService({ staffIds, ...fields }) {
       const state = load();
-      const service = state.services.find((s) => s.id === id);
-      if (!service) throw new NotFoundError("Service");
-      Object.assign(service, patch);
+      const service: Service = { ...fields, id: serviceSlug(state, fields.name) };
+      state.services.push(service);
+      setServiceStaff(state, service.id, staffIds);
       save(state);
       return service;
+    },
+
+    async updateService(id, { staffIds, ...patch }) {
+      const state = load();
+      const service = state.services.find((s) => s.id === id && !s.archived);
+      if (!service) throw new NotFoundError("Service");
+      Object.assign(service, patch);
+      if (staffIds) setServiceStaff(state, id, staffIds);
+      save(state);
+      return service;
+    },
+
+    async deleteService(id) {
+      const state = load();
+      const service = state.services.find((s) => s.id === id && !s.archived);
+      if (!service) throw new NotFoundError("Service");
+      const upcoming = state.bookings.filter(
+        (b) => b.status === "confirmed" && b.serviceIds.includes(id) && Date.parse(b.end) > now(),
+      ).length;
+      if (upcoming > 0) throw new ServiceInUseError(upcoming);
+      // Archive rather than remove, so past bookings keep the service name.
+      service.archived = true;
+      service.active = false;
+      service.popular = false;
+      setServiceStaff(state, id, []);
+      save(state);
+    },
+
+    async addClosure(input) {
+      const state = load();
+      const closure: Closure = { ...input, id: newId() };
+      state.closures.push(closure);
+      save(state);
+      return closure;
+    },
+
+    async removeClosure(id) {
+      const state = load();
+      state.closures = state.closures.filter((c) => c.id !== id);
+      save(state);
     },
 
     async updateStaffSchedule(id, schedule) {

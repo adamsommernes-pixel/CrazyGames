@@ -2,9 +2,10 @@
  * Pure availability logic. No storage, no clock: everything comes in through
  * `AvailabilityInput`, so it is deterministic and unit-tested.
  */
-import type { Booking, BookingRules, LocalDate, OpeningHours, Service, StaffMember } from "@/lib/types";
+import { t } from "@/i18n";
+import type { Booking, BookingRules, Closure, LocalDate, OpeningHours, Service, StaffMember } from "@/lib/types";
 import { holidayOn } from "@/lib/time/holidays";
-import { diffDays, formatClock, parseClock, toZoned, todayLocal, weekdayOf, zonedToUtc } from "@/lib/time/zoned";
+import { addDays, diffDays, formatClock, parseClock, toZoned, todayLocal, weekdayOf, zonedToUtc } from "@/lib/time/zoned";
 
 const MINUTE = 60_000;
 
@@ -22,6 +23,8 @@ export interface AvailabilityInput {
   staff: StaffMember[];
   services: Service[];
   bookings: Booking[];
+  /** Temporary closures. Defaults to `rules.closedDates` as whole-day salon closures. */
+  closures?: Closure[];
   /** Current instant, epoch ms. */
   now: number;
 }
@@ -77,19 +80,35 @@ export function qualifiedStaff(staff: StaffMember[], serviceIds: string[]): Staf
   return staff.filter((m) => serviceIds.every((id) => m.serviceIds.includes(id)));
 }
 
-/** Why the salon is closed on `date`, or null if it is open. */
-export function closureReason(
-  date: LocalDate,
-  input: Pick<AvailabilityInput, "rules" | "openingHours">,
-): string | null {
-  const extra = input.rules.closedDates.find((d) => d.date === date);
-  if (extra) return extra.reason;
+type ClosureInput = Pick<AvailabilityInput, "rules" | "openingHours" | "closures">;
+
+export function closuresOf(input: Pick<AvailabilityInput, "rules" | "closures">): Closure[] {
+  return input.closures ?? input.rules.closedDates.map((d) => ({ id: `config-${d.date}`, date: d.date, reason: d.reason }));
+}
+
+export const isWholeDay = (c: Pick<Closure, "start" | "end">) => !c.start || !c.end;
+
+/** Why the whole salon is closed on `date`, or null if it is open. */
+export function closureReason(date: LocalDate, input: ClosureInput): string | null {
+  const closed = closuresOf(input).find((c) => c.date === date && !c.staffId && isWholeDay(c));
+  if (closed) return closed.reason;
   if (input.rules.closeOnPublicHolidays) {
     const holiday = holidayOn(date);
     if (holiday) return holiday.name;
   }
-  if (!input.openingHours[weekdayOf(date)]) return "Stengt";
+  if (!input.openingHours[weekdayOf(date)]) return t.common.closed;
   return null;
+}
+
+/** Time on `date` when a staff member is unavailable because of a closure or absence. */
+export function closedIntervals(date: LocalDate, staffId: string, input: AvailabilityInput): Interval[] {
+  return closuresOf(input)
+    .filter((c) => c.date === date && (!c.staffId || c.staffId === staffId))
+    .map((c) =>
+      isWholeDay(c)
+        ? { start: zonedToUtc(date, 0, input.timeZone), end: zonedToUtc(addDays(date, 1), 0, input.timeZone) }
+        : { start: zonedToUtc(date, parseClock(c.start!), input.timeZone), end: zonedToUtc(date, parseClock(c.end!), input.timeZone) },
+    );
 }
 
 /**
@@ -154,6 +173,8 @@ export function generateSlots(input: AvailabilityInput, query: SlotQuery): Slot[
   const byStart = new Map<number, string[]>();
   for (const member of candidates) {
     const busy = confirmedBookingsFor(input, member.id, query.excludeBookingId);
+    // Closures block their own time only; the buffer is between appointments.
+    const closed = closedIntervals(query.date, member.id, input);
     for (const window of workingIntervals(query.date, member, input.openingHours, timeZone)) {
       const localStart = toZoned(window.start, timeZone).minutes;
       const align = (rules.slotStepMin - (localStart % rules.slotStepMin)) % rules.slotStepMin;
@@ -161,6 +182,7 @@ export function generateSlots(input: AvailabilityInput, query: SlotQuery): Slot[
         if (t < earliest) continue;
         const slot = { start: t, end: t + duration };
         if (busy.some((b) => overlaps(slot, b, buffer))) continue;
+        if (closed.some((c) => overlaps(slot, c))) continue;
         const list = byStart.get(t) ?? [];
         list.push(member.id);
         byStart.set(t, list);

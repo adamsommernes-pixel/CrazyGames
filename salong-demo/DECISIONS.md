@@ -27,6 +27,11 @@ A Scandinavian salon as a good print magazine would present it, not a SaaS landi
 - **The buffer applies on both sides.** Two appointments for the same person must be at least `bufferMin` apart. A slot may end exactly at closing time.
 - **Multi-service bookings are one appointment with one person.** The total duration is the sum of the services. Services that nobody can combine with the current selection are disabled, with a written reason.
 - **"Ingen preferanse" assigns staff by load.** A time is offered if any qualified person is free, and the booking goes to whoever has the fewest booked minutes that day (ties go to config order).
+- **Temporary closures are data, not config.** The admin's "Stengt og fravær" tab adds closures for a whole day or a time range, for the whole salon or one person. They are seeded from `booking.closedDates`.
+  - Salon-wide closures are shown to customers under "Avvikende åpningstider"; staff absences stay private.
+  - A closure blocks only its own time: the buffer applies between appointments, not around closures.
+  - Existing bookings inside a new closure are listed for the owner, not moved or cancelled automatically, because that needs a conversation with the customer.
+- **Deleting a service archives it.** Past bookings keep the service name. Deletion is refused while the service has upcoming bookings; hiding it is the alternative.
 - **Public holidays are computed.** Norwegian holidays come from the Easter date (`closeOnPublicHolidays`), so nobody has to maintain them. Christmas Eve and New Year's Eve are not public holidays, so they sit in `closedDates`.
 - **Cancellation rules:** customers can cancel online until the appointment starts. Inside the configured window (24h) they see a warning that a fee may apply, matching the FAQ. The admin can always cancel.
 - **The admin can override some rules.** Bookings made in the admin ignore minimum notice and the horizon, but never allow double-booking. Email is optional for them, since the salon often books by phone.

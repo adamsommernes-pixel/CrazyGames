@@ -9,11 +9,11 @@ import { addDays, weekdayOf } from "@/lib/time/zoned";
 
 /** "Åpent i dag 09:00–19:00" or the next opening day. Falls back to a neutral label on the server. */
 export function OpenToday() {
-  const { openingHours } = useLiveCatalog();
+  const { openingHours, closures } = useLiveCatalog();
   const today = useToday();
   if (!today) return <span>{t.common.openingHours}</span>;
 
-  const rules = { rules: salon.booking, openingHours };
+  const rules = { rules: salon.booking, openingHours, closures };
   const todayRange = openingHours[weekdayOf(today)];
   if (!closureReason(today, rules) && todayRange) {
     return <span>{t.home.openToday(formatRange(todayRange))}</span>;

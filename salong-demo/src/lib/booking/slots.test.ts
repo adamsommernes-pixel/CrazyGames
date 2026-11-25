@@ -292,3 +292,39 @@ describe("assignStaff", () => {
     expect(assignStaff(i, slot)).toBe("anna");
   });
 });
+
+describe("temporary closures", () => {
+  it("a whole-day salon closure closes the day", () => {
+    const i = input({ closures: [{ id: "c1", date: DAY, reason: "Kurs" }] });
+    expect(closureReason(DAY, i)).toBe("Kurs");
+    expect(generateSlots(i, { date: DAY, serviceIds: ["klipp"], staffId: null })).toEqual([]);
+    expect(dayStatus(i, { serviceIds: ["klipp"], staffId: null }, DAY)).toEqual({ kind: "closed", reason: "Kurs" });
+  });
+
+  it("a partial closure blocks only its own time, without the buffer", () => {
+    const i = input({
+      rules: { ...rules, bufferMin: 10 },
+      closures: [{ id: "c1", date: DAY, start: "12:00", end: "14:00", reason: "Personalmøte" }],
+    });
+    expect(closureReason(DAY, i)).toBeNull();
+    const slots = labels(generateSlots(i, { date: DAY, serviceIds: ["klipp"], staffId: "anna" }));
+    expect(slots).toContain("11:00"); // ends exactly 12:00
+    expect(slots).not.toContain("11:15");
+    expect(slots).not.toContain("13:45");
+    expect(slots).toContain("14:00");
+  });
+
+  it("a staff absence removes that person only", () => {
+    const i = input({ closures: [{ id: "c1", date: DAY, staffId: "anna", reason: "Syk" }] });
+    expect(closureReason(DAY, i)).toBeNull();
+    expect(generateSlots(i, { date: DAY, serviceIds: ["klipp"], staffId: "anna" })).toEqual([]);
+    const any = generateSlots(i, { date: DAY, serviceIds: ["klipp"], staffId: null });
+    expect(any).toHaveLength(29);
+    expect(any.every((s) => s.staffIds.join() === "bo")).toBe(true);
+  });
+
+  it("defaults to the config's closed dates when no closures are given", () => {
+    expect(closureReason("2026-12-24", input())).toBe("Julaften");
+    expect(closureReason("2026-12-24", input({ closures: [] }))).toBeNull();
+  });
+});

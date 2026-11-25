@@ -6,6 +6,7 @@
 import type { DayStatus, Slot } from "@/lib/booking/slots";
 import type {
   Booking,
+  Closure,
   Customer,
   LocalDate,
   OpeningHours,
@@ -37,8 +38,10 @@ export interface MoveBookingInput {
 
 export interface BookingRepository {
   listCategories(): Promise<ServiceCategory[]>;
-  /** Active services only, unless `includeInactive` is set. */
-  listServices(opts?: { includeInactive?: boolean }): Promise<Service[]>;
+  /** Active services only, unless `includeInactive` is set. Deleted services only with `includeArchived`. */
+  listServices(opts?: { includeInactive?: boolean; includeArchived?: boolean }): Promise<Service[]>;
+  /** Temporary closures and absences, sorted by date. */
+  listClosures(): Promise<Closure[]>;
   listStaff(): Promise<StaffMember[]>;
   getOpeningHours(): Promise<OpeningHours>;
   getAvailability(query: AvailabilityQuery, opts?: { admin?: boolean; excludeBookingId?: string }): Promise<Slot[]>;
@@ -51,9 +54,19 @@ export interface BookingRepository {
   cancelBooking(reference: string, opts?: { admin?: boolean }): Promise<Booking>;
 }
 
+export type ServiceInput = Omit<Service, "id" | "archived"> & {
+  /** Staff members who perform the service. */
+  staffIds: string[];
+};
+
 export interface AdminRepository {
   moveBooking(id: string, input: MoveBookingInput): Promise<Booking>;
-  updateService(id: string, patch: Partial<Pick<Service, "name" | "priceNok" | "durationMin" | "active">>): Promise<Service>;
+  createService(input: ServiceInput): Promise<Service>;
+  updateService(id: string, patch: Partial<ServiceInput>): Promise<Service>;
+  /** Throws `ServiceInUseError` if the service has upcoming bookings. */
+  deleteService(id: string): Promise<void>;
+  addClosure(input: Omit<Closure, "id">): Promise<Closure>;
+  removeClosure(id: string): Promise<void>;
   updateStaffSchedule(id: string, schedule: WeeklySchedule): Promise<StaffMember>;
   updateOpeningHours(hours: OpeningHours): Promise<OpeningHours>;
   resetDemoData(): Promise<void>;
@@ -68,6 +81,13 @@ export class SlotUnavailableError extends Error {
   constructor() {
     super("The selected time is no longer available");
     this.name = "SlotUnavailableError";
+  }
+}
+
+export class ServiceInUseError extends Error {
+  constructor(public readonly upcoming: number) {
+    super(`Service has ${upcoming} upcoming bookings`);
+    this.name = "ServiceInUseError";
   }
 }
 

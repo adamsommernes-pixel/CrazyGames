@@ -41,7 +41,7 @@ function downloadIcs(booking: Booking, services: Service[], staffName: string) {
 
 export function Confirmation({ reference }: { reference: string }) {
   const { staff } = useLiveCatalog();
-  const allServices = useRepoQuery("services:all", (repo) => repo.listServices({ includeInactive: true }));
+  const allServices = useRepoQuery("services:all", (repo) => repo.listServices({ includeInactive: true, includeArchived: true }));
   const booking = useRepoQuery(`booking:${reference}`, (repo) => repo.getBooking(reference));
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);

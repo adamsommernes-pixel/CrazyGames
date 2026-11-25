@@ -7,16 +7,17 @@ import { formatLocalDateLong, formatTime } from "@/lib/format";
 import { useToday } from "@/lib/repository/live";
 import { useRepoQuery } from "@/lib/repository/query";
 import { addDays, parseClock, toZoned, weekdayOf, zonedToUtc } from "@/lib/time/zoned";
-import type { Booking, Service, StaffMember } from "@/lib/types";
+import { isWholeDay } from "@/lib/booking/slots";
+import type { Booking, Closure, Service, StaffMember } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
 import { BookingDialog, type DialogState } from "./BookingDialog";
 
 const PX_PER_MIN = 1.3;
 
-export function CalendarView() {
+export function CalendarView({ initialDate = null }: { initialDate?: string | null }) {
   const today = useToday();
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(initialDate);
   const date = picked ?? today;
   const [dialog, setDialog] = useState<DialogState | null>(null);
 
@@ -24,18 +25,20 @@ export function CalendarView() {
     if (!date) return null;
     const from = new Date(zonedToUtc(date, 0, salon.timeZone)).toISOString();
     const to = new Date(zonedToUtc(addDays(date, 1), 0, salon.timeZone)).toISOString();
-    const [bookings, staff, services, hours] = await Promise.all([
+    const [bookings, staff, services, hours, closures] = await Promise.all([
       repo.listBookings({ from, to }),
       repo.listStaff(),
-      repo.listServices({ includeInactive: true }),
+      repo.listServices({ includeInactive: true, includeArchived: true }),
       repo.getOpeningHours(),
+      repo.listClosures(),
     ]);
-    return { bookings, staff, services, hours };
+    return { bookings, staff, services, hours, closures: closures.filter((c) => c.date === date) };
   });
 
   if (!date || !data) return <p className="text-muted">{t.common.loading}</p>;
 
-  const { bookings, staff, services, hours } = data;
+  const { bookings, staff, services, hours, closures } = data;
+  const salonClosed = closures.find((c) => !c.staffId && isWholeDay(c));
   const weekday = weekdayOf(date);
   const open = hours[weekday];
   const confirmed = bookings.filter((b) => b.status === "confirmed");
@@ -74,7 +77,21 @@ export function CalendarView() {
         </div>
       </div>
 
-      {columns.length === 0 ? (
+      {closures.length > 0 && (
+        <ul className="mt-6 grid gap-2">
+          {closures.map((c) => (
+            <li key={c.id} className="border-l-2 border-accent bg-tint px-4 py-2 text-small">
+              <span className="font-medium">{t.admin.closures.closedBanner(c.reason)}</span>
+              {" · "}
+              {isWholeDay(c) ? t.admin.closures.allDay : `${c.start}–${c.end}`}
+              {" · "}
+              {c.staffId ? staff.find((m) => m.id === c.staffId)?.name : t.admin.closures.wholeSalon}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {columns.length === 0 || (salonClosed && confirmed.length === 0) ? (
         <p className="mt-10 border-l-2 border-line-strong px-4 py-3 text-muted">{t.admin.noBookings}</p>
       ) : (
         <>
@@ -83,6 +100,7 @@ export function CalendarView() {
             className="mt-8 hidden md:block"
             date={date}
             columns={columns}
+            closures={closures}
             bookings={confirmed}
             services={services}
             open={open}
@@ -141,6 +159,7 @@ function AgendaList({
 function DayGrid({
   date,
   columns,
+  closures,
   bookings,
   services,
   open,
@@ -149,6 +168,7 @@ function DayGrid({
 }: {
   date: string;
   columns: StaffMember[];
+  closures: Closure[];
   bookings: Booking[];
   services: Service[];
   open: { start: string; end: string } | null;
@@ -192,6 +212,21 @@ function DayGrid({
             ))}
             {/* Shade time the person is not working. */}
             <OffHours schedule={m.schedule[weekday]} first={first} last={last} top={top} />
+            {closures
+              .filter((c) => !c.staffId || c.staffId === m.id)
+              .map((c) => {
+                const s = isWholeDay(c) ? first : Math.max(first, parseClock(c.start!));
+                const e = isWholeDay(c) ? last : Math.min(last, parseClock(c.end!));
+                return (
+                  <span
+                    key={c.id}
+                    className="label absolute inset-x-0 flex items-start border-y border-accent/50 bg-[repeating-linear-gradient(45deg,transparent_0_5px,color-mix(in_oklab,var(--salon-accent)_22%,transparent)_5px_6px)] px-2 pt-1 text-accent"
+                    style={{ top: top(s), height: Math.max(top(e) - top(s), 18) }}
+                  >
+                    {c.reason}
+                  </span>
+                );
+              })}
             {bookings
               .filter((b) => b.staffId === m.id)
               .map((b) => {

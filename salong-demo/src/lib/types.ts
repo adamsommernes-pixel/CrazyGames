@@ -41,6 +41,23 @@ export interface Service {
   /** Listed among popular services on the home page. */
   popular?: boolean;
   active: boolean;
+  /** Deleted in the admin. Kept so old bookings still show the service name. */
+  archived?: boolean;
+}
+
+/**
+ * A temporary closure set in the admin: a whole day or part of a day, for the
+ * whole salon or for one staff member (sick day, course, holiday).
+ */
+export interface Closure {
+  id: string;
+  date: LocalDate;
+  /** Leave out start and end to close the whole day. */
+  start?: ClockTime;
+  end?: ClockTime;
+  /** Leave out to close the whole salon. */
+  staffId?: string;
+  reason: string;
 }
 
 export interface StaffMember {
@@ -91,7 +108,7 @@ export interface BookingRules {
   horizonDays: number;
   /** Close automatically on Norwegian public holidays (helligdager). */
   closeOnPublicHolidays: boolean;
-  /** Extra closed dates, e.g. Christmas Eve. */
+  /** Extra closed dates, e.g. Christmas Eve. Seeds the editable closures in the admin. */
   closedDates: { date: LocalDate; reason: string }[];
   /** Free cancellation until this many hours before the appointment. */
   cancellationHours: number;
