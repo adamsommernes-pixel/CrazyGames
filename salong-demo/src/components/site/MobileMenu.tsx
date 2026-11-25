@@ -28,7 +28,7 @@ export function MobileMenu() {
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className="label -mr-2 inline-flex min-h-11 items-center gap-2 px-2 md:hidden"
+        className="label inline-flex min-h-11 items-center gap-2 pl-2 md:hidden"
       >
         <span aria-hidden="true" className="flex w-5 flex-col gap-[5px]">
           <span className="h-px bg-current" />

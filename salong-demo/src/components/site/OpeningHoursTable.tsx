@@ -25,7 +25,7 @@ export function OpeningHoursTable({ className, inverse }: { className?: string; 
               key={day}
               className={cx("border-b", inverse ? "border-paper/20" : "border-line", isToday && "font-medium")}
             >
-              <th scope="row" className="py-2.5 pr-4 text-left font-[inherit] capitalize">
+              <th scope="row" className="py-2.5 pr-4 text-left font-[inherit] capitalize [font-weight:inherit]">
                 {weekdayName(day)}
                 {isToday && (
                   <span className={cx("label ml-3 align-middle", inverse ? "text-stone" : "text-accent")}>

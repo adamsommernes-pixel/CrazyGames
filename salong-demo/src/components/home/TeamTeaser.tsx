@@ -22,7 +22,7 @@ export function TeamTeaser() {
         </div>
       </div>
       <ul
-        className="page-x mx-auto mt-14 flex max-w-page snap-x snap-mandatory gap-5 overflow-x-auto pb-4 md:grid md:grid-cols-5 md:gap-6 md:overflow-visible md:pb-0"
+        className="page-x scroll-px-[clamp(1.125rem,0.6rem+2.4vw,3rem)] mx-auto mt-14 flex max-w-page snap-x snap-mandatory gap-5 overflow-x-auto pb-4 md:grid md:grid-cols-5 md:gap-6 md:overflow-visible md:pb-0"
         aria-label="Teamet"
       >
         {salon.staff.map((m, i) => (

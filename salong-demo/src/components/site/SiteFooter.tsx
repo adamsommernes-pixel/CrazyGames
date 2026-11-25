@@ -15,7 +15,7 @@ export function SiteFooter() {
           <p className="mt-4 max-w-sm text-stone">{salon.tagline}.</p>
         </div>
 
-        <div className="col-span-6 md:col-span-4 lg:col-span-2">
+        <div className="col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-2">
           <h2 className="label text-stone">{t.common.address}</h2>
           <address className="mt-4 not-italic leading-relaxed">
             {address.street}
@@ -29,9 +29,9 @@ export function SiteFooter() {
           </p>
         </div>
 
-        <div className="col-span-6 md:col-span-4 lg:col-span-3">
+        <div className="col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3">
           <h2 className="label text-stone">{t.common.openingHours}</h2>
-          <HoursSummary className="tabular mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1" />
+          <HoursSummary className="tabular mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 whitespace-nowrap" />
         </div>
 
         <nav aria-label="Bunnmeny" className="col-span-12 md:col-span-4 lg:col-span-2">

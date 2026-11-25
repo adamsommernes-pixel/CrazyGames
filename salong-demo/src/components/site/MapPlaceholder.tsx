@@ -25,7 +25,7 @@ export function MapPlaceholder({ className }: { className?: string }) {
         </g>
         <rect x="190" y="60" width="90" height="70" fill="var(--salon-stone)" />
         <rect x="20" y="180" width="110" height="40" fill="var(--salon-stone)" />
-        <text x="196" y="122" className="label" fill="var(--salon-muted)" fontSize="10" letterSpacing="1.4">
+        <text x="196" y="122" className="label" fill="var(--salon-muted)" fontSize="8" letterSpacing="1.2">
           PARK
         </text>
       </svg>

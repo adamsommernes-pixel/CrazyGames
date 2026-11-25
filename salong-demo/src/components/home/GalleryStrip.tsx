@@ -21,9 +21,9 @@ export function GalleryStrip() {
         role="region"
         aria-label={t.home.galleryHeading}
         tabIndex={0}
-        className="mt-12 overflow-x-auto pb-4 [scrollbar-width:thin]"
+        className="mt-12 snap-x scroll-px-[clamp(1.125rem,0.6rem+2.4vw,3rem)] overflow-x-auto pb-4 [scrollbar-width:thin]"
       >
-        <ul className="page-x flex w-max snap-x gap-4 md:gap-6">
+        <ul className="page-x flex w-max gap-4 md:gap-6">
           {items.map((item, i) => (
             <li key={item.id} className="snap-start">
               <figure>

@@ -26,7 +26,7 @@ export default function TeamPage() {
           return (
             <li key={member.id} id={member.id} className="page-x scroll-mt-4 border-b border-line py-14 md:py-20">
               <article className="page-grid mx-auto max-w-page gap-y-8" aria-labelledby={`${member.id}-name`}>
-                <div className={cx("col-span-8 sm:col-span-6 md:col-span-4", flip && "md:col-start-9 md:row-start-1")}>
+                <div className={cx("col-span-8 sm:col-span-6", flip ? "md:col-span-3 md:col-start-10 md:row-start-1 md:mt-24" : "md:col-span-4")}>
                   <ImageSlot
                     image={member.image ?? { alt: member.name, label: member.name }}
                     aspect="4/5"
@@ -41,7 +41,7 @@ export default function TeamPage() {
                   <p className="mt-6 max-w-measure text-lead">{member.bio}</p>
                   <dl className="mt-10 grid max-w-xl gap-6 border-t border-line pt-6 sm:grid-cols-[8rem_1fr]">
                     <dt className="label pt-1 text-muted">{t.team.does}</dt>
-                    <dd>{services.map((s) => s.name).join(", ")}</dd>
+                    <dd>{services.map((s) => s.name).join(" · ")}</dd>
                     <dt className="label pt-1 text-muted">{t.team.works}</dt>
                     <dd className="capitalize">{days.map(weekdayShort).join(", ")}</dd>
                   </dl>

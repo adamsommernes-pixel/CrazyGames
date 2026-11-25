@@ -77,6 +77,7 @@ export function pageMetadata(config: SalonConfig, page: { title?: string; descri
       siteName: config.name,
       locale: "nb_NO",
       type: "website",
+      images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: `${config.name}: ${config.tagline}` }],
     },
   };
 }

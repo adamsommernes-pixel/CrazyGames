@@ -16,7 +16,7 @@ export function Testimonials() {
           </h2>
         </div>
         <figure className="reveal col-span-12 lg:col-span-7">
-          <blockquote className="font-display text-d3 italic leading-[1.15] -indent-[0.42em]">
+          <blockquote className="font-display text-d3 italic leading-[1.15] lg:-indent-[0.42em]">
             «{lead.quote}»
           </blockquote>
           <figcaption className="mt-8 flex items-center gap-4">

@@ -18,9 +18,9 @@ export function SiteHeader({ showBook = true }: { showBook?: boolean }) {
         </nav>
         <div className="flex items-center gap-4">
           {showBook && (
-            <ButtonLink href="/bestill" className="hidden md:inline-flex">
-              {t.nav.book}
-            </ButtonLink>
+            <span className="hidden md:block">
+              <ButtonLink href="/bestill">{t.nav.book}</ButtonLink>
+            </span>
           )}
           <MobileMenu />
         </div>
