@@ -68,6 +68,8 @@ export interface StaffMember {
   serviceIds: string[];
   schedule: WeeklySchedule;
   image?: ImageRef;
+  /** Removed in the admin. Kept so past bookings still show the name. */
+  archived?: boolean;
 }
 
 export interface ImageRef {
@@ -170,7 +172,17 @@ export interface SalonConfig {
   gallery: GalleryItem[];
   testimonials: Testimonial[];
   faq: FaqItem[];
+  /** Team copy, kept here because it describes this salon's people. */
+  team: { heading: string; lead: string; pageLead: string };
+  /**
+   * SHA-256 of "salong-admin:" + the initial admin password (demo only; the
+   * check runs in the browser). Replace with real authentication in production.
+   */
+  adminPasswordHash: string;
 }
+
+/** The salon details the owner can edit in the admin. */
+export type SalonProfile = Pick<SalonConfig, "name" | "tagline" | "logo" | "hero" | "contact">;
 
 export type BookingStatus = "confirmed" | "cancelled";
 

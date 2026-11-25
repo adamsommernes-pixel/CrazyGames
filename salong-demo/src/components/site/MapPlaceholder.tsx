@@ -1,13 +1,14 @@
 import { salon } from "@config";
 import { t } from "@/i18n";
 import { cx } from "@/components/ui/cx";
+import { ProfileText } from "./Live";
 
 /**
  * A drawn, map-like placeholder. A real map (with its cookies and scripts)
  * is deliberately left out of the demo; the link opens OpenStreetMap.
  */
 export function MapPlaceholder({ className }: { className?: string }) {
-  const { address, geo } = salon.contact;
+  const { geo } = salon.contact;
   const href = `https://www.openstreetmap.org/?mlat=${geo.lat}&mlon=${geo.lng}#map=17/${geo.lat}/${geo.lng}`;
   return (
     <figure className={cx("relative overflow-hidden border border-line bg-tint", className)}>
@@ -36,7 +37,7 @@ export function MapPlaceholder({ className }: { className?: string }) {
       <figcaption className="absolute bottom-0 left-0 right-0 flex flex-wrap items-end justify-between gap-2 bg-paper/90 px-4 py-3 text-small">
         <span>
           <span className="label mr-2 text-muted">{t.common.mapPlaceholder}</span>
-          {address.street}, {address.postalCode} {address.city}
+          <ProfileText field="addressLine" />
         </span>
         <a href={href} className="link font-medium" rel="noopener" target="_blank">
           {t.common.openMap}<span className="sr-only"> {t.common.newTab}</span>

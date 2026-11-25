@@ -1,31 +1,30 @@
 import Link from "next/link";
 import { salon } from "@config";
 import { t } from "@/i18n";
-import { telHref } from "@/lib/format";
 import { mainNav } from "@/lib/nav";
 import { HoursSummary } from "./HoursSummary";
+import { EmailLink, PhoneLink, ProfileText } from "./Live";
 
 export function SiteFooter() {
-  const { address, phone, email } = salon.contact;
   return (
     <footer className="page-x bg-ink pb-28 pt-16 text-paper md:pb-12 md:pt-20">
       <div className="page-grid mx-auto max-w-page gap-y-12">
         <div className="col-span-12 lg:col-span-5">
-          <p className="font-display text-d2 italic">{salon.name}</p>
-          <p className="mt-4 max-w-sm text-stone">{salon.tagline}.</p>
+          <p className="font-display text-d2 italic"><ProfileText field="name" /></p>
+          <p className="mt-4 max-w-sm text-stone"><ProfileText field="tagline" />.</p>
         </div>
 
         <div className="col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-2">
           <h2 className="label text-stone">{t.common.address}</h2>
           <address className="mt-4 not-italic leading-relaxed">
-            {address.street}
+            <ProfileText field="street" />
             <br />
-            {address.postalCode} {address.city}
+            <ProfileText field="postalCity" />
           </address>
           <p className="mt-4 leading-relaxed">
-            <a href={telHref(phone)} className="link">{phone}</a>
+            <PhoneLink className="link" />
             <br />
-            <a href={`mailto:${email}`} className="link break-all">{email}</a>
+            <EmailLink className="link break-all" />
           </p>
         </div>
 
@@ -52,9 +51,12 @@ export function SiteFooter() {
 
         <div className="col-span-12 flex flex-wrap items-center justify-between gap-4 border-t border-paper/20 pt-6 text-small text-stone">
           <p>
-            © {salon.founded}–{new Date().getFullYear()} {salon.name}. {t.footer.demo}
+            © {salon.founded}–{new Date().getFullYear()} <ProfileText field="name" />. {t.footer.demo}
           </p>
-          <Link href="/admin" className="link">{t.footer.admin}</Link>
+          <span className="flex gap-5">
+            <Link href="/staff" className="link">{t.footer.staff}</Link>
+            <Link href="/admin" className="link">{t.footer.admin}</Link>
+          </span>
         </div>
       </div>
     </footer>

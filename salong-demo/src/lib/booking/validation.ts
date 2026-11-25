@@ -23,8 +23,10 @@ export function normalizeNorwegianPhone(raw: string): string | null {
   const compact = raw.replace(/[\s().-]/g, "");
   const local = compact.replace(/^(\+47|0047)/, "");
   if (!/^[2-9]\d{7}$/.test(local)) return null;
-  // Format as "+47 412 34 567"
-  return `+47 ${local.slice(0, 3)} ${local.slice(3, 5)} ${local.slice(5)}`;
+  // Mobile numbers are written "412 34 567", landlines "22 35 18 40".
+  return /^[49]/.test(local)
+    ? `+47 ${local.slice(0, 3)} ${local.slice(3, 5)} ${local.slice(5)}`
+    : `+47 ${local.slice(0, 2)} ${local.slice(2, 4)} ${local.slice(4, 6)} ${local.slice(6)}`;
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@.]{2,}$/;

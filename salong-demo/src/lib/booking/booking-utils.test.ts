@@ -9,7 +9,8 @@ describe("normalizeNorwegianPhone", () => {
     ["412 34 567", "+47 412 34 567"],
     ["+47 412 34 567", "+47 412 34 567"],
     ["0047 91234567", "+47 912 34 567"],
-    ["22-35-18-40", "+47 223 51 840"],
+    ["22-35-18-40", "+47 22 35 18 40"],
+    ["55123456", "+47 55 12 34 56"],
   ])("accepts %s", (input, expected) => {
     expect(normalizeNorwegianPhone(input)).toBe(expected);
   });

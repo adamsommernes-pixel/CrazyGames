@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { salon } from "@config";
 import { t } from "@/i18n";
 import { qualifiedStaff, type Slot } from "@/lib/booking/slots";
 import { getRepository } from "@/lib/repository/client";
@@ -28,7 +27,7 @@ const emptyCustomer: Customer = { name: "", phone: "", email: "", note: "" };
 
 export function BookingFlow({ initialServiceIds, initialStaffId }: Props) {
   const router = useRouter();
-  const { services, staff } = useLiveCatalog();
+  const { services, staff, rules } = useLiveCatalog();
   const top = useRef<HTMLDivElement>(null);
 
   // A link can combine a service and a person who doesn't do it; then the person is dropped.
@@ -175,7 +174,7 @@ export function BookingFlow({ initialServiceIds, initialStaffId }: Props) {
               <>
                 <DetailsStep initial={customer} onChange={setCustomer} onSubmit={submit} />
                 <p className="mt-8 max-w-xl text-small text-muted">
-                  {t.booking.payInSalon} {t.booking.cancellationPolicy(salon.booking.cancellationHours)}
+                  {t.booking.payInSalon} {t.booking.cancellationPolicy(rules.cancellationHours)}
                 </p>
                 {submitError && (
                   <p role="alert" className="mt-6 border-l-2 border-accent bg-tint px-4 py-3">

@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { salon } from "@config";
 import { t } from "@/i18n";
 import type { DayStatus } from "@/lib/booking/slots";
 import { formatLocalDateLong, formatMonthYear, weekdayShort } from "@/lib/format";
 import { WEEKDAYS } from "@/lib/hours";
-import { useToday } from "@/lib/repository/live";
+import { useLiveCatalog, useToday } from "@/lib/repository/live";
 import { useRepoQuery } from "@/lib/repository/query";
 import { addDays, addMonths, daysInMonth, startOfMonth, weekdayOf } from "@/lib/time/zoned";
 import type { LocalDate } from "@/lib/types";
@@ -37,6 +36,7 @@ function dayLabel(date: LocalDate, status: DayStatus | undefined): string {
 
 export function DateStep({ serviceIds, staffId, selected, onSelect }: Props) {
   const today = useToday();
+  const { rules } = useLiveCatalog();
   const [month, setMonth] = useState<LocalDate | null>(selected ? startOfMonth(selected) : null);
   const visibleMonth = month ?? (today ? startOfMonth(today) : null);
 
@@ -49,13 +49,13 @@ export function DateStep({ serviceIds, staffId, selected, onSelect }: Props) {
 
   const firstFree = useRepoQuery(`first:${serviceIds.join()}:${staffId}:${today}`, async (repo) => {
     if (!today) return null;
-    const horizon = Array.from({ length: salon.booking.horizonDays + 1 }, (_, i) => addDays(today, i));
+    const horizon = Array.from({ length: rules.horizonDays + 1 }, (_, i) => addDays(today, i));
     const all = await repo.getDayStatuses({ serviceIds, staffId }, horizon);
     return horizon.find((d) => all[d]?.kind === "open") ?? null;
   });
 
   const firstMonth = today ? startOfMonth(today) : null;
-  const lastMonth = today ? startOfMonth(addDays(today, salon.booking.horizonDays)) : null;
+  const lastMonth = today ? startOfMonth(addDays(today, rules.horizonDays)) : null;
   const leading = visibleMonth ? weekdayOf(visibleMonth) - 1 : 0;
 
   return (
@@ -155,7 +155,7 @@ export function DateStep({ serviceIds, staffId, selected, onSelect }: Props) {
           <span aria-hidden="true" className="tabular line-through">12</span> {t.booking.full}
         </span>
         <span>
-          {t.booking.cancellationPolicy(salon.booking.cancellationHours)}
+          {t.booking.cancellationPolicy(rules.cancellationHours)}
         </span>
       </p>
     </div>

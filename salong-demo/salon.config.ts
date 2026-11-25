@@ -253,6 +253,15 @@ export const salon: SalonConfig = {
     },
   ],
 
+  team: {
+    heading: "Folkene bak stolene",
+    lead: "Alle hos oss har fagbrev, og de fleste har vært her i mange år.",
+    pageLead: "Fire frisører og en bryn- og vippeterapeut. Velg en du kjenner, eller la oss finne den som er ledig.",
+  },
+
+  // Demo password "lyng2026". See README → Admin.
+  adminPasswordHash: "0c9f57fd5adf627ac05bbcfd150a3232f9749cc5bb5f74e05e804f5375f79909",
+
   faq: [
     {
       question: "Hvor sent kan jeg avbestille?",

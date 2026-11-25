@@ -1,8 +1,7 @@
-import { salon } from "@config";
 import { t } from "@/i18n";
-import { telHref } from "@/lib/format";
 import { ButtonLink } from "@/components/ui/Button";
 import { Section } from "@/components/ui/Section";
+import { PhoneLink } from "@/components/site/Live";
 
 export function BookingCta() {
   return (
@@ -16,9 +15,7 @@ export function BookingCta() {
           </ButtonLink>
           <p className="mt-5 text-small">
             {t.common.orCall}{" "}
-            <a href={telHref(salon.contact.phone)} className="link">
-              {salon.contact.phone}
-            </a>
+            <PhoneLink className="link" />
           </p>
         </div>
       </div>

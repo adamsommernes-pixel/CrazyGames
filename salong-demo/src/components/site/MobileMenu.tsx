@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { salon } from "@config";
 import { t } from "@/i18n";
 import { telHref } from "@/lib/format";
 import { mainNav } from "@/lib/nav";
+import { useProfile } from "@/lib/repository/live";
 import { buttonClass } from "@/components/ui/Button";
 
 /** Full-screen menu for small screens, built on the native <dialog> for focus handling. */
@@ -14,6 +14,7 @@ export function MobileMenu() {
   const dialog = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const profile = useProfile();
 
   useEffect(() => {
     const el = dialog.current;
@@ -44,7 +45,7 @@ export function MobileMenu() {
       >
         <div className="page-x flex h-full flex-col pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5">
           <div className="flex items-center justify-between">
-            <span className="font-display text-d4">{salon.name}</span>
+            <span className="font-display text-d4">{profile.name}</span>
             <button type="button" onClick={() => setOpen(false)} className="label -mr-2 min-h-11 px-2" autoFocus>
               {t.nav.close}
             </button>
@@ -70,8 +71,8 @@ export function MobileMenu() {
             <Link href="/bestill" onClick={() => setOpen(false)} className={buttonClass("solid", "lg", "w-full")}>
               {t.nav.book}
             </Link>
-            <a href={telHref(salon.contact.phone)} className={buttonClass("outline", "lg", "w-full")}>
-              {t.common.phone}: {salon.contact.phone}
+            <a href={telHref(profile.contact.phone)} className={buttonClass("outline", "lg", "w-full")}>
+              {t.common.phone}: {profile.contact.phone}
             </a>
           </div>
         </div>

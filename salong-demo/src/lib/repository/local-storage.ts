@@ -3,7 +3,17 @@
  * Every call reads fresh state from storage, so two tabs (e.g. the admin and
  * the public booking page) always see each other's changes.
  */
-import type { Booking, Closure, OpeningHours, SalonConfig, Service, StaffMember } from "@/lib/types";
+import type {
+  Booking,
+  BookingRules,
+  Closure,
+  OpeningHours,
+  SalonConfig,
+  SalonProfile,
+  Service,
+  StaffMember,
+} from "@/lib/types";
+import { hashPassword } from "@/lib/password";
 import {
   assignStaff,
   dayStatus,
@@ -19,7 +29,7 @@ import { toZoned } from "@/lib/time/zoned";
 import { createSeedBookings } from "./seed";
 import {
   NotFoundError,
-  ServiceInUseError,
+  InUseError,
   SlotUnavailableError,
   type AvailabilityQuery,
   type CreateBookingInput,
@@ -40,6 +50,9 @@ interface DemoState {
   openingHours: OpeningHours;
   closures: Closure[];
   bookings: Booking[];
+  profile: SalonProfile;
+  rules: BookingRules;
+  adminPasswordHash: string;
 }
 
 export class ValidationError extends Error {
@@ -57,7 +70,7 @@ export class CancellationTooLateError extends Error {
 }
 
 /** Bump when the stored shape or the seed changes, to reseed existing browsers. */
-const DATA_VERSION = 3;
+const DATA_VERSION = 4;
 
 /** Cheap stable hash, so a changed config replaces stale demo data automatically. */
 function fingerprint(config: SalonConfig): string {
@@ -97,6 +110,15 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
       staff: clone(config.staff),
       openingHours: clone(config.openingHours),
       closures: config.booking.closedDates.map((d) => ({ id: `config-${d.date}`, date: d.date, reason: d.reason })),
+      profile: clone({
+        name: config.name,
+        tagline: config.tagline,
+        logo: config.logo,
+        hero: config.hero,
+        contact: config.contact,
+      }),
+      rules: clone(config.booking),
+      adminPasswordHash: config.adminPasswordHash,
     };
     return {
       version: 1,
@@ -129,9 +151,9 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
   function availabilityInput(state: DemoState, includeInactive = false): AvailabilityInput {
     return {
       timeZone: config.timeZone,
-      rules: config.booking,
+      rules: state.rules,
       openingHours: state.openingHours,
-      staff: state.staff,
+      staff: state.staff.filter((m) => !m.archived),
       services: includeInactive ? state.services : state.services.filter((s) => s.active),
       bookings: state.bookings,
       closures: state.closures,
@@ -149,7 +171,7 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
     }
   }
 
-  function serviceSlug(state: DemoState, name: string): string {
+  function slugFor(name: string, taken: (id: string) => boolean): string {
     const base =
       name
         .toLowerCase()
@@ -157,9 +179,9 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
         .replace(/ø/g, "o")
         .replace(/å/g, "a")
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "") || "tjeneste";
+        .replace(/^-|-$/g, "") || "id";
     let id = base;
-    for (let i = 2; state.services.some((s) => s.id === id); i++) id = `${base}-${i}`;
+    for (let i = 2; taken(id); i++) id = `${base}-${i}`;
     return id;
   }
 
@@ -183,8 +205,17 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
       return [...load().closures].sort((a, b) => (a.date + (a.start ?? "")).localeCompare(b.date + (b.start ?? "")));
     },
 
-    async listStaff() {
-      return load().staff;
+    async listStaff(opts) {
+      const { staff } = load();
+      return opts?.includeArchived ? staff : staff.filter((m) => !m.archived);
+    },
+
+    async getProfile() {
+      return load().profile;
+    },
+
+    async getRules() {
+      return load().rules;
     },
 
     async getOpeningHours() {
@@ -288,7 +319,7 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
 
     async createService({ staffIds, ...fields }) {
       const state = load();
-      const service: Service = { ...fields, id: serviceSlug(state, fields.name) };
+      const service: Service = { ...fields, id: slugFor(fields.name, (id) => state.services.some((s) => s.id === id)) };
       state.services.push(service);
       setServiceStaff(state, service.id, staffIds);
       save(state);
@@ -312,7 +343,7 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
       const upcoming = state.bookings.filter(
         (b) => b.status === "confirmed" && b.serviceIds.includes(id) && Date.parse(b.end) > now(),
       ).length;
-      if (upcoming > 0) throw new ServiceInUseError(upcoming);
+      if (upcoming > 0) throw new InUseError(upcoming);
       // Archive rather than remove, so past bookings keep the service name.
       service.archived = true;
       service.active = false;
@@ -349,6 +380,63 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
       state.openingHours = clone(hours);
       save(state);
       return state.openingHours;
+    },
+
+    async createStaff(input) {
+      const state = load();
+      const member: StaffMember = { ...clone(input), id: slugFor(input.name, (id) => state.staff.some((m) => m.id === id)) };
+      state.staff.push(member);
+      save(state);
+      return member;
+    },
+
+    async updateStaff(id, patch) {
+      const state = load();
+      const member = state.staff.find((m) => m.id === id && !m.archived);
+      if (!member) throw new NotFoundError("Staff member");
+      Object.assign(member, clone(patch));
+      save(state);
+      return member;
+    },
+
+    async deleteStaff(id) {
+      const state = load();
+      const member = state.staff.find((m) => m.id === id && !m.archived);
+      if (!member) throw new NotFoundError("Staff member");
+      const upcoming = state.bookings.filter(
+        (b) => b.status === "confirmed" && b.staffId === id && Date.parse(b.end) > now(),
+      ).length;
+      if (upcoming > 0) throw new InUseError(upcoming);
+      member.archived = true;
+      member.serviceIds = [];
+      state.closures = state.closures.filter((c) => c.staffId !== id);
+      save(state);
+    },
+
+    async updateProfile(profile) {
+      const state = load();
+      state.profile = clone(profile);
+      save(state);
+      return state.profile;
+    },
+
+    async updateRules(patch) {
+      const state = load();
+      state.rules = { ...state.rules, ...patch };
+      save(state);
+      return state.rules;
+    },
+
+    async verifyAdminPassword(password) {
+      return (await hashPassword(password)) === load().adminPasswordHash;
+    },
+
+    async changeAdminPassword(current, next) {
+      const state = load();
+      if ((await hashPassword(current)) !== state.adminPasswordHash) return false;
+      state.adminPasswordHash = await hashPassword(next);
+      save(state);
+      return true;
     },
 
     async resetDemoData() {

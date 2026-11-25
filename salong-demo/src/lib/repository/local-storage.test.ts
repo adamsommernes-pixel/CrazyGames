@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { salon } from "@config";
 import { addDays, todayLocal, weekdayOf, zonedToUtc } from "@/lib/time/zoned";
 import { createLocalRepository, ValidationError, type KeyValueStore } from "./local-storage";
-import { ServiceInUseError, SlotUnavailableError } from "./types";
+import { InUseError, SlotUnavailableError } from "./types";
 
 const TZ = salon.timeZone;
 
@@ -139,7 +139,7 @@ describe("local repository", () => {
 
     const [slot] = await repo.getAvailability({ date: DATE, serviceIds: ["pannelugg"], staffId: "marius" });
     const booking = await repo.createBooking({ serviceIds: ["pannelugg"], staffId: "marius", start: slot!.start, customer });
-    await expect(repo.deleteService("pannelugg")).rejects.toBeInstanceOf(ServiceInUseError);
+    await expect(repo.deleteService("pannelugg")).rejects.toBeInstanceOf(InUseError);
     await repo.cancelBooking(booking.reference);
     await repo.deleteService("pannelugg");
     expect((await repo.listServices({ includeInactive: true })).map((s) => s.id)).not.toContain("pannelugg");
@@ -154,5 +154,57 @@ describe("local repository", () => {
     expect(await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: "marius" })).toEqual([]);
     await repo.removeClosure(closure.id);
     expect((await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: "marius" })).length).toBeGreaterThan(0);
+  });
+
+  it("adds, edits and removes staff; availability follows", async () => {
+    const repo = make();
+    const nine = [{ start: "09:00", end: "17:00" }] as const;
+    const member = await repo.createStaff({
+      name: "Live Ås",
+      role: "Frisør",
+      bio: "Ny hos oss.",
+      serviceIds: ["herreklipp"],
+      schedule: { 1: [...nine], 2: [...nine], 3: [...nine], 4: [...nine], 5: [...nine], 6: [], 7: [] },
+    });
+    expect(member.id).toBe("live-as");
+    const slots = await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: "live-as" });
+    expect(slots[0]?.label).toBe("09:00");
+
+    await repo.updateStaff("live-as", { role: "Seniorfrisør", serviceIds: [] });
+    expect((await repo.listStaff()).find((m) => m.id === "live-as")!.role).toBe("Seniorfrisør");
+    expect(await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: "live-as" })).toEqual([]);
+
+    await repo.updateStaff("live-as", { serviceIds: ["herreklipp"] });
+    const booking = await repo.createBooking({ serviceIds: ["herreklipp"], staffId: "live-as", start: slots[0]!.start, customer });
+    await expect(repo.deleteStaff("live-as")).rejects.toBeInstanceOf(InUseError);
+    await repo.cancelBooking(booking.reference);
+    await repo.deleteStaff("live-as");
+    expect((await repo.listStaff()).map((m) => m.id)).not.toContain("live-as");
+    expect((await repo.listStaff({ includeArchived: true })).map((m) => m.id)).toContain("live-as");
+    expect(await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: null })).not.toEqual([]);
+  });
+
+  it("edits the salon profile and booking rules", async () => {
+    const repo = make();
+    const profile = await repo.getProfile();
+    await repo.updateProfile({ ...profile, name: "Salong Røsslyng" });
+    expect((await repo.getProfile()).name).toBe("Salong Røsslyng");
+
+    const before = await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: "marius" });
+    await repo.updateRules({ slotStepMin: 30 });
+    const after = await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: "marius" });
+    expect(after.length).toBeLessThan(before.length);
+    expect(after.every((s) => s.label.endsWith(":00") || s.label.endsWith(":30"))).toBe(true);
+  });
+
+  it("checks and changes the admin password", async () => {
+    const repo = make();
+    expect(await repo.verifyAdminPassword("lyng2026")).toBe(true);
+    expect(await repo.verifyAdminPassword("feil")).toBe(false);
+    expect(await repo.changeAdminPassword("feil", "nytt-passord")).toBe(false);
+    expect(await repo.changeAdminPassword("lyng2026", "nytt-passord")).toBe(true);
+    expect(await repo.verifyAdminPassword("nytt-passord")).toBe(true);
+    await repo.resetDemoData();
+    expect(await repo.verifyAdminPassword("lyng2026")).toBe(true);
   });
 });

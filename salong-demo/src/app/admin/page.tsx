@@ -1,4 +1,4 @@
-import { AdminApp } from "@/components/admin/AdminApp";
+import { AdminApp } from "@/components/panel/AdminApp";
 
 export default function AdminPage() {
   return <AdminApp />;

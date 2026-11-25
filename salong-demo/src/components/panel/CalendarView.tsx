@@ -50,20 +50,20 @@ export function CalendarView({ initialDate = null }: { initialDate?: string | nu
         <div>
           <h2 className="text-d3">{formatLocalDateLong(date)}</h2>
           <p className="mt-1 text-small text-muted">
-            {open ? `${open.start}–${open.end}` : t.common.closed} · {t.admin.bookingsCount(confirmed.length)}
+            {open ? `${open.start}–${open.end}` : t.common.closed} · {t.panel.bookingsCount(confirmed.length)}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => setPicked(addDays(date, -1))} className={navBtn} aria-label={t.admin.prevDay}>
+          <button type="button" onClick={() => setPicked(addDays(date, -1))} className={navBtn} aria-label={t.panel.prevDay}>
             ←
           </button>
           <button type="button" onClick={() => setPicked(null)} className={cx(navBtn, "px-4")} disabled={date === today}>
-            {t.admin.today}
+            {t.panel.today}
           </button>
-          <button type="button" onClick={() => setPicked(addDays(date, 1))} className={navBtn} aria-label={t.admin.nextDay}>
+          <button type="button" onClick={() => setPicked(addDays(date, 1))} className={navBtn} aria-label={t.panel.nextDay}>
             →
           </button>
-          <label className="sr-only" htmlFor="admin-date">{t.admin.date}</label>
+          <label className="sr-only" htmlFor="admin-date">{t.panel.date}</label>
           <input
             id="admin-date"
             type="date"
@@ -72,7 +72,7 @@ export function CalendarView({ initialDate = null }: { initialDate?: string | nu
             className="min-h-11 rounded-ctl border border-line-strong bg-paper px-3"
           />
           <Button type="button" onClick={() => setDialog({ mode: "create", date })}>
-            + {t.admin.newBooking}
+            + {t.panel.newBooking}
           </Button>
         </div>
       </div>
@@ -81,18 +81,18 @@ export function CalendarView({ initialDate = null }: { initialDate?: string | nu
         <ul className="mt-6 grid gap-2">
           {closures.map((c) => (
             <li key={c.id} className="border-l-2 border-accent bg-tint px-4 py-2 text-small">
-              <span className="font-medium">{t.admin.closures.closedBanner(c.reason)}</span>
+              <span className="font-medium">{t.panel.closures.closedBanner(c.reason)}</span>
               {" · "}
-              {isWholeDay(c) ? t.admin.closures.allDay : `${c.start}–${c.end}`}
+              {isWholeDay(c) ? t.panel.closures.allDay : `${c.start}–${c.end}`}
               {" · "}
-              {c.staffId ? staff.find((m) => m.id === c.staffId)?.name : t.admin.closures.wholeSalon}
+              {c.staffId ? staff.find((m) => m.id === c.staffId)?.name : t.panel.closures.wholeSalon}
             </li>
           ))}
         </ul>
       )}
 
       {columns.length === 0 || (salonClosed && confirmed.length === 0) ? (
-        <p className="mt-10 border-l-2 border-line-strong px-4 py-3 text-muted">{t.admin.noBookings}</p>
+        <p className="mt-10 border-l-2 border-line-strong px-4 py-3 text-muted">{t.panel.noBookings}</p>
       ) : (
         <>
           <AgendaList className="mt-8 md:hidden" bookings={confirmed} staff={staff} services={services} onOpen={(b) => setDialog({ mode: "edit", booking: b })} />
@@ -133,7 +133,7 @@ function AgendaList({
   onOpen: (b: Booking) => void;
   className?: string;
 }) {
-  if (bookings.length === 0) return <p className={cx("text-muted", className)}>{t.admin.noBookings}</p>;
+  if (bookings.length === 0) return <p className={cx("text-muted", className)}>{t.panel.noBookings}</p>;
   return (
     <ul className={cx("border-t border-line", className)}>
       {bookings.map((b) => (
@@ -192,7 +192,7 @@ function DayGrid({
           <div key={m.id} className="border-b border-ink px-3 pb-3">
             <p className="font-medium">{m.name}</p>
             <p className="text-small text-muted">
-              {m.schedule[weekday].map((r) => `${r.start}–${r.end}`).join(", ") || t.admin.dayOff}
+              {m.schedule[weekday].map((r) => `${r.start}–${r.end}`).join(", ") || t.panel.dayOff}
             </p>
           </div>
         ))}

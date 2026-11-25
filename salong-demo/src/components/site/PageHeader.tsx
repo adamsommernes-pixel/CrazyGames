@@ -3,7 +3,7 @@ import { SectionHead } from "@/components/ui/SectionHead";
 interface Props {
   label: string;
   title: string;
-  lead: string;
+  lead: React.ReactNode;
   children?: React.ReactNode;
 }
 

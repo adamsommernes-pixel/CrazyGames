@@ -9,7 +9,7 @@
  */
 import { useSyncExternalStore } from "react";
 import { salon } from "@config";
-import type { Closure, OpeningHours, Service, StaffMember } from "@/lib/types";
+import type { BookingRules, Closure, OpeningHours, SalonProfile, Service, StaffMember } from "@/lib/types";
 import { todayLocal } from "@/lib/time/zoned";
 
 export interface Catalog {
@@ -17,6 +17,8 @@ export interface Catalog {
   staff: StaffMember[];
   openingHours: OpeningHours;
   closures: Closure[];
+  profile: SalonProfile;
+  rules: BookingRules;
 }
 
 const initialCatalog: Catalog = {
@@ -24,6 +26,8 @@ const initialCatalog: Catalog = {
   staff: salon.staff,
   openingHours: salon.openingHours,
   closures: salon.booking.closedDates.map((d) => ({ id: `config-${d.date}`, date: d.date, reason: d.reason })),
+  profile: { name: salon.name, tagline: salon.tagline, logo: salon.logo, hero: salon.hero, contact: salon.contact },
+  rules: salon.booking,
 };
 
 let catalog: Catalog | null = null;
@@ -34,13 +38,15 @@ async function refreshCatalog() {
   // Loaded on demand so content pages ship without the repository code.
   const { getRepository } = await import("./client");
   const repo = getRepository();
-  const [services, staff, openingHours, closures] = await Promise.all([
+  const [services, staff, openingHours, closures, profile, rules] = await Promise.all([
     repo.listServices(),
     repo.listStaff(),
     repo.getOpeningHours(),
     repo.listClosures(),
+    repo.getProfile(),
+    repo.getRules(),
   ]);
-  catalog = { services, staff, openingHours, closures };
+  catalog = { services, staff, openingHours, closures, profile, rules };
   for (const l of catalogListeners) l();
 }
 
@@ -66,6 +72,11 @@ function subscribeCatalog(listener: () => void) {
       unsubscribeRepo = null;
     }
   };
+}
+
+/** The salon's name, contact details and front-page texts, including admin edits. */
+export function useProfile(): SalonProfile {
+  return useLiveCatalog().profile;
 }
 
 export function useLiveCatalog(): Catalog {

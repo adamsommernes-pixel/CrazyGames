@@ -45,13 +45,13 @@ export function ClosuresEditor({ onOpenDate }: { onOpenDate: (date: string) => v
   return (
     <div className="grid gap-12 lg:grid-cols-[minmax(0,26rem)_1fr] lg:gap-16">
       <div>
-        <p className="max-w-measure text-muted">{t.admin.closures.lead}</p>
+        <p className="max-w-measure text-muted">{t.panel.closures.lead}</p>
         <ClosureForm today={today} staff={data.staff} bookings={data.bookings} onOpenDate={onOpenDate} />
       </div>
       <section aria-labelledby="closures-upcoming">
-        <h2 id="closures-upcoming" className="text-d4">{t.admin.closures.upcoming}</h2>
+        <h2 id="closures-upcoming" className="text-d4">{t.panel.closures.upcoming}</h2>
         {upcoming.length === 0 ? (
-          <p className="mt-4 text-muted">{t.admin.closures.none}</p>
+          <p className="mt-4 text-muted">{t.panel.closures.none}</p>
         ) : (
           <ul className="mt-4 border-t border-line">
             {upcoming.map((c) => (
@@ -76,19 +76,19 @@ function ClosureRow({
   onOpenDate: (date: string) => void;
 }) {
   const notify = useNotice();
-  const who = closure.staffId ? (staff.find((m) => m.id === closure.staffId)?.name ?? closure.staffId) : t.admin.closures.wholeSalon;
+  const who = closure.staffId ? (staff.find((m) => m.id === closure.staffId)?.name ?? closure.staffId) : t.panel.closures.wholeSalon;
   return (
     <li className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 border-b border-line py-4">
       <div>
         <p className="font-medium">{formatLocalDateLong(closure.date)}</p>
         <p className="text-small text-muted">
-          {isWholeDay(closure) ? t.admin.closures.allDay : `${closure.start}–${closure.end}`} · {who} · {closure.reason}
+          {isWholeDay(closure) ? t.panel.closures.allDay : `${closure.start}–${closure.end}`} · {who} · {closure.reason}
         </p>
         {affected > 0 && (
           <p className="mt-1 text-small text-accent">
-            {t.admin.closures.affected(affected)}{" "}
+            {t.panel.closures.affected(affected)}{" "}
             <button type="button" className="link font-medium" onClick={() => onOpenDate(closure.date)}>
-              {t.admin.closures.openCalendar}
+              {t.panel.closures.openCalendar}
             </button>
           </p>
         )}
@@ -98,11 +98,11 @@ function ClosureRow({
         className="link min-h-11 text-small"
         onClick={async () => {
           await getRepository().removeClosure(closure.id);
-          notify(t.admin.closures.removed);
+          notify(t.panel.closures.removed);
         }}
-        aria-label={`${t.admin.closures.remove}: ${formatLocalDateLong(closure.date)}, ${closure.reason}`}
+        aria-label={`${t.panel.closures.remove}: ${formatLocalDateLong(closure.date)}, ${closure.reason}`}
       >
-        {t.admin.closures.remove}
+        {t.panel.closures.remove}
       </button>
     </li>
   );
@@ -129,9 +129,9 @@ function ClosureForm({
   const [result, setResult] = useState<{ date: string; affected: Booking[] } | null>(null);
 
   const errors = {
-    date: date ? undefined : t.admin.closures.dateRequired,
-    reason: reason.trim() ? undefined : t.admin.closures.reasonRequired,
-    range: wholeDay || isValidRange(range) ? undefined : t.admin.endAfterStart,
+    date: date ? undefined : t.panel.closures.dateRequired,
+    reason: reason.trim() ? undefined : t.panel.closures.reasonRequired,
+    range: wholeDay || isValidRange(range) ? undefined : t.panel.endAfterStart,
   };
   const valid = !errors.date && !errors.reason && !errors.range;
 
@@ -149,19 +149,19 @@ function ClosureForm({
     setResult({ date, affected: affectedBookings(input, bookings) });
     setReason("");
     setSubmitted(false);
-    notify(t.admin.closures.added);
+    notify(t.panel.closures.added);
   }
 
   return (
     <form onSubmit={save} noValidate className="mt-8 grid gap-6">
       <div className="grid gap-6 sm:grid-cols-2">
-        <Field id="closure-date" label={t.admin.closures.date} error={submitted ? errors.date : undefined}>
+        <Field id="closure-date" label={t.panel.closures.date} error={submitted ? errors.date : undefined}>
           {(aria) => <TextInput {...aria} type="date" min={today} value={date} onChange={(e) => setDate(e.target.value)} />}
         </Field>
-        <Field id="closure-who" label={t.admin.closures.who}>
+        <Field id="closure-who" label={t.panel.closures.who}>
           {(aria) => (
             <Select {...aria} value={staffId} onChange={(e) => setStaffId(e.target.value)}>
-              <option value="">{t.admin.closures.wholeSalon}</option>
+              <option value="">{t.panel.closures.wholeSalon}</option>
               {staff.map((m) => (
                 <option key={m.id} value={m.id}>{m.name}</option>
               ))}
@@ -170,7 +170,7 @@ function ClosureForm({
         </Field>
       </div>
       <fieldset className="grid gap-3">
-        <legend className="sr-only">{t.admin.time}</legend>
+        <legend className="sr-only">{t.panel.time}</legend>
         <label className="flex min-h-11 items-center gap-3">
           <input
             id="closure-whole-day"
@@ -179,27 +179,27 @@ function ClosureForm({
             onChange={(e) => setWholeDay(e.target.checked)}
             className="h-5 w-5 accent-[var(--salon-ink)]"
           />
-          {t.admin.closures.wholeDay}
+          {t.panel.closures.wholeDay}
         </label>
-        {!wholeDay && <RangeInputs label={t.admin.time} range={range} onChange={setRange} />}
+        {!wholeDay && <RangeInputs label={t.panel.time} range={range} onChange={setRange} />}
         {submitted && errors.range && <p className="text-small font-medium text-accent">{errors.range}</p>}
       </fieldset>
       <Field
         id="closure-reason"
-        label={t.admin.closures.reason}
-        hint={t.admin.closures.reasonHint}
+        label={t.panel.closures.reason}
+        hint={t.panel.closures.reasonHint}
         error={submitted ? errors.reason : undefined}
       >
         {(aria) => <TextInput {...aria} value={reason} maxLength={80} onChange={(e) => setReason(e.target.value)} />}
       </Field>
       <div>
         <Button type="submit" size="lg">
-          {t.admin.closures.add}
+          {t.panel.closures.add}
         </Button>
       </div>
       {result && result.affected.length > 0 && (
         <div role="status" className="border-l-2 border-accent bg-tint px-4 py-3 text-small">
-          <p className="font-medium">{t.admin.closures.affected(result.affected.length)}</p>
+          <p className="font-medium">{t.panel.closures.affected(result.affected.length)}</p>
           <ul className="mt-2 grid gap-1">
             {result.affected.map((b) => (
               <li key={b.id}>
@@ -208,7 +208,7 @@ function ClosureForm({
             ))}
           </ul>
           <button type="button" className="link mt-2 font-medium" onClick={() => onOpenDate(result.date)}>
-            {t.admin.closures.openCalendar}
+            {t.panel.closures.openCalendar}
           </button>
         </div>
       )}

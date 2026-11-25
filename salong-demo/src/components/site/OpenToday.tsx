@@ -1,6 +1,5 @@
 "use client";
 
-import { salon } from "@config";
 import { t } from "@/i18n";
 import { closureReason } from "@/lib/booking/slots";
 import { formatRange, weekdayName } from "@/lib/format";
@@ -9,11 +8,11 @@ import { addDays, weekdayOf } from "@/lib/time/zoned";
 
 /** "Åpent i dag 09:00–19:00" or the next opening day. Falls back to a neutral label on the server. */
 export function OpenToday() {
-  const { openingHours, closures } = useLiveCatalog();
+  const { openingHours, closures, rules: bookingRules } = useLiveCatalog();
   const today = useToday();
   if (!today) return <span>{t.common.openingHours}</span>;
 
-  const rules = { rules: salon.booking, openingHours, closures };
+  const rules = { rules: bookingRules, openingHours, closures };
   const todayRange = openingHours[weekdayOf(today)];
   if (!closureReason(today, rules) && todayRange) {
     return <span>{t.home.openToday(formatRange(todayRange))}</span>;

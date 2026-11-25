@@ -1,13 +1,11 @@
-import { salon } from "@config";
 import { t } from "@/i18n";
-import { telHref } from "@/lib/format";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { MapPlaceholder } from "@/components/site/MapPlaceholder";
 import { OpeningHoursTable } from "@/components/site/OpeningHoursTable";
 import { UpcomingClosures } from "@/components/site/UpcomingClosures";
+import { EmailLink, PhoneLink, ProfileText } from "@/components/site/Live";
 
 export function Visit() {
-  const { address, phone, email, directions } = salon.contact;
   return (
     <section className="page-x py-24 md:py-32">
       <div className="page-grid mx-auto max-w-page gap-y-12">
@@ -15,14 +13,14 @@ export function Visit() {
           <SectionHead number="06" label={t.common.address} />
           <h2 className="mt-6 text-d2">{t.home.visitHeading}</h2>
           <address className="mt-8 font-display text-d4 not-italic leading-snug">
-            {address.street}
+            <ProfileText field="street" />
             <br />
-            {address.postalCode} {address.city}
+            <ProfileText field="postalCity" />
           </address>
-          <p className="mt-4 text-small text-muted">{directions}</p>
+          <p className="mt-4 text-small text-muted"><ProfileText field="directions" /></p>
           <p className="mt-6 grid gap-1">
-            <a href={telHref(phone)} className="link w-fit">{phone}</a>
-            <a href={`mailto:${email}`} className="link w-fit">{email}</a>
+            <PhoneLink className="link w-fit" />
+            <EmailLink className="link w-fit" />
           </p>
           <h3 className="label mt-12 text-muted">{t.common.openingHours}</h3>
           <OpeningHoursTable className="mt-3" />

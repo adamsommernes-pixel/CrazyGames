@@ -6,7 +6,7 @@ import { t } from "@/i18n";
 import { formatDuration, formatPrice } from "@/lib/format";
 import { getRepository } from "@/lib/repository/client";
 import { useRepoQuery } from "@/lib/repository/query";
-import { ServiceInUseError, type ServiceInput } from "@/lib/repository/types";
+import { InUseError, type ServiceInput } from "@/lib/repository/types";
 import type { Service, StaffMember } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
@@ -29,18 +29,18 @@ export function ServicesEditor() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <p className="max-w-measure text-muted">
-          {t.admin.changesLive} {t.admin.activeHint}
+          {t.panel.changesLive} {t.panel.activeHint}
         </p>
         {editing !== "new" && (
           <Button type="button" onClick={() => setEditing("new")}>
-            + {t.admin.serviceForm.add}
+            + {t.panel.serviceForm.add}
           </Button>
         )}
       </div>
 
       {editing === "new" && (
         <section aria-labelledby="new-service" className="mt-8 border-t-2 border-ink pt-6">
-          <h2 id="new-service" className="text-d4">{t.admin.serviceForm.newTitle}</h2>
+          <h2 id="new-service" className="text-d4">{t.panel.serviceForm.newTitle}</h2>
           <ServiceForm staff={staff} onDone={() => setEditing(null)} />
         </section>
       )}
@@ -91,9 +91,9 @@ function ServiceSummary({
       <div className="min-w-0">
         <p className={cx("font-medium", !service.active && "text-muted")}>
           {service.name}
-          {!service.active && <span className="label ml-3 border border-line-strong px-1.5 py-0.5">{t.admin.serviceForm.hidden}</span>}
+          {!service.active && <span className="label ml-3 border border-line-strong px-1.5 py-0.5">{t.panel.serviceForm.hidden}</span>}
         </p>
-        <p className="truncate text-small text-muted">{who.length ? who.join(", ") : t.admin.serviceForm.noStaffWarning}</p>
+        <p className="truncate text-small text-muted">{who.length ? who.join(", ") : t.panel.serviceForm.noStaffWarning}</p>
       </div>
       <p className="tabular hidden text-right sm:block">{formatPrice(service.priceNok, service.priceFrom)}</p>
       <p className="tabular hidden text-right text-muted sm:block">{formatDuration(service.durationMin)}</p>
@@ -130,8 +130,8 @@ function ServiceForm({ service, staff, onDone }: { service?: Service; staff: Sta
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((f) => ({ ...f, [key]: value }));
   const errors = {
-    name: form.name.trim().length >= 2 ? undefined : t.admin.serviceForm.nameRequired,
-    price: /^\d+$/.test(form.price) ? undefined : t.admin.serviceForm.priceRequired,
+    name: form.name.trim().length >= 2 ? undefined : t.panel.serviceForm.nameRequired,
+    price: /^\d+$/.test(form.price) ? undefined : t.panel.serviceForm.priceRequired,
   };
   const id = service?.id ?? "new";
 
@@ -156,7 +156,7 @@ function ServiceForm({ service, staff, onDone }: { service?: Service; staff: Sta
       notify(`${input.name}: ${t.common.saved.toLowerCase()}`);
     } else {
       await repo.createService(input);
-      notify(t.admin.serviceForm.created(input.name));
+      notify(t.panel.serviceForm.created(input.name));
     }
     onDone();
   }
@@ -165,11 +165,11 @@ function ServiceForm({ service, staff, onDone }: { service?: Service; staff: Sta
     if (!service) return;
     try {
       await getRepository().deleteService(service.id);
-      notify(t.admin.serviceForm.deleted(service.name));
+      notify(t.panel.serviceForm.deleted(service.name));
       onDone();
     } catch (err) {
       setConfirmDelete(false);
-      if (err instanceof ServiceInUseError) setError(t.admin.serviceForm.inUse(err.upcoming));
+      if (err instanceof InUseError) setError(t.panel.serviceForm.inUse(err.upcoming));
       else throw err;
     }
   }
@@ -177,10 +177,10 @@ function ServiceForm({ service, staff, onDone }: { service?: Service; staff: Sta
   return (
     <form onSubmit={save} noValidate className="mt-4 grid max-w-2xl gap-6">
       <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_12rem]">
-        <Field id={`${id}-name`} label={t.admin.serviceForm.name} error={submitted ? errors.name : undefined}>
+        <Field id={`${id}-name`} label={t.panel.serviceForm.name} error={submitted ? errors.name : undefined}>
           {(aria) => <TextInput {...aria} value={form.name} onChange={(e) => set("name", e.target.value)} />}
         </Field>
-        <Field id={`${id}-category`} label={t.admin.serviceForm.category}>
+        <Field id={`${id}-category`} label={t.panel.serviceForm.category}>
           {(aria) => (
             <Select {...aria} value={form.categoryId} onChange={(e) => set("categoryId", e.target.value)}>
               {salon.categories.map((c) => (
@@ -190,7 +190,7 @@ function ServiceForm({ service, staff, onDone }: { service?: Service; staff: Sta
           )}
         </Field>
       </div>
-      <Field id={`${id}-description`} label={t.admin.serviceForm.description} optionalLabel={t.booking.optional}>
+      <Field id={`${id}-description`} label={t.panel.serviceForm.description} optionalLabel={t.booking.optional}>
         {(aria) => (
           <TextArea {...aria} rows={2} maxLength={160} value={form.description} onChange={(e) => set("description", e.target.value)} />
         )}
@@ -220,9 +220,9 @@ function ServiceForm({ service, staff, onDone }: { service?: Service; staff: Sta
       <div className="grid gap-1">
         {(
           [
-            ["priceFrom", t.admin.serviceForm.priceFrom],
-            ["popular", t.admin.serviceForm.popular],
-            ["active", t.admin.serviceForm.activeLabel],
+            ["priceFrom", t.panel.serviceForm.priceFrom],
+            ["popular", t.panel.serviceForm.popular],
+            ["active", t.panel.serviceForm.activeLabel],
           ] as const
         ).map(([key, label]) => (
           <label key={key} className="flex min-h-11 items-center gap-3">
@@ -237,7 +237,7 @@ function ServiceForm({ service, staff, onDone }: { service?: Service; staff: Sta
         ))}
       </div>
       <fieldset>
-        <legend className="text-small font-medium">{t.admin.serviceForm.staff}</legend>
+        <legend className="text-small font-medium">{t.panel.serviceForm.staff}</legend>
         <div className="mt-2 flex flex-wrap gap-2">
           {staff.map((m) => {
             const checked = form.staffIds.includes(m.id);
@@ -263,7 +263,7 @@ function ServiceForm({ service, staff, onDone }: { service?: Service; staff: Sta
           })}
         </div>
         {form.staffIds.length === 0 && form.active && (
-          <p className="mt-2 text-small text-accent">{t.admin.serviceForm.noStaffWarning}</p>
+          <p className="mt-2 text-small text-accent">{t.panel.serviceForm.noStaffWarning}</p>
         )}
       </fieldset>
 
@@ -276,10 +276,10 @@ function ServiceForm({ service, staff, onDone }: { service?: Service; staff: Sta
       {confirmDelete && service ? (
         <div role="group" aria-labelledby={`${id}-delete-q`} className="flex flex-wrap items-center gap-3 border-l-2 border-accent bg-tint px-4 py-3">
           <p id={`${id}-delete-q`} className="flex-1 text-small font-medium">
-            {t.admin.serviceForm.deleteConfirm(service.name)}
+            {t.panel.serviceForm.deleteConfirm(service.name)}
           </p>
           <Button type="button" variant="outline" onClick={remove} autoFocus>
-            {t.admin.serviceForm.deleteYes}
+            {t.panel.serviceForm.deleteYes}
           </Button>
           <Button type="button" onClick={() => setConfirmDelete(false)}>
             {t.common.cancel}
@@ -293,7 +293,7 @@ function ServiceForm({ service, staff, onDone }: { service?: Service; staff: Sta
           </button>
           {service && (
             <button type="button" onClick={() => setConfirmDelete(true)} className="link ml-auto min-h-11 text-accent">
-              {t.admin.serviceForm.delete}
+              {t.panel.serviceForm.delete}
             </button>
           )}
         </div>

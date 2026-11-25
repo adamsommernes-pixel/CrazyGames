@@ -32,7 +32,7 @@ function HoursForm({ initial }: { initial: OpeningHours }) {
   return (
     <form onSubmit={save} className="max-w-2xl">
       <p className="max-w-measure text-muted">
-        {t.admin.changesLive} {t.admin.hoursHint}
+        {t.panel.changesLive} {t.panel.hoursHint}
       </p>
       <ul className="mt-8 border-t border-line">
         {WEEKDAYS.map((day) => {
@@ -49,12 +49,12 @@ function HoursForm({ initial }: { initial: OpeningHours }) {
                   }
                   className="h-5 w-5 accent-[var(--salon-ink)]"
                 />
-                {t.admin.closedAllDay}
+                {t.panel.closedAllDay}
               </label>
               {range && (
                 <RangeInputs label={weekdayName(day)} range={range} onChange={(r) => setHours({ ...hours, [day]: r })} />
               )}
-              {range && !isValidRange(range) && <span className="text-small text-accent">{t.admin.endAfterStart}</span>}
+              {range && !isValidRange(range) && <span className="text-small text-accent">{t.panel.endAfterStart}</span>}
             </li>
           );
         })}

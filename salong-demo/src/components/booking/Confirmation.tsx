@@ -10,21 +10,21 @@ import { formatDateLongYear, formatDuration, formatPrice, formatTime, telHref } 
 import { getRepository } from "@/lib/repository/client";
 import { useLiveCatalog, useNow } from "@/lib/repository/live";
 import { useRepoQuery } from "@/lib/repository/query";
-import type { Booking, Service } from "@/lib/types";
+import type { Booking, SalonProfile, Service } from "@/lib/types";
 import { Button, ButtonLink } from "@/components/ui/Button";
 
-function downloadIcs(booking: Booking, services: Service[], staffName: string) {
+function downloadIcs(booking: Booking, services: Service[], staffName: string, profile: SalonProfile) {
   const names = booking.serviceIds.map((id) => services.find((s) => s.id === id)?.name ?? id).join(", ");
-  const { address } = salon.contact;
+  const { address } = profile.contact;
   const ics = buildIcs({
     uid: `${booking.id}@${new URL(salon.siteUrl).hostname}`,
     start: booking.start,
     end: booking.end,
     createdAt: booking.createdAt,
-    summary: `${names} hos ${staffName}, ${salon.name}`,
-    description: `Referanse: ${booking.reference}\nAvbestill eller se timen: ${salon.siteUrl}/bestilling/${booking.reference}\nTelefon: ${salon.contact.phone}`,
-    location: `${salon.name}, ${address.street}, ${address.postalCode} ${address.city}`,
-    organizerName: salon.name,
+    summary: `${names} hos ${staffName}, ${profile.name}`,
+    description: `Referanse: ${booking.reference}\nAvbestill eller se timen: ${salon.siteUrl}/bestilling/${booking.reference}\nTelefon: ${profile.contact.phone}`,
+    location: `${profile.name}, ${address.street}, ${address.postalCode} ${address.city}`,
+    organizerName: profile.name,
     url: `${salon.siteUrl}/bestilling/${booking.reference}`,
     cancelled: booking.status === "cancelled",
   });
@@ -40,14 +40,15 @@ function downloadIcs(booking: Booking, services: Service[], staffName: string) {
 }
 
 export function Confirmation({ reference }: { reference: string }) {
-  const { staff } = useLiveCatalog();
-  const allServices = useRepoQuery("services:all", (repo) => repo.listServices({ includeInactive: true, includeArchived: true }));
+  const { profile, rules } = useLiveCatalog();
+  const staff = useRepoQuery("confirmation-staff", (repo) => repo.listStaff({ includeArchived: true }));
+  const allServices = useRepoQuery("confirmation-services", (repo) => repo.listServices({ includeInactive: true, includeArchived: true }));
   const booking = useRepoQuery(`booking:${reference}`, (repo) => repo.getBooking(reference));
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const now = useNow();
 
-  if (booking === undefined || allServices === undefined || now === null) {
+  if (booking === undefined || allServices === undefined || staff === undefined || now === null) {
     return (
       <div className="page-x py-24" aria-busy="true">
         <p className="mx-auto max-w-page text-muted">{t.common.loading}</p>
@@ -75,7 +76,7 @@ export function Confirmation({ reference }: { reference: string }) {
   const staffName = person?.name ?? "";
   const cancelled = booking.status === "cancelled";
   const canCancel = canCustomerCancel(booking, now);
-  const late = isLateCancellation(booking, now, salon.booking);
+  const late = isLateCancellation(booking, now, rules);
   const duration = (Date.parse(booking.end) - Date.parse(booking.start)) / 60_000;
   const total = services.reduce((sum, s) => sum + s.priceNok, 0);
 
@@ -101,12 +102,12 @@ export function Confirmation({ reference }: { reference: string }) {
 
           <dl className="mt-12 border-t-2 border-ink">
             {[
-              [t.admin.date, formatDateLongYear(booking.start)],
-              [t.admin.time, `${formatTime(booking.start)}–${formatTime(booking.end)} (${formatDuration(duration)})`],
+              [t.panel.date, formatDateLongYear(booking.start)],
+              [t.panel.time, `${formatTime(booking.start)}–${formatTime(booking.end)} (${formatDuration(duration)})`],
               [t.booking.steps[0], services.map((s) => s.name).join(", ")],
               [t.booking.steps[1], staffName],
               [t.booking.total, formatPrice(total, services.some((s) => s.priceFrom))],
-              [t.common.address, `${salon.contact.address.street}, ${salon.contact.address.postalCode} ${salon.contact.address.city}`],
+              [t.common.address, `${profile.contact.address.street}, ${profile.contact.address.postalCode} ${profile.contact.address.city}`],
             ].map(([k, v]) => (
               <div key={k} className="grid gap-1 border-b border-line py-4 sm:grid-cols-[10rem_1fr]">
                 <dt className="label pt-1 text-muted">{k}</dt>
@@ -122,7 +123,7 @@ export function Confirmation({ reference }: { reference: string }) {
               (process.env.NEXT_PUBLIC_PREVIEW === "artifact" ? (
                 <p className="max-w-sm text-small text-muted">{t.confirmation.calendarInPreview}</p>
               ) : (
-                <Button type="button" size="lg" onClick={() => downloadIcs(booking, allServices, staffName)}>
+                <Button type="button" size="lg" onClick={() => downloadIcs(booking, allServices, staffName, profile)}>
                   {t.confirmation.addToCalendar}
                   <span aria-hidden="true" className="label">.ics</span>
                 </Button>
@@ -138,7 +139,7 @@ export function Confirmation({ reference }: { reference: string }) {
             <h2 className="label text-muted">{t.confirmation.whatNext}</h2>
             <ul className="mt-4 grid gap-3 text-small">
               <li>{t.confirmation.arriveEarly}</li>
-              <li>{salon.contact.directions}</li>
+              <li>{profile.contact.directions}</li>
               <li>{t.booking.payInSalon}</li>
             </ul>
             <p className="mt-6 border-l-2 border-line-strong pl-4 text-small text-muted">{t.confirmation.demoNote}</p>
@@ -151,7 +152,7 @@ export function Confirmation({ reference }: { reference: string }) {
                       <p id="cancel-q" className="font-medium">{t.confirmation.cancelQuestion}</p>
                       {late && (
                         <p className="mt-2 text-small text-muted">
-                          {t.confirmation.lateWarning(salon.booking.cancellationHours)}
+                          {t.confirmation.lateWarning(rules.cancellationHours)}
                         </p>
                       )}
                       <div className="mt-4 flex flex-wrap gap-3">
@@ -171,7 +172,7 @@ export function Confirmation({ reference }: { reference: string }) {
                 ) : (
                   <p className="text-small">
                     {t.confirmation.started}{" "}
-                    <a className="link" href={telHref(salon.contact.phone)}>{salon.contact.phone}</a>.
+                    <a className="link" href={telHref(profile.contact.phone)}>{profile.contact.phone}</a>.
                   </p>
                 )}
               </div>

@@ -13,7 +13,8 @@ import NotFound from "@/app/not-found";
 import SiteLayout from "@/app/(site)/layout";
 import BookingLayout from "@/app/(booking)/layout";
 import Template from "@/app/(site)/template";
-import { AdminApp } from "@/components/admin/AdminApp";
+import { AdminApp } from "@/components/panel/AdminApp";
+import { StaffApp } from "@/components/panel/StaffApp";
 import { BookingFlow } from "@/components/booking/BookingFlow";
 import { Confirmation } from "@/components/booking/Confirmation";
 import { useRoute } from "./router";
@@ -37,12 +38,8 @@ function App() {
 
   const key = `${route.path}?${route.query.toString()}`;
 
-  if (route.path === "/admin") {
-    return (
-      <div className="min-h-dvh bg-paper">
-        <AdminApp />
-      </div>
-    );
+  if (route.path === "/admin" || route.path === "/staff") {
+    return <div className="min-h-dvh bg-paper">{route.path === "/admin" ? <AdminApp /> : <StaffApp />}</div>;
   }
   if (route.path === "/bestill") {
     const serviceIds = (route.query.get("tjeneste") ?? "").split(",").filter(Boolean);

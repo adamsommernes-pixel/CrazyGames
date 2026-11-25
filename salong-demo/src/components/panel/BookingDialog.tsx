@@ -34,7 +34,7 @@ export function BookingDialog({ state, onClose }: { state: DialogState; onClose:
       <div className="p-6 md:p-8">
         <div className="flex items-start justify-between gap-4">
           <h2 id="booking-dialog-title" className="text-d3">
-            {state.mode === "create" ? t.admin.newBooking : t.admin.editBooking}
+            {state.mode === "create" ? t.panel.newBooking : t.panel.editBooking}
           </h2>
           <button type="button" onClick={() => ref.current?.close()} className="label -mr-2 min-h-11 px-2">
             {t.nav.close}
@@ -77,7 +77,7 @@ function TimeSelect({
     ready ? repo.getAvailability({ serviceIds, staffId, date }, { admin: true, excludeBookingId }) : Promise.resolve([]),
   );
   return (
-    <Field id="admin-time" label={t.admin.time} hint={slots && ready && slots.length === 0 ? t.admin.noFreeTimes : undefined}>
+    <Field id="admin-time" label={t.panel.time} hint={slots && ready && slots.length === 0 ? t.panel.noFreeTimes : undefined}>
       {(aria) => (
         <Select {...aria} value={value} onChange={(e) => onChange(e.target.value)} disabled={!slots || slots.length === 0}>
           <option value="">–</option>
@@ -111,22 +111,22 @@ function CreateForm({ date: initialDate, onDone }: { date: string; onDone: () =>
     const check = validateCustomer(customer, { requireEmail: false });
     setErrors(check.ok ? {} : check.errors);
     if (!check.ok || !start || !staffId) {
-      if (!start || !staffId) setError(t.admin.chooseStaffAndTime);
+      if (!start || !staffId) setError(t.panel.chooseStaffAndTime);
       return;
     }
     try {
       await getRepository().createBooking({ serviceIds, staffId, start, customer: check.value, source: "admin" });
-      notify(t.admin.created);
+      notify(t.panel.created);
       onDone();
     } catch (err) {
-      setError(err instanceof SlotUnavailableError ? t.booking.slotTaken : t.admin.saveFailed);
+      setError(err instanceof SlotUnavailableError ? t.booking.slotTaken : t.panel.saveFailed);
     }
   }
 
   return (
     <form onSubmit={save} noValidate className="mt-6 grid gap-6">
       <fieldset>
-        <legend className="text-small font-medium">{t.admin.service}</legend>
+        <legend className="text-small font-medium">{t.panel.service}</legend>
         <ul className="mt-2 max-h-52 overflow-y-auto rounded-ctl border border-line-strong">
           {catalog.services.filter((s) => !s.archived).map((s) => {
             const checked = serviceIds.includes(s.id);
@@ -153,7 +153,7 @@ function CreateForm({ date: initialDate, onDone }: { date: string; onDone: () =>
         </ul>
       </fieldset>
       <div className="grid gap-6 sm:grid-cols-2">
-        <Field id="admin-staff" label={t.admin.staff}>
+        <Field id="admin-staff" label={t.panel.staff}>
           {(aria) => (
             <Select {...aria} value={staffId} onChange={(e) => { setStaffId(e.target.value); setStart(""); }} disabled={qualified.length === 0}>
               <option value="">–</option>
@@ -163,13 +163,13 @@ function CreateForm({ date: initialDate, onDone }: { date: string; onDone: () =>
             </Select>
           )}
         </Field>
-        <Field id="admin-date-create" label={t.admin.date}>
+        <Field id="admin-date-create" label={t.panel.date}>
           {(aria) => <TextInput {...aria} type="date" value={date} onChange={(e) => { setDate(e.target.value); setStart(""); }} />}
         </Field>
       </div>
       <TimeSelect serviceIds={serviceIds} staffId={staffId} date={date} value={start} onChange={setStart} />
       <fieldset className="grid gap-4 border-t border-line pt-6">
-        <legend className="sr-only">{t.admin.customer}</legend>
+        <legend className="sr-only">{t.panel.customer}</legend>
         <Field id="admin-name" label={t.booking.name} error={errors.name}>
           {(aria) => <TextInput {...aria} autoComplete="off" value={customer.name} onChange={(e) => setCustomer({ ...customer, name: e.target.value })} />}
         </Field>
@@ -205,26 +205,26 @@ function EditForm({ booking, onDone }: { booking: Booking; onDone: () => void })
 
   async function move(e: React.FormEvent) {
     e.preventDefault();
-    if (!start) return setError(t.admin.chooseTime);
+    if (!start) return setError(t.panel.chooseTime);
     try {
       await getRepository().moveBooking(booking.id, { start, staffId });
-      notify(t.admin.moved);
+      notify(t.panel.moved);
       onDone();
     } catch (err) {
-      setError(err instanceof SlotUnavailableError ? t.booking.slotTaken : t.admin.moveFailed);
+      setError(err instanceof SlotUnavailableError ? t.booking.slotTaken : t.panel.moveFailed);
     }
   }
 
   async function cancel() {
     await getRepository().cancelBooking(booking.reference, { admin: true });
-    notify(t.admin.cancelled);
+    notify(t.panel.cancelled);
     onDone();
   }
 
   return (
     <form onSubmit={move} className="mt-6 grid gap-6">
       <dl className="grid grid-cols-[7rem_1fr] gap-y-2 border-y border-line py-4 text-small">
-        <dt className="text-muted">{t.admin.customer}</dt>
+        <dt className="text-muted">{t.panel.customer}</dt>
         <dd>
           {booking.customer.name}
           <br />
@@ -236,9 +236,9 @@ function EditForm({ booking, onDone }: { booking: Booking; onDone: () => void })
             </>
           )}
         </dd>
-        <dt className="text-muted">{t.admin.service}</dt>
+        <dt className="text-muted">{t.panel.service}</dt>
         <dd>{names}</dd>
-        <dt className="text-muted">{t.admin.time}</dt>
+        <dt className="text-muted">{t.panel.time}</dt>
         <dd>{formatDateLongYear(booking.start)}, {formatTime(booking.start)}–{formatTime(booking.end)}</dd>
         {booking.customer.note && (
           <>
@@ -248,12 +248,12 @@ function EditForm({ booking, onDone }: { booking: Booking; onDone: () => void })
         )}
         <dt className="text-muted">{t.confirmation.reference}</dt>
         <dd className="tabular">
-          {booking.reference} · {booking.source === "online" ? t.admin.sourceOnline : t.admin.sourceAdmin}
+          {booking.reference} · {booking.source === "online" ? t.panel.sourceOnline : t.panel.sourceAdmin}
         </dd>
       </dl>
-      <h3 className="label text-muted">{t.admin.move}</h3>
+      <h3 className="label text-muted">{t.panel.move}</h3>
       <div className="grid gap-6 sm:grid-cols-2">
-        <Field id="admin-staff-edit" label={t.admin.staff}>
+        <Field id="admin-staff-edit" label={t.panel.staff}>
           {(aria) => (
             <Select {...aria} value={staffId} onChange={(e) => { setStaffId(e.target.value); setStart(""); }}>
               {qualified.map((m) => (
@@ -262,7 +262,7 @@ function EditForm({ booking, onDone }: { booking: Booking; onDone: () => void })
             </Select>
           )}
         </Field>
-        <Field id="admin-date-edit" label={t.admin.date}>
+        <Field id="admin-date-edit" label={t.panel.date}>
           {(aria) => <TextInput {...aria} type="date" value={date} onChange={(e) => { setDate(e.target.value); setStart(""); }} />}
         </Field>
       </div>
@@ -270,7 +270,7 @@ function EditForm({ booking, onDone }: { booking: Booking; onDone: () => void })
       {error && <p role="alert" className="border-l-2 border-accent bg-tint px-4 py-3 text-small">{error}</p>}
       {confirmCancel ? (
         <div role="group" aria-labelledby="cancel-booking-q" className="flex flex-wrap items-center gap-3 border-l-2 border-accent bg-tint px-4 py-3">
-          <p id="cancel-booking-q" className="flex-1 font-medium">{t.admin.cancelConfirm}</p>
+          <p id="cancel-booking-q" className="flex-1 font-medium">{t.panel.cancelConfirm}</p>
           <Button type="button" variant="outline" onClick={cancel} autoFocus>
             {t.confirmation.confirmCancel}
           </Button>
@@ -281,9 +281,9 @@ function EditForm({ booking, onDone }: { booking: Booking; onDone: () => void })
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-4">
           <button type="button" onClick={() => setConfirmCancel(true)} className="link min-h-11 font-medium text-accent">
-            {t.admin.cancelBooking}
+            {t.panel.cancelBooking}
           </button>
-          <Button type="submit" size="lg">{t.admin.move}</Button>
+          <Button type="submit" size="lg">{t.panel.move}</Button>
         </div>
       )}
     </form>

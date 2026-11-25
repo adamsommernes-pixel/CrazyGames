@@ -31,6 +31,9 @@ A Scandinavian salon as a good print magazine would present it, not a SaaS landi
   - Salon-wide closures are shown to customers under "Avvikende åpningstider"; staff absences stay private.
   - A closure blocks only its own time: the buffer applies between appointments, not around closures.
   - Existing bookings inside a new closure are listed for the owner, not moved or cancelled automatically, because that needs a conversation with the customer.
+- **Two panels by role.** `/staff` holds day-to-day work (calendar, closures, working hours). `/admin` holds owner decisions (staff, services and prices, opening hours, salon details, booking rules, password, demo reset).
+- **Salon details and booking rules are editable data.** The repository stores them, seeded from the config. Pages render from the config on the server and pick up edits after hydration through small client leaves (`ProfileText`, `PhoneLink` …). Page titles, Open Graph and JSON-LD stay build-time; in production they would be revalidated from the database.
+- **Removing a staff member archives them**, like services: refused while they have upcoming bookings, and past bookings keep the name.
 - **Deleting a service archives it.** Past bookings keep the service name. Deletion is refused while the service has upcoming bookings; hiding it is the alternative.
 - **Public holidays are computed.** Norwegian holidays come from the Easter date (`closeOnPublicHolidays`), so nobody has to maintain them. Christmas Eve and New Year's Eve are not public holidays, so they sit in `closedDates`.
 - **Cancellation rules:** customers can cancel online until the appointment starts. Inside the configured window (24h) they see a warning that a fee may apply, matching the FAQ. The admin can always cancel.
@@ -73,5 +76,5 @@ A Scandinavian salon as a good print magazine would present it, not a SaaS landi
 ## Deliberately left out
 
 - **Real map.** It would bring a third party and cookies. A drawn map placeholder links to OpenStreetMap instead.
-- **Real auth.** `/admin` has a clearly marked demo gate (sessionStorage only) and is `noindex`. It is not access control.
+- **Real auth.** `/staff` has a clearly marked demo gate. `/admin` asks for a password, but it is hashed and compared in the browser, so it keeps honest people out without being access control. Both are `noindex`.
 - **Server-side storage.** Bookings live in the visitor's own browser. The confirmation link therefore only works in the browser that made the booking, and the page says so when it can't find one.

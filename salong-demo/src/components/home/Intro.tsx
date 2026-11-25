@@ -1,15 +1,16 @@
 import { salon } from "@config";
 import { t } from "@/i18n";
 import { ImageSlot } from "@/components/ui/ImageSlot";
+import { CatalogCount } from "@/components/site/Live";
 import { SectionHead } from "@/components/ui/SectionHead";
 
 export function Intro() {
-  const { intro, introImage, founded, staff, services } = salon;
+  const { intro, introImage, founded } = salon;
   const [first, ...rest] = intro.body;
   const facts = [
     { value: String(founded), label: t.home.facts.founded },
-    { value: String(staff.length), label: t.home.facts.staff },
-    { value: String(services.filter((s) => s.active).length), label: t.home.facts.services },
+    { value: <CatalogCount of="staff" />, label: t.home.facts.staff },
+    { value: <CatalogCount of="services" />, label: t.home.facts.services },
   ];
   return (
     <section className="page-x py-24 md:py-32">

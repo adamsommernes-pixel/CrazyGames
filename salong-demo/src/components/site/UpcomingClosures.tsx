@@ -1,6 +1,5 @@
 "use client";
 
-import { salon } from "@config";
 import { t } from "@/i18n";
 import { isWholeDay } from "@/lib/booking/slots";
 import { formatLocalDateLong } from "@/lib/format";
@@ -10,12 +9,12 @@ import { cx } from "@/components/ui/cx";
 
 /** Salon-wide closures in the coming weeks, as set in the admin. Staff absences stay private. */
 export function UpcomingClosures({ className }: { className?: string }) {
-  const { closures } = useLiveCatalog();
+  const { closures, rules } = useLiveCatalog();
   const today = useToday();
   if (!today) return null;
   const upcoming = closures.filter((c) => {
     const days = diffDays(today, c.date);
-    return !c.staffId && days >= 0 && days <= salon.booking.horizonDays;
+    return !c.staffId && days >= 0 && days <= rules.horizonDays;
   });
   if (upcoming.length === 0) return null;
   return (
