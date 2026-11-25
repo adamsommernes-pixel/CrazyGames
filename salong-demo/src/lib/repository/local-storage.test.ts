@@ -1,0 +1,116 @@
+import { describe, expect, it } from "vitest";
+import { salon } from "@config";
+import { addDays, todayLocal, weekdayOf, zonedToUtc } from "@/lib/time/zoned";
+import { createLocalRepository, ValidationError, type KeyValueStore } from "./local-storage";
+import { SlotUnavailableError } from "./types";
+
+const TZ = salon.timeZone;
+
+function memoryStore(): KeyValueStore {
+  const map = new Map<string, string>();
+  return {
+    getItem: (k) => map.get(k) ?? null,
+    setItem: (k, v) => void map.set(k, v),
+    removeItem: (k) => void map.delete(k),
+  };
+}
+
+// Tuesday 1 December 2026, 08:00 Oslo.
+const NOW = zonedToUtc("2026-12-01", 8 * 60, TZ);
+const DATE = "2026-12-02"; // Wednesday
+const customer = { name: "Kari Nordmann", phone: "412 34 567", email: "kari@example.no" };
+
+const make = (store = memoryStore(), seedBookings = false) =>
+  createLocalRepository({ config: salon, store, now: () => NOW, seedBookings });
+
+describe("local repository", () => {
+  it("prevents double-booking the same staff member", async () => {
+    const repo = make();
+    const [slot] = await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: "marius" });
+    expect(slot).toBeDefined();
+    await repo.createBooking({ serviceIds: ["herreklipp"], staffId: "marius", start: slot!.start, customer });
+    await expect(
+      repo.createBooking({ serviceIds: ["herreklipp"], staffId: "marius", start: slot!.start, customer }),
+    ).rejects.toBeInstanceOf(SlotUnavailableError);
+    const after = await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: "marius" });
+    expect(after.map((s) => s.start)).not.toContain(slot!.start);
+  });
+
+  it("assigns a free staff member for no-preference bookings", async () => {
+    const repo = make();
+    const slots = await repo.getAvailability({ date: DATE, serviceIds: ["dameklipp-kort"], staffId: null });
+    const slot = slots.find((s) => s.staffIds.length > 1)!;
+    const first = await repo.createBooking({ serviceIds: ["dameklipp-kort"], staffId: null, start: slot.start, customer });
+    const second = await repo.createBooking({ serviceIds: ["dameklipp-kort"], staffId: null, start: slot.start, customer });
+    expect(first.staffId).not.toBe(second.staffId);
+    expect(slot.staffIds).toContain(first.staffId);
+    expect(slot.staffIds).toContain(second.staffId);
+  });
+
+  it("rejects invalid customer details", async () => {
+    const repo = make();
+    const [slot] = await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: null });
+    await expect(
+      repo.createBooking({ serviceIds: ["herreklipp"], staffId: null, start: slot!.start, customer: { ...customer, phone: "12" } }),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it("cancels by reference and frees the slot", async () => {
+    const repo = make();
+    const [slot] = await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: "jonas" });
+    const target = slot ?? (await repo.getAvailability({ date: "2026-12-04", serviceIds: ["herreklipp"], staffId: "jonas" }))[0]!;
+    const booking = await repo.createBooking({ serviceIds: ["herreklipp"], staffId: "jonas", start: target.start, customer });
+    const cancelled = await repo.cancelBooking(booking.reference.toLowerCase());
+    expect(cancelled.status).toBe("cancelled");
+    const date = new Date(target.start);
+    const again = await repo.getAvailability({
+      date: todayLocal(date.getTime(), TZ),
+      serviceIds: ["herreklipp"],
+      staffId: "jonas",
+    });
+    expect(again.map((s) => s.start)).toContain(target.start);
+  });
+
+  it("moves a booking and checks the new time", async () => {
+    const repo = make();
+    const slots = await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: "marius" });
+    const a = await repo.createBooking({ serviceIds: ["herreklipp"], staffId: "marius", start: slots[0]!.start, customer });
+    const b = await repo.createBooking({ serviceIds: ["herreklipp"], staffId: "marius", start: slots[8]!.start, customer });
+    await expect(repo.moveBooking(b.id, { start: a.start, staffId: "marius" })).rejects.toBeInstanceOf(SlotUnavailableError);
+    const moved = await repo.moveBooking(b.id, { start: slots[4]!.start, staffId: "marius" });
+    expect(moved.start).toBe(slots[4]!.start);
+  });
+
+  it("reflects admin edits in availability immediately", async () => {
+    const repo = make();
+    await repo.updateService("herreklipp", { active: false });
+    expect((await repo.listServices()).map((s) => s.id)).not.toContain("herreklipp");
+    expect(await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: null })).toEqual([]);
+
+    const hours = await repo.getOpeningHours();
+    await repo.updateOpeningHours({ ...hours, 3: null });
+    expect(await repo.getAvailability({ date: DATE, serviceIds: ["dameklipp-kort"], staffId: null })).toEqual([]);
+
+    await repo.resetDemoData();
+    expect((await repo.getAvailability({ date: DATE, serviceIds: ["herreklipp"], staffId: null })).length).toBeGreaterThan(0);
+  });
+
+  it("seeds a fully booked Saturday and keeps seeded bookings conflict-free", async () => {
+    const repo = make(memoryStore(), true);
+    const today = todayLocal(NOW, TZ);
+    let saturday = addDays(today, 1);
+    while (weekdayOf(saturday) !== 6) saturday = addDays(saturday, 1);
+    for (const service of await repo.listServices()) {
+      const slots = await repo.getAvailability({ date: saturday, serviceIds: [service.id], staffId: null });
+      expect(slots, service.id).toEqual([]);
+    }
+    const bookings = (await repo.listBookings()).filter((b) => b.status === "confirmed");
+    for (const a of bookings) {
+      for (const b of bookings) {
+        if (a !== b && a.staffId === b.staffId) {
+          expect(Date.parse(a.start) < Date.parse(b.end) && Date.parse(b.start) < Date.parse(a.end)).toBe(false);
+        }
+      }
+    }
+  });
+});
