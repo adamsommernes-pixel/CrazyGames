@@ -20,7 +20,7 @@ export const salon: SalonConfig = {
   tagline: "Hår, bryn og vipper på Grünerløkka",
   description:
     "Salong Lyng er en frisørsalong på Grünerløkka i Oslo. Klipp, farge, balayage, styling, bryn og vipper. Bestill time på nett.",
-  logo: { text: "Lyng", mark: "L" },
+  logo: { text: "Lyng", mark: "L", suffix: "salong" },
   founded: 2011,
 
   contact: {
@@ -62,7 +62,7 @@ export const salon: SalonConfig = {
     },
     fonts: { display: "newsreader", text: "schibsted" },
     radius: "2px",
-    sectionStyle: "rules",
+    sectionStyle: "bands",
   },
 
   booking: {
@@ -89,6 +89,15 @@ export const salon: SalonConfig = {
     body: [
       "Vi er fire frisører og en bryn- og vippeterapeut. Hver time starter med en ordentlig prat, og vi sier ifra hvis det du ønsker ikke kommer til å fungere på håret ditt.",
       "Vi blander farge etter vekt, så det blir lite til overs, og vi bruker produkter fra skandinaviske leverandører der vi kan.",
+    ],
+  },
+
+  about: {
+    heading: "Et bakeri som ble frisørsalong",
+    body: [
+      "Ingrid åpnet Lyng i 2011 i det som hadde vært et bakeri i over femti år. Vi beholdt den gamle benken og de store vinduene mot gata, og la til tre stoler og en vask.",
+      "I dag er vi fem. Vi har ikke det største utvalget av behandlinger, men vi gjør dem vi tilbyr ordentlig, og vi har satt av nok tid til hver kunde til at ingen trenger å stresse.",
+      "Mange av kundene våre har gått hos oss i over ti år. Noen av dem tar nå med seg barna sine.",
     ],
   },
 

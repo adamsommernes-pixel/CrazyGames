@@ -9,7 +9,7 @@ import { addDays, todayLocal, weekdayOf } from "@/lib/time/zoned";
 const FIRST = ["Kari", "Ola", "Nora", "Emil", "Ingrid", "Jakob", "Sara", "Henrik", "Maja", "Aksel", "Ida", "Filip", "Thea", "Sander", "Linnea", "Magnus", "Hedda", "Elias", "Tiril", "Mathias", "Selma", "Oskar", "Live", "Noah"];
 const LAST = ["Hansen", "Johansen", "Olsen", "Larsen", "Andersen", "Pedersen", "Nilsen", "Kristiansen", "Jensen", "Karlsen", "Johnsen", "Pettersen", "Eriksen", "Berg", "Haugen", "Hagen", "Dahl", "Lie", "Moen", "Strand"];
 const NOTES = ["Ønsker samme som sist.", "Litt kortere i nakken.", "Allergisk mot parfyme.", "Har med bilde."];
-const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const ALPHABET = [..."ABCDEFGHJKMNPQRSTUVWXYZ23456789"];
 const MINUTE = 60_000;
 const DAY = 86_400_000;
 

@@ -14,6 +14,7 @@ export const nb = {
     about: "Om oss",
     book: "Bestill time",
     menu: "Meny",
+    call: "Ring",
     close: "Lukk",
     skipToContent: "Hopp til innhold",
     mainNav: "Hovedmeny",

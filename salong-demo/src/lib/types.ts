@@ -128,7 +128,8 @@ export interface SalonConfig {
   shortName: string;
   tagline: string;
   description: string;
-  logo: { text: string; mark: string };
+  /** Text logo: a single-letter mark, the name, and an optional small suffix. */
+  logo: { text: string; mark: string; suffix?: string };
   founded: number;
   contact: {
     phone: string;
@@ -143,6 +144,7 @@ export interface SalonConfig {
   booking: BookingRules;
   hero: { eyebrow: string; heading: string; lead: string };
   intro: { heading: string; body: string[] };
+  about: { heading: string; body: string[] };
   heroImage: ImageRef;
   introImage: ImageRef;
   categories: ServiceCategory[];

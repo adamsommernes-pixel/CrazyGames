@@ -23,11 +23,11 @@ export function formatPrice(nok: number, from = false): string {
   return from ? `${t.common.from} ${value}` : value;
 }
 
-/** 45 → "45 min", 90 → "1 t 30 min", 120 → "2 t" */
+/** 45 → "45 min", 90 → "90 min", 120 → "2 t", 150 → "2 t 30 min" (as Norwegian price lists write it). */
 export function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  if (h === 0) return `${m} ${t.common.minutes}`;
+  if (minutes < 120) return `${minutes} ${t.common.minutes}`;
   if (m === 0) return `${h} ${t.common.hoursShort}`;
   return `${h} ${t.common.hoursShort} ${m} ${t.common.minutes}`;
 }
