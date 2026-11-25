@@ -197,6 +197,7 @@ function EditForm({ booking, onDone }: { booking: Booking; onDone: () => void })
   const [date, setDate] = useState(toZoned(Date.parse(booking.start), salon.timeZone).date);
   const [start, setStart] = useState(booking.start);
   const [error, setError] = useState<string | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   if (!catalog) return <p className="mt-6 text-muted">{t.common.loading}</p>;
   const qualified = qualifiedStaff(catalog.staff, booking.serviceIds);
@@ -215,7 +216,6 @@ function EditForm({ booking, onDone }: { booking: Booking; onDone: () => void })
   }
 
   async function cancel() {
-    if (!window.confirm(t.admin.cancelConfirm)) return;
     await getRepository().cancelBooking(booking.reference, { admin: true });
     notify(t.admin.cancelled);
     onDone();
@@ -268,12 +268,24 @@ function EditForm({ booking, onDone }: { booking: Booking; onDone: () => void })
       </div>
       <TimeSelect serviceIds={booking.serviceIds} staffId={staffId} date={date} value={start} onChange={setStart} excludeBookingId={booking.id} />
       {error && <p role="alert" className="border-l-2 border-accent bg-tint px-4 py-3 text-small">{error}</p>}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <button type="button" onClick={cancel} className="link min-h-11 font-medium text-accent">
-          {t.admin.cancelBooking}
-        </button>
-        <Button type="submit" size="lg">{t.admin.move}</Button>
-      </div>
+      {confirmCancel ? (
+        <div role="group" aria-labelledby="cancel-booking-q" className="flex flex-wrap items-center gap-3 border-l-2 border-accent bg-tint px-4 py-3">
+          <p id="cancel-booking-q" className="flex-1 font-medium">{t.admin.cancelConfirm}</p>
+          <Button type="button" variant="outline" onClick={cancel} autoFocus>
+            {t.confirmation.confirmCancel}
+          </Button>
+          <Button type="button" onClick={() => setConfirmCancel(false)}>
+            {t.confirmation.keep}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <button type="button" onClick={() => setConfirmCancel(true)} className="link min-h-11 font-medium text-accent">
+            {t.admin.cancelBooking}
+          </button>
+          <Button type="submit" size="lg">{t.admin.move}</Button>
+        </div>
+      )}
     </form>
   );
 }

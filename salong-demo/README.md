@@ -28,6 +28,7 @@ Open http://localhost:3000. Other scripts:
 | `npm run build` | Production build |
 | `npm start` | Serve the production build |
 | `npm run check` | All of the above in order |
+| `npm run preview:build` | Builds `preview/dist/index.html`: the whole site as one self-contained page with hash routing, for hosting the demo where only a single static page can be served (e.g. a claude.ai Artifact). File downloads (.ics) are disabled there. |
 
 ## What's in it
 

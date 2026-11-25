@@ -83,9 +83,11 @@ function Dashboard() {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const notify = useNotice();
 
+  const [confirmReset, setConfirmReset] = useState(false);
+
   async function reset() {
-    if (!window.confirm(t.admin.resetConfirm)) return;
     await getRepository().resetDemoData();
+    setConfirmReset(false);
     notify(t.admin.resetDone);
   }
 
@@ -109,11 +111,33 @@ function Dashboard() {
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-small">
             <Link href="/" className="link">{t.admin.viewSite}</Link>
             <Link href="/bestill" className="link">{t.nav.book}</Link>
-            <button type="button" onClick={reset} className="link min-h-11 text-accent">
+            <button
+              type="button"
+              onClick={() => setConfirmReset(true)}
+              aria-expanded={confirmReset}
+              aria-controls="reset-confirm"
+              className="link min-h-11 text-accent"
+            >
               {t.admin.reset}
             </button>
           </div>
         </div>
+        {confirmReset && (
+          <div
+            id="reset-confirm"
+            role="alertdialog"
+            aria-labelledby="reset-text"
+            className="mx-auto mb-4 flex max-w-page flex-wrap items-center gap-4 border-l-2 border-accent bg-tint px-4 py-3"
+          >
+            <p id="reset-text" className="flex-1 text-small">{t.admin.resetConfirm}</p>
+            <Button type="button" onClick={reset} autoFocus>
+              {t.admin.resetYes}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setConfirmReset(false)}>
+              {t.common.cancel}
+            </Button>
+          </div>
+        )}
       </header>
 
       <main className="page-x pb-24 pt-8">
