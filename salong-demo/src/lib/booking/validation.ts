@@ -34,7 +34,8 @@ export function isValidEmail(raw: string): boolean {
   return value.length <= 254 && EMAIL.test(value) && !value.includes("..");
 }
 
-export function validateCustomer(input: Customer): ValidationResult {
+/** `requireEmail: false` is used when the salon books a walk-in or phone customer. */
+export function validateCustomer(input: Customer, { requireEmail = true } = {}): ValidationResult {
   const errors: CustomerErrors = {};
   const name = input.name.trim().replace(/\s+/g, " ");
   const email = input.email.trim();
@@ -50,7 +51,9 @@ export function validateCustomer(input: Customer): ValidationResult {
     if (!phone) errors.phone = t.validation.phoneInvalid;
   }
 
-  if (!email) errors.email = t.validation.emailRequired;
+  if (!email) {
+    if (requireEmail) errors.email = t.validation.emailRequired;
+  }
   else if (!isValidEmail(email)) errors.email = t.validation.emailInvalid;
 
   if (note.length > NOTE_MAX) errors.note = t.validation.noteTooLong(NOTE_MAX);

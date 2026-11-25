@@ -176,10 +176,10 @@ export function createLocalRepository(options: LocalRepositoryOptions): SalonRep
     },
 
     async createBooking(data: CreateBookingInput) {
-      const validation = validateCustomer(data.customer);
+      const admin = data.source === "admin";
+      const validation = validateCustomer(data.customer, { requireEmail: !admin });
       if (!validation.ok) throw new ValidationError(Object.keys(validation.errors));
       const state = load();
-      const admin = data.source === "admin";
       const input = availabilityInput(state, admin);
       const date = toZoned(Date.parse(data.start), config.timeZone).date;
       const slot = findSlot(

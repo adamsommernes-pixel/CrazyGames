@@ -37,6 +37,11 @@ describe("validateCustomer", () => {
     expect(r).toEqual({ ok: true, value: { name: "Kari Nordmann", phone: "+47 412 34 567", email: "kari@example.no" } });
   });
 
+  it("lets the salon leave out email for phone bookings", () => {
+    expect(validateCustomer({ name: "Ola", phone: "91234567", email: "" }).ok).toBe(false);
+    expect(validateCustomer({ name: "Ola", phone: "91234567", email: "" }, { requireEmail: false }).ok).toBe(true);
+  });
+
   it("returns a Norwegian message per invalid field", () => {
     const r = validateCustomer({ name: "", phone: "123", email: "nope", note: "x".repeat(501) });
     expect(r.ok).toBe(false);
