@@ -13,9 +13,6 @@ import { useRepoQuery } from "@/lib/repository/query";
 import type { Booking, Service } from "@/lib/types";
 import { Button, ButtonLink } from "@/components/ui/Button";
 
-/** The hosted preview (preview/) runs in a sandbox that blocks file downloads. */
-const DOWNLOADS_BLOCKED = process.env.NEXT_PUBLIC_PREVIEW === "artifact";
-
 function downloadIcs(booking: Booking, services: Service[], staffName: string) {
   const names = booking.serviceIds.map((id) => services.find((s) => s.id === id)?.name ?? id).join(", ");
   const { address } = salon.contact;
@@ -120,7 +117,9 @@ export function Confirmation({ reference }: { reference: string }) {
 
           <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
             {!cancelled &&
-              (DOWNLOADS_BLOCKED ? (
+              // The hosted preview (preview/) runs in a sandbox that blocks file downloads;
+              // the inline check lets the bundler drop the download code there.
+              (process.env.NEXT_PUBLIC_PREVIEW === "artifact" ? (
                 <p className="max-w-sm text-small text-muted">{t.confirmation.calendarInPreview}</p>
               ) : (
                 <Button type="button" size="lg" onClick={() => downloadIcs(booking, allServices, staffName)}>
