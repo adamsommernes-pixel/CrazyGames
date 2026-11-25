@@ -96,6 +96,8 @@ export const nb = {
     chooseDate: "Hvilken dag?",
     chooseTime: "Hvilket klokkeslett?",
     noTimes: "Ingen ledige tider denne dagen. Prøv en annen dag.",
+    firstAvailable: "Første ledige dag",
+    noFreeInHorizon: "Ingen ledige tider de neste ukene for dette valget. Prøv en annen frisør, eller ring oss.",
     full: "Fullt",
     closedDay: "Stengt",
     timesAvailable: (n: number) => (n === 1 ? "1 ledig tid" : `${n} ledige tider`),
@@ -136,8 +138,9 @@ export const nb = {
     confirmCancel: "Ja, avbestill",
     keep: "Nei, behold timen",
     cancelQuestion: "Vil du avbestille timen?",
-    tooLateToCancel: (hours: number, phone: string) =>
-      `Det er mindre enn ${hours} timer til timen. Ring oss på ${phone} hvis du ikke kan komme.`,
+    lateWarning: (hours: number) =>
+      `Det er mindre enn ${hours} timer til timen, så salongen kan ta betalt for halve prisen.`,
+    started: "Timen har allerede startet. Ring oss på",
     bookAnother: "Bestill en ny time",
     whatNext: "Før du kommer",
     arriveEarly: "Kom gjerne fem minutter før.",

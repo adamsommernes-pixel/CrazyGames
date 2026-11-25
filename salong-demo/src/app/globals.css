@@ -126,8 +126,10 @@
     font-weight: 500;
   }
 
+  /* Lining figures for times, prices and dates. Proportional, because the
+     text face's tabular colon makes clock times look gappy. */
   .tabular {
-    font-variant-numeric: tabular-nums lining-nums;
+    font-variant-numeric: lining-nums;
   }
 
   /* Text link with a hairline underline that thickens on hover. */

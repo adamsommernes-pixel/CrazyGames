@@ -54,9 +54,12 @@ export class CancellationTooLateError extends Error {
   }
 }
 
+/** Bump when the stored shape or the seed changes, to reseed existing browsers. */
+const DATA_VERSION = 2;
+
 /** Cheap stable hash, so a changed config replaces stale demo data automatically. */
 function fingerprint(config: SalonConfig): string {
-  const source = JSON.stringify([config.services, config.staff, config.openingHours, config.booking]);
+  const source = JSON.stringify([DATA_VERSION, config.services, config.staff, config.openingHours, config.booking]);
   let h = 5381;
   for (let i = 0; i < source.length; i++) h = ((h * 33) ^ source.charCodeAt(i)) >>> 0;
   return h.toString(36);

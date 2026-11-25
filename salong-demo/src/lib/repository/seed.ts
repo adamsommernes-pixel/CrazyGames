@@ -119,7 +119,7 @@ export function createSeedBookings(config: SeedConfig, now: number): Booking[] {
     const date = addDays(today, offset);
     if (date === fullDay) continue;
     if (closureReason(date, { rules: config.booking, openingHours: config.openingHours })) continue;
-    fillRandom(date, offset <= 3 ? 0.7 : Math.max(0.15, 0.6 - offset * 0.025));
+    fillRandom(date, offset <= 3 ? 0.5 : Math.max(0.12, 0.45 - offset * 0.02));
   }
   if (fullDay && !closureReason(fullDay, { rules: config.booking, openingHours: config.openingHours })) {
     fillCompletely(fullDay);

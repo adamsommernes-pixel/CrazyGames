@@ -95,3 +95,17 @@ export function useRepoQuery<T>(key: string, load: (repo: SalonRepository) => Pr
 
   return result?.key === key ? result.data : undefined;
 }
+
+function subscribeMinute(listener: () => void) {
+  const id = window.setInterval(listener, 30_000);
+  return () => window.clearInterval(id);
+}
+
+/** The current time rounded to the minute (re-renders each minute), or null on the server. */
+export function useNow(): number | null {
+  return useSyncExternalStore(
+    subscribeMinute,
+    () => Math.floor(Date.now() / 60_000) * 60_000,
+    () => null,
+  );
+}

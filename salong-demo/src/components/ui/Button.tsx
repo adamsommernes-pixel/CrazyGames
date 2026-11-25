@@ -9,9 +9,9 @@ const base =
   "inline-flex items-center justify-center gap-3 rounded-ctl font-sans font-medium tracking-tightish transition-[background-color,color,border-color,transform] duration-200 ease-out-soft select-none disabled:cursor-not-allowed disabled:opacity-45 active:translate-y-px";
 
 const variants: Record<Variant, string> = {
-  solid: "bg-ink text-paper border border-ink hover:bg-accent hover:border-accent",
-  outline: "border border-ink text-ink hover:bg-ink hover:text-paper",
-  inverse: "bg-paper text-ink border border-paper hover:bg-stone hover:border-stone",
+  solid: "bg-ink text-paper border border-ink not-disabled:hover:bg-accent not-disabled:hover:border-accent",
+  outline: "border border-ink text-ink not-disabled:hover:bg-ink not-disabled:hover:text-paper",
+  inverse: "bg-paper text-ink border border-paper not-disabled:hover:bg-stone not-disabled:hover:border-stone",
 };
 
 const sizes: Record<Size, string> = {
