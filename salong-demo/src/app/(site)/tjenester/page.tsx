@@ -16,7 +16,7 @@ export default function ServicesPage() {
   return (
     <>
       <PageHeader label={t.nav.servicesShort} title={t.services.title} lead={t.services.lead}>
-        <nav aria-label="Kategorier" className="mt-8">
+        <nav aria-label={t.common.categories} className="mt-8">
           <ul className="flex flex-wrap gap-2">
             {salon.categories.map((c) => (
               <li key={c.id}>

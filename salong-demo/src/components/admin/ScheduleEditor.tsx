@@ -5,7 +5,7 @@ import { t } from "@/i18n";
 import { weekdayName } from "@/lib/format";
 import { WEEKDAYS } from "@/lib/hours";
 import { getRepository } from "@/lib/repository/client";
-import { useRepoQuery } from "@/lib/repository/live";
+import { useRepoQuery } from "@/lib/repository/query";
 import type { StaffMember, WeeklySchedule } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";
@@ -58,7 +58,7 @@ function ScheduleForm({ member }: { member: StaffMember }) {
   return (
     <form onSubmit={save}>
       <h2 className="text-d3">{member.name}</h2>
-      <p className="mt-2 max-w-measure text-muted">{t.admin.changesLive} Bruk to perioder for å legge inn lunsjpause.</p>
+      <p className="mt-2 max-w-measure text-muted">{t.admin.changesLive} {t.admin.scheduleHint}</p>
       <ul className="mt-6 border-t border-line">
         {WEEKDAYS.map((day) => {
           const ranges = schedule[day];
@@ -82,7 +82,7 @@ function ScheduleForm({ member }: { member: StaffMember }) {
                     >
                       {t.admin.removeRange}
                     </button>
-                    {!isValidRange(r) && <span className="text-small text-accent">Sluttid må være etter starttid.</span>}
+                    {!isValidRange(r) && <span className="text-small text-accent">{t.admin.endAfterStart}</span>}
                   </div>
                 ))}
                 <button

@@ -5,7 +5,7 @@ import { t } from "@/i18n";
 import { weekdayName } from "@/lib/format";
 import { WEEKDAYS } from "@/lib/hours";
 import { getRepository } from "@/lib/repository/client";
-import { useRepoQuery } from "@/lib/repository/live";
+import { useRepoQuery } from "@/lib/repository/query";
 import type { OpeningHours } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { useNotice } from "./Notice";
@@ -32,7 +32,7 @@ function HoursForm({ initial }: { initial: OpeningHours }) {
   return (
     <form onSubmit={save} className="max-w-2xl">
       <p className="max-w-measure text-muted">
-        {t.admin.changesLive} Ansattes arbeidstider begrenses alltid av åpningstiden.
+        {t.admin.changesLive} {t.admin.hoursHint}
       </p>
       <ul className="mt-8 border-t border-line">
         {WEEKDAYS.map((day) => {
@@ -54,7 +54,7 @@ function HoursForm({ initial }: { initial: OpeningHours }) {
               {range && (
                 <RangeInputs label={weekdayName(day)} range={range} onChange={(r) => setHours({ ...hours, [day]: r })} />
               )}
-              {range && !isValidRange(range) && <span className="text-small text-accent">Sluttid må være etter starttid.</span>}
+              {range && !isValidRange(range) && <span className="text-small text-accent">{t.admin.endAfterStart}</span>}
             </li>
           );
         })}

@@ -7,7 +7,7 @@ import { qualifiedStaff } from "@/lib/booking/slots";
 import { validateCustomer, type CustomerErrors } from "@/lib/booking/validation";
 import { formatDateLongYear, formatDuration, formatTime } from "@/lib/format";
 import { getRepository } from "@/lib/repository/client";
-import { useRepoQuery } from "@/lib/repository/live";
+import { useRepoQuery } from "@/lib/repository/query";
 import { SlotUnavailableError } from "@/lib/repository/types";
 import { toZoned } from "@/lib/time/zoned";
 import type { Booking } from "@/lib/types";
@@ -111,7 +111,7 @@ function CreateForm({ date: initialDate, onDone }: { date: string; onDone: () =>
     const check = validateCustomer(customer, { requireEmail: false });
     setErrors(check.ok ? {} : check.errors);
     if (!check.ok || !start || !staffId) {
-      if (!start || !staffId) setError(`${t.admin.staff} og ${t.admin.time.toLowerCase()} må velges.`);
+      if (!start || !staffId) setError(t.admin.chooseStaffAndTime);
       return;
     }
     try {
@@ -119,7 +119,7 @@ function CreateForm({ date: initialDate, onDone }: { date: string; onDone: () =>
       notify(t.admin.created);
       onDone();
     } catch (err) {
-      setError(err instanceof SlotUnavailableError ? t.booking.slotTaken : "Kunne ikke lagre bestillingen.");
+      setError(err instanceof SlotUnavailableError ? t.booking.slotTaken : t.admin.saveFailed);
     }
   }
 
@@ -204,13 +204,13 @@ function EditForm({ booking, onDone }: { booking: Booking; onDone: () => void })
 
   async function move(e: React.FormEvent) {
     e.preventDefault();
-    if (!start) return setError(`Velg ${t.admin.time.toLowerCase()}.`);
+    if (!start) return setError(t.admin.chooseTime);
     try {
       await getRepository().moveBooking(booking.id, { start, staffId });
       notify(t.admin.moved);
       onDone();
     } catch (err) {
-      setError(err instanceof SlotUnavailableError ? t.booking.slotTaken : "Kunne ikke flytte bestillingen.");
+      setError(err instanceof SlotUnavailableError ? t.booking.slotTaken : t.admin.moveFailed);
     }
   }
 

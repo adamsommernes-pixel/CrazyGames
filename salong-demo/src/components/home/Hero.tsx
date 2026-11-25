@@ -22,7 +22,7 @@ export function Hero() {
               <ButtonLink href="/bestill" size="lg" arrow>
                 {t.nav.book}
               </ButtonLink>
-              <ArrowLink href="/tjenester">Se priser</ArrowLink>
+              <ArrowLink href="/tjenester">{t.home.seePrices}</ArrowLink>
             </div>
           </div>
         </div>

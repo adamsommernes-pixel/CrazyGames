@@ -17,7 +17,7 @@ export const metadata = pageMetadata(salon, {
 
 export default function AboutPage() {
   const { address, phone, email, directions } = salon.contact;
-  const lead = `${address.street}, ${address.area}. Ring, send e-post eller kom innom i åpningstiden.`;
+  const lead = t.about.lead(address.street, address.area);
   const closedDates = salon.booking.closedDates.map((d) => `${d.reason.toLowerCase()} (${formatLocalDateLong(d.date).toLowerCase()})`);
 
   return (
@@ -61,7 +61,7 @@ export default function AboutPage() {
       <Section tone="stone" className="page-x py-20 md:py-28" aria-labelledby="historien">
         <div className="page-grid mx-auto max-w-page gap-y-10">
           <div className="col-span-12 md:col-span-6 lg:col-span-5">
-            <SectionHead number="01" label="Historien" />
+            <SectionHead number="01" label={t.about.storyLabel} />
             <h2 id="historien" className="mt-6 text-d2">{salon.about.heading}</h2>
             <div className="mt-8 grid max-w-measure gap-5">
               {salon.about.body.map((p, i) => (
@@ -78,7 +78,7 @@ export default function AboutPage() {
       <section className="page-x py-20 md:py-28" aria-labelledby="faq">
         <div className="page-grid mx-auto max-w-page gap-y-10">
           <div className="col-span-12 lg:col-span-4">
-            <SectionHead number="02" label="FAQ" />
+            <SectionHead number="02" label={t.about.faqLabel} />
             <h2 id="faq" className="mt-6 text-d2">{t.about.faqHeading}</h2>
           </div>
           <div className="col-span-12 lg:col-span-7 lg:col-start-6">

@@ -3,7 +3,7 @@
 import { t } from "@/i18n";
 import type { Slot } from "@/lib/booking/slots";
 import { formatLocalDateLong } from "@/lib/format";
-import { useRepoQuery } from "@/lib/repository/live";
+import { useRepoQuery } from "@/lib/repository/query";
 import type { LocalDate } from "@/lib/types";
 import { cx } from "@/components/ui/cx";
 import { StepHeading } from "./StepHeading";

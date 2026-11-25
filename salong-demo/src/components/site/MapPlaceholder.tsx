@@ -26,7 +26,7 @@ export function MapPlaceholder({ className }: { className?: string }) {
         <rect x="190" y="60" width="90" height="70" fill="var(--salon-stone)" />
         <rect x="20" y="180" width="110" height="40" fill="var(--salon-stone)" />
         <text x="196" y="122" className="label" fill="var(--salon-muted)" fontSize="8" letterSpacing="1.2">
-          PARK
+          {t.common.park.toUpperCase()}
         </text>
       </svg>
       <span
@@ -39,7 +39,7 @@ export function MapPlaceholder({ className }: { className?: string }) {
           {address.street}, {address.postalCode} {address.city}
         </span>
         <a href={href} className="link font-medium" rel="noopener" target="_blank">
-          Åpne kart<span className="sr-only"> (ny fane)</span>
+          {t.common.openMap}<span className="sr-only"> {t.common.newTab}</span>
         </a>
       </figcaption>
     </figure>

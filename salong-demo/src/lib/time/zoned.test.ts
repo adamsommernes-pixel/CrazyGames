@@ -5,7 +5,6 @@ import {
   formatClock,
   offsetMinutes,
   parseClock,
-  startOfWeek,
   toZoned,
   weekdayOf,
   zonedToUtc,
@@ -55,7 +54,6 @@ describe("calendar helpers", () => {
   it("knows ISO weekdays", () => {
     expect(weekdayOf("2026-11-25")).toBe(3); // Wednesday
     expect(weekdayOf("2026-11-29")).toBe(7); // Sunday
-    expect(startOfWeek("2026-11-29")).toBe("2026-11-23");
   });
 
   it("parses and formats clock times", () => {

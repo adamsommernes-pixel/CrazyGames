@@ -8,7 +8,8 @@ import { buildIcs } from "@/lib/booking/ics";
 import { canCustomerCancel, isLateCancellation } from "@/lib/booking/policy";
 import { formatDateLongYear, formatDuration, formatPrice, formatTime, telHref } from "@/lib/format";
 import { getRepository } from "@/lib/repository/client";
-import { useLiveCatalog, useNow, useRepoQuery } from "@/lib/repository/live";
+import { useLiveCatalog, useNow } from "@/lib/repository/live";
+import { useRepoQuery } from "@/lib/repository/query";
 import type { Booking, Service } from "@/lib/types";
 import { Button, ButtonLink } from "@/components/ui/Button";
 

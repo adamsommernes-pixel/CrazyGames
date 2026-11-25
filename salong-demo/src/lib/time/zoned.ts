@@ -137,11 +137,6 @@ export function weekdayOf(date: LocalDate): Weekday {
   return (js === 0 ? 7 : js) as Weekday;
 }
 
-/** Monday of the ISO week containing `date`. */
-export function startOfWeek(date: LocalDate): LocalDate {
-  return addDays(date, 1 - weekdayOf(date));
-}
-
 export function startOfMonth(date: LocalDate): LocalDate {
   const { year, month } = parseLocalDate(date);
   return formatLocalDate(year, month, 1);

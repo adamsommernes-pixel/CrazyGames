@@ -34,7 +34,7 @@ export function SiteFooter() {
           <HoursSummary className="tabular mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 whitespace-nowrap" />
         </div>
 
-        <nav aria-label="Bunnmeny" className="col-span-12 md:col-span-4 lg:col-span-2">
+        <nav aria-label={t.common.footerNav} className="col-span-12 md:col-span-4 lg:col-span-2">
           <h2 className="label text-stone">{t.nav.menu}</h2>
           <ul className="mt-4 grid gap-1">
             {mainNav.map((item) => (

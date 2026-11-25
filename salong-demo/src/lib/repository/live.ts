@@ -7,12 +7,10 @@
  * the server, then pick up admin edits (prices, hidden services, opening
  * hours) from the repository after hydration, without a loading state.
  */
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { salon } from "@config";
 import type { OpeningHours, Service, StaffMember } from "@/lib/types";
 import { todayLocal } from "@/lib/time/zoned";
-import { getRepository } from "./client";
-import type { SalonRepository } from "./types";
 
 export interface Catalog {
   services: Service[];
@@ -31,6 +29,8 @@ const catalogListeners = new Set<() => void>();
 let unsubscribeRepo: (() => void) | null = null;
 
 async function refreshCatalog() {
+  // Loaded on demand so content pages ship without the repository code.
+  const { getRepository } = await import("./client");
   const repo = getRepository();
   const [services, staff, openingHours] = await Promise.all([repo.listServices(), repo.listStaff(), repo.getOpeningHours()]);
   catalog = { services, staff, openingHours };
@@ -40,8 +40,17 @@ async function refreshCatalog() {
 function subscribeCatalog(listener: () => void) {
   catalogListeners.add(listener);
   if (!unsubscribeRepo) {
-    unsubscribeRepo = getRepository().subscribe(() => void refreshCatalog());
-    void refreshCatalog();
+    let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
+    unsubscribeRepo = () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+    void import("./client").then(({ getRepository }) => {
+      if (cancelled) return;
+      unsubscribe = getRepository().subscribe(() => void refreshCatalog());
+      void refreshCatalog();
+    });
   }
   return () => {
     catalogListeners.delete(listener);
@@ -69,31 +78,6 @@ export function useToday(): string | null {
     () => todayLocal(Date.now(), salon.timeZone),
     () => null,
   );
-}
-
-/**
- * Load data from the repository and reload whenever it changes.
- * `key` identifies the query; change it to refetch with new arguments.
- */
-export function useRepoQuery<T>(key: string, load: (repo: SalonRepository) => Promise<T>): T | undefined {
-  const [result, setResult] = useState<{ key: string; version: number; data: T } | undefined>(undefined);
-  const [version, setVersion] = useState(0);
-
-  useEffect(() => getRepository().subscribe(() => setVersion((v) => v + 1)), []);
-
-  useEffect(() => {
-    let alive = true;
-    load(getRepository()).then((data) => {
-      if (alive) setResult({ key, version, data });
-    });
-    return () => {
-      alive = false;
-    };
-    // `load` is recreated every render; `key` captures its inputs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, version]);
-
-  return result?.key === key ? result.data : undefined;
 }
 
 function subscribeMinute(listener: () => void) {

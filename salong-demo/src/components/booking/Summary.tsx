@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function summaryLine(services: Service[], serviceIds: string[]): string {
-  if (serviceIds.length === 0) return "Ingen tjenester valgt";
+  if (serviceIds.length === 0) return t.booking.noServices;
   const anyFrom = serviceIds.some((id) => services.find((s) => s.id === id)?.priceFrom);
   return `${formatDuration(totalDurationMin(services, serviceIds))} · ${formatPrice(totalPriceNok(services, serviceIds), anyFrom)}`;
 }
@@ -27,7 +27,7 @@ export function Summary({ services, serviceIds, staff, staffId, date, slot }: Pr
     <section aria-label={t.booking.summary} className="border-t-2 border-ink pt-5">
       <h2 className="label text-muted">{t.booking.summary}</h2>
       {chosen.length === 0 ? (
-        <p className="mt-4 text-muted">Velg en eller flere tjenester for å starte.</p>
+        <p className="mt-4 text-muted">{t.booking.summaryEmpty}</p>
       ) : (
         <ul className="mt-4 grid gap-3">
           {chosen.map((s) => (
@@ -44,7 +44,7 @@ export function Summary({ services, serviceIds, staff, staffId, date, slot }: Pr
         <dt className="text-muted">{t.booking.steps[2]}</dt>
         <dd>{date ? formatLocalDateLong(date) : "–"}</dd>
         <dt className="text-muted">{t.booking.steps[3]}</dt>
-        <dd className="tabular">{slot ? `kl. ${slot.label}` : "–"}</dd>
+        <dd className="tabular">{slot ? t.booking.atTime(slot.label) : "–"}</dd>
         <dt className="text-muted">{t.booking.total}</dt>
         <dd className="tabular font-medium">{chosen.length ? summaryLine(services, serviceIds) : "–"}</dd>
       </dl>

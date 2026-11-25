@@ -27,9 +27,9 @@ export function ServiceStep({ services, staff, selected, presetStaff, onToggle, 
       <StepHeading hint={t.booking.chooseServicesHint}>{t.booking.chooseServices}</StepHeading>
       {presetStaff && (
         <p className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-2 border-l-2 border-accent bg-tint px-4 py-3 text-small">
-          Du bestiller hos {presetStaff.name}. Tjenester {presetStaff.name.split(" ")[0]} ikke gjør, er skjult.
+          {t.booking.presetStaff(presetStaff.name, presetStaff.name.split(" ")[0]!)}
           <button type="button" onClick={onClearPreset} className="link font-medium">
-            Vis alle frisører
+            {t.booking.showAllStaff}
           </button>
         </p>
       )}

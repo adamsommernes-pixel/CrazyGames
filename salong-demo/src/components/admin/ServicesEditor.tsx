@@ -4,7 +4,7 @@ import { useState } from "react";
 import { salon } from "@config";
 import { t } from "@/i18n";
 import { getRepository } from "@/lib/repository/client";
-import { useRepoQuery } from "@/lib/repository/live";
+import { useRepoQuery } from "@/lib/repository/query";
 import type { Service } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { cx } from "@/components/ui/cx";

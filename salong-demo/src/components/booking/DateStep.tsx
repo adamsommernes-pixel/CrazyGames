@@ -6,7 +6,8 @@ import { t } from "@/i18n";
 import type { DayStatus } from "@/lib/booking/slots";
 import { formatLocalDateLong, formatMonthYear, weekdayShort } from "@/lib/format";
 import { WEEKDAYS } from "@/lib/hours";
-import { useRepoQuery, useToday } from "@/lib/repository/live";
+import { useToday } from "@/lib/repository/live";
+import { useRepoQuery } from "@/lib/repository/query";
 import { addDays, addMonths, daysInMonth, startOfMonth, weekdayOf } from "@/lib/time/zoned";
 import type { LocalDate } from "@/lib/types";
 import { cx } from "@/components/ui/cx";
@@ -148,7 +149,7 @@ export function DateStep({ serviceIds, staffId, selected, onSelect }: Props) {
       <p className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-small text-muted">
         <span className="inline-flex items-center gap-2">
           <span aria-hidden="true" className="inline-block h-4 w-4 rounded-ctl border border-line-strong bg-paper" />
-          Ledige tider
+          {t.booking.legendAvailable}
         </span>
         <span className="inline-flex items-center gap-2">
           <span aria-hidden="true" className="tabular line-through">12</span> {t.booking.full}

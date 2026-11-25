@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { salon } from "@config";
 import { t } from "@/i18n";
 import { ButtonLink } from "@/components/ui/Button";
 import { MobileMenu } from "./MobileMenu";
@@ -10,7 +9,7 @@ export function SiteHeader({ showBook = true }: { showBook?: boolean }) {
   return (
     <header className="page-x border-b border-line">
       <div className="mx-auto flex h-18 max-w-page items-center justify-between gap-6 md:h-20">
-        <Link href="/" className="-my-2 py-2" aria-label={`${salon.name}, ${t.nav.home.toLowerCase()}`}>
+        <Link href="/" className="-my-2 py-2">
           <Wordmark />
         </Link>
         <nav aria-label={t.nav.mainNav} className="hidden md:block">

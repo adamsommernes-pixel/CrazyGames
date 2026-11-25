@@ -11,7 +11,7 @@ export function TeamTeaser() {
     <section className="py-24 md:py-32">
       <div className="page-x">
         <div className="page-grid mx-auto max-w-page gap-y-6">
-          <SectionHead number="03" label="Teamet" className="col-span-12" />
+          <SectionHead number="03" label={t.home.teamLabel} className="col-span-12" />
           <h2 className="col-span-12 text-d2 lg:col-span-6">{t.home.teamHeading}</h2>
           <div className="col-span-12 self-end lg:col-span-4 lg:col-start-9">
             <p className="text-muted">{t.home.teamLead}</p>
@@ -23,7 +23,7 @@ export function TeamTeaser() {
       </div>
       <ul
         className="page-x scroll-px-[clamp(1.125rem,0.6rem+2.4vw,3rem)] mx-auto mt-14 flex max-w-page snap-x snap-mandatory gap-5 overflow-x-auto pb-4 md:grid md:grid-cols-5 md:gap-6 md:overflow-visible md:pb-0"
-        aria-label="Teamet"
+        aria-label={t.home.teamLabel}
       >
         {salon.staff.map((m, i) => (
           <li key={m.id} className={cx("w-[62vw] max-w-64 shrink-0 snap-start md:w-auto md:max-w-none", i % 2 === 1 && "md:mt-20")}>

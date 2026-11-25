@@ -85,7 +85,7 @@ export function BookingFlow({ initialServiceIds, initialStaffId }: Props) {
         go(3);
         setNotice(t.booking.slotTaken);
       } else {
-        setSubmitError("Noe gikk galt. Prøv igjen, eller ring oss.");
+        setSubmitError(t.common.genericError);
       }
     }
   }
@@ -211,8 +211,8 @@ export function BookingFlow({ initialServiceIds, initialStaffId }: Props) {
         <div className="page-x pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
           <p className="tabular mb-3 flex items-baseline justify-between gap-4 text-small" aria-live="polite">
             <span className="text-muted">
-              {activeIds.length === 1 ? "1 tjeneste" : `${activeIds.length} tjenester`}
-              {slot && date ? ` · kl. ${slot.label}` : ""}
+              {t.booking.serviceCount(activeIds.length)}
+              {slot && date ? ` · ${t.booking.atTime(slot.label)}` : ""}
             </span>
             <span className="font-medium">{summaryLine(services, activeIds)}</span>
           </p>

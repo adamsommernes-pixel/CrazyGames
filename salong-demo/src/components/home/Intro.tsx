@@ -1,4 +1,5 @@
 import { salon } from "@config";
+import { t } from "@/i18n";
 import { ImageSlot } from "@/components/ui/ImageSlot";
 import { SectionHead } from "@/components/ui/SectionHead";
 
@@ -6,14 +7,14 @@ export function Intro() {
   const { intro, introImage, founded, staff, services } = salon;
   const [first, ...rest] = intro.body;
   const facts = [
-    { value: String(founded), label: "Åpnet" },
-    { value: String(staff.length), label: "Fagfolk" },
-    { value: String(services.filter((s) => s.active).length), label: "Behandlinger" },
+    { value: String(founded), label: t.home.facts.founded },
+    { value: String(staff.length), label: t.home.facts.staff },
+    { value: String(services.filter((s) => s.active).length), label: t.home.facts.services },
   ];
   return (
     <section className="page-x py-24 md:py-32">
       <div className="page-grid mx-auto max-w-page">
-        <SectionHead number="01" label="Salongen" className="col-span-12" />
+        <SectionHead number="01" label={t.home.introLabel} className="col-span-12" />
         <h2 className="reveal col-span-12 mt-8 text-d2 md:col-span-10 lg:col-span-8">{intro.heading}</h2>
 
         <div className="reveal col-span-12 mt-12 md:col-span-6 md:mt-16 lg:col-span-6">

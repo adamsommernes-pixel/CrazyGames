@@ -15,7 +15,7 @@ export function BookingCta() {
             {t.nav.book}
           </ButtonLink>
           <p className="mt-5 text-small">
-            Eller ring{" "}
+            {t.common.orCall}{" "}
             <a href={telHref(salon.contact.phone)} className="link">
               {salon.contact.phone}
             </a>

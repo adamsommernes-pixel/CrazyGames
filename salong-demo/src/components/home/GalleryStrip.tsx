@@ -11,7 +11,7 @@ export function GalleryStrip() {
       <div className="page-x">
         <div className="mx-auto flex max-w-page flex-wrap items-end justify-between gap-6">
           <div>
-            <SectionHead number="04" label="Galleri" />
+            <SectionHead number="04" label={t.home.galleryLabel} />
             <h2 className="mt-6 text-d2">{t.home.galleryHeading}</h2>
           </div>
           <ArrowLink href="/galleri">{t.home.seeGallery}</ArrowLink>

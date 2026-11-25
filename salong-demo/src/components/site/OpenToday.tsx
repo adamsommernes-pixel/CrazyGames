@@ -16,17 +16,13 @@ export function OpenToday() {
   const rules = { rules: salon.booking, openingHours };
   const todayRange = openingHours[weekdayOf(today)];
   if (!closureReason(today, rules) && todayRange) {
-    return <span>Åpent i dag {formatRange(todayRange)}</span>;
+    return <span>{t.home.openToday(formatRange(todayRange))}</span>;
   }
   for (let i = 1; i <= 14; i++) {
     const date = addDays(today, i);
     const range = openingHours[weekdayOf(date)];
     if (!closureReason(date, rules) && range) {
-      return (
-        <span>
-          Stengt i dag. Åpner {i === 1 ? "i morgen" : weekdayName(weekdayOf(date))} {range.start}
-        </span>
-      );
+      return <span>{t.home.closedToday(i === 1 ? t.home.tomorrowLower : weekdayName(weekdayOf(date)), range.start)}</span>;
     }
   }
   return <span>{t.common.closed}</span>;

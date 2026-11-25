@@ -15,7 +15,7 @@ export function MobileBookBar() {
         <a
           href={telHref(salon.contact.phone)}
           className="label flex min-h-15 items-center border-l border-paper/25 px-5"
-          aria-label={`${t.common.phone}: ${salon.contact.phone}`}
+          aria-label={`${t.nav.call} ${salon.contact.phone}`}
         >
           {t.nav.call}
         </a>

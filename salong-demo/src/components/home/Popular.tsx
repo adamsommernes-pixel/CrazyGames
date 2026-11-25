@@ -10,9 +10,9 @@ export function Popular() {
       <div className="page-grid mx-auto max-w-page gap-y-10">
         <div className="col-span-12 lg:col-span-4">
           <div className="lg:sticky lg:top-10">
-            <SectionHead number="02" label="Priser" />
+            <SectionHead number="02" label={t.home.popularLabel} />
             <h2 className="mt-6 text-d2">{t.home.popularHeading}</h2>
-            <p className="mt-5 max-w-xs text-muted">Alle priser inkluderer mva. Klipp inkluderer vask og føn.</p>
+            <p className="mt-5 max-w-xs text-muted">{t.home.popularNote}</p>
             <ArrowLink href="/tjenester" className="mt-8">
               {t.home.allServices}
             </ArrowLink>
