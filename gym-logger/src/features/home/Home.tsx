@@ -19,6 +19,7 @@ import { dateShort, duration, isLongAgo, num, toDisplay } from '../../lib/format
 import { PR_LABEL } from '../../lib/calc';
 import { InstallHint } from '../profile/InstallHint';
 import { BackupReminder } from './BackupReminder';
+import { NewsCard } from './NewsCard';
 import { exerciseName } from '../../lib/exerciseName';
 import { formatSetShort, kindOf } from '../../lib/kinds';
 import { locale, t } from '../../i18n';
@@ -106,6 +107,7 @@ export function Home() {
 
       <main className="flex flex-col gap-4 px-4 pt-5 pb-44">
         <InstallHint />
+        <NewsCard />
         <BackupReminder />
 
         {active && isLongAgo(active.started_at, now) && !keepGoing && (
