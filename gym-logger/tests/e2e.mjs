@@ -127,6 +127,14 @@ try {
   await btn('Start Fullkropp A').click();
   await page.getByText('Knebøy').first().waitFor();
   await btn('Fullfør set 5').first().waitFor(); // styrkerutine gir 5 sets
+  // 4-0. Det du skriver er lagret selv om siden lastes på nytt før du forlater feltet
+  await page.getByLabel('Vekt set 3 (kg)').first().fill('97,5');
+  await page.waitForTimeout(700);
+  await page.reload();
+  await page.getByText('Knebøy').first().waitFor();
+  assert.equal(await page.getByLabel('Vekt set 3 (kg)').first().inputValue(), '97,5', 'vekten overlevde omlasting');
+  await page.getByLabel('Vekt set 3 (kg)').first().fill('100');
+  await page.getByLabel('Vekt set 3 (kg)').first().blur();
   // 4a. Første knebøy gir nytt totalnivå: fullskjerm «Nivå opp»
   await page.getByLabel('Vekt set 1 (kg)').first().fill('100');
   await page.getByLabel('Reps set 1').first().fill('5');
@@ -306,6 +314,23 @@ try {
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
   await page.getByText('Økter totalt').waitFor();
   await shot('profil');
+
+  // 9a. Data og backup: JSON og CSV lastes ned, og backupen kan leses inn igjen
+  const { readFile } = await import('node:fs/promises');
+  const [jsonDl] = await Promise.all([page.waitForEvent('download'), btn('Last ned backup (JSON)').click()]);
+  const backup = JSON.parse(await readFile(await jsonDl.path(), 'utf8'));
+  assert.equal(backup.version, 2);
+  assert.ok(backup.tables.sets.length >= 2, `backupen har sets (${backup.tables.sets.length})`);
+  await page.getByText(/Siste backup:/).waitFor();
+  const [csvDl] = await Promise.all([page.waitForEvent('download'), btn('Eksporter sets til regneark (CSV)').click()]);
+  const csv = await readFile(await csvDl.path(), 'utf8');
+  assert.match(csv, /date,workout,exercise,set,type,weight_kg,reps,distance_km,pr/);
+  assert.match(csv, /Knebøy,1,normal,100,5/);
+  await page.getByLabel('Velg backupfil').setInputFiles(await jsonDl.path());
+  await page.getByText(/Backup fra .* økter, .* sets/).waitFor();
+  await shot('gjenopprett-backup');
+  await btn('Slå sammen').click();
+  await page.getByText(/Gjenopprettet\./).waitFor();
   await btn('Logg ut').click();
   await dialog().getByRole('button', { name: 'Logg ut' }).click();
   await btn('Jeg har konto').waitFor();

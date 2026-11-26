@@ -3,7 +3,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../db/dexie';
 import { getProfile } from '../../db/repo';
-import { downloadJSON, exportBackup, importBackup } from '../../db/backup';
+import { backupFileName, downloadBlob, downloadJSON, exportBackup, exportCSV, importBackup, lastBackupAt, markBackedUp, parseBackup, summarizeBackup } from '../../db/backup';
+import { requestPersist, useStorageStatus } from '../../lib/storage';
 import { syncNow, useSyncStatus } from '../../db/sync';
 import { GOAL_LABEL } from '../../db/types';
 import { useAuth, useUser } from '../../auth/AuthProvider';
@@ -11,7 +12,7 @@ import { AuthError } from '../../auth/types';
 import { setSetting, useSetting } from '../../lib/settings';
 import { lifetime, longestStreak } from '../../lib/stats';
 import { usePRMap } from '../../lib/prs';
-import { duration, num, toDisplay } from '../../lib/format';
+import { dateShort, duration, num, toDisplay } from '../../lib/format';
 import { Button, Card, Chip, NumberStepper, Page, SectionTitle, Sheet, inputClass } from '../../components/ui';
 import { Avatar, PasswordField } from '../../components/widgets';
 import { Icon, type IconName } from '../../components/Icon';
@@ -60,14 +61,14 @@ export function ProfilePage() {
 
       <InstallHint />
 
+      <SectionTitle>{t('Data og backup', 'Data and backup')}</SectionTitle>
+      <DataSection />
+
       <SectionTitle>{t('Konto', 'Account')}</SectionTitle>
       <AccountSection />
 
       <SectionTitle>{t('Innstillinger', 'Settings')}</SectionTitle>
       <SettingsSection />
-
-      <SectionTitle>Data</SectionTitle>
-      <DataSection />
 
       <p className="mt-8 text-center text-xs text-faint">Gym Logger v{__APP_VERSION__}</p>
     </Page>
@@ -294,28 +295,76 @@ function SettingsSection() {
 function DataSection() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [storage, refreshStorage] = useStorageStatus();
+  const last = useLiveQuery(() => lastBackupAt(), [], null);
+
+  const exportJSON = async () => {
+    downloadJSON(await exportBackup(), backupFileName('json'));
+    await markBackedUp();
+    setMsg(t('Backup lastet ned. Ta vare på filen, f.eks. i iCloud eller Google Drive.', 'Backup downloaded. Keep the file somewhere safe, e.g. iCloud or Google Drive.'));
+  };
+  const exportSheet = async () => {
+    downloadBlob(new Blob([await exportCSV()], { type: 'text/csv;charset=utf-8' }), backupFileName('csv'));
+    setMsg(t('CSV lastet ned. Åpnes i Excel, Numbers eller Google Sheets.', 'CSV downloaded. Opens in Excel, Numbers or Google Sheets.'));
+  };
+
   return (
-    <Card className="flex flex-col gap-2 p-4">
-      <Button variant="secondary" icon="download" full onClick={async () => downloadJSON(await exportBackup(), `gym-logger-${new Date().toISOString().slice(0, 10)}.json`)}>
-        {t('Eksporter backup (JSON)', 'Export backup (JSON)')}
+    <Card className="flex flex-col gap-3 p-4">
+      <div className="flex items-start gap-3 rounded-2xl bg-raised px-3 py-2.5 text-sm" role="status">
+        <Icon name={storage?.persisted ? 'check' : 'info'} size={18} className={`mt-0.5 shrink-0 ${storage?.persisted ? 'text-green' : 'text-warn'}`} />
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold">
+            {storage?.persisted ? t('Lagringen er beskyttet', 'Storage is protected') : t('Lagringen kan slettes av nettleseren', 'Storage can be cleared by the browser')}
+          </div>
+          <div className="text-xs text-muted">
+            {storage?.persisted
+              ? t('Nettleseren sletter ikke dataene dine automatisk.', 'The browser will not clear your data automatically.')
+              : t('Installer appen på Hjem-skjermen og ta jevnlig backup.', 'Install the app on your home screen and back up regularly.')}{' '}
+            {last
+              ? t(`Siste backup: ${dateShort(last)}.`, `Last backup: ${dateShort(last)}.`)
+              : t('Ingen backup tatt ennå.', 'No backup taken yet.')}
+          </div>
+        </div>
+        {storage && !storage.persisted && storage.supported && (
+          <button type="button" className="shrink-0 text-xs font-semibold text-green" onClick={async () => { await requestPersist(); await refreshStorage(); }}>
+            {t('Beskytt', 'Protect')}
+          </button>
+        )}
+      </div>
+      <Button icon="download" full onClick={() => void exportJSON()}>
+        {t('Last ned backup (JSON)', 'Download backup (JSON)')}
+      </Button>
+      <Button variant="secondary" icon="download" full onClick={() => void exportSheet()}>
+        {t('Eksporter sets til regneark (CSV)', 'Export sets to spreadsheet (CSV)')}
       </Button>
       <Button variant="secondary" icon="upload" full onClick={() => fileRef.current?.click()}>
-        {t('Importer backup', 'Import backup')}
+        {t('Gjenopprett fra backup', 'Restore from backup')}
       </Button>
       <input
         ref={fileRef}
         type="file"
         accept="application/json,.json"
         className="hidden"
+        aria-label={t('Velg backupfil', 'Choose backup file')}
         onChange={async (e) => {
           const file = e.target.files?.[0];
           e.target.value = '';
           if (!file) return;
           try {
-            const n = await importBackup(JSON.parse(await file.text()));
-            setMsg(t(`Importerte ${n} rader.`, `Imported ${n} rows.`));
+            const backup = parseBackup(JSON.parse(await file.text()));
+            const sum = summarizeBackup(backup);
+            const ok = await askConfirm(
+              t(
+                `Backup fra ${dateShort(sum.exportedAt)}: ${sum.workouts} økter, ${sum.sets} sets, ${sum.routines} rutiner og ${sum.bodyweights} kroppsvekter. Slå sammen med det du har? Nyeste versjon av hver rad beholdes, ingenting slettes.`,
+                `Backup from ${dateShort(sum.exportedAt)}: ${sum.workouts} workouts, ${sum.sets} sets, ${sum.routines} routines and ${sum.bodyweights} bodyweights. Merge with what you have? The newest version of each row is kept, nothing is deleted.`,
+              ),
+              { confirmLabel: t('Slå sammen', 'Merge'), danger: false },
+            );
+            if (!ok) return;
+            const n = await importBackup(backup);
+            setMsg(t(`Gjenopprettet. ${n} rader lagt inn eller oppdatert.`, `Restored. ${n} rows added or updated.`));
           } catch (err) {
-            setMsg(err instanceof Error ? err.message : t('Kunne ikke lese filen.', 'Could not read the file.'));
+            setMsg(err instanceof Error && !(err instanceof SyntaxError) ? err.message : t('Kunne ikke lese filen.', 'Could not read the file.'));
           }
         }}
       />

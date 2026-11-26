@@ -7,6 +7,7 @@ import type { AuthUser } from './auth/types';
 import { openUserDb } from './db/dexie';
 import { getProfile } from './db/repo';
 import { useAutoSync } from './db/sync';
+import { requestPersist } from './lib/storage';
 import { ConfirmHost } from './components/confirm';
 import { ToastHost } from './components/toast';
 import { LevelHost } from './components/levelUp';
@@ -85,6 +86,9 @@ function SignedIn({ user }: { user: AuthUser }) {
   // Bytt til brukerens egen database før noe under leser fra den.
   useMemo(() => openUserDb(user.id), [user.id]);
   useAutoSync(user.kind === 'cloud');
+  useEffect(() => {
+    void requestPersist();
+  }, []);
   const profile = useLiveQuery(() => getProfile(user.id), [user.id], null);
   if (profile === null) return <Splash />;
   if (!profile?.onboarded_at) return <Onboarding user={user} />;

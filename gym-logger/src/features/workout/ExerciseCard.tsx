@@ -1,3 +1,4 @@
+import { useAutosave } from '../../lib/autosave';
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { Exercise, ExerciseKind, WorkoutExercise, WorkoutSet } from '../../db/types';
@@ -71,6 +72,7 @@ export function ExerciseCard({
   const [plateTarget, setPlateTarget] = useState(barWeight);
   const [showNotes, setShowNotes] = useState(!!we.notes);
   const [notes, setNotes] = useState(we.notes);
+  const notesSave = useAutosave(600);
   const [info, setInfo] = useState(false);
   const [swapping, setSwapping] = useState(false);
 
@@ -78,7 +80,8 @@ export function ExerciseCard({
   useEffect(() => {
     setNotes(we.notes);
     setShowNotes(!!we.notes);
-  }, [we.exercise_id, we.notes]);
+    // Bare ved bytte av øvelse, ikke etter egen autolagring (da ville teksten hoppet).
+  }, [we.exercise_id]);
 
   const sorted = [...sets].sort((a, b) => a.position - b.position);
   const openRest = () => {
@@ -155,8 +158,12 @@ export function ExerciseCard({
           placeholder={t('Notat, f.eks. setehøyde 4', 'Note, e.g. seat height 4')}
           rows={1}
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          onBlur={() => notes !== we.notes && void setExerciseNotes(we.id, notes)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setNotes(v);
+            notesSave.schedule(() => void setExerciseNotes(we.id, v));
+          }}
+          onBlur={notesSave.flush}
         />
       )}
 

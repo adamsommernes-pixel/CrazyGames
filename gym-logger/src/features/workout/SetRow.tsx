@@ -1,3 +1,4 @@
+import { useAutosave } from '../../lib/autosave';
 import { useUser } from '../../auth/AuthProvider';
 import { celebrateSet } from '../../lib/strengthLive';
 import { showLevelEvent } from '../../components/levelUp';
@@ -22,8 +23,8 @@ const TYPE_COLOR: Record<WorkoutSet['set_type'], string> = {
 };
 
 /**
- * Felt som holder egen tekst mens du skriver, og lagrer når du forlater feltet.
- * Enter kaller `onEnter` med verdien (som da lagres der, ikke ved blur).
+ * Felt som holder egen tekst mens du skriver. Lagrer kort etter siste tastetrykk (og straks
+ * hvis appen lukkes), og når du forlater feltet. Enter kaller `onEnter` med verdien.
  */
 function NumField({
   value,
@@ -49,6 +50,9 @@ function NumField({
   const [focused, setFocused] = useState(false);
   // Satt når Enter har tatt seg av lagringen, så blur ikke lagrer en gang til.
   const handled = useRef(false);
+  const autosave = useAutosave();
+  const committed = useRef(value);
+  committed.current = value;
   useEffect(() => {
     if (!focused) setText(show(value));
   }, [value, focused]);
@@ -68,16 +72,25 @@ function NumField({
         handled.current = false;
         e.currentTarget.select();
       }}
-      onChange={(e) => setText(e.target.value)}
+      onChange={(e) => {
+        const next = e.target.value;
+        setText(next);
+        autosave.schedule(() => {
+          const v = Math.max(0, parseNum(next));
+          if (v !== committed.current) onCommit(v);
+        });
+      }}
       onBlur={() => {
         setFocused(false);
+        autosave.cancel();
         if (handled.current) return;
         const v = parseNum(text);
-        if (v !== value) onCommit(Math.max(0, v));
+        if (v !== committed.current) onCommit(Math.max(0, v));
       }}
       onKeyDown={(e) => {
         if (e.key !== 'Enter') return;
         e.preventDefault();
+        autosave.cancel();
         handled.current = true;
         onEnter(Math.max(0, parseNum(text)), e.currentTarget);
       }}

@@ -1,3 +1,4 @@
+import { requestPersist } from '../../lib/storage';
 import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -76,6 +77,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
     if (notes !== workout.notes) await setWorkoutNotes(workout.id, notes);
     const endedAt = longAgo ? new Date(startMs + minutes * 60_000).toISOString() : undefined;
     if (await finishWorkout(workout.id, endedAt)) {
+      void requestPersist();
       if (routineChange && updateRoutine) await updateRoutineFromWorkout(workout.id);
       await stopRest();
       setFinishing(false);

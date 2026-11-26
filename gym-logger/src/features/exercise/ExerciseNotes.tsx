@@ -1,3 +1,4 @@
+import { useAutosave } from '../../lib/autosave';
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/dexie';
@@ -10,8 +11,10 @@ export function ExerciseNotes({ exerciseId }: { exerciseId: string }) {
   const saved = useLiveQuery(async () => ((await db.kv.get(key))?.value as string | undefined) ?? '', [key]);
   const [text, setText] = useState('');
   useEffect(() => {
-    if (saved !== undefined) setText(saved);
-  }, [saved]);
+    // Ikke overskriv det du holder på å skrive når autolagringen kommer tilbake.
+    if (saved !== undefined && document.activeElement?.id !== `exnote-${exerciseId}`) setText(saved);
+  }, [saved, exerciseId]);
+  const autosave = useAutosave(600);
   return (
     <section>
       <SectionTitle>{t('Mine notater', 'My notes')}</SectionTitle>
@@ -21,8 +24,12 @@ export function ExerciseNotes({ exerciseId }: { exerciseId: string }) {
         className={`${inputClass} min-h-24 py-3`}
         placeholder={t('F.eks. setehøyde 4, albuer inn, pust ut på vei opp', 'E.g. seat height 4, elbows in, breathe out on the way up')}
         value={text}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={() => text !== saved && void db.kv.put({ key, value: text })}
+        onChange={(e) => {
+          const v = e.target.value;
+          setText(v);
+          autosave.schedule(() => void db.kv.put({ key, value: v }));
+        }}
+        onBlur={autosave.flush}
       />
     </section>
   );
