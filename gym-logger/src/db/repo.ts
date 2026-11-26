@@ -174,25 +174,32 @@ export async function addSet(we: WorkoutExercise): Promise<void> {
   );
 }
 
+// Endringer på sets leser først og skriver så. De kjøres i en rw-transaksjon, slik at Dexie
+// kjører dem én om gangen: en rask «fullfør» kan da ikke overskrive en vekt som akkurat ble lagret.
+
 export async function updateSet(id: string, patch: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'set_type'>>) {
-  const s = await db.sets.get(id);
-  if (s) await db.sets.put(touched({ ...s, ...patch }));
+  await db.transaction('rw', db.sets, async () => {
+    const s = await db.sets.get(id);
+    if (s) await db.sets.put(touched({ ...s, ...patch }));
+  });
 }
 
 /** Huker av eller fjerner haken. Returnerer true når settet ble fullført. */
 export async function toggleSetDone(id: string): Promise<boolean> {
-  const s = await db.sets.get(id);
-  if (!s) return false;
-  const completing = !s.completed_at;
-  await db.sets.put(touched({ ...s, completed_at: completing ? now() : null }));
-  if (completing && s.weight > 0) {
-    // Neste tomme sets i samme øvelse får samme vekt, så man slipper å skrive den igjen.
-    const later = (await db.sets.where('workout_exercise_id').equals(s.workout_exercise_id).toArray()).filter(
-      (x) => !x.deleted && !x.completed_at && x.position > s.position && x.weight === 0 && x.set_type === s.set_type,
-    );
-    await db.sets.bulkPut(later.map((x) => touched({ ...x, weight: s.weight, reps: x.reps || s.reps })));
-  }
-  return completing;
+  return db.transaction('rw', db.sets, async () => {
+    const s = await db.sets.get(id);
+    if (!s) return false;
+    const completing = !s.completed_at;
+    await db.sets.put(touched({ ...s, completed_at: completing ? now() : null }));
+    if (completing && s.weight > 0) {
+      // Neste tomme sets i samme øvelse får samme vekt, så man slipper å skrive den igjen.
+      const later = (await db.sets.where('workout_exercise_id').equals(s.workout_exercise_id).toArray()).filter(
+        (x) => !x.deleted && !x.completed_at && x.position > s.position && x.weight === 0 && x.set_type === s.set_type,
+      );
+      await db.sets.bulkPut(later.map((x) => touched({ ...x, weight: s.weight, reps: x.reps || s.reps })));
+    }
+    return completing;
+  });
 }
 
 /** Setter samme vekt (kg) på alle uferdige arbeidssett i øvelsen, f.eks. fra et progresjonsforslag. */
@@ -262,8 +269,10 @@ export async function setExerciseNotes(weId: string, notes: string) {
 
 /** Endrer et set i en ferdig økt (vekt og reps). */
 export async function editSet(id: string, weight: number, reps: number) {
-  const s = await db.sets.get(id);
-  if (s) await db.sets.put(touched({ ...s, weight, reps }));
+  await db.transaction('rw', db.sets, async () => {
+    const s = await db.sets.get(id);
+    if (s) await db.sets.put(touched({ ...s, weight, reps }));
+  });
 }
 
 export async function setExerciseRest(weId: string, seconds: number) {
@@ -435,20 +444,60 @@ export async function deleteRoutine(id: string): Promise<Removed> {
   });
 }
 
+/**
+ * Rutinepunkter ut fra en økt. Med `onlyDone` telles bare fullførte arbeidssett (ferdig økt),
+ * ellers alle planlagte arbeidssett (økt som pågår). Mål-reps beholdes fra rutinen når de finnes.
+ */
+async function itemsFromWorkout(workoutId: string, onlyDone: boolean): Promise<RoutineDraftItem[]> {
+  const sets = await setsForWorkout(workoutId);
+  return (await workoutExercises(workoutId))
+    .map((we) => {
+      const work = sets.filter((s) => s.workout_exercise_id === we.id && s.set_type !== 'warmup' && (!onlyDone || s.completed_at));
+      return {
+        exercise_id: we.exercise_id,
+        target_sets: work.length,
+        target_reps: we.target_reps ?? work[0]?.reps ?? 8,
+        rest_seconds: we.rest_seconds,
+      };
+    })
+    .filter((i) => i.target_sets > 0);
+}
+
 /** Lager en rutine av en ferdig økt. */
 export async function routineFromWorkout(workoutId: string): Promise<string> {
   const w = await db.workouts.get(workoutId);
-  const sets = await setsForWorkout(workoutId);
-  const items: RoutineDraftItem[] = (await workoutExercises(workoutId)).map((we) => {
-    const done = sets.filter((s) => s.workout_exercise_id === we.id && s.completed_at && s.set_type !== 'warmup');
-    return {
-      exercise_id: we.exercise_id,
-      target_sets: Math.max(done.length, 1),
-      target_reps: done[0]?.reps ?? 8,
-      rest_seconds: we.rest_seconds,
-    };
-  });
-  return saveRoutine({ name: w?.name ?? 'Ny rutine', notes: '' }, items);
+  return saveRoutine({ name: w?.name ?? 'Ny rutine', notes: '' }, await itemsFromWorkout(workoutId, true));
+}
+
+/**
+ * Er økta (startet fra en rutine) annerledes enn rutinen: andre øvelser, annen rekkefølge
+ * eller annet antall sets? Brukes til å tilby «Oppdater rutinen» når økta avsluttes.
+ */
+export async function routineChanges(workoutId: string): Promise<{ routineId: string; routineName: string } | null> {
+  const w = await db.workouts.get(workoutId);
+  if (!w?.routine_id) return null;
+  const routine = await db.routines.get(w.routine_id);
+  if (!routine || routine.deleted) return null;
+  const planned = await itemsFromWorkout(workoutId, false);
+  const current = await routineItems(routine.id);
+  const sig = (xs: { exercise_id: string; target_sets: number }[]) => xs.map((x) => `${x.exercise_id}:${x.target_sets}`).join('|');
+  return sig(planned) === sig(current) ? null : { routineId: routine.id, routineName: routine.name };
+}
+
+/** Skriver øktas øvelser og antall sets tilbake til rutinen den ble startet fra. */
+export async function updateRoutineFromWorkout(workoutId: string): Promise<void> {
+  const w = await db.workouts.get(workoutId);
+  const routine = w?.routine_id ? await db.routines.get(w.routine_id) : undefined;
+  if (!routine) return;
+  const items = await itemsFromWorkout(workoutId, true);
+  if (items.length) await saveRoutine({ id: routine.id, name: routine.name, notes: routine.notes }, items);
+}
+
+/** Lager en kopi av en rutine og returnerer id-en til kopien. */
+export async function duplicateRoutine(id: string): Promise<string> {
+  const r = await db.routines.get(id);
+  const items = (await routineItems(id)).map(({ exercise_id, target_sets, target_reps, rest_seconds }) => ({ exercise_id, target_sets, target_reps, rest_seconds }));
+  return saveRoutine({ name: `${r?.name ?? 'Rutine'} (kopi)`, notes: r?.notes ?? '' }, items);
 }
 
 // ---------- Profil ----------

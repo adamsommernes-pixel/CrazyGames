@@ -9,6 +9,8 @@ import {
   lastSetTime,
   renameWorkout,
   restore,
+  routineChanges,
+  updateRoutineFromWorkout,
   setsForWorkout,
   setWorkoutNotes,
   workoutExercises,
@@ -20,9 +22,10 @@ import { stopRest, useNow } from './restTimer';
 import { useWakeLock } from './useWakeLock';
 import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
-import { dateShort, duration, durationShort, isLongAgo, num, toDisplay } from '../../lib/format';
+import { dateShort, duration, durationShort, isLongAgo, num, plural, toDisplay } from '../../lib/format';
 import { volume } from '../../lib/calc';
 import { undoToast } from '../../components/toast';
+import { Icon } from '../../components/Icon';
 
 export function ActiveWorkout({ workout }: { workout: Workout }) {
   const navigate = useNavigate();
@@ -46,7 +49,12 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
   const [durationMin, setDurationMin] = useState<number | null>(null);
   const lastSet = useLiveQuery(() => lastSetTime(workout.id), [workout.id, sets.length]);
   const suggestedMin = lastSet ? Math.max(10, Math.round((new Date(lastSet).getTime() - startMs) / 60_000 / 5) * 5 + 5) : 60;
-  const minutes = durationMin ?? Math.min(suggestedMin, 300);
+  // Etterregistrert økt: settene er huket av nå, så tiden siden start sier ingenting. Bruk 60 min.
+  const minutes = durationMin ?? (suggestedMin > 300 ? 60 : suggestedMin);
+
+  // Startet fra en rutine og endret underveis? Da kan rutinen oppdateres når økta lagres.
+  const routineChange = useLiveQuery(() => routineChanges(workout.id), [workout.id, sets.length, wes.length]);
+  const [updateRoutine, setUpdateRoutine] = useState(false);
 
   const doneSets = sets.filter((s) => s.completed_at);
   const vol = volume(sets);
@@ -55,6 +63,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
     if (notes !== workout.notes) await setWorkoutNotes(workout.id, notes);
     const endedAt = longAgo ? new Date(startMs + minutes * 60_000).toISOString() : undefined;
     if (await finishWorkout(workout.id, endedAt)) {
+      if (routineChange && updateRoutine) await updateRoutineFromWorkout(workout.id);
       await stopRest();
       setFinishing(false);
       navigate(`/summary/${workout.id}`, { replace: true });
@@ -134,7 +143,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
           <p className="mb-4 text-muted">Du har ikke huket av noen sets ennå. Hak av settene du har gjort, eller forkast økta.</p>
         ) : (
           <p className="mb-4 text-muted">
-            {doneSets.length} sets fullført. Sets som ikke er huket av blir fjernet.
+            {plural(doneSets.length, 'set', 'sets')} fullført. Sets som ikke er huket av blir fjernet.
           </p>
         )}
         {longAgo && (
@@ -144,6 +153,23 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
             </div>
             <NumberStepper label="Varighet" value={minutes} step={5} min={5} max={300} onChange={setDurationMin} format={(v) => durationShort(v * 60_000)} />
           </div>
+        )}
+        {routineChange && doneSets.length > 0 && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={updateRoutine}
+            onClick={() => setUpdateRoutine(!updateRoutine)}
+            className={`mb-4 flex w-full items-start gap-3 rounded-2xl border p-3 text-left transition ${updateRoutine ? 'border-green/60 bg-green-dim/30' : 'border-line bg-raised'}`}
+          >
+            <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-lg border-2 ${updateRoutine ? 'border-green bg-green text-black' : 'border-line'}`}>
+              {updateRoutine && <Icon name="check" size={14} strokeWidth={3.5} />}
+            </span>
+            <span>
+              <span className="block font-semibold">Oppdater rutinen «{routineChange.routineName}»</span>
+              <span className="block text-sm text-muted">Du har endret øvelser eller antall sets. Lagre dem i rutinen til neste gang.</span>
+            </span>
+          </button>
         )}
         <label className="mb-4 flex flex-col gap-1">
           <span className="text-sm text-muted">Notat (valgfritt)</span>

@@ -90,7 +90,8 @@ export const SET_TYPE_LABEL: Record<SetType, string> = {
   failure: 'Til feil',
 };
 /** Kort merke i set-kolonnen. Vanlige sets viser nummeret i stedet. */
-export const SET_TYPE_SHORT: Record<SetType, string> = { normal: '', warmup: 'O', drop: 'D', failure: 'F' };
+// «W» for oppvarming (warm-up) som i de fleste treningsapper; «O» ligner for mye på 0.
+export const SET_TYPE_SHORT: Record<SetType, string> = { normal: '', warmup: 'W', drop: 'D', failure: 'F' };
 
 export const GOALS = ['strength', 'hypertrophy', 'general', 'endurance'] as const;
 export type Goal = (typeof GOALS)[number];

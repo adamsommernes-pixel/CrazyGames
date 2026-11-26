@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { db } from '../../db/dexie';
-import { deleteRoutine, restore, routineItems, saveRoutine, type RoutineDraftItem } from '../../db/repo';
-import { undoToast } from '../../components/toast';
+import { deleteRoutine, duplicateRoutine, restore, routineItems, saveRoutine, type RoutineDraftItem } from '../../db/repo';
+import { showToast, undoToast } from '../../components/toast';
 import { Button, Card, IconButton, NumberStepper, Page, inputClass } from '../../components/ui';
 import { ExercisePicker, useExerciseMap } from '../workout/ExercisePicker';
 import { getSetting } from '../../lib/settings';
@@ -111,9 +111,27 @@ export function RoutineEditor() {
       {id && (
         <Button
           full
+          variant="secondary"
+          icon="repeat"
+          className="mt-8"
+          onClick={async () => {
+            // Lagre endringene først, så kopien blir lik det som står på skjermen.
+            await saveRoutine({ id, name: name.trim() || 'Rutine', notes }, items);
+            const copy = await duplicateRoutine(id);
+            navigate(`/routines/${copy}`, { replace: true });
+            showToast('Kopi laget. Du redigerer nå kopien.');
+          }}
+        >
+          Dupliser rutine
+        </Button>
+      )}
+
+      {id && (
+        <Button
+          full
           variant="danger"
           icon="trash"
-          className="mt-8"
+          className="mt-2"
           onClick={async () => {
             const removed = await deleteRoutine(id);
             navigate('/routines', { replace: true });

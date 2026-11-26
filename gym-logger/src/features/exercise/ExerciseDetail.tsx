@@ -11,6 +11,7 @@ import { dateShort, num, toDisplay } from '../../lib/format';
 import { PR_LABEL, estimate1RM } from '../../lib/calc';
 import { sessionsForExercise } from '../progress/data';
 import { ExerciseNotes } from './ExerciseNotes';
+import { OneRepMaxTable } from './OneRepMaxTable';
 
 type Metric = 'heaviest' | 'e1rm' | 'volume';
 const METRICS: { key: Metric; label: string }[] = [
@@ -100,6 +101,8 @@ export function ExerciseDetail() {
           </div>
         )}
       </Card>
+
+      <OneRepMaxTable oneRm={estimate1RM(best1.weight, best1.reps)} equipment={exercise?.equipment} />
 
       <ExerciseNotes exerciseId={exerciseId} />
 

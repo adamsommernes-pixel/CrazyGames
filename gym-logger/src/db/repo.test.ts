@@ -11,6 +11,7 @@ import {
   setsForWorkout,
   startWorkout,
   toggleSetDone,
+  updateSet,
   updateWorkoutTimes,
   workoutExercises,
 } from './repo';
@@ -18,6 +19,21 @@ import {
 let n = 0;
 beforeEach(() => {
   openUserDb(`test-${++n}`);
+});
+
+describe('samtidige endringer', () => {
+  it('fullfør rett etter vektendring mister ikke vekten', async () => {
+    const w = await startWorkout();
+    await addExerciseToWorkout(w, 'ex-knebøy', { sets: 1 });
+    const [s] = await setsForWorkout(w);
+    // Ikke awaited, akkurat som når Enter i vektfeltet etterfølges av rask fullføring.
+    const write = updateSet(s.id, { weight: 105 });
+    await toggleSetDone(s.id);
+    await write;
+    const [after] = await setsForWorkout(w);
+    expect(after.weight).toBe(105);
+    expect(after.completed_at).not.toBeNull();
+  });
 });
 
 describe('etterregistrert økt', () => {

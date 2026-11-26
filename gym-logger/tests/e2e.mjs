@@ -23,8 +23,21 @@ await new Promise((res, rej) => {
 await mkdir('tests/screens', { recursive: true });
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ ...devices['iPhone 13'], locale: 'nb-NO' });
+// Headless Chromium har ingen skjermlås: tell kallene i stedet, så vi ser at appen ber om den.
+await ctx.addInitScript(() => {
+  window.__wakeLocks = 0;
+  Object.defineProperty(navigator, 'wakeLock', {
+    configurable: true,
+    value: { request: async () => (window.__wakeLocks++, { released: false, release: async () => {} }) },
+  });
+});
 const page = await ctx.newPage();
 const errors = [];
+const focused = () => page.evaluate(() => document.activeElement?.getAttribute('aria-label'));
+const isoDay = (daysAgo) => {
+  const d = new Date(Date.now() - daysAgo * 86_400_000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 page.on('pageerror', (e) => errors.push(e.message));
 let n = 0;
 const shot = async (name) => {
@@ -116,10 +129,55 @@ try {
   await btn(/Gjenta forrige/).click();
   await page.getByText('Knebøy').first().waitFor();
   await page.getByRole('button', { name: 'Bruk forrige: 100 × 5' }).first().waitFor();
-  await logSet(1, 105, 5);
+
+  // 5a. Progresjonsforslag (målet 5 reps ble nådd sist) og skjermlås
+  await page.getByText('Du klarte målet sist').waitFor();
+  assert.ok((await page.evaluate(() => window.__wakeLocks)) > 0, 'skjermen holdes på under økta');
+
+  // 5b. Oppvarming med ett trykk: 40/60/80 % av 100 kg
+  await btn('Valg for øvelse').first().click();
+  await btn('Legg til oppvarming (40 / 60 / 80 kg)').click();
+  await btn('Fullfør set oppvarming 3').waitFor();
+  await shot('oppvarming-og-forslag');
+
+  // 5c. Enter-flyt: vekt → reps → fullført, og fokus til neste set
+  const weight1 = page.getByLabel('Vekt set 1 (kg)').first();
+  await weight1.fill('105');
+  await weight1.press('Enter');
+  assert.equal(await focused(), 'Reps set 1', 'Enter i vekt går til reps');
+  await page.keyboard.type('5');
+  await page.keyboard.press('Enter');
+  await btn('Angre set 1').first().waitFor();
+  assert.equal(await focused(), 'Vekt set 2 (kg)', 'Enter i reps fullfører og går til neste set');
   await page.getByText('Tyngste').first().waitFor();
   await shot('pr-i-okt');
-  await finish();
+
+  // 5d. Slett et set og angre
+  await btn('Set 2, rediger').first().click();
+  await dialog().getByRole('button', { name: 'Slett' }).click();
+  await page.getByText('Settet er slettet').waitFor();
+  assert.equal(await btn('Set 2, rediger').count(), 0);
+  await btn('Angre', { exact: true }).click();
+  await btn('Set 2, rediger').first().waitFor();
+
+  // 5e. Flervalg og søk uten æøå
+  await btn('Legg til øvelse').click();
+  await page.getByPlaceholder('Søk etter øvelse').fill('kneboy');
+  await page.getByRole('checkbox', { name: /^Knebøy/ }).first().waitFor();
+  await page.getByPlaceholder('Søk etter øvelse').fill('');
+  await page.getByRole('checkbox', { name: /^Benkpress Bryst/ }).click();
+  await page.getByPlaceholder('Søk etter øvelse').fill('sidehev');
+  await page.getByRole('checkbox', { name: /^Sidehev Skuldre/ }).click();
+  await shot('flervalg');
+  await btn('Legg til (2)').click();
+  await page.getByRole('heading', { name: 'Sidehev' }).waitFor();
+  await page.getByRole('heading', { name: 'Benkpress' }).waitFor();
+
+  // 5f. Økta avviker fra rutinen → tilbud om å oppdatere rutinen (lar den stå av)
+  await btn('Avslutt', { exact: true }).click();
+  await page.getByText('Oppdater rutinen «Fullkropp A»').waitFor();
+  await btn('Lagre økt').click();
+  await page.getByText('Økt fullført').waitFor();
   await page.getByText(/ny rekord|nye rekorder/).first().waitFor();
   await shot('oppsummering-pr');
   await btn('Ferdig').click();
@@ -139,6 +197,7 @@ try {
   await shot('fremgang');
   await btn(/Knebøy/).click();
   await page.getByRole('img', { name: /Graf/ }).waitFor();
+  await page.getByText('Prosent av 1RM').waitFor();
   await shot('ovelse');
 
   // 8. Kroppsvekt
@@ -147,6 +206,33 @@ try {
   await page.getByPlaceholder('Vekt i dag (kg)').fill('82,5');
   await btn('Logg').click();
   await page.getByText('82,5 kg').first().waitFor();
+
+  // 8b. Etterregistrert økt fra forrige uke (påvirker ikke ukemålet), så endre den i historikken
+  await btn('Start økt').click();
+  await btn(/Logg tidligere økt/).click();
+  await page.locator('#past-date').fill(isoDay(8));
+  await btn('Start registrering').click();
+  await btn('Legg til øvelse').click();
+  await page.getByPlaceholder('Søk etter øvelse').fill('benk');
+  await page.getByRole('checkbox', { name: /^Benkpress Bryst/ }).click();
+  await btn('Legg til (1)').click();
+  await logSet(1, 60, 10);
+  await btn('Avslutt', { exact: true }).click();
+  await page.getByRole('group', { name: 'Varighet' }).waitFor();
+  await shot('etterregistrert');
+  await btn('Lagre økt').click();
+  await page.getByText('Økt fullført').waitFor();
+  await btn('Ferdig').click();
+  await page.getByRole('img', { name: '2 av 3 økter denne uka' }).waitFor();
+
+  await page.getByRole('navigation').getByRole('link', { name: 'Historikk' }).click();
+  await btn(/1 øvelse/).nth(2).waitFor();
+  await btn(/1 øvelse/).last().click();
+  await btn('Valg').click();
+  await btn('Endre navn, dato og varighet').click();
+  await page.locator('#edit-workout-name').fill('Bryst');
+  await btn('Lagre endringer').click();
+  await page.getByRole('heading', { name: 'Bryst' }).waitFor();
 
   // 9. Profil → logg ut
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();

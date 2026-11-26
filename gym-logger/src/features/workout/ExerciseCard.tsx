@@ -87,6 +87,7 @@ export function ExerciseCard({
 
   let workIndex = 0;
   let label = 0;
+  let warmIndex = 0;
 
   return (
     <Card className="p-3">
@@ -147,7 +148,7 @@ export function ExerciseCard({
             <SetRow
               key={s.id}
               set={s}
-              label={s.set_type === 'normal' ? label : label + 1}
+              label={s.set_type === 'normal' ? label : s.set_type === 'warmup' ? `oppvarming ${++warmIndex}` : `${label + 1} (${SET_TYPE_LABEL[s.set_type].toLowerCase()})`}
               previous={prev}
               unit={unit}
               prs={prMap.get(s.id)}

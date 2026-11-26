@@ -107,7 +107,7 @@ export function SetRow({
 }: {
   set: WorkoutSet;
   /** Nummer for vanlige sets. */
-  label: number;
+  label: number | string;
   previous?: WorkoutSet;
   unit: 'kg' | 'lbs';
   prs?: PRKind[];

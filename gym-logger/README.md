@@ -21,13 +21,22 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
   - hold-inne-knapper for vekt og reps
   - fremdriftslinje
   - neste tomme sets får samme vekt når du fullfører et set
+  - **progresjonsforslag**: nådde du mål-reps på alle sett sist, foreslås ett steg tyngre (+2,5 kg stang, +1 kg annet)
+  - **oppvarming med ett trykk** for stangøvelser (40/60/80 %, avrundet til skivene dine)
+  - **Enter-flyt**: Enter i vekt går til reps, og Enter i reps fullfører settet og går til neste
+  - **skjermen holdes på** under økta (kan slås av)
+- **Øvelsesvelger**: velg flere øvelser på én gang, med «Nylig brukt» og siste vekt × reps. Søket tåler at du skriver uten æ, ø og å («kneboy» finner Knebøy).
+- **Angre**: sletting av set, øvelse, økt, rutine og kroppsvekt kan angres fra meldingen nederst på skjermen.
 - **Hviletimer** starter når du huker av et set. Den har −15/+15, lyd og vibrasjon, og teller riktig når skjermen er låst.
-- **Oppsummering** etter økta: rekorder med konfetti, volum mot forrige gang og muskelgrupper.
+- **Oppsummering** etter økta: rekorder med konfetti, volum mot forrige gang og muskelgrupper. Har du endret en rutine-økt underveis, kan rutinen oppdateres.
+- **Glemt å avslutte?** Hjem spør når en økt har stått åpen i over 3 timer, og du setter varigheten selv.
+- **Logg tidligere økt**: registrer en økt i ettertid med dato og klokkeslett.
 
 **Oversikt**
-- **Historikk** som liste eller kalender. Du kan rette vekt og reps i ferdige økter.
+- **Historikk** som liste eller kalender. Du kan rette vekt og reps, og endre navn, dato og varighet på ferdige økter.
 - **Fremgang**: volum og økter per uke (12 uker), fordeling på muskelgrupper og 1RM per øvelse.
-- **Øvelsesside**: rekorder, graf (tyngste, 1RM, volum), historikk og egne notater.
+- **Øvelsesside**: rekorder, graf (tyngste, 1RM, volum), prosenttabell for 1RM, historikk og egne notater.
+- **Rutiner** kan dupliseres.
 - **Kroppsvekt**: logg og graf.
 - **Profil**: livstidstall, rediger profil, konto, innstillinger (enhet, hvile, stang og skiver, lyd og vibrasjon) og backup til JSON.
 
@@ -72,6 +81,7 @@ Slik installeres den på telefonen:
 2. Kjør disse filene i **SQL Editor**, i denne rekkefølgen:
    - `supabase/migrations/001_init.sql`
    - `supabase/migrations/002_profiles.sql` (profiler, kroppsvekt, set-typer og sletting av konto)
+   - `supabase/migrations/003_qol.sql` (mål-reps per øvelse i økta, til progresjonsforslag)
 3. Velg om e-post skal bekreftes, under **Authentication → Sign In / Providers → Email**:
    - Med bekreftelse ber appen brukeren sjekke e-posten etter registrering.
    - Uten bekreftelse logges brukeren inn med en gang.
