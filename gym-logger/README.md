@@ -1,6 +1,12 @@
 # Gym Logger
 
-Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fremgangen. Svart og grønt design, norsk språk, virker uten nett.
+Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fremgangen. Svart og grønt design, norsk og engelsk, virker uten nett.
+
+> **English:** A gym-logging PWA. Pick an exercise, log sets, reps and weight, and follow your progress. Black and green design, works offline.
+> - Available in **Norwegian and English**. Switch on the welcome page (NO / EN) or under Profile → Settings → Language. On first visit the app follows the browser language.
+> - Built-in exercises have English names and how-to guides, and search finds them in both languages («squat» finds Knebøy).
+> - **Muscles trained**: a front and back body figure on Home shows which muscle groups you have trained in the last 7 or 30 days. Secondary muscles count half a set. Tap a muscle for sets and the date you last trained it.
+> - Development: `npm install`, `npm run dev`, `npm test`, `npm run build && npm run e2e`.
 
 ## Funksjoner
 
@@ -10,9 +16,14 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
 - Oppstart i fire steg: navn og farge, mål, økter per uke og erfaring, og til slutt enhet og kroppsvekt. Til slutt lages ferdige startrutiner etter mål og frekvens (Fullkropp A/B, Overkropp/Underkropp eller Push/Pull/Bein).
 - Hver konto har sin egen database, så flere personer kan bruke samme enhet uten å se hverandres data.
 
+**Språk**
+- Norsk og engelsk. Bytt med NO / EN på velkomstsiden eller under Profil → Innstillinger → Språk. Første gang følger appen nettleserens språk.
+- Øvelsesnavn og fremgangsmåter finnes på begge språk. Søket finner øvelser på begge, og egne øvelser beholder navnet du ga dem.
+- Datoer og tall følger språket (desimalkomma på norsk, punktum på engelsk).
+
 **Øvelsesbibliotek**
 - **131 innebygde øvelser** fordelt på bryst, rygg, skuldre, biceps, triceps, underarmer, bein, rumpe, mage og kondisjon.
-- **Fremgangsmåte for hver øvelse**, på norsk:
+- **Fremgangsmåte for hver øvelse**, på norsk og engelsk:
   - steg for steg
   - tips
   - vanlige feil
@@ -59,6 +70,7 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
 - **Logg tidligere økt**: registrer en økt i ettertid med dato og klokkeslett.
 
 **Oversikt**
+- **Trent kropp** på Hjem: en figur forfra og bakfra som farges etter hvor mange arbeidssett hver muskelgruppe har fått siste 7 eller 30 dager (1–3, 4–8, 9–15 og 16+ sets per uke). Sekundære muskler teller et halvt sett. Trykk på en muskel for antall sets og når den sist ble trent.
 - **Historikk** som liste eller kalender. Du kan rette vekt og reps, og endre navn, dato og varighet på ferdige økter.
 - **Fremgang**: volum og økter per uke (12 uker), fordeling på muskelgrupper og 1RM per øvelse.
 - **Øvelsesside**: rekorder, graf (tyngste, 1RM, volum), prosenttabell for 1RM, historikk og egne notater.
@@ -124,10 +136,11 @@ Synken skriver alt lokalt først. Når det er nett, sendes endringene og nye end
 
 ```
 src/
+  i18n/        språk: t('norsk', 'english'), valgt språk og locale
   auth/        innlogging: lokal og Supabase bak samme grensesnitt, passord-hashing
   db/          Dexie-skjema (én database per konto), datafunksjoner, maler, synk, backup, v1-migrering
   lib/         1RM, PR, statistikk (ukemål, streak), platekalkulator, formatering, innstillinger
-  components/  knapper, kort, ark, stepper, ring, avatar, kalender, grafer, platekalkulator
+  components/  knapper, kort, ark, stepper, ring, avatar, kalender, grafer, platekalkulator, kroppskart
   features/    welcome, auth, onboarding, home, workout, summary, history, progress,
                exercise, bodyweight, routines, profile
 supabase/      SQL-migreringer
