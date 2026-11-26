@@ -62,7 +62,7 @@ async function signUp(name, email, password) {
   await page.getByText(`Hei, ${name}!`).waitFor();
 }
 
-async function onboard({ goal, perWeek, sex }, shots = false) {
+async function onboard({ goal, perWeek, sex, program }, shots = false) {
   if (shots) await shot('oppstart-navn');
   await btn('Fortsett').click();
   await page.getByRole('radio', { name: new RegExp(goal) }).click();
@@ -73,7 +73,9 @@ async function onboard({ goal, perWeek, sex }, shots = false) {
   if (sex) await btn(sex, { exact: true }).click();
   if (shots) await shot('oppstart-om-deg');
   await btn('Fortsett').click();
-  if (shots) await shot('oppstart-klart');
+  await page.getByRole('radio', { name: /Anbefalt/ }).first().waitFor();
+  if (program) await page.getByRole('radio', { name: new RegExp(`^${program} `) }).click();
+  if (shots) await shot('oppstart-program');
   await btn('Start å trene').click();
   await page.getByText(/God (morgen|kveld|natt)|Hei,/).first().waitFor();
 }
@@ -133,7 +135,7 @@ try {
   await page.getByText('Hei, Ola!').waitFor();
 
   // 3. Oppstart → Hjem med startrutiner
-  await onboard({ goal: 'Bli sterkere', perWeek: 3, sex: 'Mann' }, true);
+  await onboard({ goal: 'Bli sterkere', perWeek: 3, sex: 'Mann', program: 'Fullkropp A/B' }, true);
   await page.getByRole('link', { name: /^Styrkenivå: Nybegynner/ }).waitFor();
   await page.getByRole('img', { name: '0 av 3 økter denne uka' }).waitFor();
   await page.getByText('Fullkropp A').first().waitFor();
@@ -354,6 +356,36 @@ try {
   await page.getByText('Økter totalt').waitFor();
   await shot('profil');
 
+  // 9-0. Treningen din: endre mål og dager direkte, og bytt program fra Profil
+  await btn(/^Mål: Bli sterkere/).click();
+  await dialog().getByRole('button', { name: /Min egen vei/ }).click();
+  await btn(/^Mål: Min egen vei/).waitFor();
+  await btn(/^Økter per uke: 3/).click();
+  await dialog().getByRole('button', { name: '5', exact: true }).click();
+  await btn(/^Økter per uke: 5/).waitFor();
+  await shot('profil-treningen-din');
+  await page.getByRole('link', { name: /Program.*Bytt/ }).click();
+  await page.getByRole('radio', { name: /^PPL \+ Overkropp \/ Underkropp.*Anbefalt/ }).waitFor();
+  await page.getByRole('button', { name: '6 dager' }).click();
+  await page.getByRole('radio', { name: /^Push \/ Pull \/ Bein ×2.*Anbefalt/ }).waitFor();
+  await shot('programmer');
+  await btn('Bruk dette programmet').click();
+  await dialog().getByText(/Du har 2 startrutiner fra et tidligere program/).waitFor();
+  await btn('Erstatt startrutinene').click();
+  await page.getByRole('heading', { name: 'Rutiner', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Push B', exact: true }).waitFor();
+  assert.equal(await page.getByRole('heading', { name: 'Fullkropp A', exact: true }).count(), 0, 'gamle startrutiner er erstattet');
+  await page.getByRole('navigation').getByRole('link', { name: 'Hjem' }).click();
+  await page.getByRole('heading', { name: 'Dine rutiner' }).waitFor();
+  await page.getByRole('heading', { name: 'Nyheter og eventer' }).waitFor();
+  await shot('hjem-rutiner');
+  await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
+  await page.getByText('Økter totalt').waitFor();
+  // Tilbake til 3 økter i uka, som resten av testen forventer.
+  await btn(/^Økter per uke: 5/).click();
+  await dialog().getByRole('button', { name: '3', exact: true }).click();
+  await btn(/^Økter per uke: 3/).waitFor();
+
   // 9a. Data og backup: JSON og CSV lastes ned, og backupen kan leses inn igjen
   const { readFile } = await import('node:fs/promises');
   const [jsonDl] = await Promise.all([page.waitForEvent('download'), btn('Last ned backup (JSON)').click()]);
@@ -497,6 +529,7 @@ try {
   await ep.getByRole('radio', { name: /^3/ }).click();
   await ebtn('Continue').click();
   await ebtn('Continue').click();
+  await ep.getByRole('radio', { name: /^Full body A\/B / }).click();
   await ebtn('Start training').click();
   await ep.getByText('Muscles trained').waitFor();
   await ep.getByRole('img', { name: 'No muscle groups trained in this period.' }).waitFor();

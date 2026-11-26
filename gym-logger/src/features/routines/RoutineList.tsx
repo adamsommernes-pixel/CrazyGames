@@ -7,6 +7,7 @@ import { useExerciseMap } from '../workout/ExercisePicker';
 import { exerciseName } from '../../lib/exerciseName';
 import { showInfo } from '../../components/confirm';
 import { t } from '../../i18n';
+import { Icon } from '../../components/Icon';
 
 export function RoutineList() {
   const navigate = useNavigate();
@@ -28,6 +29,21 @@ export function RoutineList() {
 
   return (
     <Page title={t('Rutiner', 'Routines')} actions={<IconButton icon="plus" label={t('Ny rutine', 'New routine')} className="text-green" onClick={() => navigate('/routines/new')} />}>
+      <button
+        type="button"
+        onClick={() => navigate('/programs')}
+        className="mb-4 flex w-full items-center gap-3 rounded-2xl border border-green/40 bg-green-dim/20 p-4 text-left"
+      >
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-green text-black">
+          <Icon name="list" size={20} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">{t('Programbibliotek', 'Program library')}</span>
+          <span className="block text-sm text-muted">{t('Ferdige splitter for 2–6 dager i uka: PPL, overkropp/underkropp, fullkropp og flere.', 'Ready-made splits for 2–6 days a week: PPL, upper/lower, full body and more.')}</span>
+        </span>
+        <Icon name="chevron" size={18} className="text-faint" />
+      </button>
+      {routines && routines.length > 0 && <h2 className="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{t('Mine rutiner', 'My routines')}</h2>}
       {routines && routines.length === 0 && (
         <EmptyState icon="list" title={t('Ingen rutiner', 'No routines')} text={t('Lag faste økter, som Push, Pull og Bein, og start dem med ett trykk.', 'Create fixed workouts like Push, Pull and Legs, and start them with one tap.')}>
           <Button full icon="plus" onClick={() => navigate('/routines/new')}>

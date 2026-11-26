@@ -20,6 +20,8 @@ import { PR_LABEL } from '../../lib/calc';
 import { InstallHint } from '../profile/InstallHint';
 import { BackupReminder } from './BackupReminder';
 import { NewsCard } from './NewsCard';
+import { ProgramsBanner } from './ProgramsBanner';
+import { RoutinesSection } from './RoutinesSection';
 import { exerciseName } from '../../lib/exerciseName';
 import { formatSetShort, kindOf } from '../../lib/kinds';
 import { locale, t } from '../../i18n';
@@ -107,7 +109,7 @@ export function Home() {
 
       <main className="flex flex-col gap-4 px-4 pt-5 pb-44">
         <InstallHint />
-        <NewsCard />
+        <ProgramsBanner days={target} />
         <BackupReminder />
 
         {active && isLongAgo(active.started_at, now) && !keepGoing && (
@@ -207,6 +209,8 @@ export function Home() {
           </Button>
         )}
 
+        <RoutinesSection />
+
         {body && (
           <section aria-labelledby="body-map-title">
             <Card className="p-5">
@@ -228,10 +232,7 @@ export function Home() {
           </section>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <QuickLink to="/routines" icon="list" title={t('Rutiner', 'Routines')} />
-          <QuickLink to="/bodyweight" icon="scale" title={t('Kroppsvekt', 'Bodyweight')} />
-        </div>
+        <QuickLink to="/bodyweight" icon="scale" title={t('Kroppsvekt', 'Bodyweight')} />
 
         {stats && stats.recentPRs.length > 0 && (
           <section>
@@ -255,12 +256,14 @@ export function Home() {
             </Card>
           </section>
         )}
+
+        <NewsCard />
       </main>
     </div>
   );
 }
 
-function QuickLink({ to, icon, title }: { to: string; icon: 'list' | 'scale'; title: string }) {
+function QuickLink({ to, icon, title }: { to: string; icon: 'scale'; title: string }) {
   return (
     <Link to={to} className="card flex items-center gap-3 rounded-3xl p-4 active:bg-raised">
       <Icon name={icon} className="text-green" />

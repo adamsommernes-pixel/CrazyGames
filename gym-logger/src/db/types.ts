@@ -91,6 +91,8 @@ export interface Exercise extends Row {
 export interface Routine extends Row {
   name: string;
   notes: string;
+  /** «program:<id>» for rutiner laget fra programbiblioteket og ikke endret siden. null = egen rutine. */
+  source?: string | null;
 }
 
 export interface RoutineExercise extends Row {
@@ -148,13 +150,14 @@ export const SET_TYPE_LABEL: Record<SetType, string> = {
 // «W» for oppvarming (warm-up) som i de fleste treningsapper; «O» ligner for mye på 0.
 export const SET_TYPE_SHORT: Record<SetType, string> = { normal: '', warmup: 'W', drop: 'D', failure: 'F' };
 
-export const GOALS = ['strength', 'hypertrophy', 'general', 'endurance'] as const;
+export const GOALS = ['strength', 'hypertrophy', 'general', 'endurance', 'own'] as const;
 export type Goal = (typeof GOALS)[number];
 export const GOAL_LABEL: Record<Goal, string> = {
   get strength() { return t('Bli sterkere', 'Get stronger'); },
   get hypertrophy() { return t('Bygge muskler', 'Build muscle'); },
   get general() { return t('Generell form', 'General fitness'); },
   get endurance() { return t('Utholdenhet', 'Endurance'); },
+  get own() { return t('Min egen vei', 'My own way'); },
 };
 
 export const EXPERIENCE = ['beginner', 'intermediate', 'advanced'] as const;

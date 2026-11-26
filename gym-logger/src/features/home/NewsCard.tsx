@@ -51,38 +51,30 @@ export function NewsCard() {
 
   return (
     <>
-      <section aria-labelledby="news-title" className="relative overflow-hidden rounded-3xl border border-green/40 bg-gradient-to-br from-green-dim/60 via-surface to-surface p-5">
-        <div className="pointer-events-none absolute -top-16 -right-16 size-48 rounded-full bg-green/20 blur-3xl" aria-hidden="true" />
-        <div className="relative flex items-start justify-between gap-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-green px-2.5 py-1 text-[11px] font-bold tracking-wider text-black uppercase">
-            <Icon name="sparkle" size={13} /> {t('Kommer snart', 'Coming soon')}
+      <section aria-labelledby="news-title">
+        <h2 id="news-title" className="mb-2 px-1 text-sm font-semibold tracking-wide text-muted uppercase">
+          {t('Nyheter og eventer', 'News and events')}
+        </h2>
+        <div className="card flex items-start gap-3 rounded-3xl p-4">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-green-dim/50 text-green">
+            <Icon name="sparkle" size={20} />
           </span>
-          <button type="button" aria-label={t('Skjul nyheten', 'Hide the news')} onClick={close} className="-mt-1 -mr-1 grid size-9 place-items-center rounded-full text-muted">
-            <Icon name="x" size={18} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">{t('Vi har nyheter!', 'We have news!')}</span>
+              <span className="rounded-full bg-raised px-2 py-0.5 text-[10px] font-semibold tracking-wide text-green uppercase">{t('Kommer snart', 'Coming soon')}</span>
+            </div>
+            <p className="mt-0.5 text-sm text-muted">
+              {t('Venner, utfordringer og åpne eventer er på vei til Repgrade.', 'Friends, challenges and public events are coming to Repgrade.')}
+            </p>
+            <button type="button" className="mt-2 text-sm font-semibold text-green" onClick={() => setOpen(true)}>
+              {t('Les mer', 'Read more')}
+            </button>
+          </div>
+          <button type="button" aria-label={t('Skjul nyheten', 'Hide the news')} onClick={close} className="-mt-1 -mr-1 grid size-9 shrink-0 place-items-center rounded-full text-faint">
+            <Icon name="x" size={16} />
           </button>
         </div>
-        <h2 id="news-title" className="font-num relative mt-3 text-2xl font-bold">
-          {t('Vi har nyheter!', 'We have news!')}
-        </h2>
-        <p className="relative mt-1 text-sm text-muted">
-          {t('Neste store oppdatering gjør Repgrade sosialt: venner, utfordringer og eventer.', 'The next big update makes Repgrade social: friends, challenges and events.')}
-        </p>
-        <ul className="relative mt-4 flex flex-col gap-2.5">
-          {features().map((f) => (
-            <li key={f.title} className="flex items-center gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-line bg-raised text-green">
-                <Icon name={f.icon} size={18} />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold">{f.title}</span>
-                <span className="block text-xs text-muted">{f.text}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-        <Button full variant="secondary" className="relative mt-4" onClick={() => setOpen(true)}>
-          {t('Les mer', 'Read more')}
-        </Button>
       </section>
 
       <Sheet open={open} onClose={() => setOpen(false)} title={t('Dette kommer', "What's coming")}>

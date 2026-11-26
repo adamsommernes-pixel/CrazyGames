@@ -2,9 +2,11 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AuthUser } from '../../auth/types';
 import { db, now } from '../../db/dexie';
-import { PROFILE_COLORS, createStarterRoutines, logBodyweight, saveProfile } from '../../db/repo';
+import { PROFILE_COLORS, PROGRAMS_SEEN_KEY, applyProgram, logBodyweight, saveProfile } from '../../db/repo';
 import { importLegacy, legacyWorkoutCount } from '../../db/legacy';
-import { pickTemplate, TEMPLATES } from '../../db/templates';
+import { recommendedProgramId } from '../../db/programs';
+import { GOAL_INFO } from '../profile/choices';
+import { ProgramList } from '../routines/ProgramList';
 import { EXPERIENCE, EXPERIENCE_LABEL, GOALS, GOAL_LABEL, type Experience, type Goal, type Sex } from '../../db/types';
 import { setSetting } from '../../lib/settings';
 import { fromDisplay, parseNum } from '../../lib/format';
@@ -15,13 +17,6 @@ import { Icon, type IconName } from '../../components/Icon';
 import { t } from '../../i18n';
 import { SexPicker } from '../profile/SexPicker';
 import { HealthConsent } from '../legal/HealthConsent';
-
-const GOAL_INFO: Record<Goal, { icon: IconName; text: string }> = {
-  strength: { icon: 'dumbbell', get text() { return t('Tunge løft, få reps, lang hvile.', 'Heavy lifts, few reps, long rest.'); } },
-  hypertrophy: { icon: 'flame', get text() { return t('Moderat vekt, 8–12 reps.', 'Moderate weight, 8–12 reps.'); } },
-  general: { icon: 'target', get text() { return t('Allsidig trening og god form.', 'Well-rounded training and good fitness.'); } },
-  endurance: { icon: 'timer', get text() { return t('Flere reps, kortere hvile.', 'More reps, shorter rest.'); } },
-};
 
 const STEPS = 4;
 
@@ -40,7 +35,8 @@ export function Onboarding({ user }: { user: AuthUser }) {
   const [consent, setConsent] = useState(false);
   const [legacy, setLegacy] = useState(0);
   const [moveLegacy, setMoveLegacy] = useState(true);
-  const [starter, setStarter] = useState(true);
+  // Valgt program; null = følg anbefalingen til brukeren velger selv.
+  const [picked, setPicked] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -51,7 +47,8 @@ export function Onboarding({ user }: { user: AuthUser }) {
     setBusy(true);
     await setSetting('unit', unit);
     if (legacy > 0 && moveLegacy) await importLegacy(db);
-    if (starter) await createStarterRoutines(goal, perWeek);
+    if (program !== 'none') await applyProgram(program, goal);
+    else await db.kv.put({ key: PROGRAMS_SEEN_KEY, value: now() });
     const bw = parseNum(bodyweight);
     if (bw > 0) await logBodyweight(fromDisplay(bw, unit));
     await saveProfile(user.id, {
@@ -69,7 +66,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
     navigate('/', { replace: true });
   };
 
-  const template = TEMPLATES[pickTemplate(perWeek)];
+  const program = picked ?? (goal === 'own' ? 'none' : recommendedProgramId(perWeek, experience, goal));
   const canNext = step !== 0 || name.trim().length > 0;
 
   return (
@@ -170,9 +167,12 @@ export function Onboarding({ user }: { user: AuthUser }) {
         )}
 
         {step === 4 && (
-          <Step title={t('Klart!', 'All set!')} text={t('Dette får du å starte med:', 'Here is what you start with:')}>
-            <div className="flex flex-col gap-2">
-              <Toggle checked={starter} onChange={setStarter} title={`${t('Startrutiner', 'Starter routines')}: ${template.map((r) => r.name).join(', ')}`} text={t(`Laget for ${perWeek} økter i uka og målet «${GOAL_LABEL[goal].toLowerCase()}».`, `Made for ${perWeek} workouts a week and the goal “${GOAL_LABEL[goal].toLowerCase()}”.`)} />
+          <Step
+            title={t('Velg program', 'Choose a program')}
+            text={t(`Splitter som passer ${perWeek} økter i uka. Du kan bytte når som helst under Rutiner.`, `Splits that fit ${perWeek} workouts a week. You can switch any time under Routines.`)}
+          >
+            <ProgramList days={perWeek} experience={experience} goal={goal} selected={program} onSelect={setPicked} allowNone />
+            <div className="mt-2 flex flex-col gap-2">
               {legacy > 0 && (
                 <Toggle checked={moveLegacy} onChange={setMoveLegacy} title={t(`Flytt ${legacy} økt${legacy === 1 ? '' : 'er'} fra før`, `Move ${legacy} earlier workout${legacy === 1 ? '' : 's'}`)} text={t('Det finnes treningsdata på denne enheten fra før du hadde konto.', 'There is training data on this device from before you had an account.')} />
               )}
