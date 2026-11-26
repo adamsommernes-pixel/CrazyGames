@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -17,6 +17,8 @@ import { dateLong, durationShort, fromDateTimeInputs, fromDisplay, num, toDateIn
 import { PR_LABEL, estimate1RM, volume } from '../../lib/calc';
 import { t } from '../../i18n';
 
+const ShareSheet = lazy(() => import('../share/ShareSheet'));
+
 export function WorkoutDetail() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -24,6 +26,7 @@ export function WorkoutDetail() {
   const exMap = useExerciseMap();
   const prMap = usePRMap();
   const [menu, setMenu] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [editing, setEditing] = useState<WorkoutSet | null>(null);
   const [editTimes, setEditTimes] = useState(false);
   const data = useLiveQuery(async () => {
@@ -44,7 +47,13 @@ export function WorkoutDetail() {
   const prCount = sets.filter((s) => prMap.has(s.id)).length;
 
   return (
-    <Page title={workout.name} back actions={<IconButton icon="more" label={t('Valg', 'Options')} onClick={() => setMenu(true)} />}>
+    <Page title={workout.name} back actions={
+        <>
+          {workout.ended_at && <IconButton icon="share" label={t('Del økta', 'Share workout')} onClick={() => setSharing(true)} />}
+          <IconButton icon="more" label={t('Valg', 'Options')} onClick={() => setMenu(true)} />
+        </>
+      }
+    >
       <p className="text-muted first-letter:uppercase">{dateLong(workout.started_at)}</p>
       <div className="tabular mt-3 grid grid-cols-3 gap-2 text-center">
         <Stat label={t('Varighet', 'Duration')} value={workout.ended_at ? durationShort(new Date(workout.ended_at).getTime() - new Date(workout.started_at).getTime()) : t('Pågår', 'In progress')} />
@@ -119,6 +128,11 @@ export function WorkoutDetail() {
           ]}
         />
       </Sheet>
+      {sharing && (
+        <Suspense fallback={null}>
+          <ShareSheet workoutId={workout.id} onClose={() => setSharing(false)} />
+        </Suspense>
+      )}
     </Page>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { db } from '../../db/dexie';
@@ -16,6 +16,8 @@ import { exerciseName } from '../../lib/exerciseName';
 import { MUSCLE_LABEL, type MuscleGroup } from '../../db/types';
 import { t } from '../../i18n';
 
+const ShareSheet = lazy(() => import('../share/ShareSheet'));
+
 const prText = (n: number) => t(`${n} ny${n === 1 ? '' : 'e'} rekord${n === 1 ? '' : 'er'}`, `${n} new record${n === 1 ? '' : 's'}`);
 
 /** Oppsummering rett etter en økt: tall, rekorder og sammenligning med forrige gang. */
@@ -27,6 +29,7 @@ export function Summary() {
   const prMap = usePRMap();
   const [copied, setCopied] = useState(false);
   const [fire, setFire] = useState(0);
+  const [sharing, setSharing] = useState(false);
 
   const data = useLiveQuery(async () => {
     const workout = await db.workouts.get(id);
@@ -140,13 +143,21 @@ export function Summary() {
         <Button full className="min-h-14 text-lg" onClick={() => navigate('/', { replace: true })}>
           {t('Ferdig', 'Done')}
         </Button>
-        <Button full variant="secondary" icon="share" onClick={() => void share()}>
-          {copied ? t('Kopiert!', 'Copied!') : t('Kopier sammendrag', 'Copy summary')}
+        <Button full variant="secondary" icon="share" onClick={() => setSharing(true)}>
+          {t('Del økta', 'Share workout')}
+        </Button>
+        <Button full variant="ghost" onClick={() => void share()}>
+          {copied ? t('Kopiert!', 'Copied!') : t('Kopier som tekst', 'Copy as text')}
         </Button>
         <Button full variant="ghost" onClick={() => navigate(`/history/${id}`)}>
           {t('Se detaljer', 'See details')}
         </Button>
       </div>
+      {sharing && (
+        <Suspense fallback={null}>
+          <ShareSheet workoutId={id} onClose={() => setSharing(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -202,3 +202,44 @@ export function BodyMap({ load, days, cardioSessions }: { load: Map<MuscleGroup,
     </div>
   );
 }
+
+const STATIC = {
+  raised: '#1b211e',
+  surface: '#121614',
+  line: '#2a322e',
+  green: '#2bd66b',
+};
+const STATIC_FILL = [STATIC.raised, 'rgb(43 214 107 / 0.32)', 'rgb(43 214 107 / 0.5)', 'rgb(43 214 107 / 0.75)', STATIC.green];
+
+/**
+ * Begge figurene i én SVG med faste farger, for delekort (tegnes på canvas via et bilde).
+ * `levelOf` gir 0–4 per muskelgruppe.
+ */
+export function StaticBody({ levelOf }: { levelOf: (g: MuscleGroup) => number }) {
+  const figure = (regions: Region[], back: boolean, x: number) => (
+    <g transform={`translate(${x} 0)`}>
+      <g fill={STATIC.surface} stroke={STATIC.line} strokeWidth={1}>
+        <circle cx={60} cy={20} r={13} />
+        <rect x={55} y={31} width={10} height={8} rx={3} />
+        {!back && <path d="M47 108 H73 L71 122 H49 Z" strokeLinejoin="round" />}
+        {pair((s) => <circle key={`h${s}`} cx={mx(22, s)} cy={121} r={5} />)}
+        {pair((s) => <circle key={`k${s}`} cx={mx(52, s)} cy={176} r={4} />)}
+        {pair((s) => <ellipse key={`f${s}`} cx={mx(51, s)} cy={226} rx={7} ry={4} />)}
+      </g>
+      {regions.map((r, i) => {
+        const level = Math.max(0, Math.min(4, levelOf(r.group)));
+        return (
+          <g key={i} fill={STATIC_FILL[level]} stroke={level ? 'rgb(43 214 107 / 0.7)' : STATIC.line} strokeWidth={1}>
+            {r.shape}
+          </g>
+        );
+      })}
+    </g>
+  );
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 234" width={1000} height={936}>
+      {figure(FRONT, false, 0)}
+      {figure(BACK, true, 130)}
+    </svg>
+  );
+}
