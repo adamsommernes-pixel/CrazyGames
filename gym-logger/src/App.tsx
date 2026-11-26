@@ -7,6 +7,7 @@ import { openUserDb } from './db/dexie';
 import { getProfile } from './db/repo';
 import { useAutoSync } from './db/sync';
 import { ConfirmHost } from './components/confirm';
+import { ToastHost } from './components/toast';
 import { BottomNav } from './components/BottomNav';
 import { Icon } from './components/Icon';
 import { RestTimerBar, unlockAudio } from './features/workout/restTimer';
@@ -116,6 +117,7 @@ function SignedIn({ user }: { user: AuthUser }) {
         <Route path="*" element={<Home />} />
       </Routes>
       <div className="fixed inset-x-0 bottom-0 z-30">
+        <ToastHost />
         <RestTimerBar />
         <BottomNav />
       </div>

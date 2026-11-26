@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { db } from '../../db/dexie';
-import { deleteRoutine, routineItems, saveRoutine, type RoutineDraftItem } from '../../db/repo';
+import { deleteRoutine, restore, routineItems, saveRoutine, type RoutineDraftItem } from '../../db/repo';
+import { undoToast } from '../../components/toast';
 import { Button, Card, IconButton, NumberStepper, Page, inputClass } from '../../components/ui';
 import { ExercisePicker, useExerciseMap } from '../workout/ExercisePicker';
 import { getSetting } from '../../lib/settings';
 import { duration } from '../../lib/format';
-import { askConfirm } from '../../components/confirm';
 
 export function RoutineEditor() {
   const { id } = useParams();
@@ -115,9 +115,9 @@ export function RoutineEditor() {
           icon="trash"
           className="mt-8"
           onClick={async () => {
-            if (!(await askConfirm('Rutinen slettes. Tidligere økter beholdes.', { confirmLabel: 'Slett rutine' }))) return;
-            await deleteRoutine(id);
+            const removed = await deleteRoutine(id);
             navigate('/routines', { replace: true });
+            undoToast('Rutinen er slettet', () => restore(removed));
           }}
         >
           Slett rutine

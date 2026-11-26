@@ -1,20 +1,17 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
 import { db } from '../../db/dexie';
 import { SET_TYPE_SHORT, type WorkoutSet } from '../../db/types';
-import { editSet } from '../../db/repo';
-import { NumberStepper } from '../../components/ui';
-import { useEffect } from 'react';
-import { fromDisplay } from '../../lib/format';
-import { deleteWorkout, repeatWorkout, routineFromWorkout, setsForWorkout, workoutExercises } from '../../db/repo';
-import { ActionList, Button, Card, EmptyState, IconButton, Page, PRBadge, Sheet, Stat } from '../../components/ui';
+import { deleteWorkout, editSet, repeatWorkout, restore, routineFromWorkout, setsForWorkout, workoutExercises } from '../../db/repo';
+import { ActionList, Button, Card, EmptyState, IconButton, NumberStepper, Page, PRBadge, Sheet, Stat } from '../../components/ui';
+import { undoToast } from '../../components/toast';
 import { useExerciseMap } from '../workout/ExercisePicker';
 import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
-import { dateLong, durationShort, num, toDisplay } from '../../lib/format';
+import { dateLong, durationShort, fromDisplay, num, toDisplay } from '../../lib/format';
 import { PR_LABEL, estimate1RM, volume } from '../../lib/calc';
-import { askConfirm } from '../../components/confirm';
 
 export function WorkoutDetail() {
   const { id = '' } = useParams();
@@ -100,9 +97,9 @@ export function WorkoutDetail() {
               danger: true,
               onClick: async () => {
                 setMenu(false);
-                if (!(await askConfirm('Økta slettes for godt.', { confirmLabel: 'Slett økt' }))) return;
-                await deleteWorkout(id);
+                const removed = await deleteWorkout(id);
                 navigate('/history', { replace: true });
+                undoToast('Økta er slettet', () => restore(removed));
               },
             },
           ]}

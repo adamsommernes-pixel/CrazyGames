@@ -9,6 +9,7 @@ import {
   lastPerformance,
   moveWorkoutExercise,
   removeWorkoutExercise,
+  restore,
   setExerciseNotes,
   setExerciseRest,
   updateSet,
@@ -16,7 +17,7 @@ import {
 import type { PRKind } from '../../lib/calc';
 import { ActionList, Button, Card, Chip, IconButton, NumberStepper, Sheet } from '../../components/ui';
 import { PlateCalculator } from '../../components/PlateCalculator';
-import { askConfirm } from '../../components/confirm';
+import { undoToast } from '../../components/toast';
 import { Icon } from '../../components/Icon';
 import { SET_GRID, SetRow } from './SetRow';
 import { startRest } from './restTimer';
@@ -142,9 +143,8 @@ export function ExerciseCard({
               danger: true,
               onClick: async () => {
                 setMenu(false);
-                if (await askConfirm(`${exercise?.name ?? 'Øvelsen'} og settene fjernes fra økta.`, { confirmLabel: 'Fjern' })) {
-                  await removeWorkoutExercise(we.id);
-                }
+                const removed = await removeWorkoutExercise(we.id);
+                undoToast(`${exercise?.name ?? 'Øvelsen'} er fjernet`, () => restore(removed));
               },
             },
           ]}
@@ -217,7 +217,15 @@ function SetEditor({ set, unit, onClose }: { set: WorkoutSet | null; unit: 'kg' 
         ))}
       </div>
       <div className="mt-6 flex gap-2">
-        <Button variant="danger" icon="trash" onClick={() => void deleteSet(set.id).then(onClose)}>
+        <Button
+          variant="danger"
+          icon="trash"
+          onClick={async () => {
+            const removed = await deleteSet(set.id);
+            onClose();
+            undoToast('Settet er slettet', () => restore(removed));
+          }}
+        >
           Slett
         </Button>
         <Button className="flex-1" onClick={() => void save()}>

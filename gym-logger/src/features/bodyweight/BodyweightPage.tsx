@@ -1,7 +1,8 @@
 import { Suspense, lazy, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/dexie';
-import { deleteBodyweight, logBodyweight } from '../../db/repo';
+import { deleteBodyweight, logBodyweight, restore } from '../../db/repo';
+import { undoToast } from '../../components/toast';
 import { Button, Card, EmptyState, IconButton, Page, SectionTitle, inputClass } from '../../components/ui';
 import { useSetting } from '../../lib/settings';
 import { dateLong, dateShort, fromDisplay, num, parseNum, toDisplay } from '../../lib/format';
@@ -77,7 +78,14 @@ export function BodyweightPage() {
                 <span className="font-num font-bold">
                   {num(toDisplay(e.weight_kg, unit))} {unit}
                 </span>
-                <IconButton icon="trash" label="Slett måling" onClick={() => void deleteBodyweight(e.id)} />
+                <IconButton
+                  icon="trash"
+                  label="Slett måling"
+                  onClick={async () => {
+                    const removed = await deleteBodyweight(e.id);
+                    undoToast('Målingen er slettet', () => restore(removed));
+                  }}
+                />
               </div>
             ))}
           </Card>

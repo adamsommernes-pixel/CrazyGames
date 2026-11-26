@@ -7,6 +7,7 @@ import {
   deleteWorkout,
   finishWorkout,
   renameWorkout,
+  restore,
   setsForWorkout,
   setWorkoutNotes,
   workoutExercises,
@@ -20,7 +21,7 @@ import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
 import { duration, num, toDisplay } from '../../lib/format';
 import { volume } from '../../lib/calc';
-import { askConfirm } from '../../components/confirm';
+import { undoToast } from '../../components/toast';
 
 export function ActiveWorkout({ workout }: { workout: Workout }) {
   const navigate = useNavigate();
@@ -51,10 +52,13 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
 
   const discard = async () => {
     setFinishing(false);
-    if (!(await askConfirm('Hele økta forkastes. Dette kan ikke angres.', { confirmLabel: 'Forkast økt' }))) return;
-    await deleteWorkout(workout.id);
+    const removed = await deleteWorkout(workout.id);
     await stopRest();
     navigate('/', { replace: true });
+    undoToast('Økta er forkastet', async () => {
+      await restore(removed);
+      navigate('/workout');
+    });
   };
 
   return (

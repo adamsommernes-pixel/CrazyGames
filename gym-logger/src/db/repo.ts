@@ -185,9 +185,29 @@ export async function toggleSetDone(id: string): Promise<boolean> {
   return completing;
 }
 
-export async function deleteSet(id: string) {
+/** Hvilke rader en sletting markerte som slettet, så den kan angres nøyaktig. */
+export type Removed = Partial<Record<'workouts' | 'workout_exercises' | 'sets' | 'routines' | 'routine_exercises' | 'bodyweights', string[]>>;
+
+/** Angrer en sletting: radene blir synlige igjen (og synkes som endret). */
+export async function restore(removed: Removed) {
+  for (const [table, ids] of Object.entries(removed) as [keyof Removed, string[]][]) {
+    if (!ids?.length) continue;
+    const t = db.table(table);
+    const rows = (await t.bulkGet(ids)).filter(Boolean);
+    await t.bulkPut(rows.map((r) => touched({ ...r, deleted: 0 as const })));
+  }
+}
+
+/** Myk-sletter radene som ikke allerede er slettet, og returnerer id-ene. */
+async function softDelete<T extends { id: string; deleted: 0 | 1 }>(table: string, rows: T[]): Promise<string[]> {
+  const live = rows.filter((r) => !r.deleted);
+  await db.table(table).bulkPut(live.map((r) => touched({ ...r, deleted: 1 as const })));
+  return live.map((r) => r.id);
+}
+
+export async function deleteSet(id: string): Promise<Removed> {
   const s = await db.sets.get(id);
-  if (s) await db.sets.put(touched({ ...s, deleted: 1 }));
+  return s ? { sets: await softDelete('sets', [s]) } : {};
 }
 
 export async function setExerciseNotes(weId: string, notes: string) {
@@ -206,13 +226,14 @@ export async function setExerciseRest(weId: string, seconds: number) {
   if (we) await db.workout_exercises.put(touched({ ...we, rest_seconds: seconds }));
 }
 
-export async function removeWorkoutExercise(weId: string) {
-  await db.transaction('rw', db.workout_exercises, db.sets, async () => {
+export async function removeWorkoutExercise(weId: string): Promise<Removed> {
+  return db.transaction('rw', db.workout_exercises, db.sets, async () => {
     const we = await db.workout_exercises.get(weId);
-    if (!we) return;
-    await db.workout_exercises.put(touched({ ...we, deleted: 1 }));
-    const sets = await db.sets.where('workout_exercise_id').equals(weId).toArray();
-    await db.sets.bulkPut(sets.map((s) => touched({ ...s, deleted: 1 as const })));
+    if (!we) return {};
+    return {
+      workout_exercises: await softDelete('workout_exercises', [we]),
+      sets: await softDelete('sets', await db.sets.where('workout_exercise_id').equals(weId).toArray()),
+    };
   });
 }
 
@@ -257,14 +278,14 @@ export async function finishWorkout(id: string): Promise<boolean> {
 }
 
 /** Sletter en økt med alt innhold (myk sletting). */
-export async function deleteWorkout(id: string) {
-  await db.transaction('rw', db.workouts, db.workout_exercises, db.sets, async () => {
+export async function deleteWorkout(id: string): Promise<Removed> {
+  return db.transaction('rw', db.workouts, db.workout_exercises, db.sets, async () => {
     const w = await db.workouts.get(id);
-    if (w) await db.workouts.put(touched({ ...w, deleted: 1 }));
-    const wes = await db.workout_exercises.where('workout_id').equals(id).toArray();
-    await db.workout_exercises.bulkPut(wes.map((r) => touched({ ...r, deleted: 1 as const })));
-    const sets = await db.sets.where('workout_id').equals(id).toArray();
-    await db.sets.bulkPut(sets.map((r) => touched({ ...r, deleted: 1 as const })));
+    return {
+      workouts: w ? await softDelete('workouts', [w]) : [],
+      workout_exercises: await softDelete('workout_exercises', await db.workout_exercises.where('workout_id').equals(id).toArray()),
+      sets: await softDelete('sets', await db.sets.where('workout_id').equals(id).toArray()),
+    };
   });
 }
 
@@ -326,12 +347,13 @@ export async function saveRoutine(
   return id;
 }
 
-export async function deleteRoutine(id: string) {
-  await db.transaction('rw', db.routines, db.routine_exercises, async () => {
+export async function deleteRoutine(id: string): Promise<Removed> {
+  return db.transaction('rw', db.routines, db.routine_exercises, async () => {
     const r = await db.routines.get(id);
-    if (r) await db.routines.put(touched({ ...r, deleted: 1 }));
-    const items = await db.routine_exercises.where('routine_id').equals(id).toArray();
-    await db.routine_exercises.bulkPut(items.map((i) => touched({ ...i, deleted: 1 as const })));
+    return {
+      routines: r ? await softDelete('routines', [r]) : [],
+      routine_exercises: await softDelete('routine_exercises', await db.routine_exercises.where('routine_id').equals(id).toArray()),
+    };
   });
 }
 
@@ -395,9 +417,9 @@ export async function logBodyweight(weightKg: number, date = now()): Promise<voi
   );
 }
 
-export async function deleteBodyweight(id: string) {
+export async function deleteBodyweight(id: string): Promise<Removed> {
   const b = await db.bodyweights.get(id);
-  if (b) await db.bodyweights.put(touched({ ...b, deleted: 1 }));
+  return b ? { bodyweights: await softDelete('bodyweights', [b]) } : {};
 }
 
 // ---------- Startrutiner ----------
