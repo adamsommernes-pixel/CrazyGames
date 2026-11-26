@@ -154,7 +154,7 @@ export function friendlySyncError(message: string): string {
   if (m.includes('jwt') || m.includes('invalid api key') || m.includes('no api key')) {
     return t('Feil Supabase-nøkkel. Sjekk VITE_SUPABASE_ANON_KEY.', 'Wrong Supabase key. Check VITE_SUPABASE_ANON_KEY.');
   }
-  if (m.includes('row-level security')) {
+  if (m.includes('row-level security') || m.includes('permission denied')) {
     return t('Tilgang nektet av databasen. Kjør supabase/setup.sql på nytt.', 'Access denied by the database. Run supabase/setup.sql again.');
   }
   return message;
