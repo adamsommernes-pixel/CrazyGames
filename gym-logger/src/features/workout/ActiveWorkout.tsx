@@ -27,6 +27,7 @@ import { dateShort, duration, durationShort, isLongAgo, num, plural, toDisplay }
 import { volume } from '../../lib/calc';
 import { undoToast } from '../../components/toast';
 import { Icon } from '../../components/Icon';
+import { locale, t } from '../../i18n';
 
 export function ActiveWorkout({ workout }: { workout: Workout }) {
   const navigate = useNavigate();
@@ -162,7 +163,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
         {longAgo && (
           <div className="mb-4">
             <div className="mb-1.5 text-sm text-muted">
-              Økta startet {new Date(workout.started_at).toLocaleString('nb-NO', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. Hvor lenge varte den?
+              Økta startet {new Date(workout.started_at).toLocaleString(locale(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. Hvor lenge varte den?
             </div>
             <NumberStepper label="Varighet" value={minutes} step={5} min={5} max={300} onChange={setDurationMin} format={(v) => durationShort(v * 60_000)} />
           </div>

@@ -1,4 +1,5 @@
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { locale, t } from '../i18n';
 
 // Felles grafstil: svak rutelinje, grønn strek, tekst i dempede tokens.
 const AXIS = { stroke: '#66706a', tick: { fontSize: 11 }, tickLine: false, axisLine: false } as const;
@@ -16,7 +17,7 @@ export function LineTrend({ data, label, unit }: { data: { x: string; y: number 
           <CartesianGrid stroke="#232a26" vertical={false} />
           <XAxis dataKey="x" {...AXIS} minTickGap={16} />
           <YAxis {...AXIS} width={44} domain={['auto', 'auto']} />
-          <Tooltip {...TOOLTIP} formatter={(v) => [`${Number(v).toLocaleString('nb-NO', { maximumFractionDigits: 1 })} ${unit}`, label]} />
+          <Tooltip {...TOOLTIP} formatter={(v) => [`${Number(v).toLocaleString(locale(), { maximumFractionDigits: 1 })} ${unit}`, label]} />
           <Line type="monotone" dataKey="y" stroke="#2bd66b" strokeWidth={2.5} dot={{ r: 3, fill: '#2bd66b', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#7dffaa' }} />
         </LineChart>
       </ResponsiveContainer>
@@ -31,8 +32,8 @@ export function BarTrend({ data, label, unit }: { data: { x: string; y: number; 
         <BarChart data={data} margin={{ top: 8, right: 4, left: -8, bottom: 0 }}>
           <CartesianGrid stroke="#232a26" vertical={false} />
           <XAxis dataKey="x" {...AXIS} interval="preserveStartEnd" minTickGap={8} />
-          <YAxis {...AXIS} width={44} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toLocaleString('nb-NO', { maximumFractionDigits: 1 })}k` : String(v))} />
-          <Tooltip {...TOOLTIP} formatter={(v) => [`${Number(v).toLocaleString('nb-NO', { maximumFractionDigits: 0 })} ${unit}`, label]} />
+          <YAxis {...AXIS} width={44} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toLocaleString(locale(), { maximumFractionDigits: 1 })}k` : String(v))} />
+          <Tooltip {...TOOLTIP} formatter={(v) => [`${Number(v).toLocaleString(locale(), { maximumFractionDigits: 0 })} ${unit}`, label]} />
           <Bar dataKey="y" radius={[6, 6, 0, 0]} fill="#2bd66b" fillOpacity={0.85} />
         </BarChart>
       </ResponsiveContainer>

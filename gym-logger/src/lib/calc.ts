@@ -1,5 +1,6 @@
 import type { ExerciseKind } from '../db/types';
 import { kindOf } from './kinds';
+import { t } from '../i18n';
 
 export interface SetLike {
   weight: number;
@@ -41,11 +42,11 @@ export function best1RM(sets: SetLike[]): number {
 export type PRKind = 'weight' | '1rm' | 'reps' | 'time' | 'distance';
 
 export const PR_LABEL: Record<PRKind, string> = {
-  weight: 'Tyngste',
-  '1rm': 'Beste 1RM',
-  reps: 'Flest reps',
-  time: 'Lengst tid',
-  distance: 'Lengst distanse',
+  get weight() { return t('Tyngste', 'Heaviest'); },
+  get '1rm'() { return t('Beste 1RM', 'Best 1RM'); },
+  get reps() { return t('Flest reps', 'Most reps'); },
+  get time() { return t('Lengst tid', 'Longest time'); },
+  get distance() { return t('Lengst distanse', 'Longest distance'); },
 };
 
 const EPS = 1e-9;

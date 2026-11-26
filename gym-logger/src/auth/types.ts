@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 export interface AuthUser {
   id: string;
   email: string;
@@ -26,7 +27,7 @@ export class AuthError extends Error {}
 export const MIN_PASSWORD = 8;
 
 export function validateSignUp(name: string, email: string, password: string) {
-  if (!name.trim()) throw new AuthError('Skriv inn navnet ditt.');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) throw new AuthError('E-postadressen ser ikke riktig ut.');
-  if (password.length < MIN_PASSWORD) throw new AuthError(`Passordet må ha minst ${MIN_PASSWORD} tegn.`);
+  if (!name.trim()) throw new AuthError(t('Skriv inn navnet ditt.', 'Enter your name.'));
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) throw new AuthError(t('E-postadressen ser ikke riktig ut.', "That email address doesn't look right."));
+  if (password.length < MIN_PASSWORD) throw new AuthError(t(`Passordet må ha minst ${MIN_PASSWORD} tegn.`, `The password must be at least ${MIN_PASSWORD} characters.`));
 }

@@ -17,6 +17,7 @@ import { Avatar, PasswordField } from '../../components/widgets';
 import { Icon, type IconName } from '../../components/Icon';
 import { askConfirm } from '../../components/confirm';
 import { InstallHint } from './InstallHint';
+import { locale, t } from '../../i18n';
 
 const ALL_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
 
@@ -32,7 +33,7 @@ export function ProfilePage() {
     return { ...lifetime(data.workouts, data.sets), longest: longestStreak(data.workouts, profile?.weekly_target ?? 3) };
   }, [data, profile?.weekly_target]);
 
-  const since = new Date(profile?.created_at ?? user.created_at).toLocaleDateString('nb-NO', { month: 'long', year: 'numeric' });
+  const since = new Date(profile?.created_at ?? user.created_at).toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
   const tonnes = stats ? toDisplay(stats.volume, unit) / 1000 : 0;
 
   return (
@@ -118,7 +119,7 @@ function AccountSection() {
           <Row
             icon="cloud"
             title="Synk nå"
-            sub={sync.state === 'syncing' ? 'Synker …' : sync.state === 'error' ? `Feil: ${sync.error}` : sync.state === 'offline' ? 'Uten nett' : sync.lastSync ? `Synket ${new Date(sync.lastSync).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}` : 'Klar'}
+            sub={sync.state === 'syncing' ? 'Synker …' : sync.state === 'error' ? `Feil: ${sync.error}` : sync.state === 'offline' ? 'Uten nett' : sync.lastSync ? `Synket ${new Date(sync.lastSync).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}` : 'Klar'}
             onClick={() => void syncNow()}
           />
         )}

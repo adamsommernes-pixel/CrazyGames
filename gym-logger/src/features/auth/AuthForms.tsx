@@ -5,13 +5,16 @@ import { AuthError } from '../../auth/types';
 import { Button, IconButton, inputClass } from '../../components/ui';
 import { PasswordField } from '../../components/widgets';
 import { Icon } from '../../components/Icon';
+import { LanguageToggle } from '../../components/LanguageToggle';
+import { t } from '../../i18n';
 
 function Shell({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   const navigate = useNavigate();
   return (
     <div className="pt-safe pb-safe mx-auto flex min-h-full max-w-xl flex-col px-5">
-      <div className="-ml-2 pt-3">
-        <IconButton icon="back" label="Tilbake" onClick={() => navigate('/welcome')} />
+      <div className="-ml-2 flex items-center justify-between pt-3">
+        <IconButton icon="back" label={t('Tilbake', 'Back')} onClick={() => navigate('/welcome')} />
+        <LanguageToggle />
       </div>
       <h1 className="font-num mt-4 text-4xl font-bold tracking-tight">{title}</h1>
       <p className="mt-2 text-muted">{subtitle}</p>
@@ -26,7 +29,7 @@ function LocalNote() {
   return (
     <p className="mt-6 flex gap-2 rounded-2xl border border-line bg-surface p-3 text-sm text-muted">
       <Icon name="lock" size={18} className="mt-0.5 shrink-0 text-green" />
-      Kontoen og øktene lagres på denne enheten, med kryptert passord. Sky-synk mellom enheter kan slås på senere.
+      {t('Kontoen og øktene lagres på denne enheten, med kryptert passord. Sky-synk mellom enheter kan slås på senere.', 'Your account and workouts are stored on this device, with an encrypted password. Cloud sync between devices can be turned on later.')}
     </p>
   );
 }
@@ -41,7 +44,7 @@ function useSubmit(fn: () => Promise<void>) {
     try {
       await fn();
     } catch (err) {
-      setError(err instanceof AuthError ? err.message : 'Noe gikk galt. Prøv igjen.');
+      setError(err instanceof AuthError ? err.message : t('Noe gikk galt. Prøv igjen.', 'Something went wrong. Try again.'));
     } finally {
       setBusy(false);
     }
@@ -68,35 +71,35 @@ export function SignUp() {
 
   if (confirm) {
     return (
-      <Shell title="Sjekk e-posten" subtitle={`Vi har sendt en lenke til ${email}. Trykk på den for å bekrefte kontoen, og logg så inn.`}>
+      <Shell title={t('Sjekk e-posten', 'Check your email')} subtitle={t(`Vi har sendt en lenke til ${email}. Trykk på den for å bekrefte kontoen, og logg så inn.`, `We sent a link to ${email}. Tap it to confirm your account, then log in.`)}>
         <Link to="/login" className="font-semibold text-green">
-          Gå til innlogging
+          {t('Gå til innlogging', 'Go to login')}
         </Link>
       </Shell>
     );
   }
 
   return (
-    <Shell title="Lag konto" subtitle="Det tar under ett minutt.">
+    <Shell title={t('Lag konto', 'Create account')} subtitle={t('Det tar under ett minutt.', 'It takes less than a minute.')}>
       <form className="flex flex-col gap-4" onSubmit={onSubmit} noValidate>
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Navn</span>
+          <span className="text-sm text-muted">{t('Navn', 'Name')}</span>
           <input id="signup-name" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} autoComplete="given-name" required />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">E-post</span>
+          <span className="text-sm text-muted">{t('E-post', 'Email')}</span>
           <input id="signup-email" className={inputClass} type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
         </label>
-        <PasswordField id="signup-password" label="Passord (minst 8 tegn)" value={password} onChange={setPassword} autoComplete="new-password" showStrength />
+        <PasswordField id="signup-password" label={t('Passord (minst 8 tegn)', 'Password (at least 8 characters)')} value={password} onChange={setPassword} autoComplete="new-password" showStrength />
         <ErrorText error={error} />
         <button type="submit" disabled={busy} className="mt-2 min-h-14 rounded-2xl bg-green text-lg font-semibold text-black shadow-glow disabled:opacity-50">
-          {busy ? 'Lager konto …' : 'Lag konto'}
+          {busy ? t('Lager konto …', 'Creating account …') : t('Lag konto', 'Create account')}
         </button>
       </form>
       <p className="mt-6 text-center text-muted">
-        Har du konto?{' '}
+        {t('Har du konto?', 'Already have an account?')}{' '}
         <Link to="/login" className="font-semibold text-green">
-          Logg inn
+          {t('Logg inn', 'Log in')}
         </Link>
       </p>
       <LocalNote />
@@ -111,42 +114,42 @@ export function Login() {
   const [reset, setReset] = useState<'idle' | 'sent'>('idle');
   const { busy, error, onSubmit } = useSubmit(() => signIn(email, password));
   const forgot = useSubmit(async () => {
-    if (!email.trim()) throw new AuthError('Skriv inn e-posten din først.');
+    if (!email.trim()) throw new AuthError(t('Skriv inn e-posten din først.', 'Enter your email first.'));
     await backend.resetPassword!(email);
     setReset('sent');
   });
 
   return (
-    <Shell title="Velkommen tilbake" subtitle="Logg inn for å fortsette der du slapp.">
+    <Shell title={t('Velkommen tilbake', 'Welcome back')} subtitle={t('Logg inn for å fortsette der du slapp.', 'Log in to pick up where you left off.')}>
       <form className="flex flex-col gap-4" onSubmit={onSubmit} noValidate>
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">E-post</span>
+          <span className="text-sm text-muted">{t('E-post', 'Email')}</span>
           <input id="login-email" className={inputClass} type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
         </label>
-        <PasswordField id="login-password" label="Passord" value={password} onChange={setPassword} autoComplete="current-password" />
+        <PasswordField id="login-password" label={t('Passord', 'Password')} value={password} onChange={setPassword} autoComplete="current-password" />
         <ErrorText error={error ?? forgot.error} />
         {reset === 'sent' && (
           <p role="status" className="rounded-xl bg-green-dim/40 px-3 py-2.5 text-sm text-green-light">
-            Sjekk e-posten for en lenke til å lage nytt passord.
+            {t('Sjekk e-posten for en lenke til å lage nytt passord.', 'Check your email for a link to set a new password.')}
           </p>
         )}
         <button type="submit" disabled={busy} className="mt-2 min-h-14 rounded-2xl bg-green text-lg font-semibold text-black shadow-glow disabled:opacity-50">
-          {busy ? 'Logger inn …' : 'Logg inn'}
+          {busy ? t('Logger inn …', 'Logging in …') : t('Logg inn', 'Log in')}
         </button>
         {backend.resetPassword && (
           <Button variant="ghost" onClick={(e) => void forgot.onSubmit(e as unknown as FormEvent)}>
-            Glemt passord?
+            {t('Glemt passord?', 'Forgot password?')}
           </Button>
         )}
       </form>
       <p className="mt-6 text-center text-muted">
-        Ny her?{' '}
+        {t('Ny her?', 'New here?')}{' '}
         <Link to="/signup" className="font-semibold text-green">
-          Lag konto
+          {t('Lag konto', 'Create account')}
         </Link>
       </p>
       {backend.kind === 'local' && (
-        <p className="mt-6 text-center text-sm text-faint">Kontoer lagres på enheten de ble laget på. Glemt passord kan ikke tilbakestilles uten sky-synk.</p>
+        <p className="mt-6 text-center text-sm text-faint">{t('Kontoer lagres på enheten de ble laget på. Glemt passord kan ikke tilbakestilles uten sky-synk.', 'Accounts are stored on the device they were created on. A forgotten password cannot be reset without cloud sync.')}</p>
       )}
     </Shell>
   );

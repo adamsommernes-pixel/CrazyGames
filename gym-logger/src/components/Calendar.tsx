@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { IconButton } from './ui';
+import { locale, t } from '../i18n';
 
 const DAYS = ['man', 'tir', 'ons', 'tor', 'fre', 'lør', 'søn'];
 const key = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -22,7 +23,7 @@ export function Calendar({
   const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   const today = key(new Date());
   const cells: (Date | null)[] = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => new Date(month.getFullYear(), month.getMonth(), i + 1))];
-  const title = month.toLocaleDateString('nb-NO', { month: 'long', year: 'numeric' });
+  const title = month.toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
   const count = cells.filter((d) => d && marked.has(key(d))).length;
 
   return (

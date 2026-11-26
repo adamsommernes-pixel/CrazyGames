@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useMemo } from 'react';
 import { HashRouter, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
+import { t, useLang } from './i18n';
 import type { AuthUser } from './auth/types';
 import { openUserDb } from './db/dexie';
 import { getProfile } from './db/repo';
@@ -41,8 +42,10 @@ export default function App() {
     return () => window.removeEventListener('pointerdown', unlock);
   }, []);
 
+  // Ved språkbytte tegnes hele appen på nytt, så all tekst følger med.
+  const lang = useLang();
   return (
-    <AuthProvider>
+    <AuthProvider key={lang}>
       <Router>
         <Gate />
       </Router>

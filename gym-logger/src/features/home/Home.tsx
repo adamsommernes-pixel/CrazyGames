@@ -17,6 +17,7 @@ import { dateShort, duration, isLongAgo, num, toDisplay } from '../../lib/format
 import { PR_LABEL } from '../../lib/calc';
 import { InstallHint } from '../profile/InstallHint';
 import { formatSetShort, kindOf } from '../../lib/kinds';
+import { locale, t } from '../../i18n';
 
 function greeting(d = new Date()) {
   const h = d.getHours();
@@ -70,7 +71,7 @@ export function Home() {
         <div className="flex items-center gap-3 pt-5">
           <div className="min-w-0 flex-1">
             <p className="text-sm text-muted first-letter:uppercase">
-              {new Date().toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' })}
+              {new Date().toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
             <h1 className="font-num truncate text-3xl font-bold tracking-tight">
               {greeting()}, {first}
@@ -93,7 +94,7 @@ export function Home() {
                 <h2 className="font-semibold">Glemte du å avslutte?</h2>
                 <p className="mt-0.5 text-sm text-muted">
                   «{active.name}» startet{' '}
-                  {new Date(active.started_at).toLocaleString('nb-NO', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.
+                  {new Date(active.started_at).toLocaleString(locale(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.
                 </p>
               </div>
             </div>

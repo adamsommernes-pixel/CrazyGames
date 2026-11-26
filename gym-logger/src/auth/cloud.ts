@@ -2,6 +2,7 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { AuthError, MIN_PASSWORD, validateSignUp, type AuthBackend, type AuthUser } from './types';
 import { userDbName } from '../db/dexie';
 import Dexie from 'dexie';
+import { t } from '../i18n';
 
 const toUser = (u: User): AuthUser => ({
   id: u.id,
@@ -12,12 +13,12 @@ const toUser = (u: User): AuthUser => ({
 });
 
 function message(e: { message: string; code?: string } | null): string {
-  if (!e) return 'Noe gikk galt.';
+  if (!e) return t('Noe gikk galt.', 'Something went wrong.');
   const m = e.message.toLowerCase();
-  if (m.includes('invalid login')) return 'Feil e-post eller passord.';
-  if (m.includes('already registered')) return 'Det finnes allerede en konto med denne e-posten. Logg inn i stedet.';
-  if (m.includes('email not confirmed')) return 'Bekreft e-posten din først. Sjekk innboksen.';
-  if (m.includes('fetch') || m.includes('network')) return 'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.';
+  if (m.includes('invalid login')) return t('Feil e-post eller passord.', 'Wrong email or password.');
+  if (m.includes('already registered')) return t('Det finnes allerede en konto med denne e-posten. Logg inn i stedet.', 'There is already an account with this email. Log in instead.');
+  if (m.includes('email not confirmed')) return t('Bekreft e-posten din først. Sjekk innboksen.', 'Confirm your email first. Check your inbox.');
+  if (m.includes('fetch') || m.includes('network')) return t('Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.', "Couldn't reach the server. Check your connection and try again.");
   return e.message;
 }
 
@@ -55,19 +56,19 @@ export function createCloudBackend(sb: SupabaseClient): AuthBackend {
 
     async changePassword(oldPassword, newPassword) {
       const { data } = await sb.auth.getUser();
-      if (!data.user?.email) throw new AuthError('Du er ikke logget inn.');
+      if (!data.user?.email) throw new AuthError(t('Du er ikke logget inn.', "You're not logged in."));
       const check = await sb.auth.signInWithPassword({ email: data.user.email, password: oldPassword });
-      if (check.error) throw new AuthError('Nåværende passord er feil.');
-      if (newPassword.length < MIN_PASSWORD) throw new AuthError(`Nytt passord må ha minst ${MIN_PASSWORD} tegn.`);
+      if (check.error) throw new AuthError(t('Nåværende passord er feil.', 'Your current password is wrong.'));
+      if (newPassword.length < MIN_PASSWORD) throw new AuthError(t(`Nytt passord må ha minst ${MIN_PASSWORD} tegn.`, `The new password must be at least ${MIN_PASSWORD} characters.`));
       const { error } = await sb.auth.updateUser({ password: newPassword });
       if (error) throw new AuthError(message(error));
     },
 
     async deleteAccount(password) {
       const { data } = await sb.auth.getUser();
-      if (!data.user?.email) throw new AuthError('Du er ikke logget inn.');
+      if (!data.user?.email) throw new AuthError(t('Du er ikke logget inn.', "You're not logged in."));
       const check = await sb.auth.signInWithPassword({ email: data.user.email, password });
-      if (check.error) throw new AuthError('Passordet er feil.');
+      if (check.error) throw new AuthError(t('Passordet er feil.', 'The password is wrong.'));
       // Databasefunksjonen delete_user() sletter kontoen og alle rader (se 002_profiles.sql).
       const { error } = await sb.rpc('delete_user');
       if (error) throw new AuthError(message(error));

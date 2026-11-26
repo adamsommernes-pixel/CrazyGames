@@ -2,6 +2,7 @@ import Dexie, { type EntityTable } from 'dexie';
 import { AuthError, MIN_PASSWORD, validateSignUp, type AuthBackend, type AuthUser } from './types';
 import { hashPassword, newSalt, safeEqual } from './crypto';
 import { userDbName } from '../db/dexie';
+import { t } from '../i18n';
 
 interface Account {
   id: string;
@@ -32,7 +33,7 @@ export function createLocalBackend(): AuthBackend {
     const acc = await adb.accounts.where('email').equals(norm(email)).first();
     // Regn ut en hash også når kontoen ikke finnes, så svartiden ikke røper hvilke e-poster som er registrert.
     const hash = await hashPassword(password, acc?.salt ?? newSalt());
-    if (!acc || !safeEqual(hash, acc.hash)) throw new AuthError('Feil e-post eller passord.');
+    if (!acc || !safeEqual(hash, acc.hash)) throw new AuthError(t('Feil e-post eller passord.', 'Wrong email or password.'));
     return acc;
   }
 
@@ -49,7 +50,7 @@ export function createLocalBackend(): AuthBackend {
     async signUp(name, email, password) {
       validateSignUp(name, email, password);
       if (await adb.accounts.where('email').equals(norm(email)).count()) {
-        throw new AuthError('Det finnes allerede en konto med denne e-posten på enheten. Logg inn i stedet.');
+        throw new AuthError(t('Det finnes allerede en konto med denne e-posten på enheten. Logg inn i stedet.', 'There is already an account with this email on this device. Log in instead.'));
       }
       const salt = newSalt();
       const acc: Account = {
@@ -78,11 +79,11 @@ export function createLocalBackend(): AuthBackend {
     async changePassword(oldPassword, newPassword) {
       const s = await adb.session.get('current');
       const acc = s && (await adb.accounts.get(s.user_id));
-      if (!acc) throw new AuthError('Du er ikke logget inn.');
+      if (!acc) throw new AuthError(t('Du er ikke logget inn.', "You're not logged in."));
       await verify(acc.email, oldPassword).catch(() => {
-        throw new AuthError('Nåværende passord er feil.');
+        throw new AuthError(t('Nåværende passord er feil.', 'Your current password is wrong.'));
       });
-      if (newPassword.length < MIN_PASSWORD) throw new AuthError(`Nytt passord må ha minst ${MIN_PASSWORD} tegn.`);
+      if (newPassword.length < MIN_PASSWORD) throw new AuthError(t(`Nytt passord må ha minst ${MIN_PASSWORD} tegn.`, `The new password must be at least ${MIN_PASSWORD} characters.`));
       const salt = newSalt();
       await adb.accounts.put({ ...acc, salt, hash: await hashPassword(newPassword, salt) });
     },
@@ -90,9 +91,9 @@ export function createLocalBackend(): AuthBackend {
     async deleteAccount(password) {
       const s = await adb.session.get('current');
       const acc = s && (await adb.accounts.get(s.user_id));
-      if (!acc) throw new AuthError('Du er ikke logget inn.');
+      if (!acc) throw new AuthError(t('Du er ikke logget inn.', "You're not logged in."));
       await verify(acc.email, password).catch(() => {
-        throw new AuthError('Passordet er feil.');
+        throw new AuthError(t('Passordet er feil.', 'The password is wrong.'));
       });
       await adb.accounts.delete(acc.id);
       await adb.session.delete('current');

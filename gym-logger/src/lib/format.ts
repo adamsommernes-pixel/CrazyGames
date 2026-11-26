@@ -1,3 +1,5 @@
+import { locale, t } from '../i18n';
+
 const LB_PER_KG = 2.20462262;
 
 /** Vekt lagres alltid i kg. Viser i valgt enhet, avrundet til én desimal. */
@@ -12,7 +14,7 @@ export function fromDisplay(value: number, unit: 'kg' | 'lbs'): number {
 
 /** Tall med komma som desimaltegn, uten unødvendige desimaler. */
 export function num(n: number, decimals = 1): string {
-  return n.toLocaleString('nb-NO', { maximumFractionDigits: decimals });
+  return n.toLocaleString(locale(), { maximumFractionDigits: decimals });
 }
 
 /** Leser tall skrevet med komma eller punktum. */
@@ -36,8 +38,9 @@ export function duration(ms: number): string {
 
 export function durationShort(ms: number): string {
   const min = Math.round(ms / 60000);
+  const h = t('t', 'h');
   if (min < 60) return `${min} min`;
-  return min % 60 ? `${Math.floor(min / 60)} t ${min % 60} min` : `${min / 60} t`;
+  return min % 60 ? `${Math.floor(min / 60)} ${h} ${min % 60} min` : `${min / 60} ${h}`;
 }
 
 /** En økt regnes som glemt eller etterregistrert når den startet for over 3 timer siden. */
@@ -62,15 +65,15 @@ export function fromDateTimeInputs(date: string, time: string): string {
 }
 
 export function dateLong(iso: string): string {
-  return new Date(iso).toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' });
+  return new Date(iso).toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 export function dateShort(iso: string): string {
-  return new Date(iso).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' });
+  return new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short' });
 }
 
 export function monthYear(iso: string): string {
-  const s = new Date(iso).toLocaleDateString('nb-NO', { month: 'long', year: 'numeric' });
+  const s = new Date(iso).toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
@@ -82,8 +85,8 @@ export function plural(n: number, one: string, many: string): string {
 /** Standardnavn på en økt ut fra tid på døgnet. */
 export function defaultWorkoutName(d = new Date()): string {
   const h = d.getHours();
-  if (h < 5) return 'Nattøkt';
-  if (h < 11) return 'Morgenøkt';
-  if (h < 17) return 'Ettermiddagsøkt';
-  return 'Kveldsøkt';
+  if (h < 5) return t('Nattøkt', 'Night workout');
+  if (h < 11) return t('Morgenøkt', 'Morning workout');
+  if (h < 17) return t('Ettermiddagsøkt', 'Afternoon workout');
+  return t('Kveldsøkt', 'Evening workout');
 }

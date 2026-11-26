@@ -10,13 +10,15 @@ import { setSetting } from '../../lib/settings';
 import { fromDisplay, parseNum } from '../../lib/format';
 import { Button, Chip, IconButton, inputClass } from '../../components/ui';
 import { Avatar, StepDots } from '../../components/widgets';
+import { LanguageToggle } from '../../components/LanguageToggle';
 import { Icon, type IconName } from '../../components/Icon';
+import { t } from '../../i18n';
 
 const GOAL_INFO: Record<Goal, { icon: IconName; text: string }> = {
-  strength: { icon: 'dumbbell', text: 'Tunge løft, få reps, lang hvile.' },
-  hypertrophy: { icon: 'flame', text: 'Moderat vekt, 8–12 reps.' },
-  general: { icon: 'target', text: 'Allsidig trening og god form.' },
-  endurance: { icon: 'timer', text: 'Flere reps, kortere hvile.' },
+  strength: { icon: 'dumbbell', get text() { return t('Tunge løft, få reps, lang hvile.', 'Heavy lifts, few reps, long rest.'); } },
+  hypertrophy: { icon: 'flame', get text() { return t('Moderat vekt, 8–12 reps.', 'Moderate weight, 8–12 reps.'); } },
+  general: { icon: 'target', get text() { return t('Allsidig trening og god form.', 'Well-rounded training and good fitness.'); } },
+  endurance: { icon: 'timer', get text() { return t('Flere reps, kortere hvile.', 'More reps, shorter rest.'); } },
 };
 
 const STEPS = 4;
@@ -67,26 +69,30 @@ export function Onboarding({ user }: { user: AuthUser }) {
   return (
     <div className="pt-safe pb-safe mx-auto flex min-h-full max-w-xl flex-col px-5">
       <div className="flex h-14 items-center justify-between">
-        {step > 0 ? <IconButton icon="back" label="Forrige steg" className="-ml-2" onClick={() => setStep(step - 1)} /> : <span />}
+        {step > 0 ? <IconButton icon="back" label={t('Forrige steg', 'Previous step')} className="-ml-2" onClick={() => setStep(step - 1)} /> : <span />}
         <StepDots step={step} total={STEPS + 1} />
         <span className="w-11" />
       </div>
 
       <div key={step} className="animate-rise flex flex-1 flex-col">
         {step === 0 && (
-          <Step title={`Hei${user.name ? `, ${user.name.split(' ')[0]}` : ''}!`} text="Hva vil du kalles, og hvilken farge vil du ha?">
+          <>
+          <div className="mb-2 flex justify-end">
+            <LanguageToggle size="md" />
+          </div>
+          <Step title={`${t('Hei', 'Hi')}${user.name ? `, ${user.name.split(' ')[0]}` : ''}!`} text={t('Hva vil du kalles, og hvilken farge vil du ha?', 'What should we call you, and which colour do you want?')}>
             <div className="flex items-center gap-4">
               <Avatar name={name || '?'} color={color} size={64} />
-              <input id="ob-name" aria-label="Navn" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
+              <input id="ob-name" aria-label={t('Navn', 'Name')} className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
             </div>
-            <div className="mt-5 flex gap-3" role="radiogroup" aria-label="Profilfarge">
+            <div className="mt-5 flex gap-3" role="radiogroup" aria-label={t('Profilfarge', 'Profile colour')}>
               {PROFILE_COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
                   role="radio"
                   aria-checked={c === color}
-                  aria-label={`Farge ${c}`}
+                  aria-label={`${t('Farge', 'Colour')} ${c}`}
                   className={`size-10 rounded-full transition ${c === color ? 'ring-2 ring-ink ring-offset-2 ring-offset-bg' : ''}`}
                   style={{ background: c }}
                   onClick={() => setColor(c)}
@@ -94,11 +100,12 @@ export function Onboarding({ user }: { user: AuthUser }) {
               ))}
             </div>
           </Step>
+          </>
         )}
 
         {step === 1 && (
-          <Step title="Hva er målet ditt?" text="Vi tilpasser sets, reps og hvile etter det.">
-            <div className="flex flex-col gap-2" role="radiogroup" aria-label="Mål">
+          <Step title={t('Hva er målet ditt?', 'What is your goal?')} text={t('Vi tilpasser sets, reps og hvile etter det.', 'We tailor sets, reps and rest to it.')}>
+            <div className="flex flex-col gap-2" role="radiogroup" aria-label={t('Mål', 'Goal')}>
               {GOALS.map((g) => (
                 <Choice key={g} selected={goal === g} onClick={() => setGoal(g)} icon={GOAL_INFO[g].icon} title={GOAL_LABEL[g]} text={GOAL_INFO[g].text} />
               ))}
@@ -107,8 +114,8 @@ export function Onboarding({ user }: { user: AuthUser }) {
         )}
 
         {step === 2 && (
-          <Step title="Hvor ofte vil du trene?" text="Ukemålet ditt. Du kan endre det senere.">
-            <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Økter per uke">
+          <Step title={t('Hvor ofte vil du trene?', 'How often do you want to train?')} text={t('Ukemålet ditt. Du kan endre det senere.', 'Your weekly goal. You can change it later.')}>
+            <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-label={t('Økter per uke', 'Workouts per week')}>
               {[2, 3, 4, 5, 6].map((n) => (
                 <button
                   key={n}
@@ -121,11 +128,11 @@ export function Onboarding({ user }: { user: AuthUser }) {
                   }`}
                 >
                   {n}
-                  <span className={`text-[10px] font-medium ${perWeek === n ? 'text-black/70' : 'text-faint'}`}>/uke</span>
+                  <span className={`text-[10px] font-medium ${perWeek === n ? 'text-black/70' : 'text-faint'}`}>{t('/uke', '/week')}</span>
                 </button>
               ))}
             </div>
-            <h3 className="mt-8 mb-2 text-sm font-semibold tracking-wide text-muted uppercase">Erfaring</h3>
+            <h3 className="mt-8 mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{t('Erfaring', 'Experience')}</h3>
             <div className="flex flex-wrap gap-2">
               {EXPERIENCE.map((e) => (
                 <Chip key={e} active={experience === e} onClick={() => setExperience(e)}>
@@ -137,29 +144,29 @@ export function Onboarding({ user }: { user: AuthUser }) {
         )}
 
         {step === 3 && (
-          <Step title="Litt om deg" text="Brukes til grafer og kroppsvekt-loggen. Kroppsvekt er valgfritt.">
-            <h3 className="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">Vektenhet</h3>
+          <Step title={t('Litt om deg', 'A bit about you')} text={t('Brukes til grafer og kroppsvekt-loggen. Kroppsvekt er valgfritt.', 'Used for charts and the bodyweight log. Bodyweight is optional.')}>
+            <h3 className="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{t('Vektenhet', 'Weight unit')}</h3>
             <div className="flex gap-2">
               <Chip active={unit === 'kg'} onClick={() => setUnit('kg')}>
-                Kilo (kg)
+                {t('Kilo (kg)', 'Kilograms (kg)')}
               </Chip>
               <Chip active={unit === 'lbs'} onClick={() => setUnit('lbs')}>
-                Pund (lbs)
+                {t('Pund (lbs)', 'Pounds (lbs)')}
               </Chip>
             </div>
             <label className="mt-6 flex flex-col gap-1.5">
-              <span className="text-sm text-muted">Kroppsvekt ({unit})</span>
-              <input id="ob-bodyweight" className={inputClass} inputMode="decimal" placeholder="Valgfritt" value={bodyweight} onChange={(e) => setBodyweight(e.target.value)} />
+              <span className="text-sm text-muted">{t('Kroppsvekt', 'Bodyweight')} ({unit})</span>
+              <input id="ob-bodyweight" className={inputClass} inputMode="decimal" placeholder={t('Valgfritt', 'Optional')} value={bodyweight} onChange={(e) => setBodyweight(e.target.value)} />
             </label>
           </Step>
         )}
 
         {step === 4 && (
-          <Step title="Klart!" text="Dette får du å starte med:">
+          <Step title={t('Klart!', 'All set!')} text={t('Dette får du å starte med:', 'Here is what you start with:')}>
             <div className="flex flex-col gap-2">
-              <Toggle checked={starter} onChange={setStarter} title={`Startrutiner: ${template.map((t) => t.name).join(', ')}`} text={`Laget for ${perWeek} økter i uka og målet «${GOAL_LABEL[goal].toLowerCase()}».`} />
+              <Toggle checked={starter} onChange={setStarter} title={`${t('Startrutiner', 'Starter routines')}: ${template.map((r) => r.name).join(', ')}`} text={t(`Laget for ${perWeek} økter i uka og målet «${GOAL_LABEL[goal].toLowerCase()}».`, `Made for ${perWeek} workouts a week and the goal “${GOAL_LABEL[goal].toLowerCase()}”.`)} />
               {legacy > 0 && (
-                <Toggle checked={moveLegacy} onChange={setMoveLegacy} title={`Flytt ${legacy} økt${legacy === 1 ? '' : 'er'} fra før`} text="Det finnes treningsdata på denne enheten fra før du hadde konto." />
+                <Toggle checked={moveLegacy} onChange={setMoveLegacy} title={t(`Flytt ${legacy} økt${legacy === 1 ? '' : 'er'} fra før`, `Move ${legacy} earlier workout${legacy === 1 ? '' : 's'}`)} text={t('Det finnes treningsdata på denne enheten fra før du hadde konto.', 'There is training data on this device from before you had an account.')} />
               )}
             </div>
           </Step>
@@ -169,11 +176,11 @@ export function Onboarding({ user }: { user: AuthUser }) {
       <div className="py-6">
         {step < STEPS ? (
           <Button full className="min-h-14 text-lg" disabled={!canNext} onClick={() => setStep(step + 1)}>
-            Fortsett
+            {t('Fortsett', 'Continue')}
           </Button>
         ) : (
           <Button full className="min-h-14 text-lg" disabled={busy} onClick={() => void finish()}>
-            {busy ? 'Gjør klar …' : 'Start å trene'}
+            {busy ? t('Gjør klar …', 'Getting ready …') : t('Start å trene', 'Start training')}
           </Button>
         )}
       </div>
