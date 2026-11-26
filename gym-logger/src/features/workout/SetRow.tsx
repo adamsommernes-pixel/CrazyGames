@@ -1,3 +1,4 @@
+import { showToast } from '../../components/toast';
 import { useAutosave } from '../../lib/autosave';
 import { useUser } from '../../auth/AuthProvider';
 import { celebrateSet } from '../../lib/strengthLive';
@@ -148,7 +149,7 @@ export function SetRow({
     if (await toggleSetDone(set.id)) {
       void buzz(20);
       onCompleted();
-      void celebrateSet(user.id, set.id, showLevelEvent);
+      void celebrateSet(user.id, set.id, showLevelEvent, (m) => showToast(m, undefined, 7000));
     }
   };
   // Tidsøvelser: tomt set + ✓ starter tidtaking; neste trykk stopper, fyller inn sekundene og fullfører.

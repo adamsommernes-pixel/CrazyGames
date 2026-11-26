@@ -74,6 +74,20 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
 **Styrkenivå**
 - Ti nivåer: Nybegynner, Rookie, Stamgjest, Gymrotte, Løfter, Sterk, Beist, Titan, Elite og Olympia.
 - Regnes ut fra beste beregnede 1RM i nøkkelløft (benk, knebøy, markløft, skulderpress, roing, pull-ups, dips og varianter) delt på kroppsvekt, med egne standarder for menn og kvinner (snitt hvis kjønn ikke er valgt). Snittet av press, trekk og bein gir nivået.
+- Maskiner, manualer og hip thrust teller opp til Beist; Titan og over krever hovedløft. Estimert 1RM bruker sets med 1–10 reps, og urealistiske sets (over 1,5 × verdensklasse, som regel tastefeil) teller ikke.
+- Testet mot realistiske løftere (`src/lib/strength.personas.test.ts`), mann 80 kg / kvinne 62 kg:
+
+  | Løfter | Eksempel (1RM benk / knebøy / markløft + trekk) | Nivå |
+  |---|---|---|
+  | Første måned | 40 / 50 / – + roing 40 | Nybegynner (9) |
+  | 6 måneder | 65 / 90 / 110 + 5 pull-ups | Gymrotte (33) |
+  | 2 år | 90 / 120 / 150 + pull-ups +10 × 5 | Sterk (52) |
+  | Avansert | 120 / 160 / 200 + pull-ups +30 × 5 | Titan (71) |
+  | Nasjonalt nivå | 160 / 210 / 240 + pull-ups +40 × 5 | Elite (84) |
+  | Verdensklasse | 195 / 260 / 290 + pull-ups +60 × 5 | Olympia (97) |
+  | Bare maskiner, enorme tall | beinpress 600, hip thrust 400 … | Beist (69, taket) |
+  | Kvinne, 2 år | 50 / 85 / 105 + 3 pull-ups | Sterk (51) |
+  | Kvinne, verdensklasse | 100 / 165 / 190 + pull-ups +35 × 5 | Olympia (92) |
 - Nytt beste løft viser et rekordkort med animert poengsum; nytt totalnivå gir fullskjerm «Nivå opp» med konfetti.
 - Merke med fremgang under hilsenen på Hjem, egen nivåside med stigen og hvert løft, og nivå per løft på øvelsessiden.
 

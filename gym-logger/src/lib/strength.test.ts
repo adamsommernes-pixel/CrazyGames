@@ -11,7 +11,7 @@ import {
   fallbackBodyweight,
 } from './strength';
 
-const ANCH: [number, number, number, number, number] = [0.5, 0.75, 1.0, 1.5, 2.0];
+const ANCH = [0.5, 0.75, 1.0, 1.5, 1.9, 2.4];
 let id = 0;
 const set = (exercise: string, weight: number, reps: number, set_type = 'normal') => ({
   id: `s${++id}`,
@@ -28,7 +28,9 @@ describe('strength scoring', () => {
     expect(scoreFromRatio(1.0, ANCH)).toBe(50);
     expect(scoreFromRatio(1.25, ANCH)).toBeCloseTo(60);
     expect(scoreFromRatio(0.25, ANCH)).toBeCloseTo(5);
-    expect(scoreFromRatio(2.25, ANCH)).toBeCloseTo(100);
+    expect(scoreFromRatio(1.9, ANCH)).toBeCloseTo(85);
+    expect(scoreFromRatio(2.4, ANCH)).toBeCloseTo(98);
+    expect(scoreFromRatio(2.5, ANCH)).toBeCloseTo(100);
     expect(scoreFromRatio(5, ANCH)).toBe(100);
     expect(ratioForScore(60, ANCH)).toBeCloseTo(1.25);
   });
@@ -76,8 +78,8 @@ describe('strength scoring', () => {
     expect(p.categories.push).toBe(50);
     expect(p.score).toBeCloseTo(50 / 3);
     expect(p.missing).toEqual(['pull', 'legs']);
-    const full = strengthProfile([set('benkpress', 80, 1), set('stangroing', 80, 1), set('markloft', 160, 1)], 80, 'male');
-    expect(full.score).toBe(50);
+    const full = strengthProfile([set('benkpress', 80, 1), set('stangroing', 76, 1), set('markloft', 148, 1)], 80, 'male');
+    expect(full.score).toBeCloseTo(50);
     expect(full.tier.index).toBe(5);
     expect(full.missing).toEqual([]);
   });

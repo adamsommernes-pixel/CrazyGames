@@ -114,6 +114,7 @@ export function LevelPage() {
                     <span style={{ color: tierAccent(l.tier.index) }}>{l.tier.name}</span> · 1RM ≈ {shown(l.e1rm)}
                   </div>
                 </div>
+                {l.capped && <div className="text-right text-xs text-faint">{t('Maks for varianter', 'Max for variants')}</div>}
                 {nextT && l.nextTierKg && (
                   <div className="text-right text-xs text-muted">
                     <div className="font-num font-semibold text-ink">{shown(l.nextTierKg)}</div>
@@ -153,14 +154,20 @@ export function LevelPage() {
       <Card className="flex flex-col gap-2 p-4 text-sm text-muted">
         <p>
           {t(
-            'Vi tar ditt beste beregnede 1RM (fra sets med 1–12 reps) i nøkkelløft og deler på kroppsvekten. Det sammenlignes med vanlige styrkestandarder og gir 0–100 poeng per løft.',
-            'We take your best estimated 1RM (from sets of 1–12 reps) in key lifts and divide it by your bodyweight. That is compared with common strength standards and gives 0–100 points per lift.',
+            'Vi tar ditt beste beregnede 1RM (fra sets med 1–10 reps) i nøkkelløft og deler på kroppsvekten. Det sammenlignes med vanlige styrkestandarder og gir 0–100 poeng per løft.',
+            'We take your best estimated 1RM (from sets of 1–10 reps) in key lifts and divide it by your bodyweight. That is compared with common strength standards and gives 0–100 points per lift.',
           )}
         </p>
         <p>
           {t(
             'Nivået er snittet av det beste løftet i press, trekk og bein, så en balansert kropp kommer høyest. For pull-ups og dips teller kroppsvekten med.',
             'Your level is the average of your best lift in push, pull and legs, so a balanced body ranks highest. For pull-ups and dips your bodyweight counts too.',
+          )}
+        </p>
+        <p>
+          {t(
+            'Maskiner, manualer og hip thrust teller opp til Beist. Titan og over krever hovedløftene: benk, skulderpress, knebøy, markløft, roing, pull-ups eller dips. Olympia krever nær verdensklasse i alle tre kategoriene.',
+            'Machines, dumbbells and hip thrusts count up to Beast. Titan and above need the main lifts: bench, overhead press, squat, deadlift, rows, pull-ups or dips. Olympia needs close to world-class strength in all three categories.',
           )}
         </p>
       </Card>

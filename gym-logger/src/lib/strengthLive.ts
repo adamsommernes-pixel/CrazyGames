@@ -3,7 +3,9 @@ import { db } from '../db/dexie';
 import type { Sex, WorkoutSet } from '../db/types';
 import { useUser } from '../auth/AuthProvider';
 import { exerciseName } from './exerciseName';
-import { fallbackBodyweight, levelEventFor, strengthProfile, type LevelEvent, type StrengthProfile } from './strength';
+import { num } from './format';
+import { t } from '../i18n';
+import { fallbackBodyweight, isImplausible, levelEventFor, strengthProfile, type LevelEvent, type StrengthProfile } from './strength';
 
 export interface StrengthContext {
   bw: number;
@@ -42,7 +44,25 @@ export async function levelEventForSet(userId: string, setId: string): Promise<{
 }
 
 /** Viser rekordkortet eller «Nivå opp» hvis settet ga ny beste 1RM på et rangert løft. */
-export async function celebrateSet(userId: string, setId: string, show: (ev: LevelEvent, label: string, bw: number) => void) {
+export async function celebrateSet(
+  userId: string,
+  setId: string,
+  show: (ev: LevelEvent, label: string, bw: number) => void,
+  warn?: (message: string) => void,
+) {
+  const set = (await db.sets.get(setId)) as WorkoutSet | undefined;
+  if (set && warn) {
+    const ctx = await context(userId);
+    if (isImplausible(set, ctx.bw, ctx.sex)) {
+      warn(
+        t(
+          `Stemmer ${num(set.weight, 1)} kg? Settet teller ikke i styrkenivået før du retter det.`,
+          `Is ${num(set.weight, 1)} kg right? The set does not count towards your strength level until you fix it.`,
+        ),
+      );
+      return;
+    }
+  }
   const res = await levelEventForSet(userId, setId);
   if (!res) return;
   const ex = await db.exercises.get(res.event.exerciseId);
