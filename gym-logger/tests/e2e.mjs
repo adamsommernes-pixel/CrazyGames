@@ -241,7 +241,7 @@ try {
   // 5b2. Nivåmerket på Hjem og nivåsiden
   await page.getByRole('link', { name: /^Styrkenivå: / }).click();
   await page.getByRole('heading', { name: 'Styrkenivå' }).waitFor();
-  await page.getByText('Olympia').waitFor();
+  await page.getByText('Olympia', { exact: true }).waitFor();
   await page.getByText(/Logg (press|trekk).*-øvelser/).waitFor();
   await shot('styrkeniva');
   await btn('Tilbake').click();
