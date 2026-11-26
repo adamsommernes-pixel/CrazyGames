@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import { AuthError } from '../../auth/types';
@@ -119,6 +119,11 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [reset, setReset] = useState<'idle' | 'sent'>('idle');
+  // Les markøren én gang og fjern den fra adressen, så den ikke henger igjen etter utlogging.
+  const [confirmed] = useState(isConfirmedLanding);
+  useEffect(() => {
+    if (confirmed) history.replaceState(history.state, '', location.pathname + location.hash);
+  }, [confirmed]);
   const { busy, error, onSubmit } = useSubmit(() => signIn(email, password));
   const forgot = useSubmit(async () => {
     if (!email.trim()) throw new AuthError(t('Skriv inn e-posten din først.', 'Enter your email first.'));
@@ -135,6 +140,11 @@ export function Login() {
         </label>
         <PasswordField id="login-password" label={t('Passord', 'Password')} value={password} onChange={setPassword} autoComplete="current-password" />
         <ErrorText error={error ?? forgot.error} />
+        {confirmed && (
+          <p role="status" className="rounded-xl bg-green-dim/40 px-3 py-2.5 text-sm text-green-light">
+            {t('E-posten er bekreftet. Logg inn for å starte.', 'Your email is confirmed. Log in to get started.')}
+          </p>
+        )}
         {reset === 'sent' && (
           <p role="status" className="rounded-xl bg-green-dim/40 px-3 py-2.5 text-sm text-green-light">
             {t('Sjekk e-posten for en lenke til å lage nytt passord.', 'Check your email for a link to set a new password.')}
@@ -160,4 +170,9 @@ export function Login() {
       )}
     </Shell>
   );
+}
+
+/** True når brukeren kommer fra lenken i bekreftelses-e-posten. */
+export function isConfirmedLanding() {
+  return new URLSearchParams(location.search).get('confirmed') === '1';
 }

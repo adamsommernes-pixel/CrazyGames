@@ -4,6 +4,14 @@ import { userDbName } from '../db/dexie';
 import Dexie from 'dexie';
 import { t } from '../i18n';
 
+/** Appens adresse uten #-del, med ?confirmed=1 (Supabase legger egne verdier etter #). */
+export function confirmRedirect(href = typeof location === 'undefined' ? '' : location.href): string {
+  const u = new URL(href || 'http://localhost/');
+  u.hash = '';
+  u.search = '?confirmed=1';
+  return u.toString();
+}
+
 const toUser = (u: User): AuthUser => ({
   id: u.id,
   email: u.email ?? '',
@@ -37,7 +45,8 @@ export function createCloudBackend(sb: SupabaseClient): AuthBackend {
       const { data, error } = await sb.auth.signUp({
         email: email.trim(),
         password,
-        options: { data: { name: name.trim() } },
+        // Lenken i bekreftelses-e-posten fører tilbake til innloggingen med en «bekreftet»-melding.
+        options: { data: { name: name.trim() }, emailRedirectTo: confirmRedirect() },
       });
       if (error) throw new AuthError(message(error));
       if (!data.session || !data.user) return { needsConfirmation: true };

@@ -105,6 +105,13 @@ try {
   await btn('Lag konto').waitFor();
   await shot('velkomst');
 
+  // 1-0. Lenken fra bekreftelses-e-posten fører til innlogging med en melding
+  await page.goto(URL + '?confirmed=1#access_token=x&type=signup');
+  await page.getByText('E-posten er bekreftet. Logg inn for å starte.').waitFor();
+  assert.equal(await page.evaluate(() => location.search), '', 'markøren fjernes fra adressen');
+  await page.evaluate(() => { location.hash = '#/'; });
+  await btn('Lag konto').waitFor(); // velkomstsiden, ikke tilbake til innlogging
+
   // 1a. Personvernerklæringen kan leses før man lager konto
   await page.getByRole('link', { name: 'Personvern' }).click();
   await page.getByRole('heading', { name: 'Kroppsdata er særlig beskyttet' }).waitFor();

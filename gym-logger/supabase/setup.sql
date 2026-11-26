@@ -220,3 +220,19 @@ alter table public.profiles add column if not exists sex text check (sex in ('ma
 -- Uten samtykke sender appen ikke kroppsvekt-loggen, og profilens kroppsvekt, høyde,
 -- fødselsår og kjønn sendes som tomme. Når samtykket trekkes, sletter appen kroppsvekt-loggen her.
 alter table public.profiles add column if not exists health_consent_at timestamptz;
+
+-- ============================================================
+-- 007_grants.sql
+-- ============================================================
+
+-- Repgrade: gi innloggede brukere tilgang til tabellene (nyere Supabase-prosjekter gjør ikke dette automatisk).
+-- Row Level Security sørger fortsatt for at hver bruker bare ser og endrer egne rader.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on
+  public.exercises, public.routines, public.routine_exercises, public.workouts,
+  public.workout_exercises, public.sets, public.profiles, public.bodyweights
+  to authenticated;
+revoke all on
+  public.exercises, public.routines, public.routine_exercises, public.workouts,
+  public.workout_exercises, public.sets, public.profiles, public.bodyweights
+  from anon;

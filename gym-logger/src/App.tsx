@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo } from 'react';
-import { HashRouter, MemoryRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { t, useLang } from './i18n';
@@ -19,7 +19,7 @@ import { RestTimerBar, unlockAudio } from './features/workout/restTimer';
 import { StartSheet } from './features/workout/StartSheet';
 import { WorkoutTab } from './features/workout/WorkoutTab';
 import { Welcome } from './features/welcome/Welcome';
-import { Login, SignUp } from './features/auth/AuthForms';
+import { Login, SignUp, isConfirmedLanding } from './features/auth/AuthForms';
 import { Onboarding } from './features/onboarding/Onboarding';
 import { Home } from './features/home/Home';
 import { HistoryList } from './features/history/HistoryList';
@@ -79,6 +79,11 @@ function Splash() {
   );
 }
 
+/** Lenken fra bekreftelses-e-posten skal til innlogging; ellers velkomstsiden. Sjekkes ved hver visning. */
+function WelcomeOrConfirmed() {
+  return isConfirmedLanding() ? <Navigate to="/login" replace /> : <Welcome />;
+}
+
 function Gate() {
   const { status, user } = useAuth();
   if (status === 'loading') return <Splash />;
@@ -88,7 +93,7 @@ function Gate() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="*" element={<Welcome />} />
+        <Route path="*" element={<WelcomeOrConfirmed />} />
       </Routes>
     );
   }

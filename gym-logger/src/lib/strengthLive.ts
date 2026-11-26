@@ -3,7 +3,8 @@ import { db } from '../db/dexie';
 import type { Sex, WorkoutSet } from '../db/types';
 import { useUser } from '../auth/AuthProvider';
 import { exerciseName } from './exerciseName';
-import { num } from './format';
+import { num, toDisplay } from './format';
+import { getSetting } from './settings';
 import { t } from '../i18n';
 import { fallbackBodyweight, isImplausible, levelEventFor, strengthProfile, type LevelEvent, type StrengthProfile } from './strength';
 
@@ -54,10 +55,12 @@ export async function celebrateSet(
   if (set && warn) {
     const ctx = await context(userId);
     if (isImplausible(set, ctx.bw, ctx.sex)) {
+      const unit = await getSetting('unit');
+      const shown = `${num(toDisplay(set.weight, unit), 1)} ${unit}`;
       warn(
         t(
-          `Stemmer ${num(set.weight, 1)} kg? Settet teller ikke i styrkenivået før du retter det.`,
-          `Is ${num(set.weight, 1)} kg right? The set does not count towards your strength level until you fix it.`,
+          `Stemmer ${shown}? Settet teller ikke i styrkenivået før du retter det.`,
+          `Is ${shown} right? The set does not count towards your strength level until you fix it.`,
         ),
       );
       return;
