@@ -11,7 +11,7 @@ describe('estimate1RM', () => {
 });
 
 describe('volum og tyngste', () => {
-  const sets = [s(100, 5), s(60, 10, { is_warmup: 1 }), s(110, 3), { weight: 200, reps: 1, completed_at: null }];
+  const sets = [s(100, 5), s(60, 10, { set_type: 'warmup' }), s(110, 3), { weight: 200, reps: 1, completed_at: null }];
   it('teller bare fullførte arbeidssett', () => {
     expect(volume(sets)).toBe(100 * 5 + 110 * 3);
     expect(heaviest(sets)).toBe(110);
@@ -25,7 +25,7 @@ describe('detectPRs', () => {
   it('vekt-PR og 1RM-PR', () => expect(detectPRs(s(105, 5), history)).toEqual(['weight', '1rm']));
   it('reps-PR på samme vekt', () => expect(detectPRs(s(100, 6), history)).toEqual(['1rm', 'reps']));
   it('ingen PR for lettere og færre', () => expect(detectPRs(s(90, 7), history)).toEqual([]));
-  it('oppvarming gir ikke PR', () => expect(detectPRs(s(200, 1, { is_warmup: 1 }), history)).toEqual([]));
+  it('oppvarming gir ikke PR', () => expect(detectPRs(s(200, 1, { set_type: 'warmup' }), history)).toEqual([]));
 });
 
 describe('detectPRsInOrder', () => {

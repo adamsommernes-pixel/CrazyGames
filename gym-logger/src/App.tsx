@@ -1,25 +1,38 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useMemo } from 'react';
 import { HashRouter, MemoryRouter, Route, Routes } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { AuthProvider, useAuth } from './auth/AuthProvider';
+import type { AuthUser } from './auth/types';
+import { openUserDb } from './db/dexie';
+import { getProfile } from './db/repo';
+import { useAutoSync } from './db/sync';
 import { ConfirmHost } from './components/confirm';
 import { BottomNav } from './components/BottomNav';
+import { Icon } from './components/Icon';
 import { RestTimerBar, unlockAudio } from './features/workout/restTimer';
+import { StartSheet } from './features/workout/StartSheet';
 import { WorkoutTab } from './features/workout/WorkoutTab';
+import { Welcome } from './features/welcome/Welcome';
+import { Login, SignUp } from './features/auth/AuthForms';
+import { Onboarding } from './features/onboarding/Onboarding';
+import { Home } from './features/home/Home';
 import { HistoryList } from './features/history/HistoryList';
 import { WorkoutDetail } from './features/history/WorkoutDetail';
 import { RoutineList } from './features/routines/RoutineList';
 import { RoutineEditor } from './features/routines/RoutineEditor';
-import { ProgressList } from './features/progress/ProgressList';
+import { Summary } from './features/summary/Summary';
 import { ProfilePage } from './features/profile/ProfilePage';
-import { useAutoSync } from './db/sync';
+import { EditProfile } from './features/profile/EditProfile';
+import { BodyweightPage } from './features/bodyweight/BodyweightPage';
 
-// Grafbiblioteket er stort, så grafsiden lastes først når den åpnes.
-const ExerciseProgress = lazy(() => import('./features/progress/ExerciseProgress').then((m) => ({ default: m.ExerciseProgress })));
+// Grafbiblioteket er stort, så sider med grafer lastes først når de åpnes.
+const ProgressList = lazy(() => import('./features/progress/ProgressList').then((m) => ({ default: m.ProgressList })));
+const ExerciseDetail = lazy(() => import('./features/exercise/ExerciseDetail').then((m) => ({ default: m.ExerciseDetail })));
 
 // I claude.ai-versjonen styres ikke adressefeltet av appen, så ruting skjer i minnet.
 const Router = __ARTIFACT__ ? MemoryRouter : HashRouter;
 
 export default function App() {
-  useAutoSync();
   // Lyd for hviletimeren må låses opp av et trykk på iOS.
   useEffect(() => {
     const unlock = () => unlockAudio();
@@ -28,31 +41,85 @@ export default function App() {
   }, []);
 
   return (
-    <Router>
+    <AuthProvider>
+      <Router>
+        <Gate />
+      </Router>
+      <ConfirmHost />
+    </AuthProvider>
+  );
+}
+
+function Splash() {
+  return (
+    <div className="grid h-full place-items-center" aria-label="Laster">
+      <span className="grid size-14 animate-pulse place-items-center rounded-2xl bg-green text-black shadow-glow">
+        <Icon name="dumbbell" size={28} strokeWidth={2.4} />
+      </span>
+    </div>
+  );
+}
+
+function Gate() {
+  const { status, user } = useAuth();
+  if (status === 'loading') return <Splash />;
+  if (!user) {
+    return (
       <Routes>
-        <Route path="/" element={<WorkoutTab />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="*" element={<Welcome />} />
+      </Routes>
+    );
+  }
+  return <SignedIn key={user.id} user={user} />;
+}
+
+function SignedIn({ user }: { user: AuthUser }) {
+  // Bytt til brukerens egen database før noe under leser fra den.
+  useMemo(() => openUserDb(user.id), [user.id]);
+  useAutoSync(user.kind === 'cloud');
+  const profile = useLiveQuery(() => getProfile(user.id), [user.id], null);
+  if (profile === null) return <Splash />;
+  if (!profile?.onboarded_at) return <Onboarding user={user} />;
+
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/workout" element={<WorkoutTab />} />
         <Route path="/history" element={<HistoryList />} />
         <Route path="/history/:id" element={<WorkoutDetail />} />
+        <Route path="/summary/:id" element={<Summary />} />
         <Route path="/routines" element={<RoutineList />} />
         <Route path="/routines/new" element={<RoutineEditor />} />
         <Route path="/routines/:id" element={<RoutineEditor />} />
-        <Route path="/progress" element={<ProgressList />} />
         <Route
-          path="/progress/:exerciseId"
+          path="/progress"
           element={
             <Suspense fallback={null}>
-              <ExerciseProgress />
+              <ProgressList />
             </Suspense>
           }
         />
+        <Route
+          path="/exercise/:exerciseId"
+          element={
+            <Suspense fallback={null}>
+              <ExerciseDetail />
+            </Suspense>
+          }
+        />
+        <Route path="/bodyweight" element={<BodyweightPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="*" element={<WorkoutTab />} />
+        <Route path="/profile/edit" element={<EditProfile />} />
+        <Route path="*" element={<Home />} />
       </Routes>
       <div className="fixed inset-x-0 bottom-0 z-30">
         <RestTimerBar />
         <BottomNav />
       </div>
-      <ConfirmHost />
-    </Router>
+      <StartSheet />
+    </>
   );
 }

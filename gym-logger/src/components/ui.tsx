@@ -1,14 +1,14 @@
-import { useEffect, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon, type IconName } from './Icon';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-green text-black font-semibold active:bg-green-light',
-  secondary: 'bg-raised text-ink border border-line active:bg-line',
-  ghost: 'text-green active:bg-raised',
-  danger: 'bg-raised text-danger border border-line active:bg-line',
+  primary: 'bg-green text-black font-semibold shadow-glow active:bg-green-light active:scale-[0.98]',
+  secondary: 'bg-raised text-ink border border-line font-medium active:bg-line active:scale-[0.98]',
+  ghost: 'text-green font-medium active:bg-raised',
+  danger: 'bg-raised text-danger border border-line font-medium active:bg-line',
 };
 
 export function Button({
@@ -22,7 +22,7 @@ export function Button({
   return (
     <button
       type="button"
-      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-base transition-colors disabled:opacity-40 ${
+      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-base transition disabled:opacity-40 disabled:shadow-none ${
         VARIANTS[variant]
       } ${full ? 'w-full' : ''} ${className}`}
       {...rest}
@@ -53,7 +53,7 @@ export function IconButton({
 }
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-2xl border border-line bg-surface ${className}`}>{children}</div>;
+  return <div className={`card rounded-3xl ${className}`}>{children}</div>;
 }
 
 /** Sidehode med valgfri tilbakeknapp og handlinger til høyre. */
@@ -95,8 +95,11 @@ export function EmptyState({ icon, title, text, children }: {
 }) {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
-      <div className="mb-4 grid size-16 place-items-center rounded-2xl bg-green-dim/50 text-green">
-        <Icon name={icon} size={30} />
+      <div className="relative mb-5 grid size-20 place-items-center">
+        <div className="absolute inset-0 rounded-full bg-green/10 blur-xl" />
+        <div className="relative grid size-20 place-items-center rounded-full border border-green/30 bg-green-dim/40 text-green">
+          <Icon name={icon} size={34} strokeWidth={1.6} />
+        </div>
       </div>
       <h2 className="text-lg font-semibold">{title}</h2>
       {text && <p className="mt-1 max-w-xs text-muted">{text}</p>}
@@ -133,13 +136,14 @@ export function Sheet({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
-      <button type="button" aria-label="Lukk" className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <button type="button" aria-label="Lukk" className="absolute inset-0 animate-fade bg-black/70 backdrop-blur-[2px]" onClick={onClose} />
       <div
-        className={`pb-safe relative flex w-full max-w-xl flex-col rounded-t-3xl border-t border-line bg-surface ${
+        className={`pb-safe relative flex w-full max-w-xl animate-sheet flex-col rounded-t-[28px] border-t border-line bg-surface shadow-[0_-12px_40px_rgb(0_0_0/0.6)] ${
           tall ? 'h-[88vh]' : 'max-h-[88vh]'
         }`}
       >
-        <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+        <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line" aria-hidden="true" />
+        <div className="flex items-center gap-2 px-4 pt-2 pb-2">
           <h2 className="flex-1 text-lg font-bold">{title}</h2>
           <IconButton icon="x" label="Lukk" onClick={onClose} />
         </div>
@@ -164,7 +168,46 @@ export function ActionList({ actions }: {
   );
 }
 
-/** Tall med − og + på hver side. */
+/** Holder knappen inne → gjentar handlingen raskere og raskere. */
+function useRepeat(fn: () => void) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fnRef = useRef(fn);
+  fnRef.current = fn;
+  const stop = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  };
+  const start = () => {
+    stop();
+    fnRef.current();
+    let delay = 380;
+    const loop = () => {
+      fnRef.current();
+      delay = Math.max(50, delay * 0.8);
+      timer.current = setTimeout(loop, delay);
+    };
+    timer.current = setTimeout(loop, delay);
+  };
+  useEffect(() => stop, []);
+  return {
+    onPointerDown: (e: React.PointerEvent) => {
+      e.preventDefault();
+      start();
+    },
+    onPointerUp: stop,
+    onPointerLeave: stop,
+    onPointerCancel: stop,
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fnRef.current();
+      }
+    },
+  };
+}
+
+/** Tall med − og + på hver side. Hold inne for å endre raskt. */
 export function NumberStepper({
   value,
   onChange,
@@ -173,6 +216,7 @@ export function NumberStepper({
   max = 999,
   label,
   format = (v: number) => String(v),
+  size = 'md',
 }: {
   value: number;
   onChange: (v: number) => void;
@@ -181,15 +225,28 @@ export function NumberStepper({
   max?: number;
   label: string;
   format?: (v: number) => string;
+  size?: 'md' | 'lg';
 }) {
-  const clamp = (v: number) => Math.min(max, Math.max(min, v));
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v * 1000) / 1000));
+  const change = (d: number) => {
+    const next = clamp(valueRef.current + d);
+    valueRef.current = next;
+    onChange(next);
+  };
+  const minus = useRepeat(() => change(-step));
+  const plus = useRepeat(() => change(step));
+  const btn = `grid place-items-center text-green active:bg-line select-none touch-none ${size === 'lg' ? 'size-14 text-2xl' : 'size-11 text-xl'}`;
   return (
-    <div className="flex items-center rounded-xl border border-line bg-raised" role="group" aria-label={label}>
-      <button type="button" aria-label={`${label} minus`} className="grid size-11 place-items-center text-green active:bg-line rounded-l-xl" onClick={() => onChange(clamp(value - step))}>
+    <div className="flex items-center rounded-2xl border border-line bg-raised" role="group" aria-label={label}>
+      <button type="button" aria-label={`${label} minus`} className={`${btn} rounded-l-2xl`} {...minus}>
         −
       </button>
-      <span className="tabular min-w-12 flex-1 text-center font-semibold">{format(value)}</span>
-      <button type="button" aria-label={`${label} pluss`} className="grid size-11 place-items-center text-green active:bg-line rounded-r-xl" onClick={() => onChange(clamp(value + step))}>
+      <span className={`font-num min-w-12 flex-1 text-center font-bold ${size === 'lg' ? 'text-3xl' : 'text-lg'}`} aria-live="polite">
+        {format(value)}
+      </span>
+      <button type="button" aria-label={`${label} pluss`} className={`${btn} rounded-r-2xl`} {...plus}>
         +
       </button>
     </div>
@@ -227,8 +284,8 @@ export function SectionTitle({ children }: { children: ReactNode }) {
 /** Liten nøkkeltall-boks. */
 export function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-line bg-surface py-2">
-      <div className="text-lg font-bold">{value}</div>
+    <div className="card rounded-2xl py-2.5 text-center">
+      <div className="font-num text-xl font-bold">{value}</div>
       <div className="text-xs text-muted">{label}</div>
     </div>
   );

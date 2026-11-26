@@ -40,7 +40,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // Bare latinske fonter i offline-lageret; andre tegnsett hentes ved behov.
+        globPatterns: ['**/*.{js,css,html,svg,png}', '**/*latin*.woff2'],
         navigateFallback: 'index.html',
       },
     }),

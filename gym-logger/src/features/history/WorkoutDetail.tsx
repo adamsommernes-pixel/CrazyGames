@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate, useParams } from 'react-router-dom';
 import { db } from '../../db/dexie';
+import { SET_TYPE_SHORT, type WorkoutSet } from '../../db/types';
+import { editSet } from '../../db/repo';
+import { NumberStepper } from '../../components/ui';
+import { useEffect } from 'react';
+import { fromDisplay } from '../../lib/format';
 import { deleteWorkout, repeatWorkout, routineFromWorkout, setsForWorkout, workoutExercises } from '../../db/repo';
 import { ActionList, Button, Card, EmptyState, IconButton, Page, PRBadge, Sheet, Stat } from '../../components/ui';
 import { useExerciseMap } from '../workout/ExercisePicker';
@@ -18,6 +23,7 @@ export function WorkoutDetail() {
   const exMap = useExerciseMap();
   const prMap = usePRMap();
   const [menu, setMenu] = useState(false);
+  const [editing, setEditing] = useState<WorkoutSet | null>(null);
   const data = useLiveQuery(async () => {
     const workout = await db.workouts.get(id);
     return { workout, wes: await workoutExercises(id), sets: (await setsForWorkout(id)).filter((s) => s.completed_at) };
@@ -52,7 +58,7 @@ export function WorkoutDetail() {
           let n = 0;
           return (
             <Card key={we.id} className="p-4">
-              <button type="button" className="text-lg font-bold text-green" onClick={() => navigate(`/progress/${we.exercise_id}`)}>
+              <button type="button" className="text-lg font-bold text-green" onClick={() => navigate(`/exercise/${we.exercise_id}`)}>
                 {exMap.get(we.exercise_id)?.name ?? 'Ukjent øvelse'}
               </button>
               <ul className="mt-2 flex flex-col gap-1.5">
@@ -60,12 +66,12 @@ export function WorkoutDetail() {
                   const prs = prMap.get(s.id);
                   return (
                     <li key={s.id} className="tabular flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span className={`w-6 text-center font-bold ${s.is_warmup ? 'text-amber-400' : 'text-faint'}`}>
-                        {s.is_warmup ? 'O' : ++n}
+                      <span className={`font-num w-6 text-center font-bold ${s.set_type === 'normal' ? 'text-faint' : 'text-warn'}`}>
+                        {SET_TYPE_SHORT[s.set_type] || ++n}
                       </span>
-                      <span className="font-semibold">
+                      <button type="button" className="font-num font-bold underline decoration-line decoration-dotted underline-offset-4" aria-label={`Rediger set: ${num(toDisplay(s.weight, unit))} ${unit} × ${s.reps}`} onClick={() => setEditing(s)}>
                         {num(toDisplay(s.weight, unit))} {unit} × {s.reps}
-                      </span>
+                      </button>
                       <span className="text-sm text-faint">1RM {num(toDisplay(estimate1RM(s.weight, s.reps), unit))}</span>
                       {prs?.map((p) => <PRBadge key={p} label={PR_LABEL[p]} />)}
                     </li>
@@ -77,14 +83,16 @@ export function WorkoutDetail() {
         })}
       </div>
 
-      <Button full icon="repeat" variant="secondary" className="mt-4" onClick={() => void repeatWorkout(id).then(() => navigate('/'))}>
+      <Button full icon="repeat" variant="secondary" className="mt-4" onClick={() => void repeatWorkout(id).then(() => navigate('/workout'))}>
         Gjenta økt
       </Button>
+
+      <EditSetSheet set={editing} unit={unit} onClose={() => setEditing(null)} />
 
       <Sheet open={menu} onClose={() => setMenu(false)} title="Økt">
         <ActionList
           actions={[
-            { label: 'Gjenta økt', icon: 'repeat', onClick: () => void repeatWorkout(id).then(() => navigate('/')) },
+            { label: 'Gjenta økt', icon: 'repeat', onClick: () => void repeatWorkout(id).then(() => navigate('/workout')) },
             { label: 'Lagre som rutine', icon: 'list', onClick: () => void routineFromWorkout(id).then((rid) => navigate(`/routines/${rid}`)) },
             {
               label: 'Slett økt',
@@ -101,5 +109,34 @@ export function WorkoutDetail() {
         />
       </Sheet>
     </Page>
+  );
+}
+
+/** Endre vekt og reps på et set i en ferdig økt. */
+function EditSetSheet({ set, unit, onClose }: { set: WorkoutSet | null; unit: 'kg' | 'lbs'; onClose: () => void }) {
+  const [weight, setWeight] = useState(0);
+  const [reps, setReps] = useState(0);
+  useEffect(() => {
+    if (set) {
+      setWeight(toDisplay(set.weight, unit));
+      setReps(set.reps);
+    }
+  }, [set, unit]);
+  return (
+    <Sheet open={!!set} onClose={onClose} title="Rediger set">
+      <div className="flex flex-col gap-3">
+        <div>
+          <div className="mb-1.5 text-sm text-muted">Vekt ({unit})</div>
+          <NumberStepper label="Vekt" size="lg" value={weight} step={unit === 'kg' ? 2.5 : 5} max={unit === 'kg' ? 500 : 1100} onChange={setWeight} format={(v) => num(v)} />
+        </div>
+        <div>
+          <div className="mb-1.5 text-sm text-muted">Reps</div>
+          <NumberStepper label="Reps" size="lg" value={reps} max={100} onChange={setReps} />
+        </div>
+        <Button full className="mt-2" onClick={() => set && void editSet(set.id, fromDisplay(weight, unit), reps).then(onClose)}>
+          Lagre endring
+        </Button>
+      </div>
+    </Sheet>
   );
 }

@@ -1,7 +1,7 @@
 export interface SetLike {
   weight: number;
   reps: number;
-  is_warmup?: 0 | 1;
+  set_type?: string;
   completed_at?: string | null;
 }
 
@@ -14,7 +14,7 @@ export function estimate1RM(weight: number, reps: number): number {
 
 /** Sets som teller: fullført, ikke oppvarming, og med reps. */
 export function countsAsWork(s: SetLike): boolean {
-  return !!s.completed_at && !s.is_warmup && s.reps > 0;
+  return !!s.completed_at && s.set_type !== 'warmup' && s.reps > 0;
 }
 
 export function volume(sets: SetLike[]): number {

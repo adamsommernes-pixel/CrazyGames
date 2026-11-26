@@ -1,18 +1,46 @@
 # Gym Logger
 
-Mobilapp (PWA) for å logge treningsøkter: velg øvelse, logg sets, reps og vekt. Svart og grønt design, norsk språk.
+Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fremgangen. Svart og grønt design, norsk språk, virker uten nett.
 
 ## Funksjoner
 
-- **Aktiv økt**: legg til øvelser fra et bibliotek med 64 øvelser (eller lag egne), logg vekt og reps, hak av sets.
-- **Forrige økt**: det du løftet sist vises ved siden av hvert set, og nye sets fylles ut med forrige vekt og reps.
-- **Hviletimer**: starter av seg selv når du huker av et set, med −15/+15, lyd og vibrasjon. Teller riktig selv om skjermen låses.
-- **Rutiner**: lagre faste økter (Push, Pull, Bein …) og start dem med ett trykk.
-- **Historikk**: alle økter, med varighet, volum og rekorder.
-- **Fremgang og PR**: grafer per øvelse (tyngste set, beregnet 1RM etter Epley, volum) og automatiske rekordmerker.
-- **Offline først**: alt lagres lokalt (IndexedDB) og virker uten dekning.
-- **Sky-synk (valgfritt)**: logg inn med kode på e-post og synk mellom enheter via Supabase.
-- **Backup**: eksport og import til JSON.
+**Konto og oppstart**
+- Velkomstside første gang og etter utlogging.
+- Registrering og innlogging med e-post og passord. Man kan bytte passord, logge ut og slette kontoen.
+- Oppstart i fire steg: navn og farge, mål, økter per uke og erfaring, og til slutt enhet og kroppsvekt. Til slutt lages ferdige startrutiner etter mål og frekvens (Fullkropp A/B, Overkropp/Underkropp eller Push/Pull/Bein).
+- Hver konto har sin egen database, så flere personer kan bruke samme enhet uten å se hverandres data.
+
+**Trening**
+- **Hjem**: ukemål som ring, streak i uker, ukas treningsdager, neste rutine og siste rekorder.
+- **Startknapp** i midten av menyen: tom økt, rutine eller «Gjenta forrige».
+- **Aktiv økt**:
+  - forrige økt vises ved siden av hvert set
+  - set-typer: vanlig, oppvarming, drop-set og til feil
+  - notat per øvelse
+  - platekalkulator
+  - hold-inne-knapper for vekt og reps
+  - fremdriftslinje
+  - neste tomme sets får samme vekt når du fullfører et set
+- **Hviletimer** starter når du huker av et set. Den har −15/+15, lyd og vibrasjon, og teller riktig når skjermen er låst.
+- **Oppsummering** etter økta: rekorder med konfetti, volum mot forrige gang og muskelgrupper.
+
+**Oversikt**
+- **Historikk** som liste eller kalender. Du kan rette vekt og reps i ferdige økter.
+- **Fremgang**: volum og økter per uke (12 uker), fordeling på muskelgrupper og 1RM per øvelse.
+- **Øvelsesside**: rekorder, graf (tyngste, 1RM, volum), historikk og egne notater.
+- **Kroppsvekt**: logg og graf.
+- **Profil**: livstidstall, rediger profil, konto, innstillinger (enhet, hvile, stang og skiver, lyd og vibrasjon) og backup til JSON.
+
+## To typer konto
+
+| | Lokal konto | Sky-konto |
+|---|---|---|
+| Når | Appen er bygget uten Supabase-nøkler (bl.a. claude.ai-versjonen) | `VITE_SUPABASE_URL` og `VITE_SUPABASE_ANON_KEY` er satt |
+| Lagring | Bare på enheten (IndexedDB) | Lokalt først, og synket til Supabase |
+| Passord | PBKDF2-SHA256, 210 000 runder, tilfeldig salt | Supabase Auth |
+| Glemt passord | Kan ikke tilbakestilles | Lenke på e-post |
+
+Data fra versjon 1, fra før appen hadde kontoer, kan flyttes inn i den første kontoen som lages på enheten. Appen spør om det under oppstarten.
 
 ## Utvikling
 
@@ -22,52 +50,49 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # enhetstester (Vitest)
 npm run build
-npm run e2e        # ende-til-ende i iPhone-visning (krever Playwright + Chromium)
+npm run e2e        # ende-til-ende i iPhone-visning (Playwright + Chromium)
+ARTIFACT=1 npx vite build   # versjon for claude.ai (dist-artifact/)
 ```
 
-Teknologi: React 19, TypeScript, Vite, Tailwind CSS 4, Dexie (IndexedDB), Recharts, vite-plugin-pwa, Supabase.
+Teknologi: React 19, TypeScript, Vite, Tailwind CSS 4, Dexie (IndexedDB), Recharts, vite-plugin-pwa, Supabase, Inter og Space Grotesk (pakket med appen).
 
 ## Publisering (GitHub Pages)
 
 1. I GitHub: **Settings → Pages → Source: GitHub Actions**.
-2. Når `gym-logger/` endres på repoets standardgren, bygges og publiseres appen av `.github/workflows/gym-logger-pages.yml`.
-   Du kan også starte den manuelt under **Actions → Gym Logger → Run workflow**.
+2. Workflowen `.github/workflows/gym-logger-pages.yml` bygger og publiserer når `gym-logger/` endres på repoets standardgren. Den kan også startes manuelt under **Actions**.
 3. Appen ligger da på `https://<brukernavn>.github.io/<repo>/`.
 
-### Installer på telefonen
+Slik installeres den på telefonen:
+- **iPhone**: Safari → Del → «Legg til på Hjem-skjerm».
+- **Android**: Chrome → meny → «Installer app».
 
-- **iPhone**: åpne lenken i Safari → Del → «Legg til på Hjem-skjerm».
-- **Android**: åpne i Chrome → meny → «Installer app».
-
-## Sky-synk med Supabase (valgfritt)
-
-Uten Supabase-nøkler kjører appen bare lokalt.
+## Sky-kontoer med Supabase (valgfritt)
 
 1. Lag et gratis prosjekt på [supabase.com](https://supabase.com).
-2. **SQL Editor**: kjør innholdet i `supabase/migrations/001_init.sql`.
-3. **Authentication → Email Templates → Magic Link**: legg til koden i e-posten, f.eks. `Koden din er {{ .Token }}`.
-   Appen bruker engangskode i stedet for lenke, fordi en lenke på iPhone åpnes i Safari og ikke i den installerte appen.
-4. **Project Settings → API**: kopier Project URL og anon public key.
-   - Lokalt: lag `.env.local` etter mønster av `.env.example`.
-   - GitHub Pages: legg dem inn som repository secrets `VITE_SUPABASE_URL` og `VITE_SUPABASE_ANON_KEY`.
+2. Kjør disse filene i **SQL Editor**, i denne rekkefølgen:
+   - `supabase/migrations/001_init.sql`
+   - `supabase/migrations/002_profiles.sql` (profiler, kroppsvekt, set-typer og sletting av konto)
+3. Velg om e-post skal bekreftes, under **Authentication → Sign In / Providers → Email**:
+   - Med bekreftelse ber appen brukeren sjekke e-posten etter registrering.
+   - Uten bekreftelse logges brukeren inn med en gang.
+4. Under **Project Settings → API** kopierer du Project URL og anon public key:
+   - Lokalt: `.env.local` (se `.env.example`).
+   - GitHub Pages: repository secrets `VITE_SUPABASE_URL` og `VITE_SUPABASE_ANON_KEY`.
 
-Anon-nøkkelen er laget for å ligge i nettleseren. Tilgangen styres av Row Level Security, så hver bruker ser bare sine egne data.
+Anon-nøkkelen er laget for å ligge i nettleseren. Row Level Security sørger for at hver bruker bare ser egne rader.
 
-### Slik fungerer synken
-
-- Alle endringer skrives først lokalt og merkes som «ikke sendt».
-- Appen synker ved oppstart, ved innlogging, når nettet kommer tilbake, når appen åpnes igjen, og noen sekunder etter hver endring.
-- Ved konflikt vinner siste endring. Slettinger synkes som myk sletting.
-- Innebygde øvelser har faste id-er og synkes ikke. Egne øvelser synkes.
+Synken skriver alt lokalt først. Når det er nett, sendes endringene og nye endringer hentes. Ved konflikt vinner siste endring.
 
 ## Struktur
 
 ```
 src/
-  db/          Dexie-skjema, typer, datafunksjoner (repo.ts), synk, backup
-  lib/         beregninger (1RM, volum, PR), formatering, innstillinger, Supabase-klient
-  components/  knapper, kort, ark, stepper, bunnmeny, ikoner
-  features/    workout, history, routines, progress, profile, auth
-supabase/      SQL-migrering
+  auth/        innlogging: lokal og Supabase bak samme grensesnitt, passord-hashing
+  db/          Dexie-skjema (én database per konto), datafunksjoner, maler, synk, backup, v1-migrering
+  lib/         1RM, PR, statistikk (ukemål, streak), platekalkulator, formatering, innstillinger
+  components/  knapper, kort, ark, stepper, ring, avatar, kalender, grafer, platekalkulator
+  features/    welcome, auth, onboarding, home, workout, summary, history, progress,
+               exercise, bodyweight, routines, profile
+supabase/      SQL-migreringer
 tests/         e2e-skript (Playwright)
 ```

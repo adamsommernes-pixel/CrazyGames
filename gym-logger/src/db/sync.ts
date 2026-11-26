@@ -118,9 +118,9 @@ export function syncNow(): Promise<void> {
 }
 
 /** Synker ved oppstart, innlogging, når nettet kommer tilbake, når appen åpnes igjen og kort tid etter endringer. */
-export function useAutoSync() {
+export function useAutoSync(enabled: boolean) {
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase || !enabled) return;
     void syncNow();
     const { data: auth } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') void syncNow();
@@ -148,5 +148,5 @@ export function useAutoSync() {
       clearTimeout(timer);
       clearInterval(interval);
     };
-  }, []);
+  }, [enabled]);
 }

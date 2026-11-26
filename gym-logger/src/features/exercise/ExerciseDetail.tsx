@@ -3,12 +3,14 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { db } from '../../db/dexie';
+import type { Exercise } from '../../db/types';
 import { Card, Chip, EmptyState, Page, PRBadge, SectionTitle } from '../../components/ui';
 import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
 import { dateShort, num, toDisplay } from '../../lib/format';
 import { PR_LABEL, estimate1RM } from '../../lib/calc';
-import { sessionsForExercise } from './data';
+import { sessionsForExercise } from '../progress/data';
+import { ExerciseNotes } from './ExerciseNotes';
 
 type Metric = 'heaviest' | 'e1rm' | 'volume';
 const METRICS: { key: Metric; label: string }[] = [
@@ -17,7 +19,7 @@ const METRICS: { key: Metric; label: string }[] = [
   { key: 'volume', label: 'Volum' },
 ];
 
-export function ExerciseProgress() {
+export function ExerciseDetail() {
   const { exerciseId = '' } = useParams();
   const navigate = useNavigate();
   const unit = useSetting('unit');
@@ -47,7 +49,9 @@ export function ExerciseProgress() {
   if (sessions.length === 0) {
     return (
       <Page title={title} back>
-        <EmptyState icon="chart" title="Ingen fullførte sets" text="Logg øvelsen i en økt for å se fremgang." />
+        <Subtitle exercise={exercise} />
+        <EmptyState icon="chart" title="Ingen fullførte sets" text="Logg øvelsen i en økt for å se rekorder og grafer." />
+        <ExerciseNotes exerciseId={exerciseId} />
       </Page>
     );
   }
@@ -59,6 +63,7 @@ export function ExerciseProgress() {
 
   return (
     <Page title={title} back>
+      <Subtitle exercise={exercise} />
       <div className="grid grid-cols-3 gap-2 text-center tabular">
         <Record label="Tyngste" value={`${num(toDisplay(bestWeight.weight, unit))}`} sub={`× ${bestWeight.reps}`} />
         <Record label="Beste 1RM" value={num(toDisplay(estimate1RM(best1.weight, best1.reps), unit), 0)} sub={`${num(toDisplay(best1.weight, unit))} × ${best1.reps}`} />
@@ -81,20 +86,22 @@ export function ExerciseProgress() {
           <div className="h-56" role="img" aria-label={`Graf: ${METRICS.find((m) => m.key === metric)!.label} over tid`}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chart} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
-                <CartesianGrid stroke="#2a2a2a" vertical={false} />
-                <XAxis dataKey="date" stroke="#6b6b6b" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} minTickGap={16} />
-                <YAxis stroke="#6b6b6b" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={44} domain={['auto', 'auto']} />
+                <CartesianGrid stroke="#232a26" vertical={false} />
+                <XAxis dataKey="date" stroke="#66706a" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} minTickGap={16} />
+                <YAxis stroke="#66706a" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={44} domain={['auto', 'auto']} />
                 <Tooltip
-                  contentStyle={{ background: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: 12, color: '#f5f5f5' }}
-                  labelStyle={{ color: '#a3a3a3' }}
+                  contentStyle={{ background: '#161b18', border: '1px solid #232a26', borderRadius: 12, color: '#f2f5f3' }}
+                  labelStyle={{ color: '#9ba59f' }}
                   formatter={(v) => [`${num(Number(v))} ${unit}`, METRICS.find((m) => m.key === metric)!.label]}
                 />
-                <Line type="monotone" dataKey="value" stroke="#22c55e" strokeWidth={2.5} dot={{ r: 3, fill: '#22c55e', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#4ade80' }} />
+                <Line type="monotone" dataKey="value" stroke="#2bd66b" strokeWidth={2.5} dot={{ r: 3, fill: '#2bd66b', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#7dffaa' }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         )}
       </Card>
+
+      <ExerciseNotes exerciseId={exerciseId} />
 
       <SectionTitle>Økter</SectionTitle>
       <ul className="flex flex-col gap-2">
@@ -124,10 +131,20 @@ export function ExerciseProgress() {
 
 function Record({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-xl border border-green/30 bg-surface py-2">
+    <div className="card rounded-2xl border-green/30 py-2.5">
       <div className="text-xs text-muted">{label}</div>
-      <div className="text-xl font-bold text-green">{value}</div>
+      <div className="font-num text-2xl font-bold text-green">{value}</div>
       <div className="text-xs text-faint">{sub}</div>
     </div>
+  );
+}
+
+function Subtitle({ exercise }: { exercise?: Exercise }) {
+  if (!exercise) return null;
+  return (
+    <p className="-mt-1 mb-4 text-sm text-muted">
+      {exercise.muscle_group} · {exercise.equipment}
+      {exercise.custom ? ' · Egen øvelse' : ''}
+    </p>
   );
 }

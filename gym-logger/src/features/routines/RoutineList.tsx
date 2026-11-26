@@ -17,11 +17,11 @@ export function RoutineList() {
   const start = async (routineId: string) => {
     if (await getActiveWorkout()) {
       await showInfo('Du har allerede en økt i gang. Avslutt den før du starter en ny.');
-      navigate('/');
+      navigate('/workout');
       return;
     }
     await startWorkout({ routineId });
-    navigate('/');
+    navigate('/workout');
   };
 
   return (

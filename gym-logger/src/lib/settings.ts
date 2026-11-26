@@ -7,9 +7,23 @@ export interface Settings {
   defaultRest: number;
   /** Aktiv hviletimer: når den er ferdig (ms) og hvor lang den var. */
   restTimer: { endAt: number; total: number } | null;
+  /** Stangvekt i kg for platekalkulatoren. */
+  barWeight: number;
+  /** Skiver som finnes på gymmen (kg). */
+  plates: number[];
+  sound: boolean;
+  haptics: boolean;
 }
 
-export const DEFAULTS: Settings = { unit: 'kg', defaultRest: 90, restTimer: null };
+export const DEFAULTS: Settings = {
+  unit: 'kg',
+  defaultRest: 90,
+  restTimer: null,
+  barWeight: 20,
+  plates: [25, 20, 15, 10, 5, 2.5, 1.25],
+  sound: true,
+  haptics: true,
+};
 
 export async function getSetting<K extends keyof Settings>(key: K): Promise<Settings[K]> {
   const row = await db.kv.get(key);

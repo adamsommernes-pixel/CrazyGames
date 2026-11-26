@@ -24,6 +24,17 @@ const PATHS = {
   edit: 'M4 20h4L19 9l-4-4L4 16v4M13 7l4 4',
   repeat: 'M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3',
   share: 'M12 3v12M8 7l4-4 4 4M5 12v8h14v-8',
+  calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+  scale: 'M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2M8.5 10a3.5 3.5 0 0 1 7 0M12 10l1.8-1.8',
+  flame: 'M12 22c4 0 7-3 7-7 0-5-4-7-5-11-2 2-3 4-3 6-1-1-2-2-2-4-2 2-4 5-4 9 0 4 3 7 7 7',
+  plates: 'M3 12h3M18 12h3M6 7v10M9 5v14M15 5v14M18 7v10M9 12h6',
+  home: 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10',
+  logout: 'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10',
+  lock: 'M6 11h12v10H6zM8 11V8a4 4 0 0 1 8 0v3',
+  mail: 'M3 6h18v12H3zM3 7l9 6 9-6',
+  target: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8M12 12h.01',
+  note: 'M5 3h10l4 4v14H5zM14 3v5h5M8 13h8M8 17h5',
+  sparkle: 'M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z',
 } as const;
 
 export type IconName = keyof typeof PATHS;

@@ -42,7 +42,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
     if (await finishWorkout(workout.id)) {
       await stopRest();
       setFinishing(false);
-      navigate(`/history/${workout.id}`);
+      navigate(`/summary/${workout.id}`, { replace: true });
     }
   };
 
@@ -51,7 +51,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
     if (!(await askConfirm('Hele økta forkastes. Dette kan ikke angres.', { confirmLabel: 'Forkast økt' }))) return;
     await deleteWorkout(workout.id);
     await stopRest();
-    setFinishing(false);
+    navigate('/', { replace: true });
   };
 
   return (
@@ -71,10 +71,13 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
         </Button>
       }
     >
-      <div className="tabular mb-4 grid grid-cols-3 gap-2 text-center">
+      <div className="mb-3 grid grid-cols-3 gap-2">
         <Stat label="Tid" value={duration(now - new Date(workout.started_at).getTime())} />
-        <Stat label="Sets" value={String(doneSets.length)} />
+        <Stat label="Sets" value={`${doneSets.length}/${sets.length}`} />
         <Stat label={`Volum (${unit})`} value={num(toDisplay(vol, unit), 0)} />
+      </div>
+      <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-line" role="progressbar" aria-label="Fremdrift i økta" aria-valuenow={doneSets.length} aria-valuemax={sets.length}>
+        <div className="h-full rounded-full bg-green shadow-glow transition-[width] duration-500" style={{ width: `${sets.length ? (doneSets.length / sets.length) * 100 : 0}%` }} />
       </div>
 
       {wes.length === 0 ? (

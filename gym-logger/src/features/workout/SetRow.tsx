@@ -1,10 +1,19 @@
 import { useEffect, useState } from 'react';
 import type { WorkoutSet } from '../../db/types';
+import { SET_TYPE_SHORT } from '../../db/types';
 import { toggleSetDone, updateSet } from '../../db/repo';
 import { fromDisplay, num, parseNum, toDisplay } from '../../lib/format';
 import { PR_LABEL, type PRKind } from '../../lib/calc';
+import { buzz } from '../../lib/haptics';
 import { Icon } from '../../components/Icon';
 import { PRBadge } from '../../components/ui';
+
+const TYPE_COLOR: Record<WorkoutSet['set_type'], string> = {
+  normal: 'text-muted',
+  warmup: 'text-warn',
+  drop: 'text-sky-400',
+  failure: 'text-danger',
+};
 
 /** Felt som holder egen tekst mens du skriver, og lagrer når du forlater feltet. */
 function NumField({
@@ -31,8 +40,8 @@ function NumField({
       aria-label={label}
       inputMode={decimal ? 'decimal' : 'numeric'}
       enterKeyHint="done"
-      className={`tabular h-11 w-full min-w-0 rounded-lg border text-center text-lg font-semibold outline-none focus:border-green ${
-        done ? 'border-transparent bg-green-dim/40 text-green-light' : 'border-line bg-raised'
+      className={`font-num h-12 w-full min-w-0 rounded-xl border text-center text-xl font-bold outline-none transition-colors focus:border-green focus:bg-bg ${
+        done ? 'border-transparent bg-green-dim/50 text-green-light' : 'border-line bg-raised'
       }`}
       value={text}
       placeholder="0"
@@ -51,9 +60,11 @@ function NumField({
   );
 }
 
+export const SET_GRID = 'grid grid-cols-[2.25rem_minmax(0,1fr)_4.75rem_4rem_3.25rem] items-center gap-2';
+
 export function SetRow({
   set,
-  index,
+  label,
   previous,
   unit,
   prs,
@@ -61,7 +72,8 @@ export function SetRow({
   onMenu,
 }: {
   set: WorkoutSet;
-  index: number;
+  /** Nummer for vanlige sets. */
+  label: number;
   previous?: WorkoutSet;
   unit: 'kg' | 'lbs';
   prs?: PRKind[];
@@ -70,52 +82,51 @@ export function SetRow({
 }) {
   const done = !!set.completed_at;
   const prevLabel = previous ? `${num(toDisplay(previous.weight, unit))} × ${previous.reps}` : '–';
+  const short = SET_TYPE_SHORT[set.set_type];
   return (
-    <div className={`rounded-xl ${done ? 'bg-green-dim/20' : ''}`}>
-      <div className="grid grid-cols-[2.5rem_1fr_4.5rem_4rem_3rem] items-center gap-2 px-1 py-1">
+    <div className={`rounded-2xl transition-colors ${done ? 'bg-green-dim/25' : ''}`}>
+      <div className={`${SET_GRID} px-1 py-1`}>
         <button
           type="button"
           onClick={onMenu}
-          aria-label={`Set ${index + 1}, valg`}
-          className={`tabular h-10 rounded-lg text-center font-bold ${set.is_warmup ? 'text-amber-400' : 'text-muted'} active:bg-raised`}
+          aria-label={`Set ${label}, rediger`}
+          className={`font-num h-11 rounded-xl text-center text-lg font-bold active:bg-raised ${TYPE_COLOR[set.set_type]}`}
         >
-          {set.is_warmup ? 'O' : index + 1}
+          {short || label}
         </button>
         <button
           type="button"
-          className="tabular truncate text-left text-sm text-faint"
+          className="font-num truncate text-left text-sm text-faint active:text-muted"
           aria-label={previous ? `Bruk forrige: ${prevLabel}` : 'Ingen forrige'}
           onClick={() => previous && void updateSet(set.id, { weight: previous.weight, reps: previous.reps })}
         >
           {prevLabel}
         </button>
         <NumField
-          label={`Vekt set ${index + 1} (${unit})`}
+          label={`Vekt set ${label} (${unit})`}
           decimal
           done={done}
           value={toDisplay(set.weight, unit)}
           onCommit={(v) => void updateSet(set.id, { weight: fromDisplay(v, unit) })}
         />
-        <NumField
-          label={`Reps set ${index + 1}`}
-          done={done}
-          value={set.reps}
-          onCommit={(v) => void updateSet(set.id, { reps: Math.round(v) })}
-        />
+        <NumField label={`Reps set ${label}`} done={done} value={set.reps} onCommit={(v) => void updateSet(set.id, { reps: Math.round(v) })} />
         <button
           type="button"
-          aria-label={done ? `Angre set ${index + 1}` : `Fullfør set ${index + 1}`}
+          aria-label={done ? `Angre set ${label}` : `Fullfør set ${label}`}
           aria-pressed={done}
-          className={`grid h-11 w-12 place-items-center rounded-lg ${done ? 'bg-green text-black' : 'bg-raised text-faint'}`}
+          className={`grid h-12 w-[3.25rem] place-items-center rounded-xl transition ${done ? 'animate-pop bg-green text-black shadow-glow' : 'border border-line bg-raised text-faint active:bg-line'}`}
           onClick={async () => {
-            if (await toggleSetDone(set.id)) onCompleted();
+            if (await toggleSetDone(set.id)) {
+              void buzz(20);
+              onCompleted();
+            }
           }}
         >
           <Icon name="check" strokeWidth={3} />
         </button>
       </div>
       {prs && prs.length > 0 && (
-        <div className="flex flex-wrap gap-1 px-12 pb-1.5">
+        <div className="flex flex-wrap gap-1 pr-1 pb-2 pl-12">
           {prs.map((p) => (
             <PRBadge key={p} label={PR_LABEL[p]} />
           ))}

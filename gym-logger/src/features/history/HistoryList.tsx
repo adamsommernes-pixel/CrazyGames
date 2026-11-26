@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../db/dexie';
 import type { Workout, WorkoutSet } from '../../db/types';
-import { Card, EmptyState, Page, PRBadge, SectionTitle } from '../../components/ui';
+import { Card, Chip, EmptyState, Page, PRBadge, SectionTitle } from '../../components/ui';
+import { Calendar, dayKey } from '../../components/Calendar';
 import { Icon } from '../../components/Icon';
 import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
@@ -13,6 +15,8 @@ export function HistoryList() {
   const navigate = useNavigate();
   const unit = useSetting('unit');
   const prMap = usePRMap();
+  const [view, setView] = useState<'list' | 'calendar'>('list');
+  const [day, setDay] = useState<string | null>(null);
   const data = useLiveQuery(async () => {
     const workouts = (await db.workouts.orderBy('started_at').reverse().toArray()).filter((w) => !w.deleted && w.ended_at);
     const sets = (await db.sets.toArray()).filter((s) => !s.deleted && s.completed_at);
@@ -28,16 +32,35 @@ export function HistoryList() {
   if (!data) return <Page title="Historikk">{null}</Page>;
   const { workouts, byWorkout } = data;
 
-  // Grupper på måned.
+  // Grupper på måned (eller bare valgt dag i kalendervisning).
+  const shown = view === 'calendar' ? workouts.filter((w) => day && dayKey(w.started_at) === day) : workouts;
   const groups: { month: string; items: Workout[] }[] = [];
-  for (const w of workouts) {
+  for (const w of shown) {
     const m = monthYear(w.started_at);
     if (groups[groups.length - 1]?.month !== m) groups.push({ month: m, items: [] });
     groups[groups.length - 1].items.push(w);
   }
 
   return (
-    <Page title="Historikk">
+    <Page
+      title="Historikk"
+      actions={
+        <div className="flex gap-1.5 pr-2">
+          <Chip active={view === 'list'} onClick={() => setView('list')}>
+            Liste
+          </Chip>
+          <Chip active={view === 'calendar'} onClick={() => setView('calendar')}>
+            Kalender
+          </Chip>
+        </div>
+      }
+    >
+      {view === 'calendar' && workouts.length > 0 && (
+        <div className="mb-4">
+          <Calendar marked={new Set(workouts.map((w) => dayKey(w.started_at)))} selected={day} onSelect={setDay} />
+          {!day && <p className="mt-3 text-center text-sm text-muted">Trykk på en grønn dag for å se økta.</p>}
+        </div>
+      )}
       {workouts.length === 0 ? (
         <EmptyState icon="history" title="Ingen økter ennå" text="Ferdige økter dukker opp her." />
       ) : (

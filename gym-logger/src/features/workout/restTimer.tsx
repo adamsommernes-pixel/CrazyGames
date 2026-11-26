@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getSetting, setSetting, useSetting } from '../../lib/settings';
 import { duration } from '../../lib/format';
 import { Icon } from '../../components/Icon';
+import { buzz } from '../../lib/haptics';
 
 // Timeren lagrer sluttidspunktet, så den teller riktig selv om skjermen låses
 // eller appen lukkes og åpnes igjen.
@@ -69,6 +70,7 @@ export function useNow(intervalMs = 1000, active = true) {
 /** Linje over bunnmenyen som viser gjenstående hviletid. */
 export function RestTimerBar() {
   const timer = useSetting('restTimer');
+  const sound = useSetting('sound');
   const now = useNow(250, !!timer);
   const notified = useRef<number | null>(null);
   const remaining = timer ? timer.endAt - now : 0;
@@ -76,11 +78,11 @@ export function RestTimerBar() {
   useEffect(() => {
     if (!timer || remaining > 0 || notified.current === timer.endAt) return;
     notified.current = timer.endAt;
-    beep();
-    navigator.vibrate?.([300, 150, 300]);
+    if (sound) beep();
+    void buzz([300, 150, 300]);
     const t = setTimeout(() => void stopRest(), 2500);
     return () => clearTimeout(t);
-  }, [timer, remaining]);
+  }, [timer, remaining, sound]);
 
   if (!timer) return null;
   const done = remaining <= 0;

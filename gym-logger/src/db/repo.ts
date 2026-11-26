@@ -1,5 +1,7 @@
 import { db, now, uuid } from './dexie';
-import type { Exercise, Routine, RoutineExercise, Workout, WorkoutExercise, WorkoutSet } from './types';
+import type { Bodyweight, Exercise, Profile, Routine, RoutineExercise, SetType, Workout, WorkoutExercise, WorkoutSet } from './types';
+import { TEMPLATES, pickTemplate } from './templates';
+import type { Goal } from './types';
 import { getSetting } from '../lib/settings';
 import { defaultWorkoutName } from '../lib/format';
 
@@ -107,13 +109,14 @@ export async function addExerciseToWorkout(
       exercise_id: exerciseId,
       position: existing.length ? Math.max(...existing.map((e) => e.position)) + 1 : 0,
       rest_seconds: rest,
+      notes: '',
       deleted: 0,
       updated_at: '',
       dirty: 1,
     }),
   );
   // Forhåndsutfyll med det du gjorde sist.
-  const last = (await lastPerformance(exerciseId, workoutId)).filter((s) => !s.is_warmup);
+  const last = (await lastPerformance(exerciseId, workoutId)).filter((s) => s.set_type !== 'warmup');
   const count = opts.sets ?? Math.max(last.length, 3);
   const rows: WorkoutSet[] = [];
   for (let i = 0; i < count; i++) {
@@ -127,7 +130,7 @@ export async function addExerciseToWorkout(
         position: i,
         weight: ref?.weight ?? 0,
         reps: opts.reps ?? ref?.reps ?? 0,
-        is_warmup: 0,
+        set_type: 'normal',
         completed_at: null,
         deleted: 0,
         updated_at: '',
@@ -152,7 +155,7 @@ export async function addSet(we: WorkoutExercise): Promise<void> {
       position: prev ? prev.position + 1 : 0,
       weight: prev?.weight ?? 0,
       reps: prev?.reps ?? 0,
-      is_warmup: 0,
+      set_type: prev?.set_type === 'warmup' ? 'normal' : (prev?.set_type ?? 'normal'),
       completed_at: null,
       deleted: 0,
       updated_at: '',
@@ -161,7 +164,7 @@ export async function addSet(we: WorkoutExercise): Promise<void> {
   );
 }
 
-export async function updateSet(id: string, patch: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'is_warmup'>>) {
+export async function updateSet(id: string, patch: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'set_type'>>) {
   const s = await db.sets.get(id);
   if (s) await db.sets.put(touched({ ...s, ...patch }));
 }
@@ -172,12 +175,30 @@ export async function toggleSetDone(id: string): Promise<boolean> {
   if (!s) return false;
   const completing = !s.completed_at;
   await db.sets.put(touched({ ...s, completed_at: completing ? now() : null }));
+  if (completing && s.weight > 0) {
+    // Neste tomme sets i samme øvelse får samme vekt, så man slipper å skrive den igjen.
+    const later = (await db.sets.where('workout_exercise_id').equals(s.workout_exercise_id).toArray()).filter(
+      (x) => !x.deleted && !x.completed_at && x.position > s.position && x.weight === 0 && x.set_type === s.set_type,
+    );
+    await db.sets.bulkPut(later.map((x) => touched({ ...x, weight: s.weight, reps: x.reps || s.reps })));
+  }
   return completing;
 }
 
 export async function deleteSet(id: string) {
   const s = await db.sets.get(id);
   if (s) await db.sets.put(touched({ ...s, deleted: 1 }));
+}
+
+export async function setExerciseNotes(weId: string, notes: string) {
+  const we = await db.workout_exercises.get(weId);
+  if (we) await db.workout_exercises.put(touched({ ...we, notes }));
+}
+
+/** Endrer et set i en ferdig økt (vekt og reps). */
+export async function editSet(id: string, weight: number, reps: number) {
+  const s = await db.sets.get(id);
+  if (s) await db.sets.put(touched({ ...s, weight, reps }));
 }
 
 export async function setExerciseRest(weId: string, seconds: number) {
@@ -319,7 +340,7 @@ export async function routineFromWorkout(workoutId: string): Promise<string> {
   const w = await db.workouts.get(workoutId);
   const sets = await setsForWorkout(workoutId);
   const items: RoutineDraftItem[] = (await workoutExercises(workoutId)).map((we) => {
-    const done = sets.filter((s) => s.workout_exercise_id === we.id && s.completed_at && !s.is_warmup);
+    const done = sets.filter((s) => s.workout_exercise_id === we.id && s.completed_at && s.set_type !== 'warmup');
     return {
       exercise_id: we.exercise_id,
       target_sets: Math.max(done.length, 1),
@@ -329,3 +350,84 @@ export async function routineFromWorkout(workoutId: string): Promise<string> {
   });
   return saveRoutine({ name: w?.name ?? 'Ny rutine', notes: '' }, items);
 }
+
+// ---------- Profil ----------
+
+export const PROFILE_COLORS = ['#2bd66b', '#38bdf8', '#a78bfa', '#f472b6', '#fb923c', '#facc15'];
+
+export async function getProfile(userId: string): Promise<Profile | undefined> {
+  const p = await db.profiles.get(userId);
+  return p && !p.deleted ? p : undefined;
+}
+
+export async function saveProfile(userId: string, patch: Partial<Omit<Profile, 'id'>>): Promise<Profile> {
+  const prev = await db.profiles.get(userId);
+  const next = touched<Profile>({
+    name: '',
+    color: PROFILE_COLORS[0],
+    goal: 'hypertrophy',
+    weekly_target: 3,
+    experience: 'beginner',
+    bodyweight_kg: null,
+    height_cm: null,
+    birth_year: null,
+    created_at: now(),
+    onboarded_at: null,
+    deleted: 0,
+    ...prev,
+    ...patch,
+    id: userId,
+    updated_at: '',
+    dirty: 1,
+  });
+  await db.profiles.put(next);
+  return next;
+}
+
+// ---------- Kroppsvekt ----------
+
+export async function logBodyweight(weightKg: number, date = now()): Promise<void> {
+  // Én måling per dag: samme dag erstattes.
+  const day = date.slice(0, 10);
+  const same = (await db.bodyweights.toArray()).find((b) => !b.deleted && b.date.slice(0, 10) === day);
+  await db.bodyweights.put(
+    touched<Bodyweight>({ id: same?.id ?? uuid(), date, weight_kg: weightKg, deleted: 0, updated_at: '', dirty: 1 }),
+  );
+}
+
+export async function deleteBodyweight(id: string) {
+  const b = await db.bodyweights.get(id);
+  if (b) await db.bodyweights.put(touched({ ...b, deleted: 1 }));
+}
+
+// ---------- Startrutiner ----------
+
+/** Lager ferdige rutiner tilpasset mål og antall økter per uke. */
+export async function createStarterRoutines(goal: Goal, perWeek: number): Promise<number> {
+  const key = pickTemplate(perWeek);
+  const scheme = goal === 'strength' ? { sets: 5, reps: 5, rest: 180 } : goal === 'endurance' ? { sets: 3, reps: 15, rest: 60 } : goal === 'general' ? { sets: 3, reps: 10, rest: 90 } : { sets: 3, reps: 10, rest: 120 };
+  for (const r of TEMPLATES[key]) {
+    await saveRoutine(
+      { name: r.name, notes: '' },
+      r.exercises.map(([exercise_id, accessory]) => ({
+        exercise_id,
+        target_sets: accessory ? 3 : scheme.sets,
+        target_reps: accessory ? Math.max(scheme.reps, 10) : scheme.reps,
+        rest_seconds: accessory ? Math.min(scheme.rest, 90) : scheme.rest,
+      })),
+    );
+  }
+  return TEMPLATES[key].length;
+}
+
+/** Rutinen som står for tur: den som er brukt minst nylig. */
+export async function nextRoutine(): Promise<Routine | undefined> {
+  const routines = (await db.routines.toArray()).filter((r) => !r.deleted);
+  if (!routines.length) return undefined;
+  const workouts = (await db.workouts.toArray()).filter((w) => !w.deleted && w.routine_id);
+  const lastUsed = new Map<string, string>();
+  for (const w of workouts) if (w.started_at > (lastUsed.get(w.routine_id!) ?? '')) lastUsed.set(w.routine_id!, w.started_at);
+  return routines.sort((a, b) => (lastUsed.get(a.id) ?? '').localeCompare(lastUsed.get(b.id) ?? '') || a.name.localeCompare(b.name, 'nb'))[0];
+}
+
+export type { SetType };

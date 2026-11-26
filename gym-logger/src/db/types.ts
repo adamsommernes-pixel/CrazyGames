@@ -63,6 +63,7 @@ export interface WorkoutExercise extends Row {
   exercise_id: string;
   position: number;
   rest_seconds: number;
+  notes: string;
 }
 
 export interface WorkoutSet extends Row {
@@ -74,8 +75,56 @@ export interface WorkoutSet extends Row {
   /** Alltid lagret i kg. */
   weight: number;
   reps: number;
-  is_warmup: Flag;
+  set_type: SetType;
   completed_at: string | null;
+}
+
+export const SET_TYPES = ['normal', 'warmup', 'drop', 'failure'] as const;
+export type SetType = (typeof SET_TYPES)[number];
+export const SET_TYPE_LABEL: Record<SetType, string> = {
+  normal: 'Vanlig',
+  warmup: 'Oppvarming',
+  drop: 'Drop-set',
+  failure: 'Til feil',
+};
+/** Kort merke i set-kolonnen. Vanlige sets viser nummeret i stedet. */
+export const SET_TYPE_SHORT: Record<SetType, string> = { normal: '', warmup: 'O', drop: 'D', failure: 'F' };
+
+export const GOALS = ['strength', 'hypertrophy', 'general', 'endurance'] as const;
+export type Goal = (typeof GOALS)[number];
+export const GOAL_LABEL: Record<Goal, string> = {
+  strength: 'Bli sterkere',
+  hypertrophy: 'Bygge muskler',
+  general: 'Generell form',
+  endurance: 'Utholdenhet',
+};
+
+export const EXPERIENCE = ['beginner', 'intermediate', 'advanced'] as const;
+export type Experience = (typeof EXPERIENCE)[number];
+export const EXPERIENCE_LABEL: Record<Experience, string> = {
+  beginner: 'Nybegynner',
+  intermediate: 'Litt erfaren',
+  advanced: 'Erfaren',
+};
+
+/** Én rad per konto, med id = bruker-id. */
+export interface Profile extends Row {
+  name: string;
+  color: string;
+  goal: Goal;
+  weekly_target: number;
+  experience: Experience;
+  bodyweight_kg: number | null;
+  height_cm: number | null;
+  birth_year: number | null;
+  created_at: string;
+  /** Satt når oppstartsveiviseren er fullført. */
+  onboarded_at: string | null;
+}
+
+export interface Bodyweight extends Row {
+  date: string;
+  weight_kg: number;
 }
 
 export interface KV {
@@ -90,5 +139,7 @@ export const SYNCED_TABLES = [
   'workouts',
   'workout_exercises',
   'sets',
+  'profiles',
+  'bodyweights',
 ] as const;
 export type SyncedTable = (typeof SYNCED_TABLES)[number];

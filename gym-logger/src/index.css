@@ -1,19 +1,50 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/inter/wght.css';
+@import '@fontsource/space-grotesk/latin-500.css';
+@import '@fontsource/space-grotesk/latin-700.css';
 
-/* Svart/grønt tema. Brukes som bg-bg, text-green, border-line osv. */
+/*
+ * Gym Logger — grafittsvart med grønt skjær, ett kraftig grønt aksentlys.
+ * Space Grotesk til tall og titler, Inter til tekst. Tall er helten.
+ */
 @theme {
-  --color-bg: #0a0a0a;
-  --color-surface: #141414;
-  --color-raised: #1e1e1e;
-  --color-line: #2a2a2a;
-  --color-green: #22c55e;
-  --color-green-light: #4ade80;
-  --color-green-dim: #14532d;
-  --color-ink: #f5f5f5;
-  --color-muted: #a3a3a3;
-  --color-faint: #6b6b6b;
-  --color-danger: #f87171;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-bg: #07090a;
+  --color-surface: #0f1311;
+  --color-raised: #161b18;
+  --color-line: #232a26;
+  --color-green: #2bd66b;
+  --color-green-light: #7dffaa;
+  --color-green-dim: #0f3b22;
+  --color-ink: #f2f5f3;
+  --color-muted: #9ba59f;
+  --color-faint: #66706a;
+  --color-warn: #f5b942;
+  --color-danger: #ff6b6b;
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --shadow-glow: 0 0 24px rgb(43 214 107 / 0.35);
+  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.4);
+  --animate-pop: pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-sheet: sheet 240ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  --animate-fade: fade 200ms ease-out;
+  --animate-rise: rise 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+
+  @keyframes pop {
+    0% { transform: scale(0.8); }
+    100% { transform: scale(1); }
+  }
+  @keyframes sheet {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes rise {
+    from { opacity: 0.001; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }
 
 /* Grunnstiler i base-laget, så Tailwind-klasser (text-black osv.) vinner over dem. */
@@ -24,9 +55,17 @@
     height: 100%;
   }
 
+  :root {
+    color-scheme: dark;
+    background: var(--color-bg);
+  }
+
   body {
     margin: 0;
-    background: var(--color-bg);
+    background:
+      radial-gradient(120% 60% at 50% -10%, rgb(43 214 107 / 0.07), transparent 60%),
+      var(--color-bg);
+    background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -42,7 +81,19 @@
     color: inherit;
   }
 
-  /* Fjerner piler i tallfelt. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-green);
+    outline-offset: 2px;
+  }
+
   input[type='number']::-webkit-inner-spin-button,
   input[type='number']::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -50,14 +101,36 @@
   }
 }
 
-.tabular {
+@utility tabular {
   font-variant-numeric: tabular-nums;
 }
 
-.pb-safe {
+@utility font-num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+@utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-.pt-safe {
+@utility pt-safe {
   padding-top: env(safe-area-inset-top);
+}
+
+@utility card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  box-shadow: var(--shadow-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
 }

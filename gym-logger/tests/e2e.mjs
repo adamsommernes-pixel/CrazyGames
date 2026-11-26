@@ -1,6 +1,6 @@
 // Ende-til-ende-test i iPhone-visning. Kjør etter `npm run build`:
 //   npm run e2e
-// Starter `vite preview`, logger en hel økt, og tar skjermbilder i tests/screens/.
+// Starter `vite preview` og går gjennom hele appen med to kontoer. Skjermbilder i tests/screens/.
 import { createRequire } from 'node:module';
 import { spawn, execSync } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
@@ -26,99 +26,170 @@ const ctx = await browser.newContext({ ...devices['iPhone 13'], locale: 'nb-NO' 
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
-const shot = (name) => page.screenshot({ path: `tests/screens/${name}.png`, fullPage: false });
+let n = 0;
+const shot = async (name) => {
+  await page.waitForTimeout(350);
+  await page.screenshot({ path: `tests/screens/${String(++n).padStart(2, '0')}-${name}.png` });
+};
+const btn = (name, opts = {}) => page.getByRole('button', { name, ...opts });
+const dialog = () => page.getByRole('dialog');
 
-/** Logger én økt med benkpress og gitte sets. */
-async function logWorkout(sets) {
-  await page.getByRole('button', { name: 'Start tom økt' }).click();
-  await page.getByRole('button', { name: 'Legg til øvelse' }).click();
-  await page.getByPlaceholder('Søk etter øvelse').fill('benkpress');
-  await page.getByRole('button', { name: /^Benkpress Bryst/ }).click();
-  // Første gang: 3 tomme sets. Senere: forhåndsutfylt fra forrige.
-  await page.getByRole('button', { name: 'Fullfør set 1' }).waitFor();
-  const rows = await page.getByRole('button', { name: /^Fullfør set/ }).count();
-  for (let i = rows; i < sets.length; i++) await page.getByRole('button', { name: 'Legg til set' }).click();
-  for (const [i, [w, r]] of sets.entries()) {
-    await page.getByLabel(`Vekt set ${i + 1} (kg)`).fill(String(w));
-    await page.getByLabel(`Reps set ${i + 1}`).fill(String(r));
-    await page.getByLabel(`Reps set ${i + 1}`).blur();
-    await page.getByRole('button', { name: `Fullfør set ${i + 1}` }).click();
-  }
+async function signUp(name, email, password) {
+  await btn('Lag konto').click();
+  await page.getByLabel('Navn').fill(name);
+  await page.getByLabel('E-post').fill(email);
+  await page.getByLabel('Passord (minst 8 tegn)').fill(password);
+  await page.locator('form').getByRole('button', { name: 'Lag konto' }).click();
+  await page.getByText(`Hei, ${name}!`).waitFor();
+}
+
+async function onboard({ goal, perWeek }, shots = false) {
+  if (shots) await shot('oppstart-navn');
+  await btn('Fortsett').click();
+  await page.getByRole('radio', { name: new RegExp(goal) }).click();
+  if (shots) await shot('oppstart-mal');
+  await btn('Fortsett').click();
+  await page.getByRole('radio', { name: new RegExp(`^${perWeek}`) }).click();
+  await btn('Fortsett').click();
+  await btn('Fortsett').click();
+  if (shots) await shot('oppstart-klart');
+  await btn('Start å trene').click();
+  await page.getByText(/God (morgen|kveld|natt)|Hei,/).first().waitFor();
+}
+
+async function logSet(i, weight, reps) {
+  await page.getByLabel(`Vekt set ${i} (kg)`).first().fill(String(weight));
+  await page.getByLabel(`Reps set ${i}`).first().fill(String(reps));
+  await page.getByLabel(`Reps set ${i}`).first().blur();
+  await btn(`Fullfør set ${i}`).first().click();
 }
 
 async function finish() {
-  await page.getByRole('button', { name: 'Avslutt', exact: true }).click();
-  await page.getByRole('button', { name: 'Lagre økt' }).click();
-  await page.waitForURL(/#\/history\//);
+  await btn('Avslutt', { exact: true }).click();
+  await btn('Lagre økt').click();
+  await page.getByText('Økt fullført').waitFor();
 }
 
 try {
+  // 1. Velkomst
   await page.goto(URL);
-  await page.getByRole('button', { name: 'Start tom økt' }).waitFor();
-  await shot('01-start');
+  await btn('Lag konto').waitFor();
+  await shot('velkomst');
 
-  // Økt 1
-  await logWorkout([[80, 8], [80, 8], [80, 7]]);
-  await page.getByRole('timer').waitFor({ timeout: 3000 });
-  await shot('02-aktiv-okt');
+  // 2. Registrering med svakt passord gir feilmelding, så riktig
+  await btn('Lag konto').click();
+  await page.getByLabel('Navn').fill('Ola');
+  await page.getByLabel('E-post').fill('ola@eksempel.no');
+  await page.getByLabel('Passord (minst 8 tegn)').fill('kort');
+  await page.locator('form').getByRole('button', { name: 'Lag konto' }).click();
+  await page.getByRole('alert').filter({ hasText: 'minst 8 tegn' }).waitFor();
+  await page.getByLabel('Passord (minst 8 tegn)').fill('Sterkt-passord-2026');
+  await shot('lag-konto');
+  await page.locator('form').getByRole('button', { name: 'Lag konto' }).click();
+  await page.getByText('Hei, Ola!').waitFor();
+
+  // 3. Oppstart → Hjem med startrutiner
+  await onboard({ goal: 'Bli sterkere', perWeek: 3 }, true);
+  await page.getByRole('img', { name: '0 av 3 økter denne uka' }).waitFor();
+  await page.getByText('Fullkropp A').first().waitFor();
+  await shot('hjem-ny');
+
+  // 4. Første økt fra rutine, med platekalkulator
+  await btn('Start Fullkropp A').click();
+  await page.getByText('Knebøy').first().waitFor();
+  await btn('Fullfør set 5').first().waitFor(); // styrkerutine gir 5 sets
+  await logSet(1, 100, 5);
+  await page.getByRole('timer').waitFor();
+  await logSet(2, 100, 5);
+  await btn('Platekalkulator').first().click();
+  await dialog().getByText('25 + 15').waitFor();
+  await shot('platekalkulator');
+  await dialog().getByRole('button', { name: 'Lukk' }).last().click();
+  await shot('aktiv-okt');
   await finish();
-  await shot('03-detalj');
+  await shot('oppsummering-1');
+  await btn('Ferdig').click();
+  await page.getByRole('img', { name: '1 av 3 økter denne uka' }).waitFor();
 
-  // Økt 2: tyngre, skal gi PR, og forrige skal vises
-  await page.getByRole('link', { name: 'Økt' }).click();
-  await page.getByRole('button', { name: 'Start tom økt' }).click();
-  await page.getByRole('button', { name: 'Legg til øvelse' }).click();
-  await page.getByPlaceholder('Søk etter øvelse').fill('benkpress');
-  await page.getByRole('button', { name: /^Benkpress Bryst/ }).click();
-  await page.getByRole('button', { name: 'Bruk forrige: 80 × 8' }).first().waitFor({ timeout: 3000 });
-  assert.equal(await page.getByLabel('Vekt set 1 (kg)').inputValue(), '80', 'vekt forhåndsutfylt');
-  await page.getByLabel('Vekt set 1 (kg)').fill('85');
-  await page.getByLabel('Reps set 1').fill('6');
-  await page.getByLabel('Reps set 1').blur();
-  await page.getByRole('button', { name: 'Fullfør set 1' }).click();
+  // 5. Andre økt: gjenta forrige, tyngre → PR
+  await btn('Start økt').click();
+  await btn(/Gjenta forrige/).click();
+  await page.getByText('Knebøy').first().waitFor();
+  await page.getByRole('button', { name: 'Bruk forrige: 100 × 5' }).first().waitFor();
+  await logSet(1, 105, 5);
   await page.getByText('Tyngste').first().waitFor();
-  await shot('04-pr-i-okt');
+  await shot('pr-i-okt');
   await finish();
+  await page.getByText(/ny rekord|nye rekorder/).first().waitFor();
+  await shot('oppsummering-pr');
+  await btn('Ferdig').click();
+  await page.getByText('Siste rekorder').waitFor();
+  await shot('hjem-med-data');
 
-  // Historikk
-  await page.getByRole('link', { name: 'Historikk' }).click();
-  await page.getByRole('button', { name: /min · 1 øvelse ·/ }).first().waitFor();
-  assert.equal(await page.getByRole('button', { name: /min · 1 øvelse ·/ }).count(), 2, 'to økter i historikken');
-  await shot('05-historikk');
+  // 6. Historikk og kalender
+  await page.getByRole('navigation').getByRole('link', { name: 'Historikk' }).click();
+  await btn(/1 øvelse/).first().waitFor();
+  assert.equal(await btn(/1 øvelse/).count(), 2, 'to økter i historikken');
+  await btn('Kalender').click();
+  await shot('kalender');
 
-  // Fremgang
-  await page.getByRole('link', { name: 'Fremgang' }).click();
-  await page.getByRole('button', { name: /Benkpress/ }).click();
+  // 7. Fremgang og øvelse
+  await page.getByRole('navigation').getByRole('link', { name: 'Fremgang' }).click();
+  await page.getByText('Siste 12 uker').waitFor();
+  await shot('fremgang');
+  await btn(/Knebøy/).click();
   await page.getByRole('img', { name: /Graf/ }).waitFor();
-  await page.waitForTimeout(600);
-  await shot('06-fremgang');
+  await shot('ovelse');
 
-  // Rutine
-  await page.getByRole('link', { name: 'Rutiner' }).click();
-  await page.getByRole('button', { name: 'Lag rutine' }).click();
-  await page.getByPlaceholder('F.eks. Push, Overkropp A').fill('Push');
-  await page.getByRole('button', { name: 'Legg til øvelse' }).click();
-  await page.getByRole('button', { name: /^Skulderpress med manualer/ }).click();
-  await shot('07-rutine');
-  await page.getByRole('button', { name: 'Lagre' }).click();
-  await page.getByRole('button', { name: 'Start økt' }).click();
-  await page.getByText('Skulderpress med manualer').waitFor();
-  await page.getByRole('button', { name: 'Fullfør set 3' }).waitFor();
-  assert.equal(await page.getByRole('button', { name: /^Fullfør set/ }).count(), 3, 'rutine gir 3 sets');
+  // 8. Kroppsvekt
+  await page.goBack();
+  await page.getByRole('link', { name: /Kroppsvekt/ }).click();
+  await page.getByPlaceholder('Vekt i dag (kg)').fill('82,5');
+  await btn('Logg').click();
+  await page.getByText('82,5 kg').first().waitFor();
 
-  // Offline: appen skal laste fra service worker
-  await page.goto(URL);
-  await page.waitForTimeout(1000);
+  // 9. Profil → logg ut
+  await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
+  await page.getByText('Økter totalt').waitFor();
+  await shot('profil');
+  await btn('Logg ut').click();
+  await dialog().getByRole('button', { name: 'Logg ut' }).click();
+  await btn('Jeg har konto').waitFor();
+
+  // 10. Feil passord, så riktig – dataene er der
+  await btn('Jeg har konto').click();
+  await page.getByLabel('E-post').fill('ola@eksempel.no');
+  await page.getByLabel('Passord').fill('feil-passord');
+  await page.locator('form').getByRole('button', { name: 'Logg inn' }).click();
+  await page.getByRole('alert').filter({ hasText: 'Feil e-post eller passord' }).waitFor();
+  await shot('feil-passord');
+  await page.getByLabel('Passord').fill('Sterkt-passord-2026');
+  await page.locator('form').getByRole('button', { name: 'Logg inn' }).click();
+  await page.getByRole('img', { name: '2 av 3 økter denne uka' }).waitFor();
+
+  // 11. Konto nr. 2 ser ingen data fra konto 1
+  await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
+  await btn('Logg ut').click();
+  await dialog().getByRole('button', { name: 'Logg ut' }).click();
+  await signUp('Kari', 'kari@eksempel.no', 'Kari-passord-99');
+  await onboard({ goal: 'Bygge muskler', perWeek: 4 });
+  await page.getByRole('img', { name: '0 av 4 økter denne uka' }).waitFor();
+  assert.equal(await page.getByText('Siste rekorder').count(), 0, 'Kari ser ikke Olas rekorder');
+  await page.getByText('Overkropp').first().waitFor();
+
+  // 12. Offline: appen laster fra service worker, fortsatt innlogget
+  await page.waitForTimeout(800);
   await ctx.setOffline(true);
   await page.reload();
-  await page.getByText('Skulderpress med manualer').waitFor({ timeout: 5000 });
+  await page.getByRole('img', { name: '0 av 4 økter denne uka' }).waitFor({ timeout: 8000 });
   await ctx.setOffline(false);
 
-  await page.getByRole('link', { name: 'Profil' }).click();
-  await shot('08-profil');
-
   assert.deepEqual(errors, [], 'ingen JS-feil');
-  console.log('✓ Alle e2e-sjekker bestått. Skjermbilder i tests/screens/');
+  console.log(`✓ Alle e2e-sjekker bestått. ${n} skjermbilder i tests/screens/`);
+} catch (e) {
+  await page.screenshot({ path: 'tests/screens/FEIL.png' }).catch(() => {});
+  if (errors.length) console.error('JS-feil:', errors);
+  throw e;
 } finally {
   await browser.close();
   server.kill();
