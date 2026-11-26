@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lifetime, longestStreak, thisWeekCount, trainedDaysThisWeek, weekKey, weekStreak, weeklySeries } from './stats';
+import { lifetime, loadLevel, longestStreak, muscleLoad, thisWeekCount, trainedDaysThisWeek, weekKey, weekStreak, weeklySeries } from './stats';
 import type { Workout, WorkoutSet } from '../db/types';
 
 const w = (id: string, date: string): Workout => ({
@@ -55,5 +55,44 @@ describe('volum', () => {
     const series = weeklySeries(ws, sets, 3, new Date('2026-11-26T12:00:00'));
     expect(series.map((x) => x.volume)).toEqual([0, 500, 500]);
     expect(lifetime(ws, sets)).toEqual({ workouts: 2, sets: 2, volume: 1000 });
+  });
+});
+
+describe('muscleLoad', () => {
+  const ex = (id: string, muscle_group: 'Bryst' | 'Bein' | 'Triceps') =>
+    [id, { id, muscle_group, name: id, equipment: 'Stang', custom: 0, kind: 'weight', updated_at: '', deleted: 0, dirty: 0 }] as const;
+  const exercises = new Map([ex('bench', 'Bryst'), ex('squat', 'Bein')]);
+  const secondary = (id: string) => (id === 'bench' ? (['Triceps'] as const).slice() : []);
+  const set = (id: string, exercise_id: string, completed_at: string, set_type: 'normal' | 'warmup' = 'normal'): WorkoutSet => ({
+    id, exercise_id, completed_at, set_type, workout_id: 'w', workout_exercise_id: 'we', position: 0, weight: 100, reps: 5,
+    updated_at: '', deleted: 0, dirty: 0,
+  });
+  const now = new Date('2026-11-26T12:00:00Z');
+
+  it('hovedmuskel teller 1, sekundær 0,5, oppvarming og gamle sets teller ikke', () => {
+    const load = muscleLoad(
+      [
+        set('1', 'bench', '2026-11-25T18:00:00Z'),
+        set('2', 'bench', '2026-11-25T18:05:00Z'),
+        set('3', 'bench', '2026-11-25T17:55:00Z', 'warmup'),
+        set('4', 'squat', '2026-11-10T18:00:00Z'), // over 7 dager siden
+      ],
+      exercises as never,
+      secondary as never,
+      7,
+      now,
+    );
+    expect(load.get('Bryst')).toEqual({ sets: 2, last: '2026-11-25T18:05:00Z' });
+    expect(load.get('Triceps')?.sets).toBe(1);
+    expect(load.has('Bein')).toBe(false);
+  });
+
+  it('nivåer per uke', () => {
+    expect(loadLevel(0)).toBe(0);
+    expect(loadLevel(0.5)).toBe(1);
+    expect(loadLevel(4)).toBe(2);
+    expect(loadLevel(12)).toBe(3);
+    expect(loadLevel(20)).toBe(4);
+    expect(loadLevel(20, 30)).toBe(2); // 20 sets over 30 dager ≈ 4,7 per uke
   });
 });

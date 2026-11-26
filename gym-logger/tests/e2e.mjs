@@ -25,6 +25,11 @@ const browser = await chromium.launch();
 const ctx = await browser.newContext({ ...devices['iPhone 13'], locale: 'nb-NO' });
 // Headless Chromium har ingen skjermlås: tell kallene i stedet, så vi ser at appen ber om den.
 await ctx.addInitScript(() => {
+  // Hovedflyten kjøres på norsk; den engelske har egen kontekst lenger ned.
+  if (!sessionStorage.getItem('lang-set')) {
+    localStorage.setItem('gym-lang', 'nb');
+    sessionStorage.setItem('lang-set', '1');
+  }
   window.__wakeLocks = 0;
   Object.defineProperty(navigator, 'wakeLock', {
     configurable: true,
@@ -184,6 +189,19 @@ try {
   await page.getByText('Siste rekorder').waitFor();
   await shot('hjem-med-data');
 
+  // 5c. Kroppskartet: knebøy farger beina, brystet er ikke trent
+  const bodyMap = page.getByRole('img', { name: /^Trent: .*bein/ });
+  await bodyMap.waitFor();
+  assert.match(await bodyMap.getAttribute('aria-label'), /Ikke trent: .*bryst/);
+  await btn('Bein', { exact: true }).click();
+  await page.getByRole('status').filter({ hasText: /Bein · .*sets siste 7 dager/ }).waitFor();
+  await page.waitForTimeout(350);
+  await page.getByRole('region', { name: 'Trent kropp' })
+    .screenshot({ path: `tests/screens/${String(++n).padStart(2, '0')}-kroppskart.png` });
+  await btn('30 d').click();
+  await page.getByRole('status').filter({ hasText: /siste 30 dager/ }).waitFor();
+  await btn('7 d').click();
+
   // 6. Historikk og kalender
   await page.getByRole('navigation').getByRole('link', { name: 'Historikk' }).click();
   await btn(/1 øvelse/).first().waitFor();
@@ -341,6 +359,48 @@ try {
   await page.reload();
   await page.getByRole('img', { name: '0 av 4 økter denne uka' }).waitFor({ timeout: 8000 });
   await ctx.setOffline(false);
+
+  // 13. Engelsk: velg English på velkomstsiden, lag konto, logg knebøy, bytt tilbake til norsk
+  const en = await browser.newContext({ ...devices['iPhone 13'], locale: 'nb-NO' });
+  const ep = await en.newPage();
+  ep.on('pageerror', (e) => errors.push(e.message));
+  const ebtn = (name, opts = {}) => ep.getByRole('button', { name, ...opts });
+  await ep.goto(URL);
+  await ebtn('Lag konto').waitFor();
+  await ep.getByRole('radio', { name: 'English' }).click();
+  await ebtn('Create account').click();
+  await ep.getByLabel('Name').fill('Sam');
+  await ep.getByLabel('Email').fill('sam@example.com');
+  await ep.getByLabel('Password (at least 8 characters)').fill('Strong-password-26');
+  await ep.locator('form').getByRole('button', { name: 'Create account' }).click();
+  await ep.getByText('Hi, Sam!').waitFor();
+  await ebtn('Continue').click();
+  await ep.getByRole('radio', { name: /Get stronger/ }).click();
+  await ebtn('Continue').click();
+  await ep.getByRole('radio', { name: /^3/ }).click();
+  await ebtn('Continue').click();
+  await ebtn('Continue').click();
+  await ebtn('Start training').click();
+  await ep.getByText('Muscles trained').waitFor();
+  await ep.getByRole('img', { name: 'No muscle groups trained in this period.' }).waitFor();
+  await ebtn('Start Full body A').click();
+  await ep.getByText('Squat').first().waitFor();
+  await ep.getByLabel('Weight set 1 (kg)').first().fill('80');
+  await ep.getByLabel('Reps set 1').first().fill('5');
+  await ep.getByLabel('Reps set 1').first().blur();
+  await ebtn('Complete set 1').first().click();
+  await ebtn('Finish', { exact: true }).click();
+  await ebtn('Save workout').click();
+  await ep.getByText('Workout complete').waitFor();
+  await ebtn('Done').click();
+  await ep.getByRole('img', { name: /^Trained: .*legs/ }).waitFor();
+  await ep.waitForTimeout(350);
+  await ep.getByRole('region', { name: 'Muscles trained' }).screenshot({ path: `tests/screens/${String(++n).padStart(2, '0')}-body-map-en.png` });
+  await ep.getByRole('navigation').getByRole('link', { name: 'Profile' }).click();
+  await ep.getByRole('radio', { name: 'Norsk' }).click();
+  await ep.getByRole('navigation').getByRole('link', { name: 'Hjem' }).click();
+  await ep.getByText('Trent kropp').waitFor();
+  await en.close();
 
   assert.deepEqual(errors, [], 'ingen JS-feil');
   console.log(`✓ Alle e2e-sjekker bestått. ${n} skjermbilder i tests/screens/`);

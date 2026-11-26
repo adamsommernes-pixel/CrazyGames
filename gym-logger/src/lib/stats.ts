@@ -120,3 +120,48 @@ export function lifetime(workouts: Workout[], sets: WorkoutSet[]) {
     volume: work.reduce((v, s) => v + s.weight * s.reps, 0),
   };
 }
+
+export interface MuscleLoad {
+  /** Arbeidssett (sekundære muskler teller halvt). */
+  sets: number;
+  /** Sist trent (ISO), eller null. */
+  last: string | null;
+}
+
+/**
+ * Hvor mye hver muskelgruppe er trent i perioden: hovedmuskelen får 1 per arbeidssett,
+ * muskler som også jobber (fra fremgangsmåten) får 0,5. Brukes til kroppskartet på Hjem.
+ */
+export function muscleLoad(
+  sets: WorkoutSet[],
+  exercises: Map<string, Exercise>,
+  secondaryOf: (exerciseId: string) => MuscleGroup[],
+  days = 7,
+  now = new Date(),
+): Map<MuscleGroup, MuscleLoad> {
+  const since = now.getTime() - days * DAY;
+  const out = new Map<MuscleGroup, MuscleLoad>();
+  const add = (g: MuscleGroup, amount: number, at: string) => {
+    const cur = out.get(g) ?? { sets: 0, last: null };
+    out.set(g, { sets: cur.sets + amount, last: !cur.last || at > cur.last ? at : cur.last });
+  };
+  for (const s of sets) {
+    if (s.deleted || !countsAsWork(s)) continue;
+    if (new Date(s.completed_at!).getTime() < since) continue;
+    const ex = exercises.get(s.exercise_id);
+    if (!ex) continue;
+    add(ex.muscle_group, 1, s.completed_at!);
+    for (const g of secondaryOf(s.exercise_id)) if (g !== ex.muscle_group) add(g, 0.5, s.completed_at!);
+  }
+  return out;
+}
+
+/** 0–4: hvor mye en muskelgruppe er trent, målt i arbeidssett per uke (1–3, 4–8, 9–15, 16+). */
+export function loadLevel(setsInPeriod: number, days = 7): 0 | 1 | 2 | 3 | 4 {
+  const perWeek = setsInPeriod / (days / 7);
+  if (perWeek <= 0) return 0;
+  if (perWeek <= 3) return 1;
+  if (perWeek <= 8) return 2;
+  if (perWeek <= 15) return 3;
+  return 4;
+}
