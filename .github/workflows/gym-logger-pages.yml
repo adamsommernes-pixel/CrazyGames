@@ -1,0 +1,53 @@
+name: Repgrade → GitHub Pages
+
+on:
+  push:
+    paths: ['gym-logger/**', '.github/workflows/gym-logger-pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Publiserer bare fra repoets standardgren (uansett hva den heter).
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gym-logger
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: gym-logger/package-lock.json
+      - run: npm ci
+      - run: npm test
+      # Landingsside i roten og appen under /app/ (se gym-logger/scripts/build-site.mjs).
+      - run: npm run build:site
+        env:
+          SITE_BASE: /${{ github.event.repository.name }}/
+          # Valgfritt: legg inn som repository secrets for å slå på sky-synk.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: gym-logger/dist-site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

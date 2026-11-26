@@ -1,0 +1,194 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter/wght.css';
+@import '@fontsource/space-grotesk/latin-500.css';
+@import '@fontsource/space-grotesk/latin-700.css';
+
+/*
+ * Repgrade — grafittsvart med grønt skjær, ett kraftig grønt aksentlys.
+ * Space Grotesk til tall og titler, Inter til tekst. Tall er helten.
+ */
+@theme {
+  --color-bg: #07090a;
+  --color-surface: #0f1311;
+  --color-raised: #161b18;
+  --color-line: #232a26;
+  --color-green: #2bd66b;
+  --color-green-light: #7dffaa;
+  --color-green-dim: #0f3b22;
+  --color-ink: #f2f5f3;
+  --color-muted: #9ba59f;
+  --color-faint: #66706a;
+  --color-warn: #f5b942;
+  --color-danger: #ff6b6b;
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --shadow-glow: 0 0 24px rgb(43 214 107 / 0.35);
+  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.4);
+  --animate-pop: pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-sheet: sheet 240ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  --animate-fade: fade 200ms ease-out;
+  --animate-rise: rise 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+
+  @keyframes pop {
+    0% { transform: scale(0.8); }
+    100% { transform: scale(1); }
+  }
+  @keyframes sheet {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes rise {
+    from { opacity: 0.001; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* Grunnstiler i base-laget, så Tailwind-klasser (text-black osv.) vinner over dem. */
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  :root {
+    color-scheme: dark;
+    background: var(--color-bg);
+  }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(120% 60% at 50% -10%, rgb(43 214 107 / 0.07), transparent 60%),
+      var(--color-bg);
+    background-attachment: fixed;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-green);
+    outline-offset: 2px;
+  }
+
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility font-num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  box-shadow: var(--shadow-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* ---------- Styrkenivå ---------- */
+.level-glow {
+  display: inline-flex;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--glow, #2bd66b) 55%, transparent));
+}
+
+@keyframes level-card-in {
+  from { transform: translateY(-120%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes level-card-out {
+  to { transform: translateY(-120%); opacity: 0; }
+}
+@keyframes level-emblem-in {
+  0% { transform: scale(0.2) rotate(-25deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(6deg); opacity: 1; }
+  80% { transform: scale(0.95) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+@keyframes level-rays {
+  to { transform: rotate(360deg); }
+}
+@keyframes level-shine {
+  0% { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(220%) skewX(-20deg); }
+}
+@keyframes level-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50% { transform: scale(1.12); opacity: 0.9; }
+}
+@keyframes level-text-in {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes level-flash {
+  0% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+.level-card { animation: level-card-in 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.level-card.leaving { animation: level-card-out 260ms ease-in both; }
+.level-emblem-in { animation: level-emblem-in 900ms cubic-bezier(0.34, 1.56, 0.64, 1) 250ms both; }
+.level-rays { animation: level-rays 14s linear infinite; }
+.level-pulse { animation: level-pulse 2.4s ease-in-out infinite; }
+.level-shine { animation: level-shine 1.4s ease-in-out 1s both; }
+.level-text-in { animation: level-text-in 600ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.level-flash { animation: level-flash 700ms ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .level-card, .level-emblem-in, .level-rays, .level-pulse, .level-shine, .level-text-in, .level-flash {
+    animation: none !important;
+  }
+  .level-flash, .level-shine { display: none; }
+}
+
+/* Personvernsiden: vanlige lister. */
+.privacy ul { list-style: disc; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.privacy b { color: var(--color-ink); font-weight: 600; }

@@ -1,0 +1,145 @@
+import 'fake-indexeddb/auto';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { openUserDb } from './dexie';
+import {
+  addExerciseToWorkout,
+  deleteSet,
+  deleteWorkout,
+  finishWorkout,
+  removeWorkoutExercise,
+  restore,
+  setsForWorkout,
+  startWorkout,
+  rememberedRest,
+  setExerciseRest,
+  swapWorkoutExercise,
+  toggleSetDone,
+  updateSet,
+  updateWorkoutTimes,
+  workoutExercises,
+} from './repo';
+
+let n = 0;
+beforeEach(() => {
+  openUserDb(`test-${++n}`);
+});
+
+describe('bytt øvelse og husk hviletid', () => {
+  it('bytte uten fullførte sets bytter på plass og beholder antallet', async () => {
+    const w = await startWorkout();
+    await addExerciseToWorkout(w, 'ex-beinpress', { sets: 4 });
+    const [we] = await workoutExercises(w);
+    await swapWorkoutExercise(we.id, 'ex-hack-squat');
+    const after = await workoutExercises(w);
+    expect(after).toHaveLength(1);
+    expect(after[0].exercise_id).toBe('ex-hack-squat');
+    const sets = await setsForWorkout(w);
+    expect(sets).toHaveLength(4);
+    expect(sets.every((s) => s.exercise_id === 'ex-hack-squat' && s.workout_exercise_id === we.id)).toBe(true);
+  });
+
+  it('bytte etter fullførte sets flytter bare de uferdige til en ny øvelse', async () => {
+    const w = await startWorkout();
+    await addExerciseToWorkout(w, 'ex-beinpress', { sets: 3 });
+    const [we] = await workoutExercises(w);
+    const [first] = (await setsForWorkout(w)).sort((a, b) => a.position - b.position);
+    await updateSet(first.id, { weight: 100, reps: 10 });
+    await toggleSetDone(first.id);
+    await swapWorkoutExercise(we.id, 'ex-hack-squat');
+    const after = await workoutExercises(w);
+    expect(after.map((e) => e.exercise_id)).toEqual(['ex-beinpress', 'ex-hack-squat']);
+    const sets = await setsForWorkout(w);
+    expect(sets.filter((s) => s.exercise_id === 'ex-beinpress')).toHaveLength(1);
+    expect(sets.filter((s) => s.exercise_id === 'ex-hack-squat')).toHaveLength(2);
+  });
+
+  it('hviletid valgt for en øvelse brukes neste gang', async () => {
+    const w = await startWorkout();
+    await addExerciseToWorkout(w, 'ex-kneboy');
+    const [we] = await workoutExercises(w);
+    await setExerciseRest(we.id, 240);
+    expect(await rememberedRest('ex-kneboy')).toBe(240);
+    await addExerciseToWorkout(w, 'ex-kneboy');
+    const list = await workoutExercises(w);
+    expect(list[1].rest_seconds).toBe(240);
+  });
+});
+
+describe('samtidige endringer', () => {
+  it('fullfør rett etter vektendring mister ikke vekten', async () => {
+    const w = await startWorkout();
+    await addExerciseToWorkout(w, 'ex-knebøy', { sets: 1 });
+    const [s] = await setsForWorkout(w);
+    // Ikke awaited, akkurat som når Enter i vektfeltet etterfølges av rask fullføring.
+    const write = updateSet(s.id, { weight: 105 });
+    await toggleSetDone(s.id);
+    await write;
+    const [after] = await setsForWorkout(w);
+    expect(after.weight).toBe(105);
+    expect(after.completed_at).not.toBeNull();
+  });
+});
+
+describe('etterregistrert økt', () => {
+  it('sluttid og set-tider legges i øktas tidsrom, i samme rekkefølge', async () => {
+    const start = '2026-11-20T17:00:00.000Z';
+    const w = await startWorkout({ startedAt: start });
+    await addExerciseToWorkout(w, 'ex-benkpress', { sets: 2 });
+    const [a, b] = (await setsForWorkout(w)).sort((x, y) => x.position - y.position);
+    await toggleSetDone(a.id);
+    await toggleSetDone(b.id);
+    const end = '2026-11-20T18:00:00.000Z';
+    expect(await finishWorkout(w, end)).toBe(true);
+    const done = (await setsForWorkout(w)).sort((x, y) => x.position - y.position);
+    expect(done.every((s) => s.completed_at! > start && s.completed_at! < end)).toBe(true);
+    expect(done[0].completed_at! < done[1].completed_at!).toBe(true);
+  });
+
+  it('endre start og varighet flytter økta', async () => {
+    const w = await startWorkout({ startedAt: '2026-11-20T17:00:00.000Z' });
+    await addExerciseToWorkout(w, 'ex-benkpress', { sets: 1 });
+    const [s] = await setsForWorkout(w);
+    await toggleSetDone(s.id);
+    await finishWorkout(w, '2026-11-20T18:00:00.000Z');
+    await updateWorkoutTimes(w, { name: 'Bryst', startedAt: '2026-11-21T08:00:00.000Z', durationMin: 45 });
+    const { db } = await import('./dexie');
+    const moved = await db.workouts.get(w);
+    expect(moved).toMatchObject({ name: 'Bryst', started_at: '2026-11-21T08:00:00.000Z', ended_at: '2026-11-21T08:45:00.000Z' });
+    const [after] = await setsForWorkout(w);
+    expect(after.completed_at! > '2026-11-21T08:00:00.000Z').toBe(true);
+  });
+});
+
+describe('angre sletting', () => {
+  it('gjenoppretter et slettet set', async () => {
+    const w = await startWorkout();
+    await addExerciseToWorkout(w, 'ex-benkpress', { sets: 3 });
+    const [first] = await setsForWorkout(w);
+    const removed = await deleteSet(first.id);
+    expect(await setsForWorkout(w)).toHaveLength(2);
+    await restore(removed);
+    expect(await setsForWorkout(w)).toHaveLength(3);
+  });
+
+  it('gjenoppretter en fjernet øvelse med settene', async () => {
+    const w = await startWorkout();
+    await addExerciseToWorkout(w, 'ex-benkpress', { sets: 2 });
+    const [we] = await workoutExercises(w);
+    const removed = await removeWorkoutExercise(we.id);
+    expect(await workoutExercises(w)).toHaveLength(0);
+    await restore(removed);
+    expect(await workoutExercises(w)).toHaveLength(1);
+    expect(await setsForWorkout(w)).toHaveLength(2);
+  });
+
+  it('gjenoppretter ikke sets som var slettet fra før', async () => {
+    const w = await startWorkout();
+    await addExerciseToWorkout(w, 'ex-benkpress', { sets: 3 });
+    const [first] = await setsForWorkout(w);
+    await deleteSet(first.id); // slettet før økta forkastes
+    const removed = await deleteWorkout(w);
+    expect(removed.sets).toHaveLength(2);
+    await restore(removed);
+    expect(await setsForWorkout(w)).toHaveLength(2);
+  });
+});
