@@ -4,6 +4,7 @@ import { db } from './dexie';
 import { SYNCED_TABLES, type Row, type SyncedTable } from './types';
 import { normalizeRemote, remoteWins } from './merge';
 import { supabase } from '../lib/supabase';
+import { t } from '../i18n';
 import { cloudPayload, hasHealthConsent, keepLocalSensitive, SENSITIVE_TABLES } from './consent';
 
 // ---------- Status (enkel global store) ----------
@@ -141,6 +142,24 @@ export async function withdrawHealthConsent(userId: string) {
 
 let running: Promise<void> | null = null;
 
+/** Gjør vanlige oppsettsfeil i Supabase forståelige. */
+export function friendlySyncError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes('does not exist') || m.includes('could not find the') || m.includes('schema cache')) {
+    return t(
+      'Databasen er ikke satt opp. Kjør supabase/setup.sql i Supabase → SQL Editor.',
+      'The database is not set up. Run supabase/setup.sql in Supabase → SQL Editor.',
+    );
+  }
+  if (m.includes('jwt') || m.includes('invalid api key') || m.includes('no api key')) {
+    return t('Feil Supabase-nøkkel. Sjekk VITE_SUPABASE_ANON_KEY.', 'Wrong Supabase key. Check VITE_SUPABASE_ANON_KEY.');
+  }
+  if (m.includes('row-level security')) {
+    return t('Tilgang nektet av databasen. Kjør supabase/setup.sql på nytt.', 'Access denied by the database. Run supabase/setup.sql again.');
+  }
+  return message;
+}
+
 /** Sender lokale endringer og henter nye fra skyen. Trygg å kalle ofte. */
 export function syncNow(): Promise<void> {
   if (!supabase) return Promise.resolve();
@@ -156,7 +175,7 @@ export function syncNow(): Promise<void> {
       await pull(user.id);
       setStatus({ state: 'idle', lastSync: new Date().toISOString(), pending: await countPending() });
     } catch (e) {
-      setStatus({ state: navigator.onLine ? 'error' : 'offline', error: e instanceof Error ? e.message : String(e) });
+      setStatus({ state: navigator.onLine ? 'error' : 'offline', error: friendlySyncError(e instanceof Error ? e.message : String(e)) });
     } finally {
       running = null;
     }

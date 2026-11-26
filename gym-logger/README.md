@@ -147,28 +147,35 @@ Slik installeres den på telefonen:
 - **iPhone**: Safari → Del → «Legg til på Hjem-skjerm».
 - **Android**: Chrome → meny → «Installer app».
 
-## Sky-kontoer med Supabase (valgfritt)
+## Kontoer på nett med Supabase
 
-1. Lag et gratis prosjekt på [supabase.com](https://supabase.com).
-2. Kjør disse filene i **SQL Editor**, i denne rekkefølgen:
-   - `supabase/migrations/001_init.sql`
-   - `supabase/migrations/002_profiles.sql` (profiler, kroppsvekt, set-typer og sletting av konto)
-   - `supabase/migrations/003_qol.sql` (mål-reps per øvelse i økta, til progresjonsforslag)
-   - `supabase/migrations/004_kinds.sql` (øvelsestyper og distanse for kondisjon)
-   - `supabase/migrations/005_sex.sql` (valgfritt kjønn i profilen, til styrkenivå)
-   - `supabase/migrations/006_consent.sql` (samtykke til kroppsdata i skyen)
+Når appen bygges med Supabase-nøkler, lagres alle kontoer og all trening på nett og synkes mellom enheter. Telefonen beholder en kopi, så appen virker også uten dekning.
 
-   Lag prosjektet i regionen **Central EU (Frankfurt)**, slik personvernerklæringen sier.
-3. Velg om e-post skal bekreftes, under **Authentication → Sign In / Providers → Email**:
-   - Med bekreftelse ber appen brukeren sjekke e-posten etter registrering.
-   - Uten bekreftelse logges brukeren inn med en gang.
-4. Under **Project Settings → API** kopierer du Project URL og anon public key:
-   - Lokalt: `.env.local` (se `.env.example`).
-   - GitHub Pages: repository secrets `VITE_SUPABASE_URL` og `VITE_SUPABASE_ANON_KEY`.
+1. Lag en gratis konto på [supabase.com](https://supabase.com) → **New project**. Navn `repgrade`, et sterkt databasepassord (ta vare på det), og region **Central EU (Frankfurt)** (det sier personvernerklæringen).
+2. **SQL Editor → New query**: lim inn hele `supabase/setup.sql` og trykk **Run**. Filen er trygg å kjøre flere ganger. (Den lages fra `supabase/migrations/` med `node scripts/make-setup-sql.mjs`.)
+3. **Authentication → Sign In / Providers → Email**: slå av **Confirm email** foreløpig. Supabase sin innebygde e-post sender bare noen få e-poster i timen; slå det på igjen når du har koblet til en egen e-posttjeneste (f.eks. Resend) under **Authentication → Emails → SMTP**.
+4. **Authentication → URL Configuration**: sett **Site URL** til appens adresse, f.eks. `https://adamsommernes-pixel.github.io/Web-Appdevelopment/app/`.
+5. **Project Settings → API Keys**: kopier **Project URL** og **Publishable key** (eller den eldre `anon`-nøkkelen).
+6. GitHub → repoet → **Settings → Secrets and variables → Actions → New repository secret**:
+   - `VITE_SUPABASE_URL` = Project URL
+   - `VITE_SUPABASE_ANON_KEY` = Publishable key
+7. GitHub → **Actions** → «Repgrade → GitHub Pages» → **Run workflow**. Når den er grønn, er kontoene på nett.
 
-Anon-nøkkelen er laget for å ligge i nettleseren. Row Level Security sørger for at hver bruker bare ser egne rader.
+Lokalt utviklingsoppsett: legg de samme to verdiene i `.env.local` (se `.env.example`).
 
-Synken skriver alt lokalt først. Når det er nett, sendes endringene og nye endringer hentes. Ved konflikt vinner siste endring.
+Den publiserbare nøkkelen er laget for å ligge i nettleseren. Row Level Security sørger for at hver bruker bare ser og endrer egne rader (testet mot Postgres 16). Synken skriver alt lokalt først; når det er nett, sendes endringene og nye hentes. Ved konflikt vinner siste endring. Feil i oppsettet (f.eks. at setup.sql ikke er kjørt) vises med en forståelig melding under Profil → Synk nå.
+
+**Før det kommer ekte brukere:** godta databehandleravtalen (DPA) i Supabase, og slå på e-postbekreftelse med egen e-posttjeneste.
+
+## Eget domene (valgfritt)
+
+GitHub-adressen kan ikke endres (bortsett fra ved å gi repoet nytt navn). Slik bruker du et eget domene, f.eks. `repgrade.no` (ca. 100–200 kr i året):
+
+1. Kjøp domenet hos en registrar (f.eks. Domeneshop for .no).
+2. GitHub → repoet → **Settings → Secrets and variables → Actions → Variables → New repository variable**: `SITE_DOMAIN` = `repgrade.no`. Workflowen bygger da med landingssiden på `/`, appen på `/app/` og en `CNAME`-fil.
+3. Hos registraren: fire `A`-poster for `@` til `185.199.108.153`, `185.199.109.153`, `185.199.110.153` og `185.199.111.153`, og en `CNAME`-post for `www` til `adamsommernes-pixel.github.io`.
+4. GitHub → **Settings → Pages → Custom domain**: skriv inn domenet, vent på grønn hake og kryss av **Enforce HTTPS**.
+5. Kjør workflowen på nytt, og oppdater **Site URL** i Supabase til den nye adressen.
 
 ## Struktur
 

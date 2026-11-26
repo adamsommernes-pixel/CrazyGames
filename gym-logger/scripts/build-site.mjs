@@ -1,5 +1,6 @@
 // Bygger nettstedet for GitHub Pages: landingssiden i roten og appen under app/.
 //   SITE_BASE=/repo-navn/ node scripts/build-site.mjs   (standard: /)
+//   SITE_DOMAIN=repgrade.no node scripts/build-site.mjs  (eget domene: skriver CNAME, bruk SITE_BASE=/)
 // Resultat i dist-site/.
 import { spawnSync } from 'node:child_process';
 import { cpSync, rmSync, writeFileSync } from 'node:fs';
@@ -17,4 +18,7 @@ if (r.status !== 0) process.exit(r.status ?? 1);
 cpSync('landing/index.html', `${out}/index.html`);
 // GitHub Pages: ikke kjør Jekyll (filer som starter med _ skal med).
 writeFileSync(`${out}/.nojekyll`, '');
+// Eget domene (f.eks. repgrade.no): GitHub Pages leser domenet fra CNAME-filen.
+const domain = (process.env.SITE_DOMAIN ?? '').trim();
+if (domain) writeFileSync(`${out}/CNAME`, `${domain}\n`);
 console.log(`✓ Nettsted bygget i ${out}/ (landingsside på ${siteBase}, app på ${siteBase}app/)`);
