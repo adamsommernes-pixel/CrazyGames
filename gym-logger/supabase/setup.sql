@@ -244,3 +244,10 @@ revoke all on
 -- Repgrade: hvilket program en rutine kom fra («program:<id>»). null = brukerens egen rutine.
 -- Brukes for å erstatte gamle startrutiner trygt når man bytter program.
 alter table public.routines add column if not exists source text;
+
+-- ============================================================
+-- 009_routine_position.sql
+-- ============================================================
+
+-- Repgrade: rekkefølgen på rutinene. Den neste i rekkefølgen etter forrige økt står for tur.
+alter table public.routines add column if not exists position integer;

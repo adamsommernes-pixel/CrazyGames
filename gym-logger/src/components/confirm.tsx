@@ -8,6 +8,8 @@ import { t } from '../i18n';
 interface Request {
   message: string;
   confirmLabel: string;
+  cancelLabel?: string;
+  title?: string;
   danger: boolean;
   /** Bare én knapp (informasjon). */
   info: boolean;
@@ -20,11 +22,11 @@ const emit = () => listeners.forEach((l) => l());
 
 export function askConfirm(
   message: string,
-  opts: { confirmLabel?: string; danger?: boolean } = {},
+  opts: { confirmLabel?: string; cancelLabel?: string; title?: string; danger?: boolean } = {},
 ): Promise<boolean> {
   current?.resolve(false);
   return new Promise((resolve) => {
-    current = { message, confirmLabel: opts.confirmLabel ?? 'OK', danger: opts.danger ?? true, info: false, resolve };
+    current = { message, confirmLabel: opts.confirmLabel ?? 'OK', cancelLabel: opts.cancelLabel, title: opts.title, danger: opts.danger ?? true, info: false, resolve };
     emit();
   });
 }
@@ -52,14 +54,14 @@ export function ConfirmHost() {
     () => current,
   );
   return (
-    <Sheet open={!!req} onClose={() => close(false)} title={req?.info ? t('Merk', 'Note') : t('Er du sikker?', 'Are you sure?')}>
+    <Sheet open={!!req} onClose={() => close(false)} title={req?.title ?? (req?.info ? t('Merk', 'Note') : t('Er du sikker?', 'Are you sure?'))}>
       {req && (
         <>
           <p className="mb-5 text-muted">{req.message}</p>
           <div className="flex gap-2">
             {!req.info && (
               <Button variant="secondary" className="flex-1" onClick={() => close(false)}>
-                {t('Avbryt', 'Cancel')}
+                {req.cancelLabel ?? t('Avbryt', 'Cancel')}
               </Button>
             )}
             <Button variant={req.danger ? 'danger' : 'primary'} className="flex-1" onClick={() => close(true)}>

@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { normalizeSupabaseConfig } from './src/lib/supabaseConfig';
+import pkg from './package.json' with { type: 'json' };
 
 // Stopp bygget med en tydelig melding hvis Supabase-verdiene er feil, i stedet for en mørk skjerm på nettet.
 const sbConfig = normalizeSupabaseConfig(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
@@ -18,7 +19,12 @@ const base = artifact ? './' : (process.env.BASE_PATH ?? '/');
 export default defineConfig({
   base,
   define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '0.1.0'),
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    // GitHub Actions gir løpenummer og commit; lokalt står det «lokal».
+    __APP_BUILD__: JSON.stringify(
+      process.env.GITHUB_RUN_NUMBER ? `${process.env.GITHUB_RUN_NUMBER} · ${(process.env.GITHUB_SHA ?? '').slice(0, 7)}` : 'lokal',
+    ),
+    __APP_BUILT_AT__: JSON.stringify(new Date().toISOString()),
     __ARTIFACT__: JSON.stringify(artifact),
   },
   build: artifact ? { outDir: 'dist-artifact' } : undefined,

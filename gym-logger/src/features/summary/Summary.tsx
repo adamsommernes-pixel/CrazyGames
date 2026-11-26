@@ -1,3 +1,4 @@
+import { Logo } from '../../components/Logo';
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
@@ -152,6 +153,9 @@ export function Summary() {
         <Button full variant="ghost" onClick={() => navigate(`/history/${id}`)}>
           {t('Se detaljer', 'See details')}
         </Button>
+      </div>
+      <div className="mt-10 flex justify-center">
+        <Logo size={18} className="text-sm text-faint" />
       </div>
       {sharing && (
         <Suspense fallback={null}>

@@ -502,6 +502,24 @@ export interface RoutineDraftItem {
   rest_seconds: number;
 }
 
+/** Alle rutiner i brukerens rekkefølge. */
+export async function sortedRoutines(): Promise<Routine[]> {
+  const list = alive(await db.routines.toArray());
+  return list.sort((a, b) => (a.position ?? 1e9) - (b.position ?? 1e9) || a.name.localeCompare(b.name, 'nb'));
+}
+
+/** Flytter en rutine ett steg opp (-1) eller ned (1). Gir alle rutinene faste plasser. */
+export async function moveRoutine(id: string, dir: -1 | 1): Promise<void> {
+  const list = await sortedRoutines();
+  const i = list.findIndex((r) => r.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]];
+  await db.transaction('rw', db.routines, async () => {
+    for (const [pos, r] of list.entries()) if (r.position !== pos) await db.routines.put(touched({ ...r, position: pos }));
+  });
+}
+
 export async function saveRoutine(
   routine: { id?: string; name: string; notes: string; source?: string | null },
   items: RoutineDraftItem[],
@@ -509,9 +527,11 @@ export async function saveRoutine(
   const id = routine.id ?? uuid();
   await db.transaction('rw', db.routines, db.routine_exercises, async () => {
     const prev = await db.routines.get(id);
+    // Nye rutiner legges bakerst i rekkefølgen.
+    const position = prev?.position ?? (prev ? null : Math.max(-1, ...alive(await db.routines.toArray()).map((r) => r.position ?? -1)) + 1);
     await db.routines.put(
       // Lagres rutinen uten source (f.eks. fra redigering), blir den brukerens egen.
-      touched<Routine>({ ...(prev ?? { deleted: 0 }), id, name: routine.name, notes: routine.notes, source: routine.source ?? null, updated_at: '', dirty: 1 }),
+      touched<Routine>({ ...(prev ?? { deleted: 0 }), id, name: routine.name, notes: routine.notes, source: routine.source ?? null, position, updated_at: '', dirty: 1 }),
     );
     const old = await routineItems(id);
     const keep = new Set(items.map((i) => i.id).filter(Boolean));
@@ -712,14 +732,19 @@ export async function createStarterRoutines(goal: Goal, perWeek: number): Promis
   return applyProgram(recommendedProgramId(perWeek, 'beginner', goal), goal);
 }
 
-/** Rutinen som står for tur: den som er brukt minst nylig. */
+/**
+ * Rutinen som står for tur: den neste i brukerens rekkefølge etter rutinen fra forrige økt
+ * (og den første hvis ingen er brukt ennå). Starter på nytt fra toppen etter den siste.
+ */
 export async function nextRoutine(): Promise<Routine | undefined> {
-  const routines = (await db.routines.toArray()).filter((r) => !r.deleted);
+  const routines = await sortedRoutines();
   if (!routines.length) return undefined;
-  const workouts = (await db.workouts.toArray()).filter((w) => !w.deleted && w.routine_id);
-  const lastUsed = new Map<string, string>();
-  for (const w of workouts) if (w.started_at > (lastUsed.get(w.routine_id!) ?? '')) lastUsed.set(w.routine_id!, w.started_at);
-  return routines.sort((a, b) => (lastUsed.get(a.id) ?? '').localeCompare(lastUsed.get(b.id) ?? '') || a.name.localeCompare(b.name, 'nb'))[0];
+  const last = (await db.workouts.toArray())
+    .filter((w) => !w.deleted && w.routine_id && routines.some((r) => r.id === w.routine_id))
+    .sort((a, b) => (a.started_at < b.started_at ? 1 : -1))[0];
+  if (!last) return routines[0];
+  const i = routines.findIndex((r) => r.id === last.routine_id);
+  return routines[(i + 1) % routines.length];
 }
 
 export type { SetType };

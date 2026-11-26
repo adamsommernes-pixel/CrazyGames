@@ -93,6 +93,8 @@ export interface Routine extends Row {
   notes: string;
   /** «program:<id>» for rutiner laget fra programbiblioteket og ikke endret siden. null = egen rutine. */
   source?: string | null;
+  /** Plass i rekkefølgen (lavest først). Mangler på eldre rutiner: sorteres etter navn bakerst. */
+  position?: number | null;
 }
 
 export interface RoutineExercise extends Row {

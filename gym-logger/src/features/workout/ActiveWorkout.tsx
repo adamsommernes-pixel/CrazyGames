@@ -27,7 +27,7 @@ import { usePRMap } from '../../lib/prs';
 import { dateShort, duration, durationShort, isLongAgo, num, plural, toDisplay } from '../../lib/format';
 import { volume } from '../../lib/calc';
 import { undoToast } from '../../components/toast';
-import { Icon } from '../../components/Icon';
+import { askConfirm } from '../../components/confirm';
 import { locale, t } from '../../i18n';
 
 export function ActiveWorkout({ workout }: { workout: Workout }) {
@@ -57,7 +57,6 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
 
   // Startet fra en rutine og endret underveis? Da kan rutinen oppdateres når økta lagres.
   const routineChange = useLiveQuery(() => routineChanges(workout.id), [workout.id, sets.length, wes.length]);
-  const [updateRoutine, setUpdateRoutine] = useState(false);
 
   const doneSets = sets.filter((s) => s.completed_at);
   const vol = volume(sets);
@@ -78,9 +77,19 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
     const endedAt = longAgo ? new Date(startMs + minutes * 60_000).toISOString() : undefined;
     if (await finishWorkout(workout.id, endedAt)) {
       void requestPersist();
-      if (routineChange && updateRoutine) await updateRoutineFromWorkout(workout.id);
       await stopRest();
       setFinishing(false);
+      // Endret du økta (øvelser, rekkefølge eller antall sets)? Spør om rutinen skal oppdateres.
+      if (routineChange) {
+        const save = await askConfirm(
+          t(
+            `Du endret økta i forhold til rutinen «${routineChange.routineName}». Vil du lagre endringene i rutinen, så er de med neste gang?`,
+            `You changed this workout compared to the routine “${routineChange.routineName}”. Save the changes to the routine so they're there next time?`,
+          ),
+          { title: t('Lagre i rutinen?', 'Save to the routine?'), confirmLabel: t('Lagre i rutinen', 'Save to routine'), cancelLabel: t('Bare denne gangen', 'Just this time'), danger: false },
+        );
+        if (save) await updateRoutineFromWorkout(workout.id);
+      }
       navigate(`/summary/${workout.id}`, { replace: true });
     }
   };
@@ -169,23 +178,6 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
             </div>
             <NumberStepper label={t('Varighet', 'Duration')} value={minutes} step={5} min={5} max={300} onChange={setDurationMin} format={(v) => durationShort(v * 60_000)} />
           </div>
-        )}
-        {routineChange && doneSets.length > 0 && (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={updateRoutine}
-            onClick={() => setUpdateRoutine(!updateRoutine)}
-            className={`mb-4 flex w-full items-start gap-3 rounded-2xl border p-3 text-left transition ${updateRoutine ? 'border-green/60 bg-green-dim/30' : 'border-line bg-raised'}`}
-          >
-            <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-lg border-2 ${updateRoutine ? 'border-green bg-green text-black' : 'border-line'}`}>
-              {updateRoutine && <Icon name="check" size={14} strokeWidth={3.5} />}
-            </span>
-            <span>
-              <span className="block font-semibold">{t('Oppdater rutinen', 'Update the routine')} «{routineChange.routineName}»</span>
-              <span className="block text-sm text-muted">{t('Du har endret øvelser eller antall sets. Lagre dem i rutinen til neste gang.', 'You changed exercises or the number of sets. Save them to the routine for next time.')}</span>
-            </span>
-          </button>
         )}
         <label className="mb-4 flex flex-col gap-1">
           <span className="text-sm text-muted">{t('Notat (valgfritt)', 'Note (optional)')}</span>
