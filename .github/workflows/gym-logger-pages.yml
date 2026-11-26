@@ -34,7 +34,9 @@ jobs:
       # Landingsside i roten og appen under /app/ (se gym-logger/scripts/build-site.mjs).
       - run: npm run build:site
         env:
-          SITE_BASE: /${{ github.event.repository.name }}/
+          # Eget domene: legg inn repository-variabelen SITE_DOMAIN (f.eks. repgrade.no). Tom = github.io-adressen.
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+          SITE_BASE: ${{ vars.SITE_DOMAIN && '/' || format('/{0}/', github.event.repository.name) }}
           # Valgfritt: legg inn som repository secrets for å slå på sky-synk.
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}

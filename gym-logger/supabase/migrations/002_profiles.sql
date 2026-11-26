@@ -31,8 +31,14 @@ create table if not exists public.bodyweights (
 
 -- Set-type erstatter is_warmup.
 alter table public.sets add column if not exists set_type text not null default 'normal';
-update public.sets set set_type = 'warmup' where is_warmup = 1 and set_type = 'normal';
-alter table public.sets drop column if exists is_warmup;
+-- Bare hvis den gamle kolonnen fortsatt finnes, så filen kan kjøres flere ganger.
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'sets' and column_name = 'is_warmup') then
+    update public.sets set set_type = 'warmup' where is_warmup = 1 and set_type = 'normal';
+    alter table public.sets drop column is_warmup;
+  end if;
+end $$;
 
 alter table public.workout_exercises add column if not exists notes text not null default '';
 

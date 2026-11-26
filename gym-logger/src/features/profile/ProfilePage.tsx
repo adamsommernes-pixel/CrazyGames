@@ -116,10 +116,10 @@ function AccountSection() {
           <Icon name="mail" size={20} className="text-muted" />
           <span className="min-w-0 flex-1">
             <span className="block truncate font-medium">{user.email}</span>
-            <span className="block text-sm text-muted">{user.kind === 'cloud' ? t('Sky-konto, synkes mellom enheter', 'Cloud account, synced across devices') : t('Lagret på denne enheten', 'Stored on this device')}</span>
+            <span className="block text-sm text-muted">{user.kind === 'cloud' ? t('Lagret trygt på nett og synket mellom enhetene dine', 'Stored safely online and synced across your devices') : t('Lagret på denne enheten', 'Stored on this device')}</span>
           </span>
           <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${user.kind === 'cloud' ? 'bg-green-dim text-green-light' : 'bg-raised text-muted'}`}>
-            {user.kind === 'cloud' ? t('Sky', 'Cloud') : t('Lokal', 'Local')}
+            {user.kind === 'cloud' ? t('På nett', 'Online') : t('Lokal', 'Local')}
           </span>
         </div>
         {user.kind === 'cloud' && (
@@ -298,6 +298,7 @@ function SettingsSection() {
 }
 
 function DataSection() {
+  const cloud = useUser().kind === 'cloud';
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [storage, refreshStorage] = useStorageStatus();
@@ -315,7 +316,21 @@ function DataSection() {
 
   return (
     <Card className="flex flex-col gap-3 p-4">
-      <div className="flex items-start gap-3 rounded-2xl bg-raised px-3 py-2.5 text-sm" role="status">
+      {cloud ? (
+        <div className="flex items-start gap-3 rounded-2xl bg-raised px-3 py-2.5 text-sm" role="status">
+          <Icon name="check" size={18} className="mt-0.5 shrink-0 text-green" />
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold">{t('Dataene dine ligger trygt på nett', 'Your data is stored safely online')}</div>
+            <div className="text-xs text-muted">
+              {t(
+                'Alt synkes til kontoen din, så du mister ingenting om du bytter eller mister telefonen. Last gjerne ned en kopi innimellom.',
+                'Everything syncs to your account, so you lose nothing if you switch or lose your phone. Feel free to download a copy now and then.',
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-start gap-3 rounded-2xl bg-raised px-3 py-2.5 text-sm" role="status">
         <Icon name={storage?.persisted ? 'check' : 'info'} size={18} className={`mt-0.5 shrink-0 ${storage?.persisted ? 'text-green' : 'text-warn'}`} />
         <div className="min-w-0 flex-1">
           <div className="font-semibold">
@@ -336,6 +351,7 @@ function DataSection() {
           </button>
         )}
       </div>
+      )}
       <Button icon="download" full onClick={() => void exportJSON()}>
         {t('Last ned backup (JSON)', 'Download backup (JSON)')}
       </Button>
