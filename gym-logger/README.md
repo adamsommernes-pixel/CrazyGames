@@ -30,7 +30,7 @@ Teknologi: React 19, TypeScript, Vite, Tailwind CSS 4, Dexie (IndexedDB), Rechar
 ## Publisering (GitHub Pages)
 
 1. I GitHub: **Settings → Pages → Source: GitHub Actions**.
-2. Når `gym-logger/` endres på `main`, bygges og publiseres appen av `.github/workflows/gym-logger-pages.yml`.
+2. Når `gym-logger/` endres på repoets standardgren, bygges og publiseres appen av `.github/workflows/gym-logger-pages.yml`.
    Du kan også starte den manuelt under **Actions → Gym Logger → Run workflow**.
 3. Appen ligger da på `https://<brukernavn>.github.io/<repo>/`.
 
