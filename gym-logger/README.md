@@ -10,6 +10,25 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
 - Oppstart i fire steg: navn og farge, mål, økter per uke og erfaring, og til slutt enhet og kroppsvekt. Til slutt lages ferdige startrutiner etter mål og frekvens (Fullkropp A/B, Overkropp/Underkropp eller Push/Pull/Bein).
 - Hver konto har sin egen database, så flere personer kan bruke samme enhet uten å se hverandres data.
 
+**Øvelsesbibliotek**
+- **131 innebygde øvelser** fordelt på bryst, rygg, skuldre, biceps, triceps, underarmer, bein, rumpe, mage og kondisjon.
+- **Fremgangsmåte for hver øvelse**, på norsk:
+  - steg for steg
+  - tips
+  - vanlige feil
+  - hvilke muskler som jobber
+  - nivå
+- Fremgangsmåten åpnes med «i» i øvelsesvelgeren og på hvert øvelseskort i økta. Du trenger ikke forlate økta.
+- **Øvelsestyper** med riktige felt:
+  - vekt × reps
+  - kroppsvekt (reps, med valgfri ekstra vekt)
+  - tid (sekunder, med stoppeklokke: ✓ starter og stopper tidtakingen)
+  - kondisjon (km og minutter)
+- Rekorder følger typen: tyngste og 1RM, flest reps, lengst tid eller lengst distanse.
+- **Egne øvelser** kan lages, redigeres og slettes, og slettingen kan angres.
+- **Favoritter** (stjerne) vises først i velgeren.
+- Nye innebygde øvelser legges automatisk inn i eksisterende kontoer.
+
 **Trening**
 - **Hjem**: ukemål som ring, streak i uker, ukas treningsdager, neste rutine og siste rekorder.
 - **Startknapp** i midten av menyen: tom økt, rutine eller «Gjenta forrige».
@@ -25,9 +44,16 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
   - **oppvarming med ett trykk** for stangøvelser (40/60/80 %, avrundet til skivene dine)
   - **Enter-flyt**: Enter i vekt går til reps, og Enter i reps fullfører settet og går til neste
   - **skjermen holdes på** under økta (kan slås av)
-- **Øvelsesvelger**: velg flere øvelser på én gang, med «Nylig brukt» og siste vekt × reps. Søket tåler at du skriver uten æ, ø og å («kneboy» finner Knebøy).
+  - **neste set er markert** («du er her») og rulles fram etter hvert fullførte set
+  - **bytt øvelse** midt i økta, f.eks. når maskinen er opptatt
+  - **hviletid huskes** per øvelse, og **notatet fra sist** vises som et forslag
+- **Øvelsesvelger**:
+  - velg flere øvelser på én gang
+  - favoritter og «Nylig brukt» øverst, så alle øvelser gruppert på muskelgruppe med fargekode
+  - filter for utstyr, og siste resultat ved hver øvelse
+  - søket tåler at du skriver uten æ, ø og å («kneboy» finner Knebøy)
 - **Angre**: sletting av set, øvelse, økt, rutine og kroppsvekt kan angres fra meldingen nederst på skjermen.
-- **Hviletimer** starter når du huker av et set. Den har −15/+15, lyd og vibrasjon, og teller riktig når skjermen er låst.
+- **Hviletimer** starter når du huker av et set. Den viser en ring, har −15/+15, lyd og vibrasjon, og viser hvilket set som er det neste. Den teller riktig når skjermen er låst.
 - **Oppsummering** etter økta: rekorder med konfetti, volum mot forrige gang og muskelgrupper. Har du endret en rutine-økt underveis, kan rutinen oppdateres.
 - **Glemt å avslutte?** Hjem spør når en økt har stått åpen i over 3 timer, og du setter varigheten selv.
 - **Logg tidligere økt**: registrer en økt i ettertid med dato og klokkeslett.
@@ -82,6 +108,7 @@ Slik installeres den på telefonen:
    - `supabase/migrations/001_init.sql`
    - `supabase/migrations/002_profiles.sql` (profiler, kroppsvekt, set-typer og sletting av konto)
    - `supabase/migrations/003_qol.sql` (mål-reps per øvelse i økta, til progresjonsforslag)
+   - `supabase/migrations/004_kinds.sql` (øvelsestyper og distanse for kondisjon)
 3. Velg om e-post skal bekreftes, under **Authentication → Sign In / Providers → Email**:
    - Med bekreftelse ber appen brukeren sjekke e-posten etter registrering.
    - Uten bekreftelse logges brukeren inn med en gang.

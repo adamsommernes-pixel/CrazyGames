@@ -86,7 +86,9 @@ export function RestTimerBar() {
     const s = nextPendingSet(await workoutExercises(w.id), await setsForWorkout(w.id));
     if (!s) return null;
     const ex = await db.exercises.get(s.exercise_id);
-    return `${ex?.name ?? 'Øvelse'} ${formatSet(s, ex?.kind ?? 'weight', unit)}`;
+    const kind = ex?.kind ?? 'weight';
+    const empty = s.reps === 0 && s.weight === 0 && !s.distance_km;
+    return empty ? (ex?.name ?? 'Øvelse') : `${ex?.name ?? 'Øvelse'} ${formatSet(s, kind, unit)}`;
   }, [!!timer, unit]);
 
   useEffect(() => {
@@ -123,11 +125,8 @@ export function RestTimerBar() {
               style={{ transition: 'stroke-dashoffset 250ms linear' }}
             />
           </svg>
-          <span className="min-w-0 flex-1">
-            <span className={`font-num block text-xl leading-tight font-bold ${done ? 'text-green-light' : ''}`}>
-              {done ? 'Klar for neste set!' : duration(remaining)}
-            </span>
-            {next && <span className="block truncate text-xs text-muted">Neste: {next}</span>}
+          <span className={`font-num min-w-0 flex-1 text-xl leading-tight font-bold ${done ? 'text-green-light' : ''}`}>
+            {done ? 'Klar for neste set!' : duration(remaining)}
           </span>
           {!done && (
             <>
@@ -143,6 +142,12 @@ export function RestTimerBar() {
             {done ? 'OK' : 'Hopp over'}
           </button>
         </div>
+        {next && (
+          <div className="relative -mt-1 truncate px-3 pb-2 text-sm text-muted">
+            <span className="text-faint">Neste: </span>
+            <span className="font-medium text-ink">{next}</span>
+          </div>
+        )}
       </div>
     </div>
   );

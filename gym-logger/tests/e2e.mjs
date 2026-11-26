@@ -162,11 +162,11 @@ try {
 
   // 5e. Flervalg og søk uten æøå
   await btn('Legg til øvelse').click();
-  await page.getByPlaceholder('Søk etter øvelse').fill('kneboy');
+  await page.getByPlaceholder('Søk blant øvelser').fill('kneboy');
   await page.getByRole('checkbox', { name: /^Knebøy/ }).first().waitFor();
-  await page.getByPlaceholder('Søk etter øvelse').fill('');
+  await page.getByPlaceholder('Søk blant øvelser').fill('');
   await page.getByRole('checkbox', { name: /^Benkpress Bryst/ }).click();
-  await page.getByPlaceholder('Søk etter øvelse').fill('sidehev');
+  await page.getByPlaceholder('Søk blant øvelser').fill('sidehev');
   await page.getByRole('checkbox', { name: /^Sidehev Skuldre/ }).click();
   await shot('flervalg');
   await btn('Legg til (2)').click();
@@ -213,7 +213,7 @@ try {
   await page.locator('#past-date').fill(isoDay(8));
   await btn('Start registrering').click();
   await btn('Legg til øvelse').click();
-  await page.getByPlaceholder('Søk etter øvelse').fill('benk');
+  await page.getByPlaceholder('Søk blant øvelser').fill('benk');
   await page.getByRole('checkbox', { name: /^Benkpress Bryst/ }).click();
   await btn('Legg til (1)').click();
   await logSet(1, 60, 10);
@@ -252,6 +252,78 @@ try {
   await page.getByLabel('Passord').fill('Sterkt-passord-2026');
   await page.locator('form').getByRole('button', { name: 'Logg inn' }).click();
   await page.getByRole('img', { name: '2 av 3 økter denne uka' }).waitFor();
+
+  // 10b. Fremgangsmåte, favoritt, tid og kondisjon, bytt øvelse
+  await btn('Start økt').click();
+  await btn(/^Tom økt/).click();
+  await btn('Legg til øvelse').click();
+  await page.getByPlaceholder('Søk blant øvelser').fill('planke');
+  await btn('Slik gjør du: Planke').click();
+  await page.getByText('Støtt deg på underarmene og tærne.').waitFor();
+  await btn('Legg til i favoritter').click();
+  await btn('Fjern fra favoritter').waitFor();
+  await shot('fremgangsmate');
+  await dialog().last().getByRole('button', { name: 'Lukk' }).last().click();
+  await page.getByRole('checkbox', { name: /^Planke Mage/ }).click();
+  await page.getByPlaceholder('Søk blant øvelser').fill('tredem');
+  await page.getByRole('checkbox', { name: /^Tredemølle Kondisjon/ }).click();
+  await btn('Legg til (2)').click();
+  await page.getByRole('heading', { name: 'Tredemølle' }).waitFor();
+  await page.getByText('Sek', { exact: true }).waitFor();
+  await page.getByText('Km', { exact: true }).waitFor();
+
+  // Planke med stoppeklokke: start, vent, stopp → settet er fullført med sekundene fylt inn
+  await btn('Start tidtaking set 1').click();
+  await page.waitForTimeout(1300);
+  await btn('Stopp tidtaking set 1').click();
+  await btn('Angre set 1').first().waitFor();
+  const secs = Number(await page.getByLabel('Sekunder set 1').inputValue());
+  assert.ok(secs >= 1, `stoppeklokka fylte inn ${secs} sekunder`);
+
+  // Tredemølle: km og minutter
+  await page.getByLabel('Distanse set 1 (Km)').fill('5');
+  await page.getByLabel('Minutter set 1').fill('30');
+  await page.getByLabel('Minutter set 1').blur();
+  await btn('Fullfør set 1').click();
+  await shot('tid-og-kondisjon');
+
+  // Bytt øvelse: Tredemølle har ett fullført set, så de uferdige flyttes til Romaskin
+  await btn('Valg for øvelse').last().click();
+  await btn('Bytt øvelse').click();
+  await page.getByPlaceholder('Søk blant øvelser').fill('romask');
+  await btn(/^Romaskin Kondisjon/).click();
+  await page.getByRole('heading', { name: 'Romaskin' }).waitFor();
+  await page.getByRole('heading', { name: 'Tredemølle' }).waitFor();
+
+  // Favoritter står først i velgeren
+  await btn('Legg til øvelse').click();
+  await page.getByText('★ Favoritter').waitFor();
+  await shot('velger-favoritter');
+
+  // Egen øvelse: lag, rediger og slett med angre
+  await btn(/^Lag ny øvelse/).click();
+  await page.locator('#new-exercise-name').fill('Sledgehammer');
+  await btn('Kondisjon', { exact: true }).first().click();
+  await btn('Lagre og velg').click();
+  await btn('Legg til (1)').click();
+  await page.getByRole('heading', { name: 'Sledgehammer' }).waitFor();
+  await btn('Slik gjør du').last().click();
+  await page.getByText('Dette er en egen øvelse').waitFor();
+  await btn('Rekorder og grafer').click();
+  await btn('Rediger øvelse').click();
+  await page.locator('#new-exercise-name').fill('Slegge');
+  await btn('Lagre endringer').click();
+  await page.getByRole('heading', { name: 'Slegge', level: 1 }).waitFor();
+  await btn('Rediger øvelse').click();
+  await btn('Slett øvelse').click();
+  await page.getByText('Slegge er slettet').waitFor();
+  await btn('Angre', { exact: true }).click();
+  await page.waitForTimeout(300);
+
+  // Avslutt økta
+  await page.getByRole('navigation').getByRole('button', { name: 'Fortsett økt' }).click();
+  await finish();
+  await btn('Ferdig').click();
 
   // 11. Konto nr. 2 ser ingen data fra konto 1
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();

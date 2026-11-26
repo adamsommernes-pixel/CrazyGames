@@ -239,7 +239,7 @@ export function ExercisePicker({
           </Button>
 
           {!single && (
-            <div className="sticky bottom-0 -mx-4 mt-4 bg-gradient-to-t from-surface via-surface to-transparent px-4 pt-4">
+            <div className="sticky bottom-0 z-20 -mx-4 mt-4 bg-gradient-to-t from-surface via-surface to-transparent px-4 pt-4">
               <Button full className="min-h-14 text-lg" disabled={!selected.length} onClick={confirm}>
                 {selected.length ? `Legg til (${selected.length})` : 'Velg øvelser'}
               </Button>

@@ -4,6 +4,7 @@ import { TEMPLATES, pickTemplate } from './templates';
 import type { Goal } from './types';
 import { getSetting } from '../lib/settings';
 import { defaultWorkoutName } from '../lib/format';
+import { kindOf } from '../lib/kinds';
 
 /** Markerer en rad som endret, så den blir med i neste synk. */
 function touched<T extends object>(row: T): T & { updated_at: string; dirty: 1 } {
@@ -661,7 +662,8 @@ export async function createStarterRoutines(goal: Goal, perWeek: number): Promis
       r.exercises.map(([exercise_id, accessory]) => ({
         exercise_id,
         target_sets: accessory ? 3 : scheme.sets,
-        target_reps: accessory ? Math.max(scheme.reps, 10) : scheme.reps,
+        // Tidsøvelser (planke) har mål i sekunder, ikke reps.
+        target_reps: kindOf(exercise_id) === 'time' ? 45 : accessory ? Math.max(scheme.reps, 10) : scheme.reps,
         rest_seconds: accessory ? Math.min(scheme.rest, 90) : scheme.rest,
       })),
     );

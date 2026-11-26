@@ -3,10 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { db } from '../../db/dexie';
 import { deleteRoutine, duplicateRoutine, restore, routineItems, saveRoutine, type RoutineDraftItem } from '../../db/repo';
 import { showToast, undoToast } from '../../components/toast';
+import type { ExerciseKind } from '../../db/types';
 import { Button, Card, IconButton, NumberStepper, Page, inputClass } from '../../components/ui';
 import { ExercisePicker, useExerciseMap } from '../workout/ExercisePicker';
 import { getSetting } from '../../lib/settings';
 import { duration } from '../../lib/format';
+
+const targetLabel = (kind?: ExerciseKind) => (kind === 'time' ? 'Sekunder' : kind === 'cardio' ? 'Minutter' : 'Reps');
 
 export function RoutineEditor() {
   const { id } = useParams();
@@ -84,8 +87,15 @@ export function RoutineEditor() {
                 <NumberStepper label="Sets" value={it.target_sets} min={1} max={20} onChange={(v) => update(i, { target_sets: v })} />
               </div>
               <div>
-                <div className="mb-1 text-muted">Reps</div>
-                <NumberStepper label="Reps" value={it.target_reps} min={1} max={100} onChange={(v) => update(i, { target_reps: v })} />
+                <div className="mb-1 text-muted">{targetLabel(exMap.get(it.exercise_id)?.kind)}</div>
+                <NumberStepper
+                  label={targetLabel(exMap.get(it.exercise_id)?.kind)}
+                  value={it.target_reps}
+                  min={1}
+                  max={exMap.get(it.exercise_id)?.kind === 'time' ? 600 : 100}
+                  step={exMap.get(it.exercise_id)?.kind === 'time' ? 5 : 1}
+                  onChange={(v) => update(i, { target_reps: v })}
+                />
               </div>
               <div className="col-span-2">
                 <div className="mb-1 text-muted">Hvile</div>
