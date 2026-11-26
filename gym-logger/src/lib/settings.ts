@@ -13,6 +13,8 @@ export interface Settings {
   plates: number[];
   sound: boolean;
   haptics: boolean;
+  /** Hold skjermen på mens en økt pågår. */
+  keepAwake: boolean;
 }
 
 export const DEFAULTS: Settings = {
@@ -23,6 +25,7 @@ export const DEFAULTS: Settings = {
   plates: [25, 20, 15, 10, 5, 2.5, 1.25],
   sound: true,
   haptics: true,
+  keepAwake: true,
 };
 
 export async function getSetting<K extends keyof Settings>(key: K): Promise<Settings[K]> {

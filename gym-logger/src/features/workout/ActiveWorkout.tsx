@@ -15,6 +15,7 @@ import { Button, EmptyState, Page, Sheet, Stat, inputClass } from '../../compone
 import { ExerciseCard } from './ExerciseCard';
 import { ExercisePicker, useExerciseMap } from './ExercisePicker';
 import { stopRest, useNow } from './restTimer';
+import { useWakeLock } from './useWakeLock';
 import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
 import { duration, num, toDisplay } from '../../lib/format';
@@ -27,6 +28,8 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
   const exMap = useExerciseMap();
   const prMap = usePRMap();
   const now = useNow(1000);
+  const keepAwake = useSetting('keepAwake');
+  useWakeLock(keepAwake);
   const wes = useLiveQuery(() => workoutExercises(workout.id), [workout.id], []);
   const sets = useLiveQuery(() => setsForWorkout(workout.id), [workout.id], []);
   const [picker, setPicker] = useState(false);
@@ -103,7 +106,13 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
         Legg til øvelse
       </Button>
 
-      <ExercisePicker open={picker} onClose={() => setPicker(false)} onPick={(id) => void addExerciseToWorkout(workout.id, id)} />
+      <ExercisePicker
+        open={picker}
+        onClose={() => setPicker(false)}
+        onPick={async (ids) => {
+          for (const id of ids) await addExerciseToWorkout(workout.id, id);
+        }}
+      />
 
       <Sheet open={finishing} onClose={() => setFinishing(false)} title="Avslutt økt">
         {doneSets.length === 0 ? (

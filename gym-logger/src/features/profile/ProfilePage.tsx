@@ -246,6 +246,7 @@ function SettingsSection() {
   const plates = useSetting('plates');
   const sound = useSetting('sound');
   const haptics = useSetting('haptics');
+  const keepAwake = useSetting('keepAwake');
   return (
     <Card className="flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between gap-3">
@@ -279,6 +280,7 @@ function SettingsSection() {
       </div>
       <Toggle label="Lyd når hvilen er over" checked={sound} onChange={(v) => void setSetting('sound', v)} />
       <Toggle label="Vibrasjon (Android)" checked={haptics} onChange={(v) => void setSetting('haptics', v)} />
+      <Toggle label="Hold skjermen på under økt" checked={keepAwake} onChange={(v) => void setSetting('keepAwake', v)} />
     </Card>
   );
 }

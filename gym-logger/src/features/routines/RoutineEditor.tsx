@@ -127,9 +127,9 @@ export function RoutineEditor() {
       <ExercisePicker
         open={picker}
         onClose={() => setPicker(false)}
-        onPick={async (exercise_id) => {
+        onPick={async (ids) => {
           const rest = await getSetting('defaultRest');
-          setItems((l) => [...l, { exercise_id, target_sets: 3, target_reps: 10, rest_seconds: rest }]);
+          setItems((l) => [...l, ...ids.map((exercise_id) => ({ exercise_id, target_sets: 3, target_reps: 10, rest_seconds: rest }))]);
         }}
       />
     </Page>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { WorkoutSet } from '../../db/types';
 import { SET_TYPE_SHORT } from '../../db/types';
 import { toggleSetDone, updateSet } from '../../db/repo';
@@ -15,49 +15,82 @@ const TYPE_COLOR: Record<WorkoutSet['set_type'], string> = {
   failure: 'text-danger',
 };
 
-/** Felt som holder egen tekst mens du skriver, og lagrer når du forlater feltet. */
+/**
+ * Felt som holder egen tekst mens du skriver, og lagrer når du forlater feltet.
+ * Enter kaller `onEnter` med verdien (som da lagres der, ikke ved blur).
+ */
 function NumField({
   value,
   onCommit,
+  onEnter,
   label,
   decimal,
   done,
+  field,
+  placeholder = '0',
 }: {
   value: number;
   onCommit: (v: number) => void;
+  onEnter: (v: number, el: HTMLInputElement) => void;
   label: string;
   decimal?: boolean;
   done: boolean;
+  field: 'weight' | 'reps';
+  placeholder?: string;
 }) {
   const show = (v: number) => (v ? num(v, 2) : '');
   const [text, setText] = useState(show(value));
   const [focused, setFocused] = useState(false);
+  // Satt når Enter har tatt seg av lagringen, så blur ikke lagrer en gang til.
+  const handled = useRef(false);
   useEffect(() => {
     if (!focused) setText(show(value));
   }, [value, focused]);
   return (
     <input
       aria-label={label}
+      data-field={field}
       inputMode={decimal ? 'decimal' : 'numeric'}
-      enterKeyHint="done"
-      className={`font-num h-12 w-full min-w-0 rounded-xl border text-center text-xl font-bold outline-none transition-colors focus:border-green focus:bg-bg ${
+      enterKeyHint={field === 'weight' ? 'next' : 'done'}
+      className={`font-num h-12 w-full min-w-0 rounded-xl border text-center text-xl font-bold outline-none transition-colors placeholder:text-sm placeholder:font-medium placeholder:text-faint focus:border-green focus:bg-bg ${
         done ? 'border-transparent bg-green-dim/50 text-green-light' : 'border-line bg-raised'
       }`}
       value={text}
-      placeholder="0"
+      placeholder={placeholder}
       onFocus={(e) => {
         setFocused(true);
+        handled.current = false;
         e.currentTarget.select();
       }}
       onChange={(e) => setText(e.target.value)}
       onBlur={() => {
         setFocused(false);
+        if (handled.current) return;
         const v = parseNum(text);
         if (v !== value) onCommit(Math.max(0, v));
       }}
-      onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        handled.current = true;
+        onEnter(Math.max(0, parseNum(text)), e.currentTarget);
+      }}
     />
   );
+}
+
+/** Flytter fokus til vektfeltet i neste uferdige set (i hele økta). */
+function focusNextSet(from: HTMLElement) {
+  const rows = [...document.querySelectorAll<HTMLElement>('[data-set-row]')];
+  const i = rows.indexOf(from.closest('[data-set-row]') as HTMLElement);
+  const next = rows.slice(i + 1).find((r) => r.dataset.done !== '1');
+  const input = next?.querySelector<HTMLInputElement>('[data-field="weight"]');
+  if (input) {
+    input.focus();
+    input.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  } else {
+    from.blur();
+  }
 }
 
 export const SET_GRID = 'grid grid-cols-[2.25rem_minmax(0,1fr)_4.75rem_4rem_3.25rem] items-center gap-2';
@@ -70,6 +103,7 @@ export function SetRow({
   prs,
   onCompleted,
   onMenu,
+  targetReps,
 }: {
   set: WorkoutSet;
   /** Nummer for vanlige sets. */
@@ -79,12 +113,20 @@ export function SetRow({
   prs?: PRKind[];
   onCompleted: () => void;
   onMenu: () => void;
+  /** Mål-reps fra rutinen, vist som hint i et tomt reps-felt. */
+  targetReps?: number | null;
 }) {
   const done = !!set.completed_at;
+  const complete = async () => {
+    if (await toggleSetDone(set.id)) {
+      void buzz(20);
+      onCompleted();
+    }
+  };
   const prevLabel = previous ? `${num(toDisplay(previous.weight, unit))} × ${previous.reps}` : '–';
   const short = SET_TYPE_SHORT[set.set_type];
   return (
-    <div className={`rounded-2xl transition-colors ${done ? 'bg-green-dim/25' : ''}`}>
+    <div className={`rounded-2xl transition-colors ${done ? 'bg-green-dim/25' : ''}`} data-set-row data-done={done ? '1' : '0'}>
       <div className={`${SET_GRID} px-1 py-1`}>
         <button
           type="button"
@@ -104,23 +146,36 @@ export function SetRow({
         </button>
         <NumField
           label={`Vekt set ${label} (${unit})`}
+          field="weight"
           decimal
           done={done}
           value={toDisplay(set.weight, unit)}
           onCommit={(v) => void updateSet(set.id, { weight: fromDisplay(v, unit) })}
+          onEnter={(v, el) => {
+            if (v !== toDisplay(set.weight, unit)) void updateSet(set.id, { weight: fromDisplay(v, unit) });
+            el.closest('[data-set-row]')?.querySelector<HTMLInputElement>('[data-field="reps"]')?.focus();
+          }}
         />
-        <NumField label={`Reps set ${label}`} done={done} value={set.reps} onCommit={(v) => void updateSet(set.id, { reps: Math.round(v) })} />
+        <NumField
+          label={`Reps set ${label}`}
+          field="reps"
+          done={done}
+          value={set.reps}
+          placeholder={targetReps ? `mål ${targetReps}` : '0'}
+          onCommit={(v) => void updateSet(set.id, { reps: Math.round(v) })}
+          onEnter={async (v, el) => {
+            // Lagre først, så fullføre: rekkefølgen hindrer at fullføringen overskriver reps.
+            if (Math.round(v) !== set.reps) await updateSet(set.id, { reps: Math.round(v) });
+            if (!done) await complete();
+            focusNextSet(el);
+          }}
+        />
         <button
           type="button"
           aria-label={done ? `Angre set ${label}` : `Fullfør set ${label}`}
           aria-pressed={done}
           className={`grid h-12 w-[3.25rem] place-items-center rounded-xl transition ${done ? 'animate-pop bg-green text-black shadow-glow' : 'border border-line bg-raised text-faint active:bg-line'}`}
-          onClick={async () => {
-            if (await toggleSetDone(set.id)) {
-              void buzz(20);
-              onCompleted();
-            }
-          }}
+          onClick={() => void complete()}
         >
           <Icon name="check" strokeWidth={3} />
         </button>
