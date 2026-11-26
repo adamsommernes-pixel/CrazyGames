@@ -18,6 +18,7 @@ import { Avatar, PasswordField } from '../../components/widgets';
 import { Icon, type IconName } from '../../components/Icon';
 import { askConfirm } from '../../components/confirm';
 import { InstallHint } from './InstallHint';
+import { TrainingCard } from './TrainingCard';
 import { LanguageToggle } from '../../components/LanguageToggle';
 import { locale, t } from '../../i18n';
 
@@ -58,6 +59,9 @@ export function ProfilePage() {
         <BigStat icon="trophy" label={t('Rekorder', 'Records')} value={num(prMap.size, 0)} />
         <BigStat icon="flame" label={t('Lengste streak (uker)', 'Longest streak (weeks)')} value={num(stats?.longest ?? 0, 0)} />
       </div>
+
+      <SectionTitle>{t('Treningen din', 'Your training')}</SectionTitle>
+      <TrainingCard />
 
       <InstallHint />
 

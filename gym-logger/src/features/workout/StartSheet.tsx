@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/dexie';
 import { getActiveWorkout, nextRoutine, repeatWorkout, routineItems, startWorkout } from '../../db/repo';
-import { Button, Card, Sheet, SectionTitle, inputClass } from '../../components/ui';
+import { Button, Card, Sheet, inputClass } from '../../components/ui';
 import { Icon } from '../../components/Icon';
 import { useExerciseMap } from './ExercisePicker';
 import { exerciseName } from '../../lib/exerciseName';
@@ -46,27 +46,10 @@ export function StartSheet() {
 
   return (
     <Sheet open={isOpen} onClose={() => set(false)} title={t('Start økt', 'Start workout')}>
-      <div className="flex flex-col gap-2">
-        <button type="button" onClick={() => void go(() => startWorkout())} className="flex min-h-16 items-center gap-3 rounded-2xl bg-green px-4 text-left font-semibold text-black shadow-glow active:scale-[0.99]">
-          <Icon name="plus" size={24} strokeWidth={2.6} />
-          <span className="flex-1 text-lg">{t('Tom økt', 'Empty workout')}</span>
-        </button>
-        {data?.last && (
-          <button type="button" onClick={() => void go(() => repeatWorkout(data.last!.id))} className="card flex min-h-14 items-center gap-3 rounded-2xl px-4 text-left active:bg-raised">
-            <Icon name="repeat" className="text-green" />
-            <span className="flex-1">
-              <span className="block font-semibold">{t('Gjenta forrige', 'Repeat last')}</span>
-              <span className="block text-sm text-muted">
-                {data.last.name} · {dateShort(data.last.started_at)}
-              </span>
-            </span>
-          </button>
-        )}
-      </div>
       {data && data.routines.length > 0 && (
         <>
-          <SectionTitle>{t('Rutiner', 'Routines')}</SectionTitle>
-          <ul className="flex flex-col gap-2">
+          <h3 className="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{t('Dine rutiner', 'Your routines')}</h3>
+          <ul className="mb-5 flex flex-col gap-2">
             {data.routines.map(({ r, items }) => (
               <li key={r.id}>
                 <button type="button" className="w-full text-left" disabled={!items.length} onClick={() => void go(() => startWorkout({ routineId: r.id }))}>
@@ -86,10 +69,32 @@ export function StartSheet() {
           </ul>
         </>
       )}
+      <div className="flex flex-col gap-2">
+        <button type="button" onClick={() => void go(() => startWorkout())} className="flex min-h-16 items-center gap-3 rounded-2xl bg-green px-4 text-left font-semibold text-black shadow-glow active:scale-[0.99]">
+          <Icon name="plus" size={24} strokeWidth={2.6} />
+          <span className="flex-1 text-lg">{t('Tom økt', 'Empty workout')}</span>
+        </button>
+        {data?.last && (
+          <button type="button" onClick={() => void go(() => repeatWorkout(data.last!.id))} className="card flex min-h-14 items-center gap-3 rounded-2xl px-4 text-left active:bg-raised">
+            <Icon name="repeat" className="text-green" />
+            <span className="flex-1">
+              <span className="block font-semibold">{t('Gjenta forrige', 'Repeat last')}</span>
+              <span className="block text-sm text-muted">
+                {data.last.name} · {dateShort(data.last.started_at)}
+              </span>
+            </span>
+          </button>
+        )}
+      </div>
       <PastWorkout onStart={(startedAt) => void go(() => startWorkout({ startedAt }))} />
-      <button type="button" className="mt-2 w-full py-3 text-center font-medium text-green" onClick={() => { set(false); navigate('/routines'); }}>
-        {t('Administrer rutiner', 'Manage routines')}
-      </button>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <button type="button" className="py-3 text-center font-medium text-green" onClick={() => { set(false); navigate('/routines'); }}>
+          {t('Administrer rutiner', 'Manage routines')}
+        </button>
+        <button type="button" className="py-3 text-center font-medium text-green" onClick={() => { set(false); navigate('/programs'); }}>
+          {t('Finn et program', 'Find a program')}
+        </button>
+      </div>
     </Sheet>
   );
 }

@@ -236,3 +236,11 @@ revoke all on
   public.exercises, public.routines, public.routine_exercises, public.workouts,
   public.workout_exercises, public.sets, public.profiles, public.bodyweights
   from anon;
+
+-- ============================================================
+-- 008_routine_source.sql
+-- ============================================================
+
+-- Repgrade: hvilket program en rutine kom fra («program:<id>»). null = brukerens egen rutine.
+-- Brukes for å erstatte gamle startrutiner trygt når man bytter program.
+alter table public.routines add column if not exists source text;

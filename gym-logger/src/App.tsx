@@ -31,6 +31,7 @@ import { ProfilePage } from './features/profile/ProfilePage';
 import { EditProfile } from './features/profile/EditProfile';
 import { BodyweightPage } from './features/bodyweight/BodyweightPage';
 import { LevelPage } from './features/level/LevelPage';
+import { ProgramsPage } from './features/routines/ProgramsPage';
 import { PrivacyPage } from './features/legal/PrivacyPage';
 
 // Grafbiblioteket er stort, så sider med grafer lastes først når de åpnes.
@@ -140,6 +141,7 @@ function SignedIn({ user }: { user: AuthUser }) {
         />
         <Route path="/bodyweight" element={<BodyweightPage />} />
         <Route path="/level" element={<LevelPage />} />
+        <Route path="/programs" element={<ProgramsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/edit" element={<EditProfile />} />

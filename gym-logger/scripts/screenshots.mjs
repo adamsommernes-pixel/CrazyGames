@@ -82,6 +82,7 @@ for (const lang of ['nb', 'en']) {
   await page.locator('#ob-bodyweight').fill('80');
   await btn(T('Mann', 'Male'), { exact: true }).click();
   await btn(T('Fortsett', 'Continue')).click();
+  await page.getByRole('radio', { name: T(/^Fullkropp A\/B /, /^Full body A\/B /) }).click();
   await btn(T('Start å trene', 'Start training')).click();
 
   // Les inn demodataene

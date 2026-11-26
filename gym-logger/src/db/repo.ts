@@ -1,6 +1,7 @@
 import { db, now, uuid } from './dexie';
 import type { Bodyweight, Exercise, Profile, Routine, RoutineExercise, SetType, Workout, WorkoutExercise, WorkoutSet } from './types';
-import { TEMPLATES, pickTemplate } from './templates';
+import { TEMPLATES } from './templates';
+import { programById, recommendedProgramId, schemeFor } from './programs';
 import type { Goal } from './types';
 import { getSetting } from '../lib/settings';
 import { defaultWorkoutName } from '../lib/format';
@@ -502,14 +503,15 @@ export interface RoutineDraftItem {
 }
 
 export async function saveRoutine(
-  routine: { id?: string; name: string; notes: string },
+  routine: { id?: string; name: string; notes: string; source?: string | null },
   items: RoutineDraftItem[],
 ): Promise<string> {
   const id = routine.id ?? uuid();
   await db.transaction('rw', db.routines, db.routine_exercises, async () => {
     const prev = await db.routines.get(id);
     await db.routines.put(
-      touched<Routine>({ ...(prev ?? { deleted: 0 }), id, name: routine.name, notes: routine.notes, updated_at: '', dirty: 1 }),
+      // Lagres rutinen uten source (f.eks. fra redigering), blir den brukerens egen.
+      touched<Routine>({ ...(prev ?? { deleted: 0 }), id, name: routine.name, notes: routine.notes, source: routine.source ?? null, updated_at: '', dirty: 1 }),
     );
     const old = await routineItems(id);
     const keep = new Set(items.map((i) => i.id).filter(Boolean));
@@ -654,12 +656,44 @@ export async function deleteBodyweight(id: string): Promise<Removed> {
 // ---------- Startrutiner ----------
 
 /** Lager ferdige rutiner tilpasset mål og antall økter per uke. */
-export async function createStarterRoutines(goal: Goal, perWeek: number): Promise<number> {
-  const key = pickTemplate(perWeek);
-  const scheme = goal === 'strength' ? { sets: 5, reps: 5, rest: 180 } : goal === 'endurance' ? { sets: 3, reps: 15, rest: 60 } : goal === 'general' ? { sets: 3, reps: 10, rest: 90 } : { sets: 3, reps: 10, rest: 120 };
-  for (const r of TEMPLATES[key]) {
+/** KV-nøkkel: brukeren har sett/valgt de nye programmene (skjuler banneret på Hjem). */
+export const PROGRAMS_SEEN_KEY = 'programs-v2-seen';
+
+const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+
+/**
+ * Rutiner som trygt kan erstattes av et nytt program: rutiner fra programbiblioteket som ikke er
+ * endret, og gamle startrutiner (laget før programbiblioteket) med uendrede øvelser. Egne rutiner aldri.
+ */
+export async function replaceableRoutines(): Promise<Routine[]> {
+  const routines = alive(await db.routines.toArray());
+  const legacy = Object.values(TEMPLATES).flat().map((tpl) => tpl.exercises.map(([id]) => id));
+  const out: Routine[] = [];
+  for (const r of routines) {
+    if (r.source?.startsWith('program:')) {
+      out.push(r);
+      continue;
+    }
+    if (r.source === undefined) {
+      const ids = (await routineItems(r.id)).map((i) => i.exercise_id);
+      if (legacy.some((l) => sameList(l, ids))) out.push(r);
+    }
+  }
+  return out;
+}
+
+/**
+ * Lager rutinene i et program. «replace» sletter først rutinene fra `replaceableRoutines`
+ * (egne rutiner beholdes alltid). Returnerer antall nye rutiner.
+ */
+export async function applyProgram(programId: string, goal: Goal, mode: 'add' | 'replace' = 'add'): Promise<number> {
+  const program = programById(programId);
+  if (!program) return 0;
+  if (mode === 'replace') for (const r of await replaceableRoutines()) await deleteRoutine(r.id);
+  const scheme = schemeFor(goal);
+  for (const r of program.routines) {
     await saveRoutine(
-      { name: r.name, notes: '' },
+      { name: r.name, notes: '', source: `program:${program.id}` },
       r.exercises.map(([exercise_id, accessory]) => ({
         exercise_id,
         target_sets: accessory ? 3 : scheme.sets,
@@ -669,7 +703,13 @@ export async function createStarterRoutines(goal: Goal, perWeek: number): Promis
       })),
     );
   }
-  return TEMPLATES[key].length;
+  await db.kv.put({ key: PROGRAMS_SEEN_KEY, value: new Date().toISOString() });
+  return program.routines.length;
+}
+
+/** Startrutiner ved oppstart: det anbefalte programmet for antall dager. */
+export async function createStarterRoutines(goal: Goal, perWeek: number): Promise<number> {
+  return applyProgram(recommendedProgramId(perWeek, 'beginner', goal), goal);
 }
 
 /** Rutinen som står for tur: den som er brukt minst nylig. */
