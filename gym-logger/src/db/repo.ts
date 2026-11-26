@@ -86,10 +86,19 @@ export async function repeatWorkout(workoutId: string): Promise<string> {
   const active = await getActiveWorkout();
   if (active) return active.id;
   const id = await startWorkout({ name: old?.name ?? defaultWorkoutName() });
+  // Samme rutinekobling, så «forrige gang» og rutineoppdatering virker også ved gjentakelse.
+  if (old?.routine_id) {
+    const w = await db.workouts.get(id);
+    if (w) await db.workouts.put(touched({ ...w, routine_id: old.routine_id }));
+  }
   const sets = await setsForWorkout(workoutId);
   for (const we of await workoutExercises(workoutId)) {
-    const n = sets.filter((s) => s.workout_exercise_id === we.id && s.completed_at).length;
-    await addExerciseToWorkout(id, we.exercise_id, { restSeconds: we.rest_seconds, sets: Math.max(n, 1) });
+    const n = sets.filter((s) => s.workout_exercise_id === we.id && s.completed_at && s.set_type !== 'warmup').length;
+    await addExerciseToWorkout(id, we.exercise_id, {
+      restSeconds: we.rest_seconds,
+      sets: Math.max(n, 1),
+      reps: we.target_reps ?? undefined,
+    });
   }
   return id;
 }
@@ -110,6 +119,7 @@ export async function addExerciseToWorkout(
       position: existing.length ? Math.max(...existing.map((e) => e.position)) + 1 : 0,
       rest_seconds: rest,
       notes: '',
+      target_reps: opts.reps ?? null,
       deleted: 0,
       updated_at: '',
       dirty: 1,
@@ -183,6 +193,41 @@ export async function toggleSetDone(id: string): Promise<boolean> {
     await db.sets.bulkPut(later.map((x) => touched({ ...x, weight: s.weight, reps: x.reps || s.reps })));
   }
   return completing;
+}
+
+/** Setter samme vekt (kg) på alle uferdige arbeidssett i øvelsen, f.eks. fra et progresjonsforslag. */
+export async function applyWeightToPending(weId: string, weightKg: number) {
+  const pending = alive(await db.sets.where('workout_exercise_id').equals(weId).toArray()).filter(
+    (s) => !s.completed_at && s.set_type !== 'warmup',
+  );
+  await db.sets.bulkPut(pending.map((s) => touched({ ...s, weight: weightKg })));
+}
+
+/** Legger oppvarmingssett først i øvelsen. Eksisterende sets flyttes ned. */
+export async function addWarmupSets(we: WorkoutExercise, warmups: { weight: number; reps: number }[]) {
+  if (!warmups.length) return;
+  await db.transaction('rw', db.sets, async () => {
+    const existing = alive(await db.sets.where('workout_exercise_id').equals(we.id).toArray());
+    await db.sets.bulkPut(existing.map((s) => touched({ ...s, position: s.position + warmups.length })));
+    await db.sets.bulkAdd(
+      warmups.map((w, i) =>
+        touched<WorkoutSet>({
+          id: uuid(),
+          workout_exercise_id: we.id,
+          workout_id: we.workout_id,
+          exercise_id: we.exercise_id,
+          position: i,
+          weight: w.weight,
+          reps: w.reps,
+          set_type: 'warmup',
+          completed_at: null,
+          deleted: 0,
+          updated_at: '',
+          dirty: 1,
+        }),
+      ),
+    );
+  });
 }
 
 /** Hvilke rader en sletting markerte som slettet, så den kan angres nøyaktig. */

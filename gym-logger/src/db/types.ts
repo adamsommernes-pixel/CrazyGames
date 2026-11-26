@@ -64,6 +64,8 @@ export interface WorkoutExercise extends Row {
   position: number;
   rest_seconds: number;
   notes: string;
+  /** Mål-reps fra rutinen økta ble startet fra (null for egne øvelser). */
+  target_reps?: number | null;
 }
 
 export interface WorkoutSet extends Row {

@@ -5,6 +5,8 @@ import type { Exercise, WorkoutExercise, WorkoutSet } from '../../db/types';
 import { SET_TYPES, SET_TYPE_LABEL } from '../../db/types';
 import {
   addSet,
+  addWarmupSets,
+  applyWeightToPending,
   deleteSet,
   lastPerformance,
   moveWorkoutExercise,
@@ -15,6 +17,7 @@ import {
   updateSet,
 } from '../../db/repo';
 import type { PRKind } from '../../lib/calc';
+import { stepFor, suggestNext, warmupSets } from '../../lib/progression';
 import { ActionList, Button, Card, Chip, IconButton, NumberStepper, Sheet } from '../../components/ui';
 import { PlateCalculator } from '../../components/PlateCalculator';
 import { undoToast } from '../../components/toast';
@@ -70,6 +73,17 @@ export function ExerciseCard({
   };
   const barbell = exercise?.equipment === 'Stang';
   const doneCount = sorted.filter((s) => s.completed_at).length;
+  const pendingWork = sorted.filter((s) => !s.completed_at && s.set_type !== 'warmup');
+  const workSetCount = sorted.filter((s) => s.set_type !== 'warmup').length;
+
+  // Progresjon: nådde du målet på alle sett sist, foreslås ett steg tyngre.
+  const suggestion = suggestNext(previous, we.target_reps, stepFor(exercise?.equipment, unit));
+  const showSuggestion = suggestion !== null && pendingWork.length > 0 && pendingWork.some((s) => Math.abs(s.weight - suggestion) > 0.001);
+
+  // Oppvarming: bare for stang, og bare før første arbeidssett er gjort.
+  const firstWork = sorted.find((s) => s.set_type !== 'warmup' && s.weight > 0);
+  const hasWarmups = sorted.some((s) => s.set_type === 'warmup');
+  const warmups = barbell && firstWork && !firstWork.completed_at && !hasWarmups ? warmupSets(firstWork.weight, barWeight, plates) : [];
 
   let workIndex = 0;
   let label = 0;
@@ -80,7 +94,8 @@ export function ExerciseCard({
         <button type="button" className="min-w-0 flex-1 text-left" onClick={() => navigate(`/exercise/${we.exercise_id}`)}>
           <h2 className="truncate text-lg font-bold text-green">{exercise?.name ?? 'Ukjent øvelse'}</h2>
           <p className="font-num text-xs text-faint">
-            {doneCount}/{sorted.length} sets · hvile {duration(we.rest_seconds * 1000)}
+            {doneCount}/{sorted.length} sets
+            {we.target_reps ? ` · mål ${workSetCount} × ${we.target_reps}` : ''} · hvile {duration(we.rest_seconds * 1000)}
           </p>
         </button>
         {barbell && <IconButton icon="plates" label="Platekalkulator" onClick={openPlates} />}
@@ -97,6 +112,23 @@ export function ExerciseCard({
           onChange={(e) => setNotes(e.target.value)}
           onBlur={() => notes !== we.notes && void setExerciseNotes(we.id, notes)}
         />
+      )}
+
+      {showSuggestion && (
+        <button
+          type="button"
+          onClick={() => void applyWeightToPending(we.id, suggestion)}
+          className="mb-2 flex w-full items-center gap-2 rounded-xl border border-green/40 bg-green-dim/30 px-3 py-2 text-left text-sm active:bg-green-dim/50"
+        >
+          <Icon name="sparkle" size={16} className="shrink-0 text-green" />
+          <span className="flex-1">
+            Du klarte målet sist. Forslag:{' '}
+            <span className="font-num font-bold text-green-light">
+              {num(toDisplay(suggestion, unit))} {unit}
+            </span>
+          </span>
+          <span className="font-semibold text-green">Bruk</span>
+        </button>
       )}
 
       <div className={`${SET_GRID} px-1 pb-1 text-[11px] font-semibold tracking-wide text-faint uppercase`}>
@@ -119,6 +151,7 @@ export function ExerciseCard({
               previous={prev}
               unit={unit}
               prs={prMap.get(s.id)}
+              targetReps={s.set_type === 'warmup' ? null : we.target_reps}
               onCompleted={() => void startRest(we.rest_seconds)}
               onMenu={() => setEditing(s)}
             />
@@ -132,6 +165,15 @@ export function ExerciseCard({
       <Sheet open={menu} onClose={() => setMenu(false)} title={exercise?.name ?? 'Øvelse'}>
         <ActionList
           actions={[
+            ...(warmups.length
+              ? [
+                  {
+                    label: `Legg til oppvarming (${warmups.map((w) => num(toDisplay(w.weight, unit))).join(' / ')} ${unit})`,
+                    icon: 'flame' as const,
+                    onClick: () => void addWarmupSets(we, warmups).then(() => setMenu(false)),
+                  },
+                ]
+              : []),
             { label: showNotes ? 'Skjul notat' : 'Legg til notat', icon: 'note', onClick: () => { setShowNotes(!showNotes); setMenu(false); } },
             { label: 'Endre hviletid', icon: 'timer', onClick: () => { setMenu(false); openRest(); } },
             ...(barbell ? [] : [{ label: 'Platekalkulator', icon: 'plates' as const, onClick: () => { setMenu(false); openPlates(); } }]),
