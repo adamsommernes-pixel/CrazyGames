@@ -23,6 +23,7 @@ export default function ShareSheet({ workoutId, onClose }: { workoutId: string; 
   const [busy, setBusy] = useState(false);
   const [fullImage, setFullImage] = useState<string | null>(null);
   const canvas = useRef<HTMLCanvasElement | null>(null);
+  const blob = useRef<Blob | null>(null);
 
   useEffect(() => {
     if (!exMap.size || strength === undefined) return;
@@ -32,10 +33,14 @@ export default function ShareSheet({ workoutId, onClose }: { workoutId: string; 
   useEffect(() => {
     if (!data) return;
     let alive = true;
-    void renderCard(data, level, format).then((c) => {
+    blob.current = null;
+    void renderCard(data, level, format).then(async (c) => {
       if (!alive) return;
       canvas.current = c;
       setPreview(c.toDataURL('image/png'));
+      // Lag filen på forhånd: Safari åpner bare delemenyen rett etter et trykk, uten venting.
+      const b = await cardBlob(c);
+      if (alive) blob.current = b;
     });
     return () => {
       alive = false;
@@ -48,8 +53,8 @@ export default function ShareSheet({ workoutId, onClose }: { workoutId: string; 
     if (!canvas.current) return;
     setBusy(true);
     try {
-      const blob = await cardBlob(canvas.current);
-      const file = new File([blob], fileName, { type: 'image/png' });
+      const png = blob.current ?? (await cardBlob(canvas.current));
+      const file = new File([png], fileName, { type: 'image/png' });
       if (navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share({ files: [file], title: data?.name });
@@ -58,7 +63,7 @@ export default function ShareSheet({ workoutId, onClose }: { workoutId: string; 
           if ((e as Error).name === 'AbortError') return;
         }
       }
-      download(blob);
+      void download(png);
     } finally {
       setBusy(false);
     }

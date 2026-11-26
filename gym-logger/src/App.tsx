@@ -79,6 +79,11 @@ function Splash() {
   );
 }
 
+/** Lenken fra bekreftelses-e-posten skal til innlogging; ellers velkomstsiden. Sjekkes ved hver visning. */
+function WelcomeOrConfirmed() {
+  return isConfirmedLanding() ? <Navigate to="/login" replace /> : <Welcome />;
+}
+
 function Gate() {
   const { status, user } = useAuth();
   if (status === 'loading') return <Splash />;
@@ -88,7 +93,7 @@ function Gate() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="*" element={isConfirmedLanding() ? <Navigate to="/login" replace /> : <Welcome />} />
+        <Route path="*" element={<WelcomeOrConfirmed />} />
       </Routes>
     );
   }

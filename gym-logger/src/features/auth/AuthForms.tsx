@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import { AuthError } from '../../auth/types';
@@ -119,7 +119,11 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [reset, setReset] = useState<'idle' | 'sent'>('idle');
-  const confirmed = isConfirmedLanding();
+  // Les markøren én gang og fjern den fra adressen, så den ikke henger igjen etter utlogging.
+  const [confirmed] = useState(isConfirmedLanding);
+  useEffect(() => {
+    if (confirmed) history.replaceState(history.state, '', location.pathname + location.hash);
+  }, [confirmed]);
   const { busy, error, onSubmit } = useSubmit(() => signIn(email, password));
   const forgot = useSubmit(async () => {
     if (!email.trim()) throw new AuthError(t('Skriv inn e-posten din først.', 'Enter your email first.'));
