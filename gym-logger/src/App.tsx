@@ -9,6 +9,7 @@ import { getProfile } from './db/repo';
 import { useAutoSync } from './db/sync';
 import { ConfirmHost } from './components/confirm';
 import { ToastHost } from './components/toast';
+import { LevelHost } from './components/levelUp';
 import { BottomNav } from './components/BottomNav';
 import { Icon } from './components/Icon';
 import { RestTimerBar, unlockAudio } from './features/workout/restTimer';
@@ -123,6 +124,7 @@ function SignedIn({ user }: { user: AuthUser }) {
       </Routes>
       <div className="fixed inset-x-0 bottom-0 z-30">
         <ToastHost />
+        <LevelHost />
         <RestTimerBar />
         <BottomNav />
       </div>

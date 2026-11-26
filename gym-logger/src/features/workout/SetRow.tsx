@@ -1,3 +1,6 @@
+import { useUser } from '../../auth/AuthProvider';
+import { celebrateSet } from '../../lib/strengthLive';
+import { showLevelEvent } from '../../components/levelUp';
 import { useEffect, useRef, useState } from 'react';
 import type { ExerciseKind, WorkoutSet } from '../../db/types';
 import { SET_TYPE_SHORT } from '../../db/types';
@@ -124,6 +127,7 @@ export function SetRow({
   /** Neste set som skal gjøres i økta («du er her»). */
   current?: boolean;
 }) {
+  const user = useUser();
   const done = !!set.completed_at;
   const [timingFrom, setTimingFrom] = useState<number | null>(null);
   const now = useNow(250, timingFrom !== null);
@@ -131,6 +135,7 @@ export function SetRow({
     if (await toggleSetDone(set.id)) {
       void buzz(20);
       onCompleted();
+      void celebrateSet(user.id, set.id, showLevelEvent);
     }
   };
   // Tidsøvelser: tomt set + ✓ starter tidtaking; neste trykk stopper, fyller inn sekundene og fullfører.

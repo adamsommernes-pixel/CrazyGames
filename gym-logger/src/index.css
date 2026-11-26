@@ -142,11 +142,11 @@
 }
 
 @keyframes level-card-in {
-  from { transform: translateY(120%); opacity: 0; }
+  from { transform: translateY(-120%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 @keyframes level-card-out {
-  to { transform: translateY(120%); opacity: 0; }
+  to { transform: translateY(-120%); opacity: 0; }
 }
 @keyframes level-emblem-in {
   0% { transform: scale(0.2) rotate(-25deg); opacity: 0; }
@@ -166,7 +166,7 @@
   50% { transform: scale(1.12); opacity: 0.9; }
 }
 @keyframes level-text-in {
-  from { transform: translateY(16px); opacity: 0; letter-spacing: 0.6em; }
+  from { transform: translateY(16px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 @keyframes level-flash {

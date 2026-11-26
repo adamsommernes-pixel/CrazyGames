@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/dexie';
 import type { Sex, WorkoutSet } from '../db/types';
 import { useUser } from '../auth/AuthProvider';
+import { exerciseName } from './exerciseName';
 import { fallbackBodyweight, levelEventFor, strengthProfile, type LevelEvent, type StrengthProfile } from './strength';
 
 export interface StrengthContext {
@@ -32,9 +33,18 @@ export function useStrength(): (StrengthContext & { profile: StrengthProfile }) 
 }
 
 /** Ser om et nettopp fullført set ga ny beste 1RM på en rangert øvelse. */
-export async function levelEventForSet(userId: string, setId: string): Promise<LevelEvent | null> {
+export async function levelEventForSet(userId: string, setId: string): Promise<{ event: LevelEvent; bw: number } | null> {
   const set = (await db.sets.get(setId)) as WorkoutSet | undefined;
   if (!set || set.deleted || !set.completed_at) return null;
   const ctx = await context(userId);
-  return levelEventFor(set, await workSets(), ctx.bw, ctx.sex);
+  const event = levelEventFor(set, await workSets(), ctx.bw, ctx.sex);
+  return event ? { event, bw: ctx.bw } : null;
+}
+
+/** Viser rekordkortet eller «Nivå opp» hvis settet ga ny beste 1RM på et rangert løft. */
+export async function celebrateSet(userId: string, setId: string, show: (ev: LevelEvent, label: string, bw: number) => void) {
+  const res = await levelEventForSet(userId, setId);
+  if (!res) return;
+  const ex = await db.exercises.get(res.event.exerciseId);
+  show(res.event, exerciseName(ex), res.bw);
 }
