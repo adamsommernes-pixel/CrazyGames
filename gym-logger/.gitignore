@@ -7,3 +7,4 @@ dev-dist
 tests/screens
 *.tsbuildinfo
 dist-artifact
+dist-site

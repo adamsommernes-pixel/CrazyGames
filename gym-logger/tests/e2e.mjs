@@ -3,7 +3,7 @@
 // Starter `vite preview` og går gjennom hele appen med to kontoer. Skjermbilder i tests/screens/.
 import { createRequire } from 'node:module';
 import { spawn, execSync } from 'node:child_process';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, rm } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 
 const require = createRequire(import.meta.url);
@@ -20,6 +20,7 @@ await new Promise((res, rej) => {
   setTimeout(() => rej(new Error('preview startet ikke')), 15000);
 });
 
+await rm('tests/screens', { recursive: true, force: true });
 await mkdir('tests/screens', { recursive: true });
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ ...devices['iPhone 13'], locale: 'nb-NO' });

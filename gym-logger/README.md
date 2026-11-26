@@ -135,7 +135,13 @@ Teknologi: React 19, TypeScript, Vite, Tailwind CSS 4, Dexie (IndexedDB), Rechar
 
 1. I GitHub: **Settings → Pages → Source: GitHub Actions**.
 2. Workflowen `.github/workflows/gym-logger-pages.yml` bygger og publiserer når `gym-logger/` endres på repoets standardgren. Den kan også startes manuelt under **Actions**.
-3. Appen ligger da på `https://<brukernavn>.github.io/<repo>/`.
+3. Nettstedet bygges med `npm run build:site` (til `dist-site/`):
+   - **Landingsside** på `https://<brukernavn>.github.io/<repo>/` (`landing/index.html`, ren HTML, norsk/engelsk).
+   - **Appen** på `https://<brukernavn>.github.io/<repo>/app/` (installerbar PWA, virker offline).
+4. Sjekk nettstedet lokalt med `npm run build:site && npm run site:check` (landingsside, lenker, manifest, ikoner og offline).
+5. Nye skjermbilder til manifestet og landingssiden: `npm run build && npm run screenshots` (lager en demokonto og skriver `public/screenshots/*-nb.webp` / `*-en.webp`).
+
+PWA-detaljer: manifest med ikoner, snarvei «Start økt» og skjermbilder (rikere installasjonsdialog på Android), knappen «Installer appen» der nettleseren støtter det, og «Ny versjon klar – Oppdater» i stedet for automatisk omlasting midt i en økt. claude.ai-lenken kan ikke installeres eller brukes offline; bruk GitHub Pages-adressen til det.
 
 Slik installeres den på telefonen:
 - **iPhone**: Safari → Del → «Legg til på Hjem-skjerm».

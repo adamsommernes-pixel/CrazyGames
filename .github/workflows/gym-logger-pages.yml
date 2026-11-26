@@ -1,4 +1,4 @@
-name: Gym Logger → GitHub Pages
+name: Repgrade → GitHub Pages
 
 on:
   push:
@@ -31,15 +31,16 @@ jobs:
           cache-dependency-path: gym-logger/package-lock.json
       - run: npm ci
       - run: npm test
-      - run: npm run build
+      # Landingsside i roten og appen under /app/ (se gym-logger/scripts/build-site.mjs).
+      - run: npm run build:site
         env:
-          BASE_PATH: /${{ github.event.repository.name }}/
+          SITE_BASE: /${{ github.event.repository.name }}/
           # Valgfritt: legg inn som repository secrets for å slå på sky-synk.
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: gym-logger/dist
+          path: gym-logger/dist-site
 
   deploy:
     needs: build
