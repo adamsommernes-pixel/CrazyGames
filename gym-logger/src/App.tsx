@@ -9,6 +9,8 @@ import { getProfile } from './db/repo';
 import { useAutoSync } from './db/sync';
 import { requestPersist } from './lib/storage';
 import { ConfirmHost } from './components/confirm';
+import { ErrorScreen } from './components/ErrorScreen';
+import { supabaseConfigError } from './lib/supabase';
 import { ToastHost } from './components/toast';
 import { LevelHost } from './components/levelUp';
 import { BottomNav } from './components/BottomNav';
@@ -48,6 +50,15 @@ export default function App() {
 
   // Ved språkbytte tegnes hele appen på nytt, så all tekst følger med.
   const lang = useLang();
+  if (supabaseConfigError) {
+    return (
+      <ErrorScreen
+        title="Oppsettfeil / Setup error"
+        message={supabaseConfigError}
+        hint="Rett verdien under GitHub → Settings → Secrets and variables → Actions, og kjør workflowen på nytt. / Fix the value in the GitHub repository secrets and run the workflow again."
+      />
+    );
+  }
   return (
     <AuthProvider key={lang}>
       <Router>

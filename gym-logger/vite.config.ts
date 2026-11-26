@@ -2,6 +2,13 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { normalizeSupabaseConfig } from './src/lib/supabaseConfig';
+
+// Stopp bygget med en tydelig melding hvis Supabase-verdiene er feil, i stedet for en mørk skjerm på nettet.
+const sbConfig = normalizeSupabaseConfig(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
+if (sbConfig && 'error' in sbConfig) {
+  throw new Error(`Supabase-oppsettet er feil: ${sbConfig.error}`);
+}
 
 // BASE_PATH settes av GitHub Actions (f.eks. /CrazyGames/). Lokalt: /
 // ARTIFACT=1 bygger en versjon for claude.ai: relative stier og ingen service worker.
