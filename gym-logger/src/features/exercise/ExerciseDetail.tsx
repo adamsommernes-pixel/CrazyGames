@@ -15,27 +15,29 @@ import { ExerciseNotes } from './ExerciseNotes';
 import { OneRepMaxTable } from './OneRepMaxTable';
 import { ExerciseGuide, ExerciseMeta } from './ExerciseGuide';
 import { EditExerciseSheet } from './EditExerciseSheet';
+import { exerciseName } from '../../lib/exerciseName';
+import { t } from '../../i18n';
 
 type Metric = keyof Pick<SessionPoint, 'heaviest' | 'e1rm' | 'volume' | 'maxReps' | 'totalReps' | 'distance'>;
 
 /** Grafvalg per øvelsestype. `weightUnit` betyr at verdien er kg og skal vises i valgt enhet. */
 const METRICS: Record<ExerciseKind, { key: Metric; label: string; suffix: 'weight' | 'reps' | 'sec' | 'min' | 'km' }[]> = {
   weight: [
-    { key: 'e1rm', label: 'Beregnet 1RM', suffix: 'weight' },
-    { key: 'heaviest', label: 'Tyngste set', suffix: 'weight' },
-    { key: 'volume', label: 'Volum', suffix: 'weight' },
+    { key: 'e1rm', get label() { return t('Beregnet 1RM', 'Estimated 1RM'); }, suffix: 'weight' },
+    { key: 'heaviest', get label() { return t('Tyngste set', 'Heaviest set'); }, suffix: 'weight' },
+    { key: 'volume', get label() { return t('Volum', 'Volume'); }, suffix: 'weight' },
   ],
   bodyweight: [
-    { key: 'maxReps', label: 'Flest reps i ett set', suffix: 'reps' },
-    { key: 'totalReps', label: 'Reps totalt', suffix: 'reps' },
+    { key: 'maxReps', get label() { return t('Flest reps i ett set', 'Most reps in a set'); }, suffix: 'reps' },
+    { key: 'totalReps', get label() { return t('Reps totalt', 'Total reps'); }, suffix: 'reps' },
   ],
   time: [
-    { key: 'maxReps', label: 'Lengste set', suffix: 'sec' },
-    { key: 'totalReps', label: 'Total tid', suffix: 'sec' },
+    { key: 'maxReps', get label() { return t('Lengste set', 'Longest set'); }, suffix: 'sec' },
+    { key: 'totalReps', get label() { return t('Total tid', 'Total time'); }, suffix: 'sec' },
   ],
   cardio: [
-    { key: 'distance', label: 'Distanse', suffix: 'km' },
-    { key: 'totalReps', label: 'Tid', suffix: 'min' },
+    { key: 'distance', get label() { return t('Distanse', 'Distance'); }, suffix: 'km' },
+    { key: 'totalReps', get label() { return t('Tid', 'Time'); }, suffix: 'min' },
   ],
 };
 
@@ -73,8 +75,8 @@ export function ExerciseDetail() {
   const { exercise, sessions } = data;
   if (!exercise) {
     return (
-      <Page title="Øvelse" back>
-        <EmptyState icon="dumbbell" title="Fant ikke øvelsen" />
+      <Page title={t('Øvelse', 'Exercise')} back>
+        <EmptyState icon="dumbbell" title={t('Fant ikke øvelsen', 'Exercise not found')} />
       </Page>
     );
   }
@@ -83,28 +85,28 @@ export function ExerciseDetail() {
 
   return (
     <Page
-      title={exercise.name}
+      title={exerciseName(exercise)}
       back
       actions={
         <>
-          <IconButton icon="star" filled={fav} className={fav ? 'text-warn' : ''} label={fav ? 'Fjern fra favoritter' : 'Legg til i favoritter'} onClick={() => void toggleFavorite(exercise.id)} />
-          {exercise.custom ? <IconButton icon="edit" label="Rediger øvelse" onClick={() => setEditing(true)} /> : null}
+          <IconButton icon="star" filled={fav} className={fav ? 'text-warn' : ''} label={fav ? t('Fjern fra favoritter', 'Remove from favourites') : t('Legg til i favoritter', 'Add to favourites')} onClick={() => void toggleFavorite(exercise.id)} />
+          {exercise.custom ? <IconButton icon="edit" label={t('Rediger øvelse', 'Edit exercise')} onClick={() => setEditing(true)} /> : null}
         </>
       }
     >
       <ExerciseMeta exercise={exercise} />
 
       <div className="mt-4 mb-4 grid grid-cols-2 gap-1 rounded-2xl bg-raised p-1" role="tablist">
-        {(['overview', 'guide'] as const).map((t) => (
+        {(['overview', 'guide'] as const).map((tab_) => (
           <button
-            key={t}
+            key={tab_}
             type="button"
             role="tab"
-            aria-selected={shownTab === t}
-            onClick={() => setTab(t)}
-            className={`min-h-10 rounded-xl text-sm font-semibold transition ${shownTab === t ? 'bg-surface text-ink shadow' : 'text-muted'}`}
+            aria-selected={shownTab === tab_}
+            onClick={() => setTab(tab_)}
+            className={`min-h-10 rounded-xl text-sm font-semibold transition ${shownTab === tab_ ? 'bg-surface text-ink shadow' : 'text-muted'}`}
           >
-            {t === 'overview' ? 'Oversikt' : 'Slik gjør du'}
+            {tab_ === 'overview' ? t('Oversikt', 'Overview') : t('Slik gjør du', 'How to')}
           </button>
         ))}
       </div>
@@ -115,7 +117,7 @@ export function ExerciseDetail() {
           <ExerciseNotes exerciseId={exerciseId} />
         </>
       ) : sessions.length === 0 ? (
-        <EmptyState icon="chart" title="Ingen fullførte sets" text="Logg øvelsen i en økt for å se rekorder og grafer." />
+        <EmptyState icon="chart" title={t('Ingen fullførte sets', 'No completed sets')} text={t('Logg øvelsen i en økt for å se rekorder og grafer.', 'Log the exercise in a workout to see records and charts.')} />
       ) : (
         <>
           <Records kind={kind} sessions={sessions} unit={unit} />
@@ -130,9 +132,9 @@ export function ExerciseDetail() {
 
           <Card className="mt-3 p-2 pt-4">
             {chart.length < 2 ? (
-              <p className="p-6 text-center text-muted">Grafen vises når du har logget øvelsen minst to ganger.</p>
+              <p className="p-6 text-center text-muted">{t('Grafen vises når du har logget øvelsen minst to ganger.', 'The chart appears once you have logged the exercise at least twice.')}</p>
             ) : (
-              <div className="h-56" role="img" aria-label={`Graf: ${metric.label} over tid`}>
+              <div className="h-56" role="img" aria-label={`${t('Graf', 'Chart')}: ${metric.label} ${t('over tid', 'over time')}`}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chart} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
                     <CartesianGrid stroke="#232a26" vertical={false} />
@@ -152,7 +154,7 @@ export function ExerciseDetail() {
 
           {kind === 'weight' && <OneRepMaxTable oneRm={Math.max(...sessions.map((s) => s.e1rm))} equipment={exercise.equipment} />}
 
-          <SectionTitle>Økter</SectionTitle>
+          <SectionTitle>{t('Økter', 'Workouts')}</SectionTitle>
           <ul className="flex flex-col gap-2">
             {[...sessions].reverse().map((p) => (
               <li key={p.workoutId}>
@@ -189,33 +191,33 @@ function Records({ kind, sessions, unit }: { kind: ExerciseKind; sessions: Sessi
     const best1 = all.reduce((b, s) => (estimate1RM(s.weight, s.reps) > estimate1RM(b.weight, b.reps) ? s : b));
     const bestVol = max('volume');
     tiles = [
-      { label: 'Tyngste', value: num(toDisplay(bestWeight.weight, unit)), sub: `× ${bestWeight.reps}` },
-      { label: 'Beste 1RM', value: num(toDisplay(estimate1RM(best1.weight, best1.reps), unit), 0), sub: `${num(toDisplay(best1.weight, unit))} × ${best1.reps}` },
-      { label: 'Mest volum', value: num(toDisplay(bestVol.volume, unit), 0), sub: dateShort(bestVol.date) },
+      { label: t('Tyngste', 'Heaviest'), value: num(toDisplay(bestWeight.weight, unit)), sub: `× ${bestWeight.reps}` },
+      { label: t('Beste 1RM', 'Best 1RM'), value: num(toDisplay(estimate1RM(best1.weight, best1.reps), unit), 0), sub: `${num(toDisplay(best1.weight, unit))} × ${best1.reps}` },
+      { label: t('Mest volum', 'Most volume'), value: num(toDisplay(bestVol.volume, unit), 0), sub: dateShort(bestVol.date) },
     ];
   } else if (kind === 'bodyweight') {
     const best = max('maxReps');
     const tot = max('totalReps');
     tiles = [
-      { label: 'Flest reps', value: String(best.maxReps), sub: dateShort(best.date) },
-      { label: 'Mest i én økt', value: String(tot.totalReps), sub: dateShort(tot.date) },
-      { label: 'Økter', value: String(sessions.length), sub: 'totalt' },
+      { label: t('Flest reps', 'Most reps'), value: String(best.maxReps), sub: dateShort(best.date) },
+      { label: t('Mest i én økt', 'Most in a workout'), value: String(tot.totalReps), sub: dateShort(tot.date) },
+      { label: t('Økter', 'Workouts'), value: String(sessions.length), sub: t('totalt', 'total') },
     ];
   } else if (kind === 'time') {
     const best = max('maxReps');
     const tot = max('totalReps');
     tiles = [
-      { label: 'Lengste', value: duration(best.maxReps * 1000), sub: dateShort(best.date) },
-      { label: 'Mest i én økt', value: duration(tot.totalReps * 1000), sub: dateShort(tot.date) },
-      { label: 'Økter', value: String(sessions.length), sub: 'totalt' },
+      { label: t('Lengste', 'Longest'), value: duration(best.maxReps * 1000), sub: dateShort(best.date) },
+      { label: t('Mest i én økt', 'Most in a workout'), value: duration(tot.totalReps * 1000), sub: dateShort(tot.date) },
+      { label: t('Økter', 'Workouts'), value: String(sessions.length), sub: t('totalt', 'total') },
     ];
   } else {
     const far = max('distance');
     const long = max('totalReps');
     tiles = [
-      { label: 'Lengst', value: `${num(far.distance, 1)}`, sub: 'km' },
-      { label: 'Lengste økt', value: String(long.totalReps), sub: 'min' },
-      { label: 'Økter', value: String(sessions.length), sub: 'totalt' },
+      { label: t('Lengst', 'Furthest'), value: `${num(far.distance, 1)}`, sub: 'km' },
+      { label: t('Lengste økt', 'Longest workout'), value: String(long.totalReps), sub: 'min' },
+      { label: t('Økter', 'Workouts'), value: String(sessions.length), sub: t('totalt', 'total') },
     ];
   }
   return (
@@ -229,7 +231,7 @@ function Records({ kind, sessions, unit }: { kind: ExerciseKind; sessions: Sessi
           </div>
         ))}
       </div>
-      {kind === 'weight' && <p className="mt-1 text-center text-xs text-faint">Alle vekter i {unit}</p>}
+      {kind === 'weight' && <p className="mt-1 text-center text-xs text-faint">{t('Alle vekter i', 'All weights in')} {unit}</p>}
     </>
   );
 }

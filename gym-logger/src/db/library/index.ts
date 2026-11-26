@@ -4,6 +4,8 @@ import { BACK, CHEST, SHOULDERS } from './upper';
 import { BICEPS, FOREARMS, TRICEPS } from './arms';
 import { GLUTES, LEGS } from './lower';
 import { CARDIO, CORE } from './core';
+import { EN } from './en';
+import { getLang } from '../../i18n';
 
 export type { Guide, Level, LibraryEntry } from './types';
 
@@ -34,8 +36,17 @@ export const BUILTIN_EXERCISES: Exercise[] = LIBRARY.map((e) => ({
 }));
 
 const GUIDES = new Map<string, Guide>(LIBRARY.map((e) => [`ex-${e.slug}`, e.guide]));
+const slugOf = (exerciseId: string) => exerciseId.replace(/^ex-/, '');
 
-/** Fremgangsmåten for en innebygd øvelse (undefined for egne øvelser). */
+/** Fremgangsmåten for en innebygd øvelse på gjeldende språk (undefined for egne øvelser). */
 export function guideFor(exerciseId: string): Guide | undefined {
-  return GUIDES.get(exerciseId);
+  const guide = GUIDES.get(exerciseId);
+  if (!guide) return undefined;
+  const en = getLang() === 'en' ? EN[slugOf(exerciseId)] : undefined;
+  return en ? { ...guide, steps: en.steps, tips: en.tips, mistakes: en.mistakes } : guide;
+}
+
+/** Engelsk navn på en innebygd øvelse. */
+export function englishName(exerciseId: string): string | undefined {
+  return EN[slugOf(exerciseId)]?.name;
 }

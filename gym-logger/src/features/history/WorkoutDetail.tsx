@@ -9,11 +9,13 @@ import { ActionList, Button, Card, EmptyState, IconButton, NumberStepper, Page, 
 import { undoToast } from '../../components/toast';
 import { MuscleDot } from '../../components/MuscleTag';
 import { formatSet, kindOf } from '../../lib/kinds';
+import { exerciseName } from '../../lib/exerciseName';
 import { useExerciseMap } from '../workout/ExercisePicker';
 import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
 import { dateLong, durationShort, fromDateTimeInputs, fromDisplay, num, toDateInput, toDisplay, toTimeInput } from '../../lib/format';
 import { PR_LABEL, estimate1RM, volume } from '../../lib/calc';
+import { t } from '../../i18n';
 
 export function WorkoutDetail() {
   const { id = '' } = useParams();
@@ -33,8 +35,8 @@ export function WorkoutDetail() {
   const { workout, wes, sets } = data;
   if (!workout || workout.deleted) {
     return (
-      <Page title="Økt" back>
-        <EmptyState icon="history" title="Fant ikke økta" />
+      <Page title={t('Økt', 'Workout')} back>
+        <EmptyState icon="history" title={t('Fant ikke økta', 'Workout not found')} />
       </Page>
     );
   }
@@ -42,12 +44,12 @@ export function WorkoutDetail() {
   const prCount = sets.filter((s) => prMap.has(s.id)).length;
 
   return (
-    <Page title={workout.name} back actions={<IconButton icon="more" label="Valg" onClick={() => setMenu(true)} />}>
+    <Page title={workout.name} back actions={<IconButton icon="more" label={t('Valg', 'Options')} onClick={() => setMenu(true)} />}>
       <p className="text-muted first-letter:uppercase">{dateLong(workout.started_at)}</p>
       <div className="tabular mt-3 grid grid-cols-3 gap-2 text-center">
-        <Stat label="Varighet" value={workout.ended_at ? durationShort(new Date(workout.ended_at).getTime() - new Date(workout.started_at).getTime()) : 'Pågår'} />
-        <Stat label={`Volum (${unit})`} value={num(toDisplay(volume(sets), unit), 0)} />
-        <Stat label="Rekorder" value={String(prCount)} />
+        <Stat label={t('Varighet', 'Duration')} value={workout.ended_at ? durationShort(new Date(workout.ended_at).getTime() - new Date(workout.started_at).getTime()) : t('Pågår', 'In progress')} />
+        <Stat label={`${t('Volum', 'Volume')} (${unit})`} value={num(toDisplay(volume(sets), unit), 0)} />
+        <Stat label={t('Rekorder', 'Records')} value={String(prCount)} />
       </div>
       {workout.notes && <Card className="mt-3 p-3 whitespace-pre-wrap text-muted">{workout.notes}</Card>}
 
@@ -60,7 +62,7 @@ export function WorkoutDetail() {
             <Card key={we.id} className="p-4">
               <button type="button" className="flex items-center gap-2 text-lg font-bold text-green" onClick={() => navigate(`/exercise/${we.exercise_id}`)}>
                 {exMap.get(we.exercise_id) && <MuscleDot group={exMap.get(we.exercise_id)!.muscle_group} size={9} />}
-                {exMap.get(we.exercise_id)?.name ?? 'Ukjent øvelse'}
+                {exerciseName(exMap.get(we.exercise_id))}
               </button>
               <ul className="mt-2 flex flex-col gap-1.5">
                 {exSets.map((s) => {
@@ -75,7 +77,7 @@ export function WorkoutDetail() {
                       {kind === 'cardio' ? (
                         <span className="font-num font-bold">{text}</span>
                       ) : (
-                        <button type="button" className="font-num font-bold underline decoration-line decoration-dotted underline-offset-4" aria-label={`Rediger set: ${text}`} onClick={() => setEditing(s)}>
+                        <button type="button" className="font-num font-bold underline decoration-line decoration-dotted underline-offset-4" aria-label={`${t('Rediger set', 'Edit set')}: ${text}`} onClick={() => setEditing(s)}>
                           {text}
                         </button>
                       )}
@@ -91,27 +93,27 @@ export function WorkoutDetail() {
       </div>
 
       <Button full icon="repeat" variant="secondary" className="mt-4" onClick={() => void repeatWorkout(id).then(() => navigate('/workout'))}>
-        Gjenta økt
+        {t('Gjenta økt', 'Repeat workout')}
       </Button>
 
       <EditSetSheet set={editing} unit={unit} onClose={() => setEditing(null)} />
       {editTimes && workout.ended_at && <EditTimesSheet workout={workout} onClose={() => setEditTimes(false)} />}
 
-      <Sheet open={menu} onClose={() => setMenu(false)} title="Økt">
+      <Sheet open={menu} onClose={() => setMenu(false)} title={t('Økt', 'Workout')}>
         <ActionList
           actions={[
-            ...(workout.ended_at ? [{ label: 'Endre navn, dato og varighet', icon: 'edit' as const, onClick: () => { setMenu(false); setEditTimes(true); } }] : []),
-            { label: 'Gjenta økt', icon: 'repeat', onClick: () => void repeatWorkout(id).then(() => navigate('/workout')) },
-            { label: 'Lagre som rutine', icon: 'list', onClick: () => void routineFromWorkout(id).then((rid) => navigate(`/routines/${rid}`)) },
+            ...(workout.ended_at ? [{ label: t('Endre navn, dato og varighet', 'Change name, date and duration'), icon: 'edit' as const, onClick: () => { setMenu(false); setEditTimes(true); } }] : []),
+            { label: t('Gjenta økt', 'Repeat workout'), icon: 'repeat', onClick: () => void repeatWorkout(id).then(() => navigate('/workout')) },
+            { label: t('Lagre som rutine', 'Save as routine'), icon: 'list', onClick: () => void routineFromWorkout(id).then((rid) => navigate(`/routines/${rid}`)) },
             {
-              label: 'Slett økt',
+              label: t('Slett økt', 'Delete workout'),
               icon: 'trash',
               danger: true,
               onClick: async () => {
                 setMenu(false);
                 const removed = await deleteWorkout(id);
                 navigate('/history', { replace: true });
-                undoToast('Økta er slettet', () => restore(removed));
+                undoToast(t('Økta er slettet', 'Workout deleted'), () => restore(removed));
               },
             },
           ]}
@@ -131,33 +133,33 @@ function EditTimesSheet({ workout, onClose }: { workout: Workout; onClose: () =>
   const startedAt = date ? fromDateTimeInputs(date, time) : workout.started_at;
   const inFuture = new Date(startedAt).getTime() > Date.now();
   return (
-    <Sheet open onClose={onClose} title="Endre økt">
+    <Sheet open onClose={onClose} title={t('Endre økt', 'Edit workout')}>
       <div className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Navn</span>
+          <span className="text-sm text-muted">{t('Navn', 'Name')}</span>
           <input id="edit-workout-name" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
         </label>
         <div className="grid grid-cols-2 gap-2">
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm text-muted">Dato</span>
+            <span className="text-sm text-muted">{t('Dato', 'Date')}</span>
             <input id="edit-workout-date" type="date" className={inputClass} value={date} max={toDateInput(new Date())} onChange={(e) => setDate(e.target.value)} />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm text-muted">Startet</span>
+            <span className="text-sm text-muted">{t('Startet', 'Started')}</span>
             <input id="edit-workout-time" type="time" className={inputClass} value={time} onChange={(e) => setTime(e.target.value)} />
           </label>
         </div>
         <div>
-          <div className="mb-1.5 text-sm text-muted">Varighet</div>
-          <NumberStepper label="Varighet" value={minutes} step={5} min={5} max={600} onChange={setMinutes} format={(v) => durationShort(v * 60_000)} />
+          <div className="mb-1.5 text-sm text-muted">{t('Varighet', 'Duration')}</div>
+          <NumberStepper label={t('Varighet', 'Duration')} value={minutes} step={5} min={5} max={600} onChange={setMinutes} format={(v) => durationShort(v * 60_000)} />
         </div>
-        {inFuture && <p className="text-sm text-warn">Starttidspunktet er fram i tid.</p>}
+        {inFuture && <p className="text-sm text-warn">{t('Starttidspunktet er fram i tid.', 'The start time is in the future.')}</p>}
         <Button
           full
           disabled={!date || inFuture}
           onClick={() => void updateWorkoutTimes(workout.id, { name, startedAt, durationMin: minutes }).then(onClose)}
         >
-          Lagre endringer
+          {t('Lagre endringer', 'Save changes')}
         </Button>
       </div>
     </Sheet>
@@ -175,18 +177,18 @@ function EditSetSheet({ set, unit, onClose }: { set: WorkoutSet | null; unit: 'k
     }
   }, [set, unit]);
   return (
-    <Sheet open={!!set} onClose={onClose} title="Rediger set">
+    <Sheet open={!!set} onClose={onClose} title={t('Rediger set', 'Edit set')}>
       <div className="flex flex-col gap-3">
         <div>
-          <div className="mb-1.5 text-sm text-muted">Vekt ({unit})</div>
-          <NumberStepper label="Vekt" size="lg" value={weight} step={unit === 'kg' ? 2.5 : 5} max={unit === 'kg' ? 500 : 1100} onChange={setWeight} format={(v) => num(v)} />
+          <div className="mb-1.5 text-sm text-muted">{t('Vekt', 'Weight')} ({unit})</div>
+          <NumberStepper label={t('Vekt', 'Weight')} size="lg" value={weight} step={unit === 'kg' ? 2.5 : 5} max={unit === 'kg' ? 500 : 1100} onChange={setWeight} format={(v) => num(v)} />
         </div>
         <div>
           <div className="mb-1.5 text-sm text-muted">Reps</div>
           <NumberStepper label="Reps" size="lg" value={reps} max={100} onChange={setReps} />
         </div>
         <Button full className="mt-2" onClick={() => set && void editSet(set.id, fromDisplay(weight, unit), reps).then(onClose)}>
-          Lagre endring
+          {t('Lagre endring', 'Save change')}
         </Button>
       </div>
     </Sheet>

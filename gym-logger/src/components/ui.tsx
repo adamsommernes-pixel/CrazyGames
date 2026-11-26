@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon, type IconName } from './Icon';
+import { t } from '../i18n';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -75,7 +76,7 @@ export function Page({
       <header className="pt-safe sticky top-0 z-20 border-b border-line bg-bg/95 backdrop-blur">
         <div className="flex min-h-14 items-center gap-1 px-2">
           {back ? (
-            <IconButton icon="back" label="Tilbake" onClick={() => navigate(-1)} />
+            <IconButton icon="back" label={t('Tilbake', 'Back')} onClick={() => navigate(-1)} />
           ) : (
             <span className="w-2" />
           )}
@@ -137,7 +138,7 @@ export function Sheet({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
-      <button type="button" aria-label="Lukk" className="absolute inset-0 animate-fade bg-black/70 backdrop-blur-[2px]" onClick={onClose} />
+      <button type="button" aria-label={t('Lukk', 'Close')} className="absolute inset-0 animate-fade bg-black/70 backdrop-blur-[2px]" onClick={onClose} />
       <div
         className={`pb-safe relative flex w-full max-w-xl animate-sheet flex-col rounded-t-[28px] border-t border-line bg-surface shadow-[0_-12px_40px_rgb(0_0_0/0.6)] ${
           tall ? 'h-[88vh]' : 'max-h-[88vh]'
@@ -146,7 +147,7 @@ export function Sheet({
         <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line" aria-hidden="true" />
         <div className="flex items-center gap-2 px-4 pt-2 pb-2">
           <h2 className="flex-1 text-lg font-bold">{title}</h2>
-          <IconButton icon="x" label="Lukk" onClick={onClose} />
+          <IconButton icon="x" label={t('Lukk', 'Close')} onClick={onClose} />
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">{children}</div>
       </div>

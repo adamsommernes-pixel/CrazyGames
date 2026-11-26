@@ -12,6 +12,11 @@ import { useSetting } from '../../lib/settings';
 import { PR_LABEL, volume } from '../../lib/calc';
 import { durationShort, num, toDisplay } from '../../lib/format';
 import { formatSetShort, kindOf } from '../../lib/kinds';
+import { exerciseName } from '../../lib/exerciseName';
+import { MUSCLE_LABEL, type MuscleGroup } from '../../db/types';
+import { t } from '../../i18n';
+
+const prText = (n: number) => t(`${n} ny${n === 1 ? '' : 'e'} rekord${n === 1 ? '' : 'er'}`, `${n} new record${n === 1 ? '' : 's'}`);
 
 /** Oppsummering rett etter en økt: tall, rekorder og sammenligning med forrige gang. */
 export function Summary() {
@@ -52,12 +57,12 @@ export function Summary() {
 
   const share = async () => {
     const lines = [
-      `${workout.name} – ${durationShort(minutes)}, ${num(toDisplay(vol, unit), 0)} ${unit} totalt`,
+      `${workout.name} – ${durationShort(minutes)}, ${num(toDisplay(vol, unit), 0)} ${unit} ${t('totalt', 'total')}`,
       ...wes.map((we) => {
         const ex = sets.filter((s) => s.workout_exercise_id === we.id);
-        return `${exMap.get(we.exercise_id)?.name ?? '?'}: ${ex.map((s) => formatSetShort(s, kindOf(s.exercise_id), unit)).join(', ')}`;
+        return `${exerciseName(exMap.get(we.exercise_id))}: ${ex.map((s) => formatSetShort(s, kindOf(s.exercise_id), unit)).join(', ')}`;
       }),
-      prSets.length ? `🏆 ${prSets.length} ny${prSets.length === 1 ? '' : 'e'} rekord${prSets.length === 1 ? '' : 'er'}` : '',
+      prSets.length ? `🏆 ${prText(prSets.length)}` : '',
     ].filter(Boolean);
     try {
       await navigator.clipboard.writeText(lines.join('\n'));
@@ -77,34 +82,34 @@ export function Summary() {
             <Icon name={prSets.length ? 'trophy' : 'check'} size={44} strokeWidth={2.4} />
           </div>
         </div>
-        <p className="text-sm font-semibold tracking-wide text-green uppercase">Økt fullført</p>
+        <p className="text-sm font-semibold tracking-wide text-green uppercase">{t('Økt fullført', 'Workout complete')}</p>
         <h1 className="font-num mt-1 text-4xl font-bold tracking-tight">{workout.name}</h1>
         {prSets.length > 0 && (
           <p className="mt-2 text-lg text-green-light">
-            {prSets.length} ny{prSets.length === 1 ? '' : 'e'} rekord{prSets.length === 1 ? '' : 'er'}!
+            {prText(prSets.length)}!
           </p>
         )}
       </section>
 
       <div className="grid grid-cols-3 gap-2">
-        <Stat label="Varighet" value={durationShort(minutes)} />
+        <Stat label={t('Varighet', 'Duration')} value={durationShort(minutes)} />
         <Stat label="Sets" value={String(sets.length)} />
-        <Stat label={`Volum (${unit})`} value={num(toDisplay(vol, unit), 0)} />
+        <Stat label={`${t('Volum', 'Volume')} (${unit})`} value={num(toDisplay(vol, unit), 0)} />
       </div>
       {diff !== null && (
         <p className={`mt-3 rounded-2xl px-4 py-3 text-center font-medium ${diff >= 0 ? 'bg-green-dim/40 text-green-light' : 'bg-raised text-muted'}`}>
-          {diff >= 0 ? '▲' : '▼'} {num(Math.abs(diff), 0)} % volum mot forrige gang
+          {diff >= 0 ? '▲' : '▼'} {num(Math.abs(diff), 0)} % {t('volum mot forrige gang', 'volume vs. last time')}
         </p>
       )}
 
       {prSets.length > 0 && (
         <>
-          <SectionTitle>Rekorder</SectionTitle>
+          <SectionTitle>{t('Rekorder', 'Records')}</SectionTitle>
           <Card className="divide-y divide-line">
             {prSets.map((s) => (
               <div key={s.id} className="flex items-center gap-3 p-4">
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-semibold">{exMap.get(s.exercise_id)?.name}</span>
+                  <span className="block truncate font-semibold">{exerciseName(exMap.get(s.exercise_id))}</span>
                   <span className="mt-1 flex flex-wrap gap-1">
                     {prMap.get(s.id)!.map((k) => (
                       <PRBadge key={k} label={PR_LABEL[k]} />
@@ -120,11 +125,11 @@ export function Summary() {
 
       {groups.length > 0 && (
         <>
-          <SectionTitle>Trent i dag</SectionTitle>
+          <SectionTitle>{t('Trent i dag', 'Trained today')}</SectionTitle>
           <div className="flex flex-wrap gap-2">
             {groups.map((g) => (
               <span key={g} className="rounded-full border border-line bg-raised px-3 py-1.5 text-sm">
-                {g}
+                {MUSCLE_LABEL[g as MuscleGroup]}
               </span>
             ))}
           </div>
@@ -133,13 +138,13 @@ export function Summary() {
 
       <div className="mt-8 flex flex-col gap-2">
         <Button full className="min-h-14 text-lg" onClick={() => navigate('/', { replace: true })}>
-          Ferdig
+          {t('Ferdig', 'Done')}
         </Button>
         <Button full variant="secondary" icon="share" onClick={() => void share()}>
-          {copied ? 'Kopiert!' : 'Kopier sammendrag'}
+          {copied ? t('Kopiert!', 'Copied!') : t('Kopier sammendrag', 'Copy summary')}
         </Button>
         <Button full variant="ghost" onClick={() => navigate(`/history/${id}`)}>
-          Se detaljer
+          {t('Se detaljer', 'See details')}
         </Button>
       </div>
     </div>

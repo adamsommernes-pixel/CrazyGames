@@ -1,5 +1,5 @@
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { locale, t } from '../i18n';
+import { locale } from '../i18n';
 
 // Felles grafstil: svak rutelinje, grønn strek, tekst i dempede tokens.
 const AXIS = { stroke: '#66706a', tick: { fontSize: 11 }, tickLine: false, axisLine: false } as const;

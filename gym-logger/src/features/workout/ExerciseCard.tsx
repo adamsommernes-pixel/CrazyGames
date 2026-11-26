@@ -31,6 +31,8 @@ import { ExerciseInfoSheet } from '../exercise/ExerciseInfoSheet';
 import { startRest } from './restTimer';
 import { duration, fromDisplay, num, toDisplay } from '../../lib/format';
 import { useSetting } from '../../lib/settings';
+import { exerciseName } from '../../lib/exerciseName';
+import { t } from '../../i18n';
 
 export function ExerciseCard({
   we,
@@ -111,20 +113,20 @@ export function ExerciseCard({
   return (
     <Card className={`p-3 transition-shadow ${sorted.some((s) => s.id === currentSetId) ? 'border-green/30' : ''}`}>
       <div className="mb-1 flex items-center gap-1 pl-1">
-        <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setInfo(true)} aria-label={`${exercise?.name ?? 'Øvelse'}: slik gjør du og historikk`}>
+        <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setInfo(true)} aria-label={`${exerciseName(exercise)}: ${t('slik gjør du og historikk', 'how to and history')}`}>
           <h2 className="flex items-center gap-2 truncate text-lg font-bold text-green">
             {exercise && <MuscleDot group={exercise.muscle_group} size={9} />}
-            <span className="truncate">{exercise?.name ?? 'Ukjent øvelse'}</span>
+            <span className="truncate">{exerciseName(exercise)}</span>
           </h2>
           <p className="font-num text-xs text-faint">
             {doneCount}/{sorted.length} sets
-            {we.target_reps ? ` · mål ${workSetCount} × ${we.target_reps}` : ''}
-            {!isWeight ? ` · ${KIND_LABEL[kind]}` : ''} · hvile {duration(we.rest_seconds * 1000)}
+            {we.target_reps ? ` · ${t('mål', 'goal')} ${workSetCount} × ${we.target_reps}` : ''}
+            {!isWeight ? ` · ${KIND_LABEL[kind]}` : ''} · {t('hvile', 'rest')} {duration(we.rest_seconds * 1000)}
           </p>
         </button>
-        <IconButton icon="info" label="Slik gjør du" onClick={() => setInfo(true)} />
-        {barbell && <IconButton icon="plates" label="Platekalkulator" onClick={openPlates} />}
-        <IconButton icon="more" label="Valg for øvelse" onClick={() => setMenu(true)} />
+        <IconButton icon="info" label={t('Slik gjør du', 'How to')} onClick={() => setInfo(true)} />
+        {barbell && <IconButton icon="plates" label={t('Platekalkulator', 'Plate calculator')} onClick={openPlates} />}
+        <IconButton icon="more" label={t('Valg for øvelse', 'Exercise options')} onClick={() => setMenu(true)} />
       </div>
 
       {!showNotes && previousNote && (
@@ -136,11 +138,11 @@ export function ExerciseCard({
             void setExerciseNotes(we.id, previousNote);
           }}
           className="mb-2 flex w-full items-center gap-2 rounded-xl bg-raised/70 px-3 py-2 text-left text-sm text-muted"
-          aria-label={`Notat fra sist: ${previousNote}. Trykk for å bruke det igjen.`}
+          aria-label={t(`Notat fra sist: ${previousNote}. Trykk for å bruke det igjen.`, `Note from last time: ${previousNote}. Tap to use it again.`)}
         >
           <Icon name="note" size={15} className="shrink-0 text-faint" />
           <span className="min-w-0 flex-1 truncate">
-            <span className="text-faint">Sist: </span>
+            <span className="text-faint">{t('Sist', 'Last')}: </span>
             {previousNote}
           </span>
         </button>
@@ -148,9 +150,9 @@ export function ExerciseCard({
 
       {showNotes && (
         <textarea
-          aria-label="Notat for øvelsen"
+          aria-label={t('Notat for øvelsen', 'Exercise note')}
           className="mb-2 min-h-11 w-full resize-none rounded-xl border border-line bg-raised px-3 py-2 text-sm outline-none placeholder:text-faint focus:border-green"
-          placeholder="Notat, f.eks. setehøyde 4"
+          placeholder={t('Notat, f.eks. setehøyde 4', 'Note, e.g. seat height 4')}
           rows={1}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -166,18 +168,18 @@ export function ExerciseCard({
         >
           <Icon name="sparkle" size={16} className="shrink-0 text-green" />
           <span className="flex-1">
-            Du klarte målet sist. Forslag:{' '}
+            {t('Du klarte målet sist. Forslag:', 'You hit the goal last time. Suggestion:')}{' '}
             <span className="font-num font-bold text-green-light">
               {num(toDisplay(suggestion, unit))} {unit}
             </span>
           </span>
-          <span className="font-semibold text-green">Bruk</span>
+          <span className="font-semibold text-green">{t('Bruk', 'Use')}</span>
         </button>
       )}
 
       <div className={`${SET_GRID} px-1 pb-1 text-[11px] font-semibold tracking-wide text-faint uppercase`}>
         <span className="text-center">Set</span>
-        <span>Forrige</span>
+        <span>{t('Forrige', 'Previous')}</span>
         <span className="text-center">{cols.first}</span>
         <span className="text-center">{cols.second}</span>
         <span />
@@ -193,7 +195,7 @@ export function ExerciseCard({
               set={s}
               kind={kind}
               current={s.id === currentSetId}
-              label={s.set_type === 'normal' ? label : s.set_type === 'warmup' ? `oppvarming ${++warmIndex}` : `${label + 1} (${SET_TYPE_LABEL[s.set_type].toLowerCase()})`}
+              label={s.set_type === 'normal' ? label : s.set_type === 'warmup' ? `${t('oppvarming', 'warm-up')} ${++warmIndex}` : `${label + 1} (${SET_TYPE_LABEL[s.set_type].toLowerCase()})`}
               previous={prev}
               unit={unit}
               prs={prMap.get(s.id)}
@@ -205,53 +207,53 @@ export function ExerciseCard({
         })}
       </div>
       <Button variant="ghost" icon="plus" full className="mt-1" onClick={() => void addSet(we)}>
-        Legg til set
+        {t('Legg til set', 'Add set')}
       </Button>
 
-      <Sheet open={menu} onClose={() => setMenu(false)} title={exercise?.name ?? 'Øvelse'}>
+      <Sheet open={menu} onClose={() => setMenu(false)} title={exerciseName(exercise)}>
         <ActionList
           actions={[
             ...(warmups.length
               ? [
                   {
-                    label: `Legg til oppvarming (${warmups.map((w) => num(toDisplay(w.weight, unit))).join(' / ')} ${unit})`,
+                    label: `${t('Legg til oppvarming', 'Add warm-up')} (${warmups.map((w) => num(toDisplay(w.weight, unit))).join(' / ')} ${unit})`,
                     icon: 'flame' as const,
                     onClick: () => void addWarmupSets(we, warmups).then(() => setMenu(false)),
                   },
                 ]
               : []),
-            { label: 'Slik gjør du', icon: 'book', onClick: () => { setMenu(false); setInfo(true); } },
-            { label: 'Bytt øvelse', icon: 'swap', onClick: () => { setMenu(false); setSwapping(true); } },
-            { label: showNotes ? 'Skjul notat' : 'Legg til notat', icon: 'note', onClick: () => { setShowNotes(!showNotes); setMenu(false); } },
-            { label: 'Endre hviletid', icon: 'timer', onClick: () => { setMenu(false); openRest(); } },
-            ...(isWeight && !barbell ? [{ label: 'Platekalkulator', icon: 'plates' as const, onClick: () => { setMenu(false); openPlates(); } }] : []),
-            ...(!isFirst ? [{ label: 'Flytt opp', icon: 'up' as const, onClick: () => void moveWorkoutExercise(we.workout_id, we.id, -1).then(() => setMenu(false)) }] : []),
-            ...(!isLast ? [{ label: 'Flytt ned', icon: 'down' as const, onClick: () => void moveWorkoutExercise(we.workout_id, we.id, 1).then(() => setMenu(false)) }] : []),
+            { label: t('Slik gjør du', 'How to'), icon: 'book', onClick: () => { setMenu(false); setInfo(true); } },
+            { label: t('Bytt øvelse', 'Swap exercise'), icon: 'swap', onClick: () => { setMenu(false); setSwapping(true); } },
+            { label: showNotes ? t('Skjul notat', 'Hide note') : t('Legg til notat', 'Add note'), icon: 'note', onClick: () => { setShowNotes(!showNotes); setMenu(false); } },
+            { label: t('Endre hviletid', 'Change rest time'), icon: 'timer', onClick: () => { setMenu(false); openRest(); } },
+            ...(isWeight && !barbell ? [{ label: t('Platekalkulator', 'Plate calculator'), icon: 'plates' as const, onClick: () => { setMenu(false); openPlates(); } }] : []),
+            ...(!isFirst ? [{ label: t('Flytt opp', 'Move up'), icon: 'up' as const, onClick: () => void moveWorkoutExercise(we.workout_id, we.id, -1).then(() => setMenu(false)) }] : []),
+            ...(!isLast ? [{ label: t('Flytt ned', 'Move down'), icon: 'down' as const, onClick: () => void moveWorkoutExercise(we.workout_id, we.id, 1).then(() => setMenu(false)) }] : []),
             {
-              label: 'Fjern øvelse',
+              label: t('Fjern øvelse', 'Remove exercise'),
               icon: 'trash',
               danger: true,
               onClick: async () => {
                 setMenu(false);
                 const removed = await removeWorkoutExercise(we.id);
-                undoToast(`${exercise?.name ?? 'Øvelsen'} er fjernet`, () => restore(removed));
+                undoToast(t(`${exerciseName(exercise)} er fjernet`, `${exerciseName(exercise)} removed`), () => restore(removed));
               },
             },
           ]}
         />
       </Sheet>
 
-      <Sheet open={restSheet} onClose={() => setRestSheet(false)} title="Hviletid">
-        <p className="mb-3 text-muted">Timeren starter når du huker av et set. Hviletiden huskes for {exercise?.name ?? 'øvelsen'} til neste gang.</p>
-        <NumberStepper label="Hviletid" size="lg" value={rest} step={15} min={0} max={600} onChange={setRest} format={(v) => (v ? duration(v * 1000) : 'Av')} />
+      <Sheet open={restSheet} onClose={() => setRestSheet(false)} title={t('Hviletid', 'Rest time')}>
+        <p className="mb-3 text-muted">{t(`Timeren starter når du huker av et set. Hviletiden huskes for ${exerciseName(exercise)} til neste gang.`, `The timer starts when you tick off a set. The rest time is remembered for ${exerciseName(exercise)} next time.`)}</p>
+        <NumberStepper label={t('Hviletid', 'Rest time')} size="lg" value={rest} step={15} min={0} max={600} onChange={setRest} format={(v) => (v ? duration(v * 1000) : t('Av', 'Off'))} />
         <Button full className="mt-4" onClick={() => void setExerciseRest(we.id, rest).then(() => setRestSheet(false))}>
-          Lagre
+          {t('Lagre', 'Save')}
         </Button>
       </Sheet>
 
-      <Sheet open={plateSheet} onClose={() => setPlateSheet(false)} title="Platekalkulator">
+      <Sheet open={plateSheet} onClose={() => setPlateSheet(false)} title={t('Platekalkulator', 'Plate calculator')}>
         <NumberStepper
-          label="Målvekt"
+          label={t('Målvekt', 'Target weight')}
           size="lg"
           value={toDisplay(plateTarget, unit)}
           step={unit === 'kg' ? 2.5 : 5}
@@ -263,7 +265,7 @@ export function ExerciseCard({
         <div className="mt-4">
           <PlateCalculator targetKg={plateTarget} barKg={barWeight} plates={plates} />
         </div>
-        <p className="mt-3 text-xs text-faint">Stangvekt og skiver endres under Profil → Innstillinger.</p>
+        <p className="mt-3 text-xs text-faint">{t('Stangvekt og skiver endres under Profil → Innstillinger.', 'Bar weight and plates are changed under Profile → Settings.')}</p>
       </Sheet>
 
       <SetEditor set={editing} unit={unit} kind={kind} onClose={() => setEditing(null)} />
@@ -271,7 +273,7 @@ export function ExerciseCard({
       <ExercisePicker
         open={swapping}
         single
-        title={`Bytt ut ${exercise?.name ?? 'øvelsen'}`}
+        title={`${t('Bytt ut', 'Replace')} ${exerciseName(exercise)}`}
         onClose={() => setSwapping(false)}
         onPick={([id]) => void swapWorkoutExercise(we.id, id)}
       />
@@ -297,10 +299,10 @@ function SetEditor({ set, unit, kind, onClose }: { set: WorkoutSet | null; unit:
     onClose();
   };
   const cols = kindColumns(kind, unit);
-  const firstLabel = cardio ? 'Distanse (km)' : kind === 'weight' ? `Vekt (${unit})` : `Ekstra vekt (${unit})`;
-  const secondLabel = kind === 'time' ? 'Sekunder' : cardio ? 'Minutter' : 'Reps';
+  const firstLabel = cardio ? t('Distanse (km)', 'Distance (km)') : kind === 'weight' ? `${t('Vekt', 'Weight')} (${unit})` : `${t('Ekstra vekt', 'Extra weight')} (${unit})`;
+  const secondLabel = kind === 'time' ? t('Sekunder', 'Seconds') : cardio ? t('Minutter', 'Minutes') : 'Reps';
   return (
-    <Sheet open onClose={() => void save()} title="Rediger set">
+    <Sheet open onClose={() => void save()} title={t('Rediger set', 'Edit set')}>
       <div className="grid grid-cols-1 gap-3">
         <div>
           <div className="mb-1.5 text-sm text-muted">{firstLabel}</div>
@@ -327,7 +329,7 @@ function SetEditor({ set, unit, kind, onClose }: { set: WorkoutSet | null; unit:
           />
         </div>
       </div>
-      <div className="mt-5 mb-2 text-sm text-muted">Type set</div>
+      <div className="mt-5 mb-2 text-sm text-muted">{t('Type set', 'Set type')}</div>
       <div className="flex flex-wrap gap-2">
         {SET_TYPES.map((t) => (
           <Chip key={t} active={set.set_type === t} onClick={() => void updateSet(set.id, { set_type: t, ...values() }).then(onClose)}>
@@ -342,13 +344,13 @@ function SetEditor({ set, unit, kind, onClose }: { set: WorkoutSet | null; unit:
           onClick={async () => {
             const removed = await deleteSet(set.id);
             onClose();
-            undoToast('Settet er slettet', () => restore(removed));
+            undoToast(t('Settet er slettet', 'Set deleted'), () => restore(removed));
           }}
         >
-          Slett
+          {t('Slett', 'Delete')}
         </Button>
         <Button className="flex-1" onClick={() => void save()}>
-          <Icon name="check" /> Lagre
+          <Icon name="check" /> {t('Lagre', 'Save')}
         </Button>
       </div>
     </Sheet>

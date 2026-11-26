@@ -1,4 +1,4 @@
-import type { MuscleGroup } from '../db/types';
+import { MUSCLE_LABEL, type MuscleGroup } from '../db/types';
 import { MUSCLE_COLOR } from '../lib/muscles';
 
 export function MuscleDot({ group, size = 8 }: { group: MuscleGroup; size?: number }) {
@@ -18,7 +18,7 @@ export function MuscleTag({ group, secondary }: { group: MuscleGroup; secondary?
       }}
     >
       <MuscleDot group={group} size={6} />
-      {group}
+      {MUSCLE_LABEL[group]}
     </span>
   );
 }

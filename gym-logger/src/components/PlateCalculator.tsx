@@ -1,5 +1,6 @@
 import { platesPerSide } from '../lib/plates';
 import { num } from '../lib/format';
+import { t } from '../i18n';
 
 // Skivefarger etter vanlig standard (IWF), så det ligner skivene på gymmen.
 const PLATE_STYLE: Record<string, { bg: string; h: number; fg: string }> = {
@@ -18,7 +19,7 @@ export function PlateCalculator({ targetKg, barKg, plates }: { targetKg: number;
   const r = platesPerSide(targetKg, barKg, plates);
   return (
     <div>
-      <div className="card relative flex h-32 items-center overflow-hidden rounded-3xl px-3" role="img" aria-label={`Hver side: ${r.perSide.length ? r.perSide.map((p) => `${num(p, 2)} kg`).join(', ') : 'ingen skiver'}`}>
+      <div className="card relative flex h-32 items-center overflow-hidden rounded-3xl px-3" role="img" aria-label={`${t('Hver side', 'Each side')}: ${r.perSide.length ? r.perSide.map((p) => `${num(p, 2)} kg`).join(', ') : t('ingen skiver', 'no plates')}`}>
         <div className="absolute inset-x-3 top-1/2 h-2.5 -translate-y-1/2 rounded-full bg-[#7c847f]" />
         <div className="relative z-10 h-8 w-4 rounded-sm bg-[#9ba59f]" />
         <div className="relative z-10 flex items-center gap-[3px] pl-1">
@@ -38,14 +39,14 @@ export function PlateCalculator({ targetKg, barKg, plates }: { targetKg: number;
       </div>
       <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-muted">
-          Per side:{' '}
-          <span className="font-num font-bold text-ink">{r.perSide.length ? r.perSide.map((p) => num(p, 2)).join(' + ') : 'ingen skiver'}</span>
+          {t('Per side', 'Per side')}:{' '}
+          <span className="font-num font-bold text-ink">{r.perSide.length ? r.perSide.map((p) => num(p, 2)).join(' + ') : t('ingen skiver', 'no plates')}</span>
         </p>
-        <p className="text-sm text-faint">Stang {num(barKg, 2)} kg</p>
+        <p className="text-sm text-faint">{t('Stang', 'Bar')} {num(barKg, 2)} kg</p>
       </div>
       {r.remainder > 0 && (
         <p className="mt-2 rounded-xl bg-warn/10 px-3 py-2 text-sm text-warn">
-          {num(r.remainder, 2)} kg går ikke opp med skivene. Nærmeste er {num(r.achieved, 2)} kg.
+          {num(r.remainder, 2)} kg {t('går ikke opp med skivene. Nærmeste er', 'cannot be loaded with your plates. Closest is')} {num(r.achieved, 2)} kg.
         </p>
       )}
     </div>

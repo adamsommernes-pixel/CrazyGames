@@ -8,10 +8,12 @@ import { Calendar, dayKey } from '../../components/Calendar';
 import { Icon } from '../../components/Icon';
 import { MuscleDot } from '../../components/MuscleTag';
 import { useExerciseMap } from '../workout/ExercisePicker';
+import { exerciseName } from '../../lib/exerciseName';
 import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
 import { dateLong, durationShort, monthYear, num, plural, toDisplay } from '../../lib/format';
 import { volume } from '../../lib/calc';
+import { t } from '../../i18n';
 
 export function HistoryList() {
   const navigate = useNavigate();
@@ -32,7 +34,7 @@ export function HistoryList() {
     return { workouts, byWorkout };
   }, []);
 
-  if (!data) return <Page title="Historikk">{null}</Page>;
+  if (!data) return <Page title={t('Historikk', 'History')}>{null}</Page>;
   const { workouts, byWorkout } = data;
 
   // Grupper på måned (eller bare valgt dag i kalendervisning).
@@ -46,14 +48,14 @@ export function HistoryList() {
 
   return (
     <Page
-      title="Historikk"
+      title={t('Historikk', 'History')}
       actions={
         <div className="flex gap-1.5 pr-2">
           <Chip active={view === 'list'} onClick={() => setView('list')}>
-            Liste
+            {t('Liste', 'List')}
           </Chip>
           <Chip active={view === 'calendar'} onClick={() => setView('calendar')}>
-            Kalender
+            {t('Kalender', 'Calendar')}
           </Chip>
         </div>
       }
@@ -61,11 +63,11 @@ export function HistoryList() {
       {view === 'calendar' && workouts.length > 0 && (
         <div className="mb-4">
           <Calendar marked={new Set(workouts.map((w) => dayKey(w.started_at)))} selected={day} onSelect={setDay} />
-          {!day && <p className="mt-3 text-center text-sm text-muted">Trykk på en grønn dag for å se økta.</p>}
+          {!day && <p className="mt-3 text-center text-sm text-muted">{t('Trykk på en grønn dag for å se økta.', 'Tap a green day to see the workout.')}</p>}
         </div>
       )}
       {workouts.length === 0 ? (
-        <EmptyState icon="history" title="Ingen økter ennå" text="Ferdige økter dukker opp her." />
+        <EmptyState icon="history" title={t('Ingen økter ennå', 'No workouts yet')} text={t('Ferdige økter dukker opp her.', 'Finished workouts show up here.')} />
       ) : (
         groups.map((g, gi) => (
           <section key={g.month}>
@@ -88,7 +90,7 @@ export function HistoryList() {
                           </div>
                           <div className="text-sm text-muted first-letter:uppercase">{dateLong(w.started_at)}</div>
                           <div className="tabular mt-1 text-sm text-faint">
-                            {durationShort(new Date(w.ended_at!).getTime() - new Date(w.started_at).getTime())} · {plural(exercises, 'øvelse', 'øvelser')} ·{' '}
+                            {durationShort(new Date(w.ended_at!).getTime() - new Date(w.started_at).getTime())} · {plural(exercises, t('øvelse', 'exercise'), t('øvelser', 'exercises'))} ·{' '}
                             {plural(sets.length, 'set', 'sets')} · {num(toDisplay(volume(sets), unit), 0)} {unit}
                           </div>
                           {shown.length > 0 && (
@@ -96,7 +98,7 @@ export function HistoryList() {
                               {shown.map((e) => (
                                 <span key={e!.id} className="inline-flex items-center gap-1.5">
                                   <MuscleDot group={e!.muscle_group} />
-                                  {e!.name}
+                                  {exerciseName(e)}
                                 </span>
                               ))}
                               {exercises > 3 && <span className="text-faint">+{exercises - 3}</span>}

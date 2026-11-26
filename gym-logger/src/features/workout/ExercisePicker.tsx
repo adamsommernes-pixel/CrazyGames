@@ -4,8 +4,10 @@ import { db } from '../../db/dexie';
 import { createExercise } from '../../db/repo';
 import {
   EQUIPMENT,
+  EQUIPMENT_LABEL,
   EXERCISE_KINDS,
   KIND_LABEL,
+  MUSCLE_LABEL,
   MUSCLE_GROUPS,
   type Equipment,
   type Exercise,
@@ -20,6 +22,9 @@ import { ExerciseInfoSheet } from '../exercise/ExerciseInfoSheet';
 import { matchesSearch } from '../../lib/search';
 import { useSetting } from '../../lib/settings';
 import { formatSetShort, registerKinds } from '../../lib/kinds';
+import { exerciseName } from '../../lib/exerciseName';
+import { englishName } from '../../db/exercises';
+import { t } from '../../i18n';
 
 export function useExercises(): Exercise[] {
   const list = useLiveQuery(async () => (await db.exercises.toArray()).filter((e) => !e.deleted), [], []);
@@ -77,7 +82,7 @@ export function ExercisePicker({
   const filtered = useMemo(
     () =>
       exercises
-        .filter((e) => (!group || e.muscle_group === group) && (!equipment || e.equipment === equipment) && matchesSearch(e.name, query))
+        .filter((e) => (!group || e.muscle_group === group) && (!equipment || e.equipment === equipment) && (matchesSearch(e.name, query) || matchesSearch(englishName(e.id) ?? '', query)))
         .sort((a, b) => a.name.localeCompare(b.name, 'nb')),
     [exercises, query, group, equipment],
   );
@@ -87,8 +92,8 @@ export function ExercisePicker({
     ? ((recentData?.recent ?? []).map((id) => byId.get(id)).filter((e) => e && !favorites.includes(e.id)) as Exercise[])
     : [];
   const sections = browsing
-    ? MUSCLE_GROUPS.map((g) => ({ title: g as string, group: g, items: filtered.filter((e) => e.muscle_group === g) })).filter((s) => s.items.length)
-    : [{ title: `${filtered.length} treff`, group: null, items: filtered }];
+    ? MUSCLE_GROUPS.map((g) => ({ title: MUSCLE_LABEL[g], group: g, items: filtered.filter((e) => e.muscle_group === g) })).filter((s) => s.items.length)
+    : [{ title: `${filtered.length} ${t('treff', 'results')}`, group: null, items: filtered }];
 
   const reset = () => {
     setQuery('');
@@ -129,11 +134,11 @@ export function ExercisePicker({
         >
           <MuscleDot group={e.muscle_group} size={10} />
           <span className="min-w-0 flex-1">
-            <span className={`block truncate font-medium ${on ? 'text-green-light' : ''}`}>{e.name}</span>
+            <span className={`block truncate font-medium ${on ? 'text-green-light' : ''}`}>{exerciseName(e)}</span>
             <span className="block truncate text-sm text-muted">
-              {e.muscle_group} · {e.equipment}
-              {e.custom ? ' · Egen' : ''}
-              {last ? <span className="font-num text-faint"> · sist {formatSetShort(last, e.kind ?? 'weight', unit)}</span> : null}
+              {MUSCLE_LABEL[e.muscle_group]} · {EQUIPMENT_LABEL[e.equipment]}
+              {e.custom ? ` · ${t('Egen', 'Custom')}` : ''}
+              {last ? <span className="font-num text-faint"> · {t('sist', 'last')} {formatSetShort(last, e.kind ?? 'weight', unit)}</span> : null}
             </span>
           </span>
           {!single && (
@@ -142,7 +147,7 @@ export function ExercisePicker({
             </span>
           )}
         </button>
-        <IconButton icon="info" label={`Slik gjør du: ${e.name}`} onClick={() => setInfo(e)} className="text-faint" />
+        <IconButton icon="info" label={`${t('Slik gjør du', 'How to')}: ${exerciseName(e)}`} onClick={() => setInfo(e)} className="text-faint" />
       </li>
     );
   };
@@ -155,7 +160,7 @@ export function ExercisePicker({
   );
 
   return (
-    <Sheet open={open} onClose={close} title={creating ? 'Ny øvelse' : (title ?? (single ? 'Velg øvelse' : 'Velg øvelser'))} tall>
+    <Sheet open={open} onClose={close} title={creating ? t('Ny øvelse', 'New exercise') : (title ?? (single ? t('Velg øvelse', 'Choose exercise') : t('Velg øvelser', 'Choose exercises')))} tall>
       {creating ? (
         <NewExerciseForm
           initialName={query}
@@ -175,32 +180,32 @@ export function ExercisePicker({
         <div className="flex min-h-full flex-col">
           <div className="sticky top-0 z-10 -mx-4 bg-surface px-4 pb-2">
             <label className="relative block">
-              <span className="sr-only">Søk etter øvelse</span>
+              <span className="sr-only">{t('Søk etter øvelse', 'Search for an exercise')}</span>
               <Icon name="search" size={18} className="absolute top-1/2 left-3 -translate-y-1/2 text-faint" />
               <input
                 id="exercise-search"
                 className={`${inputClass} pl-10`}
-                placeholder="Søk blant øvelser"
+                placeholder={t('Søk blant øvelser', 'Search exercises')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 type="search"
                 autoComplete="off"
               />
             </label>
-            <div className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1" aria-label="Muskelgruppe">
+            <div className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1" aria-label={t('Muskelgruppe', 'Muscle group')}>
               <Chip active={!group} onClick={() => setGroup(null)}>
-                Alle
+                {t('Alle', 'All')}
               </Chip>
               {MUSCLE_GROUPS.map((g) => (
                 <Chip key={g} active={group === g} onClick={() => setGroup(group === g ? null : g)}>
                   <span className="inline-flex items-center gap-1.5">
                     <MuscleDot group={g} size={6} />
-                    {g}
+                    {MUSCLE_LABEL[g]}
                   </span>
                 </Chip>
               ))}
             </div>
-            <div className="-mx-4 mt-1.5 flex gap-2 overflow-x-auto px-4 pb-1" aria-label="Utstyr">
+            <div className="-mx-4 mt-1.5 flex gap-2 overflow-x-auto px-4 pb-1" aria-label={t('Utstyr', 'Equipment')}>
               {EQUIPMENT.map((q) => (
                 <button
                   key={q}
@@ -209,7 +214,7 @@ export function ExercisePicker({
                   onClick={() => setEquipment(equipment === q ? null : q)}
                   className={`min-h-8 shrink-0 rounded-lg px-2.5 text-xs font-medium ${equipment === q ? 'bg-ink text-black' : 'bg-raised text-muted'}`}
                 >
-                  {q}
+                  {EQUIPMENT_LABEL[q]}
                 </button>
               ))}
             </div>
@@ -217,13 +222,13 @@ export function ExercisePicker({
 
           {favList.length > 0 && (
             <>
-              <Header>★ Favoritter</Header>
+              <Header>{`★ ${t('Favoritter', 'Favourites')}`}</Header>
               <ul className="flex flex-col gap-0.5">{favList.map(row)}</ul>
             </>
           )}
           {recent.length > 0 && (
             <>
-              <Header>Nylig brukt</Header>
+              <Header>{t('Nylig brukt', 'Recently used')}</Header>
               <ul className="flex flex-col gap-0.5">{recent.map(row)}</ul>
             </>
           )}
@@ -233,15 +238,15 @@ export function ExercisePicker({
               <ul className="flex flex-col gap-0.5">{s.items.map(row)}</ul>
             </div>
           ))}
-          {filtered.length === 0 && <p className="py-6 text-center text-muted">Fant ingen øvelser.</p>}
+          {filtered.length === 0 && <p className="py-6 text-center text-muted">{t('Fant ingen øvelser.', 'No exercises found.')}</p>}
           <Button variant="secondary" icon="plus" full className="mt-4" onClick={() => setCreating(true)}>
-            Lag ny øvelse{query.trim() ? ` «${query.trim()}»` : ''}
+            {t('Lag ny øvelse', 'Create new exercise')}{query.trim() ? ` «${query.trim()}»` : ''}
           </Button>
 
           {!single && (
             <div className="sticky bottom-0 z-20 -mx-4 mt-4 bg-gradient-to-t from-surface via-surface to-transparent px-4 pt-4">
               <Button full className="min-h-14 text-lg" disabled={!selected.length} onClick={confirm}>
-                {selected.length ? `Legg til (${selected.length})` : 'Velg øvelser'}
+                {selected.length ? `${t('Legg til', 'Add')} (${selected.length})` : t('Velg øvelser', 'Choose exercises')}
               </Button>
             </div>
           )}
@@ -254,9 +259,9 @@ export function ExercisePicker({
 
 const KIND_HINT: Record<ExerciseKind, string> = {
   weight: 'kg × reps',
-  bodyweight: 'reps, valgfri ekstra vekt',
-  time: 'sekunder',
-  cardio: 'minutter og km',
+  get bodyweight() { return t('reps, valgfri ekstra vekt', 'reps, optional extra weight'); },
+  get time() { return t('sekunder', 'seconds'); },
+  get cardio() { return t('minutter og km', 'minutes and km'); },
 };
 
 export function NewExerciseForm({
@@ -284,10 +289,10 @@ export function NewExerciseForm({
       <ExerciseFields name={name} setName={setName} group={group} setGroup={setGroup} equipment={equipment} setEquipment={setEquipment} kind={kind} setKind={setKind} />
       <div className="flex gap-2">
         <Button variant="secondary" className="flex-1" onClick={onCancel}>
-          Avbryt
+          {t('Avbryt', 'Cancel')}
         </Button>
         <button type="submit" className="min-h-12 flex-1 rounded-2xl bg-green font-semibold text-black">
-          Lagre og velg
+          {t('Lagre og velg', 'Save and select')}
         </button>
       </div>
     </form>
@@ -308,31 +313,31 @@ export function ExerciseFields(p: {
   return (
     <>
       <label className="flex flex-col gap-1">
-        <span className="text-sm text-muted">Navn</span>
+        <span className="text-sm text-muted">{t('Navn', 'Name')}</span>
         <input id="new-exercise-name" className={inputClass} value={p.name} onChange={(e) => p.setName(e.target.value)} autoFocus required />
       </label>
       <fieldset>
-        <legend className="mb-2 text-sm text-muted">Muskelgruppe</legend>
+        <legend className="mb-2 text-sm text-muted">{t('Muskelgruppe', 'Muscle group')}</legend>
         <div className="flex flex-wrap gap-2">
           {MUSCLE_GROUPS.map((g) => (
             <Chip key={g} active={p.group === g} onClick={() => p.setGroup(g)}>
-              {g}
+              {MUSCLE_LABEL[g]}
             </Chip>
           ))}
         </div>
       </fieldset>
       <fieldset>
-        <legend className="mb-2 text-sm text-muted">Utstyr</legend>
+        <legend className="mb-2 text-sm text-muted">{t('Utstyr', 'Equipment')}</legend>
         <div className="flex flex-wrap gap-2">
           {EQUIPMENT.map((g) => (
             <Chip key={g} active={p.equipment === g} onClick={() => p.setEquipment(g)}>
-              {g}
+              {EQUIPMENT_LABEL[g]}
             </Chip>
           ))}
         </div>
       </fieldset>
       <fieldset>
-        <legend className="mb-2 text-sm text-muted">Hvordan logges den?</legend>
+        <legend className="mb-2 text-sm text-muted">{t('Hvordan logges den?', 'How is it logged?')}</legend>
         <div className="grid grid-cols-2 gap-2">
           {EXERCISE_KINDS.map((k) => (
             <button

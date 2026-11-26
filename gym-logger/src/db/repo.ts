@@ -5,6 +5,7 @@ import type { Goal } from './types';
 import { getSetting } from '../lib/settings';
 import { defaultWorkoutName } from '../lib/format';
 import { kindOf } from '../lib/kinds';
+import { t } from '../i18n';
 
 /** Markerer en rad som endret, så den blir med i neste synk. */
 function touched<T extends object>(row: T): T & { updated_at: string; dirty: 1 } {
@@ -567,7 +568,7 @@ async function itemsFromWorkout(workoutId: string, onlyDone: boolean): Promise<R
 /** Lager en rutine av en ferdig økt. */
 export async function routineFromWorkout(workoutId: string): Promise<string> {
   const w = await db.workouts.get(workoutId);
-  return saveRoutine({ name: w?.name ?? 'Ny rutine', notes: '' }, await itemsFromWorkout(workoutId, true));
+  return saveRoutine({ name: w?.name ?? t('Ny rutine', 'New routine'), notes: '' }, await itemsFromWorkout(workoutId, true));
 }
 
 /**
@@ -598,7 +599,7 @@ export async function updateRoutineFromWorkout(workoutId: string): Promise<void>
 export async function duplicateRoutine(id: string): Promise<string> {
   const r = await db.routines.get(id);
   const items = (await routineItems(id)).map(({ exercise_id, target_sets, target_reps, rest_seconds }) => ({ exercise_id, target_sets, target_reps, rest_seconds }));
-  return saveRoutine({ name: `${r?.name ?? 'Rutine'} (kopi)`, notes: r?.notes ?? '' }, items);
+  return saveRoutine({ name: `${r?.name ?? t('Rutine', 'Routine')} ${t('(kopi)', '(copy)')}`, notes: r?.notes ?? '' }, items);
 }
 
 // ---------- Profil ----------

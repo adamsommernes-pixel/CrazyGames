@@ -6,6 +6,7 @@ import { EXPERIENCE, EXPERIENCE_LABEL, GOALS, GOAL_LABEL, type Profile } from '.
 import { Button, Chip, NumberStepper, Page, SectionTitle, inputClass } from '../../components/ui';
 import { Avatar } from '../../components/widgets';
 import { parseNum } from '../../lib/format';
+import { t } from '../../i18n';
 
 export function EditProfile() {
   const user = useUser();
@@ -23,7 +24,7 @@ export function EditProfile() {
     });
   }, [user.id]);
 
-  if (!p) return <Page title="Rediger profil" back>{null}</Page>;
+  if (!p) return <Page title={t('Rediger profil', 'Edit profile')} back>{null}</Page>;
   const set = (patch: Partial<Profile>) => setP({ ...p, ...patch });
 
   const save = async () => {
@@ -43,29 +44,29 @@ export function EditProfile() {
 
   return (
     <Page
-      title="Rediger profil"
+      title={t('Rediger profil', 'Edit profile')}
       back
       actions={
         <Button className="min-h-10 px-4" onClick={() => void save()}>
-          Lagre
+          {t('Lagre', 'Save')}
         </Button>
       }
     >
       <div className="flex items-center gap-4">
         <Avatar name={p.name || '?'} color={p.color} size={64} />
         <label className="flex-1">
-          <span className="sr-only">Navn</span>
+          <span className="sr-only">{t('Navn', 'Name')}</span>
           <input id="edit-name" className={inputClass} value={p.name} onChange={(e) => set({ name: e.target.value })} />
         </label>
       </div>
-      <div className="mt-4 flex gap-3" role="radiogroup" aria-label="Profilfarge">
+      <div className="mt-4 flex gap-3" role="radiogroup" aria-label={t('Profilfarge', 'Profile colour')}>
         {PROFILE_COLORS.map((c) => (
           <button
             key={c}
             type="button"
             role="radio"
             aria-checked={c === p.color}
-            aria-label={`Farge ${c}`}
+            aria-label={`${t('Farge', 'Colour')} ${c}`}
             className={`size-10 rounded-full ${c === p.color ? 'ring-2 ring-ink ring-offset-2 ring-offset-bg' : ''}`}
             style={{ background: c }}
             onClick={() => set({ color: c })}
@@ -73,7 +74,7 @@ export function EditProfile() {
         ))}
       </div>
 
-      <SectionTitle>Mål</SectionTitle>
+      <SectionTitle>{t('Mål', 'Goal')}</SectionTitle>
       <div className="flex flex-wrap gap-2">
         {GOALS.map((g) => (
           <Chip key={g} active={p.goal === g} onClick={() => set({ goal: g })}>
@@ -82,10 +83,10 @@ export function EditProfile() {
         ))}
       </div>
 
-      <SectionTitle>Økter per uke</SectionTitle>
-      <NumberStepper label="Økter per uke" value={p.weekly_target} min={1} max={7} onChange={(v) => set({ weekly_target: v })} />
+      <SectionTitle>{t('Økter per uke', 'Workouts per week')}</SectionTitle>
+      <NumberStepper label={t('Økter per uke', 'Workouts per week')} value={p.weekly_target} min={1} max={7} onChange={(v) => set({ weekly_target: v })} />
 
-      <SectionTitle>Erfaring</SectionTitle>
+      <SectionTitle>{t('Erfaring', 'Experience')}</SectionTitle>
       <div className="flex flex-wrap gap-2">
         {EXPERIENCE.map((e) => (
           <Chip key={e} active={p.experience === e} onClick={() => set({ experience: e })}>
@@ -94,18 +95,18 @@ export function EditProfile() {
         ))}
       </div>
 
-      <SectionTitle>Om deg (valgfritt)</SectionTitle>
+      <SectionTitle>{t('Om deg (valgfritt)', 'About you (optional)')}</SectionTitle>
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Høyde (cm)</span>
+          <span className="text-sm text-muted">{t('Høyde (cm)', 'Height (cm)')}</span>
           <input id="edit-height" className={inputClass} inputMode="numeric" value={height} onChange={(e) => setHeight(e.target.value)} />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Fødselsår</span>
+          <span className="text-sm text-muted">{t('Fødselsår', 'Year of birth')}</span>
           <input id="edit-born" className={inputClass} inputMode="numeric" value={born} onChange={(e) => setBorn(e.target.value)} />
         </label>
       </div>
-      <p className="mt-3 text-sm text-muted">Kroppsvekt logges under Fremgang → Kroppsvekt.</p>
+      <p className="mt-3 text-sm text-muted">{t('Kroppsvekt logges under Fremgang → Kroppsvekt.', 'Bodyweight is logged under Progress → Bodyweight.')}</p>
     </Page>
   );
 }

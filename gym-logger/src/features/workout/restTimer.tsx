@@ -5,7 +5,9 @@ import { getActiveWorkout, nextPendingSet, setsForWorkout, workoutExercises } fr
 import { getSetting, setSetting, useSetting } from '../../lib/settings';
 import { duration } from '../../lib/format';
 import { formatSet } from '../../lib/kinds';
+import { exerciseName } from '../../lib/exerciseName';
 import { buzz } from '../../lib/haptics';
+import { t } from '../../i18n';
 
 // Timeren lagrer sluttidspunktet, så den teller riktig selv om skjermen låses
 // eller appen lukkes og åpnes igjen.
@@ -88,7 +90,7 @@ export function RestTimerBar() {
     const ex = await db.exercises.get(s.exercise_id);
     const kind = ex?.kind ?? 'weight';
     const empty = s.reps === 0 && s.weight === 0 && !s.distance_km;
-    return empty ? (ex?.name ?? 'Øvelse') : `${ex?.name ?? 'Øvelse'} ${formatSet(s, kind, unit)}`;
+    return empty ? exerciseName(ex) : `${exerciseName(ex)} ${formatSet(s, kind, unit)}`;
   }, [!!timer, unit]);
 
   useEffect(() => {
@@ -126,7 +128,7 @@ export function RestTimerBar() {
             />
           </svg>
           <span className={`font-num min-w-0 flex-1 text-xl leading-tight font-bold ${done ? 'text-green-light' : ''}`}>
-            {done ? 'Klar for neste set!' : duration(remaining)}
+            {done ? t('Klar for neste set!', 'Ready for the next set!') : duration(remaining)}
           </span>
           {!done && (
             <>
@@ -139,12 +141,12 @@ export function RestTimerBar() {
             </>
           )}
           <button type="button" className="min-h-10 rounded-lg px-3 text-sm font-semibold text-green" onClick={() => void stopRest()}>
-            {done ? 'OK' : 'Hopp over'}
+            {done ? 'OK' : t('Hopp over', 'Skip')}
           </button>
         </div>
         {next && (
           <div className="relative -mt-1 truncate px-3 pb-2 text-sm text-muted">
-            <span className="text-faint">Neste: </span>
+            <span className="text-faint">{t('Neste', 'Next')}: </span>
             <span className="font-medium text-ink">{next}</span>
           </div>
         )}

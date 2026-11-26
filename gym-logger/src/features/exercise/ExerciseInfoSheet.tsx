@@ -9,7 +9,9 @@ import { ExerciseGuide, ExerciseMeta } from './ExerciseGuide';
 import { countsAsWork } from '../../lib/calc';
 import { formatSet } from '../../lib/kinds';
 import { dateShort } from '../../lib/format';
+import { exerciseName } from '../../lib/exerciseName';
 import { toggleFavorite, useSetting } from '../../lib/settings';
+import { t } from '../../i18n';
 
 /** De siste øktene med øvelsen, nyeste først. */
 async function recentSessions(exerciseId: string, limit = 5) {
@@ -39,7 +41,7 @@ export function ExerciseInfoSheet({ exercise, onClose }: { exercise: Exercise | 
   const kind = exercise.kind ?? 'weight';
 
   return (
-    <Sheet open onClose={onClose} title={exercise.name} tall>
+    <Sheet open onClose={onClose} title={exerciseName(exercise)} tall>
       <div className="flex items-start gap-2">
         <div className="flex-1">
           <ExerciseMeta exercise={exercise} />
@@ -47,7 +49,7 @@ export function ExerciseInfoSheet({ exercise, onClose }: { exercise: Exercise | 
         <IconButton
           icon="star"
           filled={fav}
-          label={fav ? 'Fjern fra favoritter' : 'Legg til i favoritter'}
+          label={fav ? t('Fjern fra favoritter', 'Remove from favourites') : t('Legg til i favoritter', 'Add to favourites')}
           aria-pressed={fav}
           className={fav ? 'text-warn' : ''}
           onClick={() => void toggleFavorite(exercise.id)}
@@ -56,17 +58,17 @@ export function ExerciseInfoSheet({ exercise, onClose }: { exercise: Exercise | 
 
       <div className="mt-4 mb-4 flex gap-2" role="tablist">
         <Chip active={tab === 'guide'} onClick={() => setTab('guide')}>
-          Slik gjør du
+          {t('Slik gjør du', 'How to')}
         </Chip>
         <Chip active={tab === 'history'} onClick={() => setTab('history')}>
-          Historikk
+          {t('Historikk', 'History')}
         </Chip>
       </div>
 
       {tab === 'guide' ? (
         <ExerciseGuide exercise={exercise} />
       ) : sessions.length === 0 ? (
-        <p className="py-6 text-center text-muted">Du har ikke logget denne øvelsen ennå.</p>
+        <p className="py-6 text-center text-muted">{t('Du har ikke logget denne øvelsen ennå.', 'You have not logged this exercise yet.')}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {sessions.map(({ workout, sets }) => (
@@ -93,7 +95,7 @@ export function ExerciseInfoSheet({ exercise, onClose }: { exercise: Exercise | 
           navigate(`/exercise/${exercise.id}`);
         }}
       >
-        <Icon name="chart" size={18} /> Rekorder og grafer
+        <Icon name="chart" size={18} /> {t('Rekorder og grafer', 'Records and charts')}
       </Button>
     </Sheet>
   );

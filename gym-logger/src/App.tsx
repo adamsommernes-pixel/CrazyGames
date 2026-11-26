@@ -56,7 +56,7 @@ export default function App() {
 
 function Splash() {
   return (
-    <div className="grid h-full place-items-center" aria-label="Laster">
+    <div className="grid h-full place-items-center" aria-label={t('Laster', 'Loading')}>
       <span className="grid size-14 animate-pulse place-items-center rounded-2xl bg-green text-black shadow-glow">
         <Icon name="dumbbell" size={28} strokeWidth={2.4} />
       </span>

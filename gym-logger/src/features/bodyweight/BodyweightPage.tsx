@@ -6,6 +6,7 @@ import { undoToast } from '../../components/toast';
 import { Button, Card, EmptyState, IconButton, Page, SectionTitle, inputClass } from '../../components/ui';
 import { useSetting } from '../../lib/settings';
 import { dateLong, dateShort, fromDisplay, num, parseNum, toDisplay } from '../../lib/format';
+import { t } from '../../i18n';
 
 const LineTrend = lazy(() => import('../../components/charts').then((m) => ({ default: m.LineTrend })));
 
@@ -25,7 +26,7 @@ export function BodyweightPage() {
   };
 
   return (
-    <Page title="Kroppsvekt" back>
+    <Page title={t('Kroppsvekt', 'Bodyweight')} back>
       <Card className="p-4">
         <form
           className="flex gap-2"
@@ -35,29 +36,29 @@ export function BodyweightPage() {
           }}
         >
           <label className="flex-1">
-            <span className="sr-only">Vekt i dag ({unit})</span>
-            <input id="bw-input" className={`${inputClass} font-num text-lg`} inputMode="decimal" placeholder={`Vekt i dag (${unit})`} value={value} onChange={(e) => setValue(e.target.value)} />
+            <span className="sr-only">{t('Vekt i dag', 'Weight today')} ({unit})</span>
+            <input id="bw-input" className={`${inputClass} font-num text-lg`} inputMode="decimal" placeholder={`${t('Vekt i dag', 'Weight today')} (${unit})`} value={value} onChange={(e) => setValue(e.target.value)} />
           </label>
           <Button type="submit" disabled={parseNum(value) <= 0}>
-            Logg
+            {t('Logg', 'Log')}
           </Button>
         </form>
-        <p className="mt-2 text-xs text-faint">Én måling per dag. Logger du igjen samme dag, erstattes den.</p>
+        <p className="mt-2 text-xs text-faint">{t('Én måling per dag. Logger du igjen samme dag, erstattes den.', 'One entry per day. Logging again the same day replaces it.')}</p>
       </Card>
 
       {entries.length === 0 ? (
-        <EmptyState icon="scale" title="Ingen målinger" text="Vei deg gjerne til samme tid på dagen, for eksempel om morgenen." />
+        <EmptyState icon="scale" title={t('Ingen målinger', 'No entries')} text={t('Vei deg gjerne til samme tid på dagen, for eksempel om morgenen.', 'Try to weigh yourself at the same time of day, for example in the morning.')} />
       ) : (
         <>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <div className="card rounded-2xl p-4">
-              <div className="text-xs text-muted">Nå</div>
+              <div className="text-xs text-muted">{t('Nå', 'Now')}</div>
               <div className="font-num text-3xl font-bold">
                 {num(toDisplay(latest.weight_kg, unit))} <span className="text-base text-faint">{unit}</span>
               </div>
             </div>
             <div className="card rounded-2xl p-4">
-              <div className="text-xs text-muted">Endring siden {dateShort(oldest.date)}</div>
+              <div className="text-xs text-muted">{t('Endring siden', 'Change since')} {dateShort(oldest.date)}</div>
               <div className={`font-num text-3xl font-bold ${change === null ? 'text-faint' : ''}`}>
                 {change === null ? '–' : `${change > 0 ? '+' : change < 0 ? '−' : ''}${num(Math.abs(toDisplay(change, unit)))}`}
               </div>
@@ -66,11 +67,11 @@ export function BodyweightPage() {
           {entries.length >= 2 && (
             <Card className="mt-3 p-2 pt-4">
               <Suspense fallback={<div className="h-52" />}>
-                <LineTrend data={[...entries].reverse().map((e) => ({ x: dateShort(e.date), y: Math.round(toDisplay(e.weight_kg, unit) * 10) / 10 }))} label="Kroppsvekt" unit={unit} />
+                <LineTrend data={[...entries].reverse().map((e) => ({ x: dateShort(e.date), y: Math.round(toDisplay(e.weight_kg, unit) * 10) / 10 }))} label={t('Kroppsvekt', 'Bodyweight')} unit={unit} />
               </Suspense>
             </Card>
           )}
-          <SectionTitle>Målinger</SectionTitle>
+          <SectionTitle>{t('Målinger', 'Entries')}</SectionTitle>
           <Card className="divide-y divide-line">
             {entries.map((e) => (
               <div key={e.id} className="flex items-center gap-3 py-2 pr-2 pl-4">
@@ -80,10 +81,10 @@ export function BodyweightPage() {
                 </span>
                 <IconButton
                   icon="trash"
-                  label="Slett måling"
+                  label={t('Slett måling', 'Delete entry')}
                   onClick={async () => {
                     const removed = await deleteBodyweight(e.id);
-                    undoToast('Målingen er slettet', () => restore(removed));
+                    undoToast(t('Målingen er slettet', 'Entry deleted'), () => restore(removed));
                   }}
                 />
               </div>

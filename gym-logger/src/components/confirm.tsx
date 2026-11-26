@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { Button, Sheet } from './ui';
+import { t } from '../i18n';
 
 // Egen bekreftelsesdialog i appen. Nettleserens confirm()/alert() blokkeres i
 // enkelte innebygde visninger, og ser dessuten fremmed ut i en installert app.
@@ -51,14 +52,14 @@ export function ConfirmHost() {
     () => current,
   );
   return (
-    <Sheet open={!!req} onClose={() => close(false)} title={req?.info ? 'Merk' : 'Er du sikker?'}>
+    <Sheet open={!!req} onClose={() => close(false)} title={req?.info ? t('Merk', 'Note') : t('Er du sikker?', 'Are you sure?')}>
       {req && (
         <>
           <p className="mb-5 text-muted">{req.message}</p>
           <div className="flex gap-2">
             {!req.info && (
               <Button variant="secondary" className="flex-1" onClick={() => close(false)}>
-                Avbryt
+                {t('Avbryt', 'Cancel')}
               </Button>
             )}
             <Button variant={req.danger ? 'danger' : 'primary'} className="flex-1" onClick={() => close(true)}>

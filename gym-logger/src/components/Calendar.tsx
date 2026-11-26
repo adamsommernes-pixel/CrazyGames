@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { IconButton } from './ui';
 import { locale, t } from '../i18n';
 
-const DAYS = ['man', 'tir', 'ons', 'tor', 'fre', 'lør', 'søn'];
+const dayNames = () => (t('ma ti on to fr lø sø', 'mo tu we th fr sa su')).split(' ');
 const key = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
 /** Månedskalender med markerte treningsdager. */
@@ -29,17 +29,17 @@ export function Calendar({
   return (
     <div className="card rounded-3xl p-3">
       <div className="mb-2 flex items-center">
-        <IconButton icon="back" label="Forrige måned" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} />
+        <IconButton icon="back" label={t('Forrige måned', 'Previous month')} onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} />
         <div className="flex-1 text-center">
           <div className="font-semibold first-letter:uppercase">{title}</div>
-          <div className="text-xs text-muted">{count} treningsdager</div>
+          <div className="text-xs text-muted">{count} {t('treningsdager', 'training days')}</div>
         </div>
-        <IconButton icon="chevron" label="Neste måned" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} />
+        <IconButton icon="chevron" label={t('Neste måned', 'Next month')} onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} />
       </div>
       <div className="grid grid-cols-7 gap-1 text-center">
-        {DAYS.map((d) => (
+        {dayNames().map((d) => (
           <div key={d} className="pb-1 text-[11px] font-semibold text-faint uppercase">
-            {d.slice(0, 2)}
+            {d}
           </div>
         ))}
         {cells.map((d, i) => {
@@ -53,7 +53,7 @@ export function Calendar({
               type="button"
               disabled={!has}
               onClick={() => onSelect(sel ? null : k)}
-              aria-label={`${d.getDate()}. ${has ? 'trent' : ''}`}
+              aria-label={`${d.getDate()}. ${has ? t('trent', 'trained') : ''}`}
               aria-pressed={sel}
               className={`font-num relative grid aspect-square place-items-center rounded-xl text-sm transition ${
                 sel ? 'bg-green font-bold text-black' : has ? 'bg-green-dim/60 font-bold text-green-light' : 'text-faint'

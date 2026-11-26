@@ -4,7 +4,9 @@ import { db } from '../../db/dexie';
 import { getActiveWorkout, routineItems, startWorkout } from '../../db/repo';
 import { Button, Card, EmptyState, IconButton, Page } from '../../components/ui';
 import { useExerciseMap } from '../workout/ExercisePicker';
+import { exerciseName } from '../../lib/exerciseName';
 import { showInfo } from '../../components/confirm';
+import { t } from '../../i18n';
 
 export function RoutineList() {
   const navigate = useNavigate();
@@ -16,7 +18,7 @@ export function RoutineList() {
 
   const start = async (routineId: string) => {
     if (await getActiveWorkout()) {
-      await showInfo('Du har allerede en økt i gang. Avslutt den før du starter en ny.');
+      await showInfo(t('Du har allerede en økt i gang. Avslutt den før du starter en ny.', 'You already have a workout in progress. Finish it before starting a new one.'));
       navigate('/workout');
       return;
     }
@@ -25,11 +27,11 @@ export function RoutineList() {
   };
 
   return (
-    <Page title="Rutiner" actions={<IconButton icon="plus" label="Ny rutine" className="text-green" onClick={() => navigate('/routines/new')} />}>
+    <Page title={t('Rutiner', 'Routines')} actions={<IconButton icon="plus" label={t('Ny rutine', 'New routine')} className="text-green" onClick={() => navigate('/routines/new')} />}>
       {routines && routines.length === 0 && (
-        <EmptyState icon="list" title="Ingen rutiner" text="Lag faste økter, som Push, Pull og Bein, og start dem med ett trykk.">
+        <EmptyState icon="list" title={t('Ingen rutiner', 'No routines')} text={t('Lag faste økter, som Push, Pull og Bein, og start dem med ett trykk.', 'Create fixed workouts like Push, Pull and Legs, and start them with one tap.')}>
           <Button full icon="plus" onClick={() => navigate('/routines/new')}>
-            Lag rutine
+            {t('Lag rutine', 'Create routine')}
           </Button>
         </EmptyState>
       )}
@@ -41,12 +43,12 @@ export function RoutineList() {
                 <h2 className="text-lg font-bold">{routine.name}</h2>
                 <p className="mt-1 line-clamp-2 text-sm text-muted">
                   {items.length
-                    ? items.map((i) => exMap.get(i.exercise_id)?.name ?? '?').join(', ')
-                    : 'Ingen øvelser'}
+                    ? items.map((i) => exerciseName(exMap.get(i.exercise_id))).join(', ')
+                    : t('Ingen øvelser', 'No exercises')}
                 </p>
               </button>
               <Button full icon="play" className="mt-3" disabled={!items.length} onClick={() => void start(routine.id)}>
-                Start økt
+                {t('Start økt', 'Start workout')}
               </Button>
             </Card>
           </li>

@@ -9,6 +9,7 @@ import { PR_LABEL, type PRKind } from '../../lib/calc';
 import { buzz } from '../../lib/haptics';
 import { Icon } from '../../components/Icon';
 import { PRBadge } from '../../components/ui';
+import { t } from '../../i18n';
 
 const TYPE_COLOR: Record<WorkoutSet['set_type'], string> = {
   normal: 'text-muted',
@@ -153,8 +154,8 @@ export function SetRow({
   const firstValue = firstIsDistance ? (set.distance_km ?? 0) : toDisplay(set.weight, unit);
   const saveFirst = (v: number) =>
     updateSet(set.id, firstIsDistance ? { distance_km: v } : { weight: fromDisplay(v, unit) });
-  const secondLabel = kind === 'time' ? 'Sekunder' : kind === 'cardio' ? 'Minutter' : 'Reps';
-  const firstLabel = kind === 'cardio' ? 'Distanse' : kind === 'weight' ? 'Vekt' : 'Ekstra vekt';
+  const secondLabel = kind === 'time' ? t('Sekunder', 'Seconds') : kind === 'cardio' ? t('Minutter', 'Minutes') : 'Reps';
+  const firstLabel = kind === 'cardio' ? t('Distanse', 'Distance') : kind === 'weight' ? t('Vekt', 'Weight') : t('Ekstra vekt', 'Extra weight');
   return (
     <div
       className={`rounded-2xl transition-colors ${done ? 'bg-green-dim/25' : current ? 'bg-raised/60 ring-1 ring-green/50' : ''}`}
@@ -166,7 +167,7 @@ export function SetRow({
         <button
           type="button"
           onClick={onMenu}
-          aria-label={`Set ${label}, rediger`}
+          aria-label={`Set ${label}, ${t('rediger', 'edit')}`}
           className={`font-num h-11 rounded-xl text-center text-lg font-bold active:bg-raised ${TYPE_COLOR[set.set_type]}`}
         >
           {short || label}
@@ -174,7 +175,7 @@ export function SetRow({
         <button
           type="button"
           className="font-num truncate text-left text-sm text-faint active:text-muted"
-          aria-label={previous ? `Bruk forrige: ${prevLabel}` : 'Ingen forrige'}
+          aria-label={previous ? `${t('Bruk forrige', 'Use previous')}: ${prevLabel}` : t('Ingen forrige', 'No previous')}
           onClick={() =>
             previous && void updateSet(set.id, { weight: previous.weight, reps: previous.reps, distance_km: previous.distance_km ?? null })
           }
@@ -182,7 +183,7 @@ export function SetRow({
           {prevLabel}
         </button>
         <NumField
-          label={kind === 'weight' ? `Vekt set ${label} (${unit})` : `${firstLabel} set ${label} (${cols.first.replace('+', '')})`}
+          label={kind === 'weight' ? `${t('Vekt', 'Weight')} set ${label} (${unit})` : `${firstLabel} set ${label} (${cols.first.replace('+', '')})`}
           field="weight"
           decimal
           done={done}
@@ -199,7 +200,7 @@ export function SetRow({
           field="reps"
           done={done}
           value={timingFrom !== null ? Math.round((now - timingFrom) / 1000) : set.reps}
-          placeholder={targetReps ? `mål ${targetReps}` : kind === 'time' ? 'sek' : kind === 'cardio' ? 'min' : '0'}
+          placeholder={targetReps ? `${t('mål', 'goal')} ${targetReps}` : kind === 'time' ? t('sek', 'sec') : kind === 'cardio' ? 'min' : '0'}
           onCommit={(v) => void updateSet(set.id, { reps: Math.round(v) })}
           onEnter={async (v, el) => {
             // Lagre først, så fullføre: rekkefølgen hindrer at fullføringen overskriver reps.
@@ -212,12 +213,12 @@ export function SetRow({
           type="button"
           aria-label={
             done
-              ? `Angre set ${label}`
+              ? `${t('Angre set', 'Undo set')} ${label}`
               : usesStopwatch
                 ? timingFrom === null
-                  ? `Start tidtaking set ${label}`
-                  : `Stopp tidtaking set ${label}`
-                : `Fullfør set ${label}`
+                  ? `${t('Start tidtaking set', 'Start timing set')} ${label}`
+                  : `${t('Stopp tidtaking set', 'Stop timing set')} ${label}`
+                : `${t('Fullfør set', 'Complete set')} ${label}`
           }
           aria-pressed={done}
           className={`grid h-12 w-[3.25rem] place-items-center rounded-xl transition ${

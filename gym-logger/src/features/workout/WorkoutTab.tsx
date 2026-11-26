@@ -3,6 +3,7 @@ import { getActiveWorkout } from '../../db/repo';
 import { ActiveWorkout } from './ActiveWorkout';
 import { Button, EmptyState, Page } from '../../components/ui';
 import { openStartSheet } from './StartSheet';
+import { t } from '../../i18n';
 
 /**
  * Viser økta som pågår. Uten aktiv økt vises en tom tilstand (ingen automatisk
@@ -13,10 +14,10 @@ export function WorkoutTab() {
   if (active === null) return null;
   if (!active) {
     return (
-      <Page title="Økt">
-        <EmptyState icon="dumbbell" title="Ingen økt i gang" text="Start en tom økt eller en av rutinene dine.">
+      <Page title={t('Økt', 'Workout')}>
+        <EmptyState icon="dumbbell" title={t('Ingen økt i gang', 'No workout in progress')} text={t('Start en tom økt eller en av rutinene dine.', 'Start an empty workout or one of your routines.')}>
           <Button full icon="plus" onClick={openStartSheet}>
-            Start økt
+            {t('Start økt', 'Start workout')}
           </Button>
         </EmptyState>
       </Page>

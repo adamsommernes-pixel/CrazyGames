@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Icon } from './Icon';
 import { passwordStrength } from '../auth/crypto';
 import { inputClass } from './ui';
+import { t } from '../i18n';
 
 /** Ring som viser fremdrift (f.eks. ukemål). Fylles med en kort animasjon. */
 export function ProgressRing({
@@ -67,13 +68,13 @@ export function Avatar({ name, color, size = 48 }: { name: string; color: string
   );
 }
 
-const DAYS = ['M', 'T', 'O', 'T', 'F', 'L', 'S'];
+const days = () => (t('MTOTFLS', 'MTWTFSS')).split('');
 
 /** Ukas dager med markering for treningsdager og i dag. */
 export function WeekStrip({ trained, today }: { trained: boolean[]; today: number }) {
   return (
-    <ol className="grid grid-cols-7 gap-1.5" aria-label="Treningsdager denne uka">
-      {DAYS.map((d, i) => (
+    <ol className="grid grid-cols-7 gap-1.5" aria-label={t('Treningsdager denne uka', 'Training days this week')}>
+      {days().map((d, i) => (
         <li key={i} className="flex flex-col items-center gap-1.5">
           <span className={`text-[11px] font-semibold ${i === today ? 'text-ink' : 'text-faint'}`}>{d}</span>
           <span
@@ -84,7 +85,7 @@ export function WeekStrip({ trained, today }: { trained: boolean[]; today: numbe
                   ? 'border-green/60 text-green'
                   : 'border-line text-transparent'
             }`}
-            aria-label={trained[i] ? 'Trent' : i === today ? 'I dag' : 'Ikke trent'}
+            aria-label={trained[i] ? t('Trent', 'Trained') : i === today ? t('I dag', 'Today') : t('Ikke trent', 'Not trained')}
           >
             <Icon name="check" size={14} strokeWidth={3.5} />
           </span>
@@ -111,7 +112,7 @@ export function PasswordField({
 }) {
   const [show, setShow] = useState(false);
   const strength = passwordStrength(value);
-  const words = ['', 'Svakt', 'Greit', 'Bra', 'Sterkt'];
+  const words = ['', t('Svakt', 'Weak'), t('Greit', 'Fair'), t('Bra', 'Good'), t('Sterkt', 'Strong')];
   const colors = ['bg-line', 'bg-danger', 'bg-warn', 'bg-green', 'bg-green-light'];
   return (
     <div className="flex flex-col gap-1.5">
@@ -129,7 +130,7 @@ export function PasswordField({
           required
         />
         <button type="button" className="absolute top-1/2 right-2 -translate-y-1/2 rounded-lg px-2 py-1.5 text-sm font-medium text-green" onClick={() => setShow((s) => !s)}>
-          {show ? 'Skjul' : 'Vis'}
+          {show ? t('Skjul', 'Hide') : t('Vis', 'Show')}
         </button>
       </div>
       {showStrength && value && (
@@ -197,7 +198,7 @@ export function Confetti({ fire }: { fire: number }) {
 /** Steg-prikker for veivisere. */
 export function StepDots({ step, total }: { step: number; total: number }) {
   return (
-    <div className="flex items-center gap-1.5" aria-label={`Steg ${step + 1} av ${total}`}>
+    <div className="flex items-center gap-1.5" aria-label={t(`Steg ${step + 1} av ${total}`, `Step ${step + 1} of ${total}`)}>
       {Array.from({ length: total }, (_, i) => (
         <span key={i} className={`h-1.5 rounded-full transition-all ${i === step ? 'w-6 bg-green' : i < step ? 'w-1.5 bg-green/60' : 'w-1.5 bg-line'}`} />
       ))}

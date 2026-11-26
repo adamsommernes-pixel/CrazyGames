@@ -88,7 +88,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
     const removed = await deleteWorkout(workout.id);
     await stopRest();
     navigate('/', { replace: true });
-    undoToast('Økta er forkastet', async () => {
+    undoToast(t('Økta er forkastet', 'Workout discarded'), async () => {
       await restore(removed);
       navigate('/workout');
     });
@@ -98,7 +98,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
     <Page
       title={
         <input
-          aria-label="Navn på økt"
+          aria-label={t('Navn på økt', 'Workout name')}
           className="w-full truncate bg-transparent outline-none focus:text-green"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -107,21 +107,21 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
       }
       actions={
         <Button className="min-h-10 px-4" onClick={() => setFinishing(true)}>
-          Avslutt
+          {t('Avslutt', 'Finish')}
         </Button>
       }
     >
       <div className="mb-3 grid grid-cols-3 gap-2">
-        {longAgo ? <Stat label="Startet" value={dateShort(workout.started_at)} /> : <Stat label="Tid" value={duration(now - startMs)} />}
+        {longAgo ? <Stat label={t('Startet', 'Started')} value={dateShort(workout.started_at)} /> : <Stat label={t('Tid', 'Time')} value={duration(now - startMs)} />}
         <Stat label="Sets" value={`${doneSets.length}/${sets.length}`} />
-        <Stat label={`Volum (${unit})`} value={num(toDisplay(vol, unit), 0)} />
+        <Stat label={`${t('Volum', 'Volume')} (${unit})`} value={num(toDisplay(vol, unit), 0)} />
       </div>
-      <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-line" role="progressbar" aria-label="Fremdrift i økta" aria-valuenow={doneSets.length} aria-valuemax={sets.length}>
+      <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-line" role="progressbar" aria-label={t('Fremdrift i økta', 'Workout progress')} aria-valuenow={doneSets.length} aria-valuemax={sets.length}>
         <div className="h-full rounded-full bg-green shadow-glow transition-[width] duration-500" style={{ width: `${sets.length ? (doneSets.length / sets.length) * 100 : 0}%` }} />
       </div>
 
       {wes.length === 0 ? (
-        <EmptyState icon="dumbbell" title="Tom økt" text="Legg til den første øvelsen for å begynne å logge." />
+        <EmptyState icon="dumbbell" title={t('Tom økt', 'Empty workout')} text={t('Legg til den første øvelsen for å begynne å logge.', 'Add your first exercise to start logging.')} />
       ) : (
         <div className="flex flex-col gap-3">
           {wes.map((we, i) => (
@@ -141,7 +141,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
       )}
 
       <Button full icon="plus" variant="secondary" className="mt-4 min-h-14 border-green/50 text-green" onClick={() => setPicker(true)}>
-        Legg til øvelse
+        {t('Legg til øvelse', 'Add exercise')}
       </Button>
 
       <ExercisePicker
@@ -152,20 +152,20 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
         }}
       />
 
-      <Sheet open={finishing} onClose={() => setFinishing(false)} title="Avslutt økt">
+      <Sheet open={finishing} onClose={() => setFinishing(false)} title={t('Avslutt økt', 'Finish workout')}>
         {doneSets.length === 0 ? (
-          <p className="mb-4 text-muted">Du har ikke huket av noen sets ennå. Hak av settene du har gjort, eller forkast økta.</p>
+          <p className="mb-4 text-muted">{t('Du har ikke huket av noen sets ennå. Hak av settene du har gjort, eller forkast økta.', 'You have not ticked off any sets yet. Tick off the sets you did, or discard the workout.')}</p>
         ) : (
           <p className="mb-4 text-muted">
-            {plural(doneSets.length, 'set', 'sets')} fullført. Sets som ikke er huket av blir fjernet.
+            {plural(doneSets.length, 'set', 'sets')} {t('fullført. Sets som ikke er huket av blir fjernet.', 'done. Sets that are not ticked off will be removed.')}
           </p>
         )}
         {longAgo && (
           <div className="mb-4">
             <div className="mb-1.5 text-sm text-muted">
-              Økta startet {new Date(workout.started_at).toLocaleString(locale(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. Hvor lenge varte den?
+              {t('Økta startet', 'The workout started')} {new Date(workout.started_at).toLocaleString(locale(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. {t('Hvor lenge varte den?', 'How long did it last?')}
             </div>
-            <NumberStepper label="Varighet" value={minutes} step={5} min={5} max={300} onChange={setDurationMin} format={(v) => durationShort(v * 60_000)} />
+            <NumberStepper label={t('Varighet', 'Duration')} value={minutes} step={5} min={5} max={300} onChange={setDurationMin} format={(v) => durationShort(v * 60_000)} />
           </div>
         )}
         {routineChange && doneSets.length > 0 && (
@@ -180,26 +180,26 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
               {updateRoutine && <Icon name="check" size={14} strokeWidth={3.5} />}
             </span>
             <span>
-              <span className="block font-semibold">Oppdater rutinen «{routineChange.routineName}»</span>
-              <span className="block text-sm text-muted">Du har endret øvelser eller antall sets. Lagre dem i rutinen til neste gang.</span>
+              <span className="block font-semibold">{t('Oppdater rutinen', 'Update the routine')} «{routineChange.routineName}»</span>
+              <span className="block text-sm text-muted">{t('Du har endret øvelser eller antall sets. Lagre dem i rutinen til neste gang.', 'You changed exercises or the number of sets. Save them to the routine for next time.')}</span>
             </span>
           </button>
         )}
         <label className="mb-4 flex flex-col gap-1">
-          <span className="text-sm text-muted">Notat (valgfritt)</span>
+          <span className="text-sm text-muted">{t('Notat (valgfritt)', 'Note (optional)')}</span>
           <textarea
             className={`${inputClass} min-h-20 py-2`}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Hvordan gikk det?"
+            placeholder={t('Hvordan gikk det?', 'How did it go?')}
           />
         </label>
         <div className="flex flex-col gap-2">
           <Button full disabled={doneSets.length === 0} onClick={() => void finish()}>
-            Lagre økt
+            {t('Lagre økt', 'Save workout')}
           </Button>
           <Button full variant="danger" icon="trash" onClick={() => void discard()}>
-            Forkast økt
+            {t('Forkast økt', 'Discard workout')}
           </Button>
         </div>
       </Sheet>

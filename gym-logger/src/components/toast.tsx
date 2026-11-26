@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { Icon } from './Icon';
+import { t } from '../i18n';
 
 // Kort melding nederst på skjermen, med valgfri «Angre»-knapp.
 // Samme enkle store-mønster som confirm.tsx.
@@ -23,7 +24,7 @@ export function showToast(message: string, action?: Toast['action'], ms = 5000) 
 
 /** Melding med «Angre» etter en sletting. */
 export function undoToast(message: string, undo: () => void | Promise<void>) {
-  showToast(message, { label: 'Angre', onClick: undo });
+  showToast(message, { label: t('Angre', 'Undo'), onClick: undo });
 }
 
 function dismiss(id: number) {
@@ -63,7 +64,7 @@ export function ToastHost() {
             {toast.action.label}
           </button>
         )}
-        <button type="button" aria-label="Lukk melding" className="grid size-10 place-items-center rounded-xl text-faint active:bg-line" onClick={() => dismiss(toast.id)}>
+        <button type="button" aria-label={t('Lukk melding', 'Dismiss message')} className="grid size-10 place-items-center rounded-xl text-faint active:bg-line" onClick={() => dismiss(toast.id)}>
           <Icon name="x" size={18} />
         </button>
       </div>

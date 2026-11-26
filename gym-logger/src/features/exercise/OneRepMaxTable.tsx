@@ -4,6 +4,7 @@ import { platesPerSide } from '../../lib/plates';
 import { stepFor } from '../../lib/progression';
 import { useSetting } from '../../lib/settings';
 import { num, toDisplay } from '../../lib/format';
+import { t } from '../../i18n';
 
 const PERCENTS = [95, 90, 85, 80, 75, 70];
 
@@ -25,13 +26,13 @@ export function OneRepMaxTable({ oneRm, equipment }: { oneRm: number; equipment?
 
   return (
     <section>
-      <SectionTitle>Prosent av 1RM</SectionTitle>
+      <SectionTitle>{t('Prosent av 1RM', 'Percent of 1RM')}</SectionTitle>
       <Card className="overflow-hidden">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-line text-[11px] tracking-wide text-faint uppercase">
-              <th className="px-4 py-2 font-semibold">Prosent</th>
-              <th className="px-4 py-2 font-semibold">Vekt ({unit})</th>
+              <th className="px-4 py-2 font-semibold">{t('Prosent', 'Percent')}</th>
+              <th className="px-4 py-2 font-semibold">{t('Vekt', 'Weight')} ({unit})</th>
               <th className="px-4 py-2 text-right font-semibold">≈ Reps</th>
             </tr>
           </thead>
@@ -47,7 +48,7 @@ export function OneRepMaxTable({ oneRm, equipment }: { oneRm: number; equipment?
         </table>
       </Card>
       <p className="mt-2 text-xs text-faint">
-        Basert på beste beregnede 1RM: {num(toDisplay(oneRm, unit), 0)} {unit}. Avrundet ned til {equipment === 'Stang' ? 'skivene dine' : 'nærmeste steg'}.
+        {t('Basert på beste beregnede 1RM', 'Based on your best estimated 1RM')}: {num(toDisplay(oneRm, unit), 0)} {unit}. {t('Avrundet ned til', 'Rounded down to')} {equipment === 'Stang' ? t('skivene dine', 'your plates') : t('nærmeste steg', 'the nearest step')}.
       </p>
     </section>
   );

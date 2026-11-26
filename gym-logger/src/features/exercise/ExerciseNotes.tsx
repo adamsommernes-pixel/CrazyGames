@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/dexie';
 import { SectionTitle, inputClass } from '../../components/ui';
+import { t } from '../../i18n';
 
 /** Egne faste notater for en øvelse (innstillinger på maskinen, teknikk-huskeregler). */
 export function ExerciseNotes({ exerciseId }: { exerciseId: string }) {
@@ -13,12 +14,12 @@ export function ExerciseNotes({ exerciseId }: { exerciseId: string }) {
   }, [saved]);
   return (
     <section>
-      <SectionTitle>Mine notater</SectionTitle>
+      <SectionTitle>{t('Mine notater', 'My notes')}</SectionTitle>
       <textarea
         id={`exnote-${exerciseId}`}
-        aria-label="Notater for øvelsen"
+        aria-label={t('Notater for øvelsen', 'Notes for the exercise')}
         className={`${inputClass} min-h-24 py-3`}
-        placeholder="F.eks. setehøyde 4, albuer inn, pust ut på vei opp"
+        placeholder={t('F.eks. setehøyde 4, albuer inn, pust ut på vei opp', 'E.g. seat height 4, elbows in, breathe out on the way up')}
         value={text}
         onChange={(e) => setText(e.target.value)}
         onBlur={() => text !== saved && void db.kv.put({ key, value: text })}

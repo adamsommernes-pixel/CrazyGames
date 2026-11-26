@@ -5,14 +5,15 @@ import { getActiveWorkout } from '../db/repo';
 import { openStartSheet } from '../features/workout/StartSheet';
 import { useNow } from '../features/workout/restTimer';
 import { duration, isLongAgo } from '../lib/format';
+import { t } from '../i18n';
 
-const LEFT: { to: string; label: string; icon: IconName }[] = [
-  { to: '/', label: 'Hjem', icon: 'home' },
-  { to: '/history', label: 'Historikk', icon: 'history' },
+const left = (): { to: string; label: string; icon: IconName }[] => [
+  { to: '/', label: t('Hjem', 'Home'), icon: 'home' },
+  { to: '/history', label: t('Historikk', 'History'), icon: 'history' },
 ];
-const RIGHT: { to: string; label: string; icon: IconName }[] = [
-  { to: '/progress', label: 'Fremgang', icon: 'chart' },
-  { to: '/profile', label: 'Profil', icon: 'user' },
+const right = (): { to: string; label: string; icon: IconName }[] => [
+  { to: '/progress', label: t('Fremgang', 'Progress'), icon: 'chart' },
+  { to: '/profile', label: t('Profil', 'Profile'), icon: 'user' },
 ];
 
 function Tab({ to, label, icon }: { to: string; label: string; icon: IconName }) {
@@ -37,27 +38,27 @@ export function BottomNav() {
   const active = useLiveQuery(() => getActiveWorkout(), []);
   const now = useNow(1000, !!active);
   return (
-    <nav className="pb-safe border-t border-line bg-bg/90 backdrop-blur-lg" aria-label="Hovedmeny">
+    <nav className="pb-safe border-t border-line bg-bg/90 backdrop-blur-lg" aria-label={t('Hovedmeny', 'Main menu')}>
       <ul className="mx-auto flex max-w-xl items-end">
-        {LEFT.map((t) => (
+        {left().map((t) => (
           <Tab key={t.to} {...t} />
         ))}
         <li className="flex flex-1 justify-center">
           <button
             type="button"
             onClick={() => (active ? navigate('/workout') : openStartSheet())}
-            aria-label={active ? 'Fortsett økt' : 'Start økt'}
+            aria-label={active ? t('Fortsett økt', 'Continue workout') : t('Start økt', 'Start workout')}
             className="-mt-5 mb-1 flex flex-col items-center gap-0.5"
           >
             <span className={`grid size-14 place-items-center rounded-full bg-green text-black shadow-glow ring-4 ring-bg transition active:scale-95 ${active ? 'animate-pulse' : ''}`}>
               <Icon name={active ? 'play' : 'plus'} size={26} strokeWidth={2.6} />
             </span>
             <span className="font-num text-[11px] font-semibold text-green">
-              {active ? (isLongAgo(active.started_at, now) ? 'Økt' : duration(now - new Date(active.started_at).getTime())) : 'Start'}
+              {active ? (isLongAgo(active.started_at, now) ? t('Økt', 'Workout') : duration(now - new Date(active.started_at).getTime())) : 'Start'}
             </span>
           </button>
         </li>
-        {RIGHT.map((t) => (
+        {right().map((t) => (
           <Tab key={t.to} {...t} />
         ))}
       </ul>

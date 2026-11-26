@@ -13,7 +13,9 @@ import { dateShort, duration, num, plural, toDisplay } from '../../lib/format';
 import { kindOf } from '../../lib/kinds';
 import { MUSCLE_COLOR } from '../../lib/muscles';
 import { MuscleDot } from '../../components/MuscleTag';
-import type { ExerciseKind, WorkoutSet } from '../../db/types';
+import { MUSCLE_LABEL, type ExerciseKind, type WorkoutSet } from '../../db/types';
+import { exerciseName } from '../../lib/exerciseName';
+import { t } from '../../i18n';
 
 type View = 'volume' | 'workouts';
 
@@ -22,11 +24,11 @@ function bestFor(kind: ExerciseKind, list: WorkoutSet[], unit: 'kg' | 'lbs') {
   const maxReps = Math.max(...list.map((s) => s.reps));
   switch (kind) {
     case 'bodyweight':
-      return { value: String(maxReps), label: 'flest reps' };
+      return { value: String(maxReps), label: t('flest reps', 'most reps') };
     case 'time':
-      return { value: duration(maxReps * 1000), label: 'lengste' };
+      return { value: duration(maxReps * 1000), label: t('lengste', 'longest') };
     case 'cardio':
-      return { value: num(Math.max(...list.map((s) => s.distance_km ?? 0)), 1), label: 'lengst km' };
+      return { value: num(Math.max(...list.map((s) => s.distance_km ?? 0)), 1), label: t('lengst km', 'longest km') };
     default:
       return { value: num(toDisplay(best1RM(list), unit), 0), label: `1RM ${unit}` };
   }
@@ -72,50 +74,50 @@ export function ProgressList() {
   const groups = useMemo(() => [...new Set(sets.map((s) => exMap.get(s.exercise_id)?.muscle_group).filter(Boolean))] as string[], [sets, exMap]);
 
   return (
-    <Page title="Fremgang">
+    <Page title={t('Fremgang', 'Progress')}>
       <Link to="/bodyweight" className="card mb-4 flex items-center gap-3 rounded-3xl p-4 active:bg-raised">
         <span className="grid size-10 place-items-center rounded-xl bg-raised text-green">
           <Icon name="scale" size={20} />
         </span>
         <span className="flex-1">
-          <span className="block font-semibold">Kroppsvekt</span>
-          <span className="block text-sm text-muted">{data?.bw ? `Sist: ${num(toDisplay(data.bw.weight_kg, unit))} ${unit}, ${dateShort(data.bw.date)}` : 'Ikke logget ennå'}</span>
+          <span className="block font-semibold">{t('Kroppsvekt', 'Bodyweight')}</span>
+          <span className="block text-sm text-muted">{data?.bw ? `${t('Sist', 'Last')}: ${num(toDisplay(data.bw.weight_kg, unit))} ${unit}, ${dateShort(data.bw.date)}` : t('Ikke logget ennå', 'Not logged yet')}</span>
         </span>
         <Icon name="chevron" size={18} className="text-faint" />
       </Link>
 
       {data && sets.length === 0 ? (
-        <EmptyState icon="chart" title="Ingen data ennå" text="Når du har logget noen økter ser du grafer, rekorder og fordeling på muskelgrupper her." />
+        <EmptyState icon="chart" title={t('Ingen data ennå', 'No data yet')} text={t('Når du har logget noen økter ser du grafer, rekorder og fordeling på muskelgrupper her.', 'Once you have logged a few workouts you will see charts, records and muscle group split here.')} />
       ) : (
         <>
           <Card className="p-4">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <h2 className="font-semibold">Siste 12 uker</h2>
+              <h2 className="font-semibold">{t('Siste 12 uker', 'Last 12 weeks')}</h2>
               <div className="flex gap-1.5">
                 <Chip active={view === 'volume'} onClick={() => setView('volume')}>
-                  Volum
+                  {t('Volum', 'Volume')}
                 </Chip>
                 <Chip active={view === 'workouts'} onClick={() => setView('workouts')}>
-                  Økter
+                  {t('Økter', 'Workouts')}
                 </Chip>
               </div>
             </div>
             <BarTrend
               data={series.map((w) => ({ x: `${w.start.getDate()}.${w.start.getMonth() + 1}`, y: view === 'volume' ? Math.round(toDisplay(w.volume, unit)) : w.workouts }))}
-              label={view === 'volume' ? 'Volum per uke' : 'Økter per uke'}
-              unit={view === 'volume' ? unit : 'økter'}
+              label={view === 'volume' ? t('Volum per uke', 'Volume per week') : t('Økter per uke', 'Workouts per week')}
+              unit={view === 'volume' ? unit : t('økter', 'workouts')}
             />
           </Card>
 
           {split.length > 0 && (
             <>
-              <SectionTitle>Muskelgrupper siste 30 dager</SectionTitle>
+              <SectionTitle>{t('Muskelgrupper siste 30 dager', 'Muscle groups, last 30 days')}</SectionTitle>
               <Card className="flex flex-col gap-2.5 p-4">
                 {split.map(([g, n]) => (
                   <div key={g} className="grid grid-cols-[6rem_1fr_2.5rem] items-center gap-3 text-sm">
                     <span className="flex items-center gap-2 text-muted">
                       <MuscleDot group={g} />
-                      {g}
+                      {MUSCLE_LABEL[g]}
                     </span>
                     <span className="h-2.5 overflow-hidden rounded-full bg-line">
                       <span className="block h-full rounded-full" style={{ width: `${(n / splitMax) * 100}%`, background: MUSCLE_COLOR[g] }} />
@@ -123,16 +125,16 @@ export function ProgressList() {
                     <span className="font-num text-right font-bold">{n}</span>
                   </div>
                 ))}
-                <p className="text-xs text-faint">Antall arbeidssett per muskelgruppe.</p>
+                <p className="text-xs text-faint">{t('Antall arbeidssett per muskelgruppe.', 'Number of working sets per muscle group.')}</p>
               </Card>
             </>
           )}
 
-          <SectionTitle>Øvelser</SectionTitle>
+          <SectionTitle>{t('Øvelser', 'Exercises')}</SectionTitle>
           {groups.length > 1 && (
             <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1">
               <Chip active={!group} onClick={() => setGroup(null)}>
-                Alle
+                {t('Alle', 'All')}
               </Chip>
               {groups.map((g) => (
                 <Chip key={g} active={group === g} onClick={() => setGroup(group === g ? null : g)}>
@@ -148,9 +150,9 @@ export function ProgressList() {
                   <Card className="flex items-center gap-3 p-4">
                     <MuscleDot group={r.exercise!.muscle_group} size={10} />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-semibold">{r.exercise!.name}</div>
+                      <div className="truncate font-semibold">{exerciseName(r.exercise)}</div>
                       <div className="text-sm text-muted">
-                        {plural(r.sessions, 'økt', 'økter')} · sist {dateShort(r.last)}
+                        {plural(r.sessions, t('økt', 'workout'), t('økter', 'workouts'))} · {t('sist', 'last')} {dateShort(r.last)}
                       </div>
                     </div>
                     <div className="text-right">

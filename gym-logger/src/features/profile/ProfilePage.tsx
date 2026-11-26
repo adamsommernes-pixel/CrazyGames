@@ -17,6 +17,7 @@ import { Avatar, PasswordField } from '../../components/widgets';
 import { Icon, type IconName } from '../../components/Icon';
 import { askConfirm } from '../../components/confirm';
 import { InstallHint } from './InstallHint';
+import { LanguageToggle } from '../../components/LanguageToggle';
 import { locale, t } from '../../i18n';
 
 const ALL_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
@@ -37,32 +38,32 @@ export function ProfilePage() {
   const tonnes = stats ? toDisplay(stats.volume, unit) / 1000 : 0;
 
   return (
-    <Page title="Profil">
+    <Page title={t('Profil', 'Profile')}>
       <section className="flex flex-col items-center pt-2 pb-6 text-center">
         <Avatar name={profile?.name || user.name} color={profile?.color ?? '#2bd66b'} size={88} />
         <h2 className="font-num mt-4 text-3xl font-bold">{profile?.name || user.name}</h2>
         <p className="mt-1 text-muted">
-          {profile ? GOAL_LABEL[profile.goal] : ''} · {profile?.weekly_target ?? 3} økter i uka
+          {profile ? GOAL_LABEL[profile.goal] : ''} · {profile?.weekly_target ?? 3} {t('økter i uka', 'workouts a week')}
         </p>
-        <p className="mt-0.5 text-sm text-faint">Medlem siden {since}</p>
+        <p className="mt-0.5 text-sm text-faint">{t('Medlem siden', 'Member since')} {since}</p>
         <Button variant="secondary" icon="edit" className="mt-4 min-h-10 px-4" onClick={() => navigate('/profile/edit')}>
-          Rediger profil
+          {t('Rediger profil', 'Edit profile')}
         </Button>
       </section>
 
       <div className="grid grid-cols-2 gap-2">
-        <BigStat icon="dumbbell" label="Økter totalt" value={num(stats?.workouts ?? 0, 0)} />
-        <BigStat icon="scale" label={`Tonn løftet${unit === 'lbs' ? ' (1000 lbs)' : ''}`} value={num(tonnes, tonnes < 10 ? 1 : 0)} />
-        <BigStat icon="trophy" label="Rekorder" value={num(prMap.size, 0)} />
-        <BigStat icon="flame" label="Lengste streak (uker)" value={num(stats?.longest ?? 0, 0)} />
+        <BigStat icon="dumbbell" label={t('Økter totalt', 'Total workouts')} value={num(stats?.workouts ?? 0, 0)} />
+        <BigStat icon="scale" label={`${t('Tonn løftet', 'Tonnes lifted')}${unit === 'lbs' ? ' (1000 lbs)' : ''}`} value={num(tonnes, tonnes < 10 ? 1 : 0)} />
+        <BigStat icon="trophy" label={t('Rekorder', 'Records')} value={num(prMap.size, 0)} />
+        <BigStat icon="flame" label={t('Lengste streak (uker)', 'Longest streak (weeks)')} value={num(stats?.longest ?? 0, 0)} />
       </div>
 
       <InstallHint />
 
-      <SectionTitle>Konto</SectionTitle>
+      <SectionTitle>{t('Konto', 'Account')}</SectionTitle>
       <AccountSection />
 
-      <SectionTitle>Innstillinger</SectionTitle>
+      <SectionTitle>{t('Innstillinger', 'Settings')}</SectionTitle>
       <SettingsSection />
 
       <SectionTitle>Data</SectionTitle>
@@ -109,31 +110,31 @@ function AccountSection() {
           <Icon name="mail" size={20} className="text-muted" />
           <span className="min-w-0 flex-1">
             <span className="block truncate font-medium">{user.email}</span>
-            <span className="block text-sm text-muted">{user.kind === 'cloud' ? 'Sky-konto, synkes mellom enheter' : 'Lagret på denne enheten'}</span>
+            <span className="block text-sm text-muted">{user.kind === 'cloud' ? t('Sky-konto, synkes mellom enheter', 'Cloud account, synced across devices') : t('Lagret på denne enheten', 'Stored on this device')}</span>
           </span>
           <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${user.kind === 'cloud' ? 'bg-green-dim text-green-light' : 'bg-raised text-muted'}`}>
-            {user.kind === 'cloud' ? 'Sky' : 'Lokal'}
+            {user.kind === 'cloud' ? t('Sky', 'Cloud') : t('Lokal', 'Local')}
           </span>
         </div>
         {user.kind === 'cloud' && (
           <Row
             icon="cloud"
-            title="Synk nå"
-            sub={sync.state === 'syncing' ? 'Synker …' : sync.state === 'error' ? `Feil: ${sync.error}` : sync.state === 'offline' ? 'Uten nett' : sync.lastSync ? `Synket ${new Date(sync.lastSync).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}` : 'Klar'}
+            title={t('Synk nå', 'Sync now')}
+            sub={sync.state === 'syncing' ? t('Synker …', 'Syncing …') : sync.state === 'error' ? `${t('Feil', 'Error')}: ${sync.error}` : sync.state === 'offline' ? t('Uten nett', 'Offline') : sync.lastSync ? `${t('Synket', 'Synced')} ${new Date(sync.lastSync).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}` : t('Klar', 'Ready')}
             onClick={() => void syncNow()}
           />
         )}
-        <Row icon="lock" title="Bytt passord" onClick={() => setSheet('password')} />
+        <Row icon="lock" title={t('Bytt passord', 'Change password')} onClick={() => setSheet('password')} />
         <Row
           icon="logout"
-          title="Logg ut"
+          title={t('Logg ut', 'Log out')}
           onClick={async () => {
-            if (await askConfirm(user.kind === 'local' ? 'Dataene blir liggende trygt på enheten til du logger inn igjen.' : 'Du kan logge inn igjen når som helst.', { confirmLabel: 'Logg ut', danger: false })) {
+            if (await askConfirm(user.kind === 'local' ? t('Dataene blir liggende trygt på enheten til du logger inn igjen.', 'Your data stays safely on this device until you log in again.') : t('Du kan logge inn igjen når som helst.', 'You can log in again at any time.'), { confirmLabel: t('Logg ut', 'Log out'), danger: false })) {
               await signOut();
             }
           }}
         />
-        <Row icon="trash" title="Slett konto" danger onClick={() => setSheet('delete')} />
+        <Row icon="trash" title={t('Slett konto', 'Delete account')} danger onClick={() => setSheet('delete')} />
       </Card>
 
       <PasswordSheet open={sheet === 'password'} onClose={() => setSheet(null)} onSubmit={changePassword} />
@@ -154,7 +155,7 @@ function PasswordSheet({ open, onClose, onSubmit }: { open: boolean; onClose: ()
     onClose();
   };
   return (
-    <Sheet open={open} onClose={close} title="Bytt passord">
+    <Sheet open={open} onClose={close} title={t('Bytt passord', 'Change password')}>
       <form
         className="flex flex-col gap-4"
         onSubmit={async (e) => {
@@ -162,25 +163,25 @@ function PasswordSheet({ open, onClose, onSubmit }: { open: boolean; onClose: ()
           setBusy(true);
           try {
             await onSubmit(oldPw, newPw);
-            setMsg({ ok: true, text: 'Passordet er byttet.' });
+            setMsg({ ok: true, text: t('Passordet er byttet.', 'Password changed.') });
             setOld('');
             setNew('');
           } catch (err) {
-            setMsg({ ok: false, text: err instanceof AuthError ? err.message : 'Noe gikk galt.' });
+            setMsg({ ok: false, text: err instanceof AuthError ? err.message : t('Noe gikk galt.', 'Something went wrong.') });
           } finally {
             setBusy(false);
           }
         }}
       >
-        <PasswordField id="pw-old" label="Nåværende passord" value={oldPw} onChange={setOld} autoComplete="current-password" />
-        <PasswordField id="pw-new" label="Nytt passord" value={newPw} onChange={setNew} autoComplete="new-password" showStrength />
+        <PasswordField id="pw-old" label={t('Nåværende passord', 'Current password')} value={oldPw} onChange={setOld} autoComplete="current-password" />
+        <PasswordField id="pw-new" label={t('Nytt passord', 'New password')} value={newPw} onChange={setNew} autoComplete="new-password" showStrength />
         {msg && (
           <p role={msg.ok ? 'status' : 'alert'} className={`rounded-xl px-3 py-2.5 text-sm ${msg.ok ? 'bg-green-dim/40 text-green-light' : 'bg-danger/10 text-danger'}`}>
             {msg.text}
           </p>
         )}
         <button type="submit" disabled={busy || !oldPw || !newPw} className="min-h-12 rounded-2xl bg-green font-semibold text-black disabled:opacity-40">
-          {busy ? 'Bytter …' : 'Bytt passord'}
+          {busy ? t('Bytter …', 'Changing …') : t('Bytt passord', 'Change password')}
         </button>
       </form>
     </Sheet>
@@ -193,7 +194,7 @@ function DeleteSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () =
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   return (
-    <Sheet open={open} onClose={onClose} title="Slett konto">
+    <Sheet open={open} onClose={onClose} title={t('Slett konto', 'Delete account')}>
       <form
         className="flex flex-col gap-4"
         onSubmit={async (e) => {
@@ -203,26 +204,26 @@ function DeleteSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () =
           try {
             await onSubmit(pw);
           } catch (x) {
-            setErr(x instanceof AuthError ? x.message : 'Noe gikk galt.');
+            setErr(x instanceof AuthError ? x.message : t('Noe gikk galt.', 'Something went wrong.'));
             setBusy(false);
           }
         }}
       >
         <p className="rounded-2xl bg-danger/10 p-3 text-sm text-danger">
-          Kontoen og alle økter, rutiner og rekorder slettes for godt. Ta gjerne en backup først under Data.
+          {t('Kontoen og alle økter, rutiner og rekorder slettes for godt. Ta gjerne en backup først under Data.', 'Your account and all workouts, routines and records are deleted for good. Consider taking a backup under Data first.')}
         </p>
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-muted">Skriv SLETT for å bekrefte</span>
+          <span className="text-sm text-muted">{t('Skriv SLETT for å bekrefte', 'Type DELETE to confirm')}</span>
           <input id="delete-word" className={inputClass} value={word} onChange={(e) => setWord(e.target.value)} autoComplete="off" autoCapitalize="characters" />
         </label>
-        <PasswordField id="delete-pw" label="Passord" value={pw} onChange={setPw} autoComplete="current-password" />
+        <PasswordField id="delete-pw" label={t('Passord', 'Password')} value={pw} onChange={setPw} autoComplete="current-password" />
         {err && (
           <p role="alert" className="text-sm text-danger">
             {err}
           </p>
         )}
-        <button type="submit" disabled={busy || word.trim().toUpperCase() !== 'SLETT' || !pw} className="min-h-12 rounded-2xl bg-danger font-semibold text-black disabled:opacity-40">
-          {busy ? 'Sletter …' : 'Slett konto for godt'}
+        <button type="submit" disabled={busy || word.trim().toUpperCase() !== t('SLETT', 'DELETE') || !pw} className="min-h-12 rounded-2xl bg-danger font-semibold text-black disabled:opacity-40">
+          {busy ? t('Sletter …', 'Deleting …') : t('Slett konto for godt', 'Delete account for good')}
         </button>
       </form>
     </Sheet>
@@ -251,7 +252,11 @@ function SettingsSection() {
   return (
     <Card className="flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between gap-3">
-        <span>Vektenhet</span>
+        <span>Språk / Language</span>
+        <LanguageToggle size="md" />
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <span>{t('Vektenhet', 'Weight unit')}</span>
         <div className="flex gap-2">
           <Chip active={unit === 'kg'} onClick={() => void setSetting('unit', 'kg')}>
             kg
@@ -262,15 +267,15 @@ function SettingsSection() {
         </div>
       </div>
       <div>
-        <div className="mb-2">Standard hviletid</div>
-        <NumberStepper label="Standard hviletid" value={defaultRest} step={15} min={0} max={600} format={(v) => (v ? duration(v * 1000) : 'Av')} onChange={(v) => void setSetting('defaultRest', v)} />
+        <div className="mb-2">{t('Standard hviletid', 'Default rest time')}</div>
+        <NumberStepper label={t('Standard hviletid', 'Default rest time')} value={defaultRest} step={15} min={0} max={600} format={(v) => (v ? duration(v * 1000) : t('Av', 'Off'))} onChange={(v) => void setSetting('defaultRest', v)} />
       </div>
       <div>
-        <div className="mb-2">Stangvekt (platekalkulator)</div>
-        <NumberStepper label="Stangvekt" value={barWeight} step={2.5} min={0} max={30} format={(v) => `${num(v)} kg`} onChange={(v) => void setSetting('barWeight', v)} />
+        <div className="mb-2">{t('Stangvekt (platekalkulator)', 'Bar weight (plate calculator)')}</div>
+        <NumberStepper label={t('Stangvekt', 'Bar weight')} value={barWeight} step={2.5} min={0} max={30} format={(v) => `${num(v)} kg`} onChange={(v) => void setSetting('barWeight', v)} />
       </div>
       <div>
-        <div className="mb-2">Skiver på gymmen (kg)</div>
+        <div className="mb-2">{t('Skiver på gymmen (kg)', 'Plates at your gym (kg)')}</div>
         <div className="flex flex-wrap gap-2">
           {ALL_PLATES.map((p) => (
             <Chip key={p} active={plates.includes(p)} onClick={() => void setSetting('plates', plates.includes(p) ? plates.filter((x) => x !== p) : [...plates, p].sort((a, b) => b - a))}>
@@ -279,9 +284,9 @@ function SettingsSection() {
           ))}
         </div>
       </div>
-      <Toggle label="Lyd når hvilen er over" checked={sound} onChange={(v) => void setSetting('sound', v)} />
-      <Toggle label="Vibrasjon (Android)" checked={haptics} onChange={(v) => void setSetting('haptics', v)} />
-      <Toggle label="Hold skjermen på under økt" checked={keepAwake} onChange={(v) => void setSetting('keepAwake', v)} />
+      <Toggle label={t('Lyd når hvilen er over', 'Sound when rest is over')} checked={sound} onChange={(v) => void setSetting('sound', v)} />
+      <Toggle label={t('Vibrasjon (Android)', 'Vibration (Android)')} checked={haptics} onChange={(v) => void setSetting('haptics', v)} />
+      <Toggle label={t('Hold skjermen på under økt', 'Keep screen on during workouts')} checked={keepAwake} onChange={(v) => void setSetting('keepAwake', v)} />
     </Card>
   );
 }
@@ -292,10 +297,10 @@ function DataSection() {
   return (
     <Card className="flex flex-col gap-2 p-4">
       <Button variant="secondary" icon="download" full onClick={async () => downloadJSON(await exportBackup(), `gym-logger-${new Date().toISOString().slice(0, 10)}.json`)}>
-        Eksporter backup (JSON)
+        {t('Eksporter backup (JSON)', 'Export backup (JSON)')}
       </Button>
       <Button variant="secondary" icon="upload" full onClick={() => fileRef.current?.click()}>
-        Importer backup
+        {t('Importer backup', 'Import backup')}
       </Button>
       <input
         ref={fileRef}
@@ -308,9 +313,9 @@ function DataSection() {
           if (!file) return;
           try {
             const n = await importBackup(JSON.parse(await file.text()));
-            setMsg(`Importerte ${n} rader.`);
+            setMsg(t(`Importerte ${n} rader.`, `Imported ${n} rows.`));
           } catch (err) {
-            setMsg(err instanceof Error ? err.message : 'Kunne ikke lese filen.');
+            setMsg(err instanceof Error ? err.message : t('Kunne ikke lese filen.', 'Could not read the file.'));
           }
         }}
       />
