@@ -70,7 +70,7 @@ export function ProfilePage() {
       <SectionTitle>{t('Innstillinger', 'Settings')}</SectionTitle>
       <SettingsSection />
 
-      <p className="mt-8 text-center text-xs text-faint">Gym Logger v{__APP_VERSION__}</p>
+      <p className="mt-8 text-center text-xs text-faint">Repgrade v{__APP_VERSION__}</p>
     </Page>
   );
 }

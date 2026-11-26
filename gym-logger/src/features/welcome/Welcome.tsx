@@ -20,7 +20,7 @@ export function Welcome() {
         <span className="grid size-9 place-items-center rounded-xl bg-green text-black shadow-glow">
           <Icon name="dumbbell" size={20} strokeWidth={2.4} />
         </span>
-        <span className="font-num flex-1 text-lg font-bold tracking-tight">Gym Logger</span>
+        <span className="font-num flex-1 text-lg font-bold tracking-tight">Repgrade</span>
         <LanguageToggle />
       </header>
 

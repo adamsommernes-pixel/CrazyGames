@@ -42,7 +42,7 @@ export default function ShareSheet({ workoutId, onClose }: { workoutId: string; 
     };
   }, [data, level, format]);
 
-  const fileName = `gym-logger-${(data?.name ?? 'okt').toLowerCase().replace(/[^a-z0-9æøå]+/gi, '-')}.png`;
+  const fileName = `repgrade-${(data?.name ?? 'okt').toLowerCase().replace(/[^a-z0-9æøå]+/gi, '-')}.png`;
 
   const share = async () => {
     if (!canvas.current) return;

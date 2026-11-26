@@ -205,7 +205,7 @@ function header(ctx: Ctx, w: number, date: string): number {
   ctx.restore();
   font(ctx, 700, 30);
   spacing(ctx, 6);
-  draw(ctx, 'GYM LOGGER', PAD + 62, y, C.ink);
+  draw(ctx, 'REPGRADE', PAD + 62, y, C.ink);
   spacing(ctx, 0);
   font(ctx, 500, 28, SANS);
   draw(ctx, ellipsize(ctx, date, w / 2 - PAD), w - PAD, y, C.muted, 'right');
@@ -229,10 +229,10 @@ function footer(ctx: Ctx, w: number, h: number, data: ShareData, emblem: HTMLIma
     draw(ctx, data.tier.name, PAD + size + 24, y - 12, tierAccent(data.tier.index));
   } else {
     font(ctx, 500, 26, SANS);
-    draw(ctx, t('Logget med Gym Logger', 'Logged with Gym Logger'), PAD, y - 12, C.faint);
+    draw(ctx, t('Logget med Repgrade', 'Logged with Repgrade'), PAD, y - 12, C.faint);
   }
   font(ctx, 600, 26, SANS);
-  draw(ctx, 'gymlogger', w - PAD, y - 12, C.green, 'right');
+  draw(ctx, 'repgrade', w - PAD, y - 12, C.green, 'right');
   return 120;
 }
 

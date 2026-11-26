@@ -23,9 +23,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Gym Logger',
-        short_name: 'Gym',
-        description: 'Logg treningsøktene dine: øvelser, sets, reps og vekt.',
+        name: 'Repgrade',
+        short_name: 'Repgrade',
+        description: 'Logg treningen din og klatre fra Nybegynner til Olympia. Log your training and climb from Newbie to Olympia.',
         lang: 'nb',
         theme_color: '#0A0A0A',
         background_color: '#0A0A0A',

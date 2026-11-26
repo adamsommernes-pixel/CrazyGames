@@ -6,9 +6,9 @@ import { t } from '../i18n';
 
 // Backup: JSON (alt, kan leses inn igjen) og CSV (alle sets, for regneark).
 
-export const BACKUP_APP = 'gym-logger';
-/** Navn som godtas ved import (også eldre navn, så gamle filer kan leses inn). */
-const KNOWN_APPS = new Set([BACKUP_APP]);
+export const BACKUP_APP = 'repgrade';
+/** Navn som godtas ved import (også det gamle navnet Gym Logger, så gamle filer kan leses inn). */
+const KNOWN_APPS = new Set([BACKUP_APP, 'gym-logger']);
 
 export interface Backup {
   app: string;
