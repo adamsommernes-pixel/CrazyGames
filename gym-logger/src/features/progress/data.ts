@@ -7,6 +7,12 @@ export interface SessionPoint {
   heaviest: number;
   e1rm: number;
   volume: number;
+  /** Flest reps (eller sekunder/minutter) i ett set. */
+  maxReps: number;
+  /** Sum av reps (eller sekunder/minutter) i økta. */
+  totalReps: number;
+  /** Sum av distanse (km) i økta. */
+  distance: number;
   bestSet: WorkoutSet;
   sets: WorkoutSet[];
 }
@@ -17,7 +23,7 @@ export function sessionsForExercise(sets: WorkoutSet[], workouts: Map<string, Wo
   for (const s of sets) {
     if (s.deleted || !countsAsWork(s)) continue;
     const w = workouts.get(s.workout_id);
-    if (!w || w.deleted) continue;
+    if (!w || w.deleted || !w.ended_at) continue;
     const list = byWorkout.get(s.workout_id) ?? [];
     list.push(s);
     byWorkout.set(s.workout_id, list);
@@ -32,6 +38,9 @@ export function sessionsForExercise(sets: WorkoutSet[], workouts: Map<string, Wo
         heaviest: heaviest(list),
         e1rm: best1RM(list),
         volume: volume(list),
+        maxReps: Math.max(...list.map((s) => s.reps)),
+        totalReps: list.reduce((t, s) => t + s.reps, 0),
+        distance: list.reduce((t, s) => t + (s.distance_km ?? 0), 0),
         bestSet,
         sets: sorted,
       };

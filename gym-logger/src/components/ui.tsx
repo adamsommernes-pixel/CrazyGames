@@ -37,8 +37,9 @@ export function IconButton({
   icon,
   label,
   className = '',
+  filled,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { icon: IconName; label: string }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { icon: IconName; label: string; filled?: boolean }) {
   return (
     <button
       type="button"
@@ -47,7 +48,7 @@ export function IconButton({
       className={`grid size-11 shrink-0 place-items-center rounded-xl text-muted active:bg-raised ${className}`}
       {...rest}
     >
-      <Icon name={icon} />
+      <Icon name={icon} filled={filled} />
     </button>
   );
 }

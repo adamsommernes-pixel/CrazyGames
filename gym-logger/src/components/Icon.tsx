@@ -35,22 +35,29 @@ const PATHS = {
   target: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8M12 12h.01',
   note: 'M5 3h10l4 4v14H5zM14 3v5h5M8 13h8M8 17h5',
   sparkle: 'M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z',
+  info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 11v5M12 8h.01',
+  star: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z',
+  swap: 'M7 4l-4 4 4 4M3 8h14M17 20l4-4-4-4M21 16H7',
+  stopwatch: 'M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16M12 10v4M9 2h6M19 6l1.5-1.5',
+  book: 'M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5M4 19a2 2 0 0 1 2-2h13',
 } as const;
 
 export type IconName = keyof typeof PATHS;
 
-export function Icon({ name, size = 22, className = '', strokeWidth = 2 }: {
+export function Icon({ name, size = 22, className = '', strokeWidth = 2, filled = false }: {
   name: IconName;
   size?: number;
   className?: string;
   strokeWidth?: number;
+  /** Fyll formen (f.eks. en valgt stjerne). */
+  filled?: boolean;
 }) {
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
+      fill={filled ? 'currentColor' : 'none'}
       stroke="currentColor"
       strokeWidth={strokeWidth}
       strokeLinecap="round"

@@ -238,7 +238,9 @@ export async function addWarmupSets(we: WorkoutExercise, warmups: { weight: numb
 }
 
 /** Hvilke rader en sletting markerte som slettet, så den kan angres nøyaktig. */
-export type Removed = Partial<Record<'workouts' | 'workout_exercises' | 'sets' | 'routines' | 'routine_exercises' | 'bodyweights', string[]>>;
+export type Removed = Partial<
+  Record<'workouts' | 'workout_exercises' | 'sets' | 'routines' | 'routine_exercises' | 'bodyweights' | 'exercises', string[]>
+>;
 
 /** Angrer en sletting: radene blir synlige igjen (og synkes som endret). */
 export async function restore(removed: Removed) {
@@ -378,10 +380,26 @@ export async function deleteWorkout(id: string): Promise<Removed> {
 
 // ---------- Øvelser ----------
 
-export async function createExercise(e: Pick<Exercise, 'name' | 'muscle_group' | 'equipment'>): Promise<string> {
+type ExerciseFields = Pick<Exercise, 'name' | 'muscle_group' | 'equipment'> & { kind?: Exercise['kind'] };
+
+export async function createExercise(e: ExerciseFields): Promise<string> {
   const id = uuid();
-  await db.exercises.add(touched<Exercise>({ ...e, id, custom: 1, deleted: 0, updated_at: '', dirty: 1 }));
+  await db.exercises.add(touched<Exercise>({ kind: 'weight', ...e, id, custom: 1, deleted: 0, updated_at: '', dirty: 1 }));
   return id;
+}
+
+/** Endrer en egen øvelse. Innebygde øvelser kan ikke endres. */
+export async function updateExercise(id: string, patch: ExerciseFields) {
+  await db.transaction('rw', db.exercises, async () => {
+    const e = await db.exercises.get(id);
+    if (e?.custom) await db.exercises.put(touched({ ...e, ...patch, name: patch.name.trim() || e.name }));
+  });
+}
+
+/** Skjuler en egen øvelse. Historikken beholdes, og slettingen kan angres. */
+export async function deleteExercise(id: string): Promise<Removed> {
+  const e = await db.exercises.get(id);
+  return e?.custom ? { exercises: await softDelete('exercises', [e]) } : {};
 }
 
 // ---------- Rutiner ----------

@@ -15,6 +15,8 @@ export interface Settings {
   haptics: boolean;
   /** Hold skjermen på mens en økt pågår. */
   keepAwake: boolean;
+  /** Øvelser merket med stjerne, vises først i øvelsesvelgeren. */
+  favorites: string[];
 }
 
 export const DEFAULTS: Settings = {
@@ -26,7 +28,13 @@ export const DEFAULTS: Settings = {
   sound: true,
   haptics: true,
   keepAwake: true,
+  favorites: [],
 };
+
+export async function toggleFavorite(exerciseId: string) {
+  const favs = await getSetting('favorites');
+  await setSetting('favorites', favs.includes(exerciseId) ? favs.filter((f) => f !== exerciseId) : [...favs, exerciseId]);
+}
 
 export async function getSetting<K extends keyof Settings>(key: K): Promise<Settings[K]> {
   const row = await db.kv.get(key);
