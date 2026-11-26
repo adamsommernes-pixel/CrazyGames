@@ -1,0 +1,45 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
+
+// BASE_PATH settes av GitHub Actions (f.eks. /CrazyGames/). Lokalt: /
+const base = process.env.BASE_PATH ?? '/';
+
+export default defineConfig({
+  base,
+  define: { __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '0.1.0') },
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      manifest: {
+        name: 'Gym Logger',
+        short_name: 'Gym',
+        description: 'Logg treningsøktene dine: øvelser, sets, reps og vekt.',
+        lang: 'nb',
+        theme_color: '#0A0A0A',
+        background_color: '#0A0A0A',
+        display: 'standalone',
+        orientation: 'portrait',
+        start_url: base,
+        scope: base,
+        icons: [
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        navigateFallback: 'index.html',
+      },
+    }),
+  ],
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+  },
+});

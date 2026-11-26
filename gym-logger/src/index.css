@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+
+/* Svart/grønt tema. Brukes som bg-bg, text-green, border-line osv. */
+@theme {
+  --color-bg: #0a0a0a;
+  --color-surface: #141414;
+  --color-raised: #1e1e1e;
+  --color-line: #2a2a2a;
+  --color-green: #22c55e;
+  --color-green-light: #4ade80;
+  --color-green-dim: #14532d;
+  --color-ink: #f5f5f5;
+  --color-muted: #a3a3a3;
+  --color-faint: #6b6b6b;
+  --color-danger: #f87171;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Grunnstiler i base-laget, så Tailwind-klasser (text-black osv.) vinner over dem. */
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* Fjerner piler i tallfelt. */
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}

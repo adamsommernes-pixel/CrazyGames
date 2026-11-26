@@ -1,0 +1,79 @@
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useNavigate } from 'react-router-dom';
+import { db } from '../../db/dexie';
+import type { Workout, WorkoutSet } from '../../db/types';
+import { Card, EmptyState, Page, PRBadge, SectionTitle } from '../../components/ui';
+import { Icon } from '../../components/Icon';
+import { useSetting } from '../../lib/settings';
+import { usePRMap } from '../../lib/prs';
+import { dateLong, durationShort, monthYear, num, plural, toDisplay } from '../../lib/format';
+import { volume } from '../../lib/calc';
+
+export function HistoryList() {
+  const navigate = useNavigate();
+  const unit = useSetting('unit');
+  const prMap = usePRMap();
+  const data = useLiveQuery(async () => {
+    const workouts = (await db.workouts.orderBy('started_at').reverse().toArray()).filter((w) => !w.deleted && w.ended_at);
+    const sets = (await db.sets.toArray()).filter((s) => !s.deleted && s.completed_at);
+    const byWorkout = new Map<string, WorkoutSet[]>();
+    for (const s of sets) {
+      const list = byWorkout.get(s.workout_id) ?? [];
+      list.push(s);
+      byWorkout.set(s.workout_id, list);
+    }
+    return { workouts, byWorkout };
+  }, []);
+
+  if (!data) return <Page title="Historikk">{null}</Page>;
+  const { workouts, byWorkout } = data;
+
+  // Grupper på måned.
+  const groups: { month: string; items: Workout[] }[] = [];
+  for (const w of workouts) {
+    const m = monthYear(w.started_at);
+    if (groups[groups.length - 1]?.month !== m) groups.push({ month: m, items: [] });
+    groups[groups.length - 1].items.push(w);
+  }
+
+  return (
+    <Page title="Historikk">
+      {workouts.length === 0 ? (
+        <EmptyState icon="history" title="Ingen økter ennå" text="Ferdige økter dukker opp her." />
+      ) : (
+        groups.map((g, gi) => (
+          <section key={g.month}>
+            {gi === 0 ? <h2 className="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{g.month}</h2> : <SectionTitle>{g.month}</SectionTitle>}
+            <ul className="flex flex-col gap-2">
+              {g.items.map((w) => {
+                const sets = byWorkout.get(w.id) ?? [];
+                const exercises = new Set(sets.map((s) => s.exercise_id)).size;
+                const prs = sets.filter((s) => prMap.has(s.id)).length;
+                return (
+                  <li key={w.id}>
+                    <button type="button" className="w-full text-left" onClick={() => navigate(`/history/${w.id}`)}>
+                      <Card className="flex items-center gap-3 p-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="truncate font-semibold">{w.name}</span>
+                            {prs > 0 && <PRBadge label={`${prs} PR`} />}
+                          </div>
+                          <div className="text-sm text-muted first-letter:uppercase">{dateLong(w.started_at)}</div>
+                          <div className="tabular mt-1 text-sm text-faint">
+                            {durationShort(new Date(w.ended_at!).getTime() - new Date(w.started_at).getTime())} · {plural(exercises, 'øvelse', 'øvelser')} ·{' '}
+                            {plural(sets.length, 'set', 'sets')} · {num(toDisplay(volume(sets), unit), 0)} {unit}
+                          </div>
+                        </div>
+                        <Icon name="chevron" className="text-faint" />
+                      </Card>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))
+      )}
+    </Page>
+  );
+}
