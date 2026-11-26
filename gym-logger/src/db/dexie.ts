@@ -41,7 +41,22 @@ export class GymDB extends Dexie {
     this.on('populate', (tx) => {
       tx.table('exercises').bulkAdd(BUILTIN_EXERCISES);
     });
+    // Ved hver åpning: legg til nye innebygde øvelser og oppdater endrede (f.eks. type),
+    // så kontoer laget med et eldre bibliotek også får dem. Egne øvelser røres ikke.
+    this.on('ready', (vip) => syncBuiltins(vip as GymDB));
   }
+}
+
+export async function syncBuiltins(gym: GymDB) {
+  const existing = new Map((await gym.table<Exercise>('exercises').toArray()).map((e) => [e.id, e]));
+  const changed = BUILTIN_EXERCISES.filter((b) => {
+    const e = existing.get(b.id);
+    if (!e) return true;
+    if (e.custom) return false;
+    return e.name !== b.name || e.muscle_group !== b.muscle_group || e.equipment !== b.equipment || e.kind !== b.kind;
+  });
+  // Behold slettet-status om brukeren har skjult en innebygd øvelse.
+  if (changed.length) await gym.table('exercises').bulkPut(changed.map((b) => ({ ...b, deleted: existing.get(b.id)?.deleted ?? 0 })));
 }
 
 export const userDbName = (userId: string) => `gym-${userId}`;

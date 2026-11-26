@@ -17,6 +17,7 @@ export const MUSCLE_GROUPS = [
   'Skuldre',
   'Biceps',
   'Triceps',
+  'Underarmer',
   'Bein',
   'Rumpe',
   'Mage',
@@ -28,12 +29,30 @@ export type MuscleGroup = (typeof MUSCLE_GROUPS)[number];
 export const EQUIPMENT = ['Stang', 'Manualer', 'Maskin', 'Kabel', 'Kroppsvekt', 'Kettlebell', 'Annet'] as const;
 export type Equipment = (typeof EQUIPMENT)[number];
 
+/**
+ * Hvordan en øvelse logges:
+ * - weight: kg × reps
+ * - bodyweight: reps, med valgfri ekstra vekt (kg)
+ * - time: sekunder (reps-feltet), med valgfri ekstra vekt
+ * - cardio: minutter (reps-feltet) og distanse (distance_km)
+ */
+export const EXERCISE_KINDS = ['weight', 'bodyweight', 'time', 'cardio'] as const;
+export type ExerciseKind = (typeof EXERCISE_KINDS)[number];
+export const KIND_LABEL: Record<ExerciseKind, string> = {
+  weight: 'Vekt × reps',
+  bodyweight: 'Kroppsvekt',
+  time: 'Tid',
+  cardio: 'Kondisjon',
+};
+
 export interface Exercise extends Row {
   name: string;
   muscle_group: MuscleGroup;
   equipment: Equipment;
   /** 0 = innebygd (synkes ikke), 1 = laget av brukeren. */
   custom: Flag;
+  /** Mangler på eldre rader: tolkes som 'weight'. */
+  kind?: ExerciseKind;
 }
 
 export interface Routine extends Row {
@@ -74,9 +93,12 @@ export interface WorkoutSet extends Row {
   workout_id: string;
   exercise_id: string;
   position: number;
-  /** Alltid lagret i kg. */
+  /** Alltid lagret i kg. For tid og kroppsvekt: ekstra vekt. */
   weight: number;
+  /** Reps, eller sekunder (tid) eller minutter (kondisjon). */
   reps: number;
+  /** Bare for kondisjon. */
+  distance_km?: number | null;
   set_type: SetType;
   completed_at: string | null;
 }
