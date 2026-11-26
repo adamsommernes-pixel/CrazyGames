@@ -45,7 +45,7 @@ export async function lastPerformance(exerciseId: string, excludeWorkoutId?: str
 
 // ---------- Økter ----------
 
-export async function startWorkout(opts: { routineId?: string; name?: string } = {}): Promise<string> {
+export async function startWorkout(opts: { routineId?: string; name?: string; startedAt?: string } = {}): Promise<string> {
   const existing = await getActiveWorkout();
   if (existing) return existing.id;
 
@@ -62,7 +62,7 @@ export async function startWorkout(opts: { routineId?: string; name?: string } =
       id,
       routine_id: opts.routineId ?? null,
       name,
-      started_at: now(),
+      started_at: opts.startedAt ?? now(),
       ended_at: null,
       notes: '',
       deleted: 0,
@@ -306,7 +306,7 @@ export async function setWorkoutNotes(id: string, notes: string) {
  * Avslutter økta. Sets som ikke er huket av fjernes, og øvelser uten fullførte sets fjernes.
  * Returnerer false (og gjør ingenting) hvis ingen sets er fullført.
  */
-export async function finishWorkout(id: string): Promise<boolean> {
+export async function finishWorkout(id: string, endedAt?: string): Promise<boolean> {
   const sets = await setsForWorkout(id);
   if (!sets.some((s) => s.completed_at)) return false;
   await db.transaction('rw', db.workouts, db.workout_exercises, db.sets, async () => {
@@ -317,9 +317,42 @@ export async function finishWorkout(id: string): Promise<boolean> {
       if (!doneWe.has(we.id)) await db.workout_exercises.put(touched({ ...we, deleted: 1 }));
     }
     const w = await db.workouts.get(id);
-    if (w) await db.workouts.put(touched({ ...w, ended_at: now() }));
+    if (!w) return;
+    const end = endedAt ?? now();
+    await db.workouts.put(touched({ ...w, ended_at: end }));
+    // Etterregistrert økt: legg settenes tidspunkt inne i øktas tidsrom, så rekorder
+    // og «forrige gang» havner i riktig rekkefølge sammenlignet med andre økter.
+    if (endedAt) await spreadSetTimes(sets.filter((s) => s.completed_at), w.started_at, end);
   });
   return true;
+}
+
+/** Fordeler fullførte sets jevnt mellom start og slutt, i samme rekkefølge som de ble gjort. */
+async function spreadSetTimes(done: WorkoutSet[], start: string, end: string) {
+  const a = new Date(start).getTime();
+  const b = new Date(end).getTime();
+  if (!(b > a) || !done.length) return;
+  const ordered = [...done].sort((x, y) => x.completed_at!.localeCompare(y.completed_at!) || x.position - y.position);
+  const stepMs = (b - a) / (ordered.length + 1);
+  await db.sets.bulkPut(ordered.map((s, i) => touched({ ...s, completed_at: new Date(a + stepMs * (i + 1)).toISOString() })));
+}
+
+/** Endrer navn, start og varighet på en ferdig økt. */
+export async function updateWorkoutTimes(id: string, patch: { name: string; startedAt: string; durationMin: number }) {
+  await db.transaction('rw', db.workouts, db.sets, async () => {
+    const w = await db.workouts.get(id);
+    if (!w) return;
+    const end = new Date(new Date(patch.startedAt).getTime() + Math.max(1, patch.durationMin) * 60_000).toISOString();
+    const moved = patch.startedAt !== w.started_at || end !== w.ended_at;
+    await db.workouts.put(touched({ ...w, name: patch.name.trim() || w.name, started_at: patch.startedAt, ended_at: end }));
+    if (moved) await spreadSetTimes((await setsForWorkout(id)).filter((s) => s.completed_at), patch.startedAt, end);
+  });
+}
+
+/** Tidspunktet for siste fullførte set i økta (eller null). */
+export async function lastSetTime(id: string): Promise<string | null> {
+  const done = (await setsForWorkout(id)).filter((s) => s.completed_at).map((s) => s.completed_at!);
+  return done.length ? done.sort().at(-1)! : null;
 }
 
 /** Sletter en økt med alt innhold (myk sletting). */

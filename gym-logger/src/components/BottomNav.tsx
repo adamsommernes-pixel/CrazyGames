@@ -4,7 +4,7 @@ import { Icon, type IconName } from './Icon';
 import { getActiveWorkout } from '../db/repo';
 import { openStartSheet } from '../features/workout/StartSheet';
 import { useNow } from '../features/workout/restTimer';
-import { duration } from '../lib/format';
+import { duration, isLongAgo } from '../lib/format';
 
 const LEFT: { to: string; label: string; icon: IconName }[] = [
   { to: '/', label: 'Hjem', icon: 'home' },
@@ -53,7 +53,7 @@ export function BottomNav() {
               <Icon name={active ? 'play' : 'plus'} size={26} strokeWidth={2.6} />
             </span>
             <span className="font-num text-[11px] font-semibold text-green">
-              {active ? duration(now - new Date(active.started_at).getTime()) : 'Start'}
+              {active ? (isLongAgo(active.started_at, now) ? 'Økt' : duration(now - new Date(active.started_at).getTime())) : 'Start'}
             </span>
           </button>
         </li>

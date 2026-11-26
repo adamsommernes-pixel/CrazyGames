@@ -3,14 +3,14 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { db } from '../../db/dexie';
-import { SET_TYPE_SHORT, type WorkoutSet } from '../../db/types';
-import { deleteWorkout, editSet, repeatWorkout, restore, routineFromWorkout, setsForWorkout, workoutExercises } from '../../db/repo';
-import { ActionList, Button, Card, EmptyState, IconButton, NumberStepper, Page, PRBadge, Sheet, Stat } from '../../components/ui';
+import { SET_TYPE_SHORT, type Workout, type WorkoutSet } from '../../db/types';
+import { deleteWorkout, editSet, repeatWorkout, restore, routineFromWorkout, setsForWorkout, updateWorkoutTimes, workoutExercises } from '../../db/repo';
+import { ActionList, Button, Card, EmptyState, IconButton, NumberStepper, Page, PRBadge, Sheet, Stat, inputClass } from '../../components/ui';
 import { undoToast } from '../../components/toast';
 import { useExerciseMap } from '../workout/ExercisePicker';
 import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
-import { dateLong, durationShort, fromDisplay, num, toDisplay } from '../../lib/format';
+import { dateLong, durationShort, fromDateTimeInputs, fromDisplay, num, toDateInput, toDisplay, toTimeInput } from '../../lib/format';
 import { PR_LABEL, estimate1RM, volume } from '../../lib/calc';
 
 export function WorkoutDetail() {
@@ -21,6 +21,7 @@ export function WorkoutDetail() {
   const prMap = usePRMap();
   const [menu, setMenu] = useState(false);
   const [editing, setEditing] = useState<WorkoutSet | null>(null);
+  const [editTimes, setEditTimes] = useState(false);
   const data = useLiveQuery(async () => {
     const workout = await db.workouts.get(id);
     return { workout, wes: await workoutExercises(id), sets: (await setsForWorkout(id)).filter((s) => s.completed_at) };
@@ -85,10 +86,12 @@ export function WorkoutDetail() {
       </Button>
 
       <EditSetSheet set={editing} unit={unit} onClose={() => setEditing(null)} />
+      {editTimes && workout.ended_at && <EditTimesSheet workout={workout} onClose={() => setEditTimes(false)} />}
 
       <Sheet open={menu} onClose={() => setMenu(false)} title="Økt">
         <ActionList
           actions={[
+            ...(workout.ended_at ? [{ label: 'Endre navn, dato og varighet', icon: 'edit' as const, onClick: () => { setMenu(false); setEditTimes(true); } }] : []),
             { label: 'Gjenta økt', icon: 'repeat', onClick: () => void repeatWorkout(id).then(() => navigate('/workout')) },
             { label: 'Lagre som rutine', icon: 'list', onClick: () => void routineFromWorkout(id).then((rid) => navigate(`/routines/${rid}`)) },
             {
@@ -106,6 +109,49 @@ export function WorkoutDetail() {
         />
       </Sheet>
     </Page>
+  );
+}
+
+/** Endre navn, startdato, klokkeslett og varighet på en ferdig økt. */
+function EditTimesSheet({ workout, onClose }: { workout: Workout; onClose: () => void }) {
+  const start = new Date(workout.started_at);
+  const [name, setName] = useState(workout.name);
+  const [date, setDate] = useState(toDateInput(start));
+  const [time, setTime] = useState(toTimeInput(start));
+  const [minutes, setMinutes] = useState(Math.max(5, Math.round((new Date(workout.ended_at!).getTime() - start.getTime()) / 60_000)));
+  const startedAt = date ? fromDateTimeInputs(date, time) : workout.started_at;
+  const inFuture = new Date(startedAt).getTime() > Date.now();
+  return (
+    <Sheet open onClose={onClose} title="Endre økt">
+      <div className="flex flex-col gap-4">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm text-muted">Navn</span>
+          <input id="edit-workout-name" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm text-muted">Dato</span>
+            <input id="edit-workout-date" type="date" className={inputClass} value={date} max={toDateInput(new Date())} onChange={(e) => setDate(e.target.value)} />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm text-muted">Startet</span>
+            <input id="edit-workout-time" type="time" className={inputClass} value={time} onChange={(e) => setTime(e.target.value)} />
+          </label>
+        </div>
+        <div>
+          <div className="mb-1.5 text-sm text-muted">Varighet</div>
+          <NumberStepper label="Varighet" value={minutes} step={5} min={5} max={600} onChange={setMinutes} format={(v) => durationShort(v * 60_000)} />
+        </div>
+        {inFuture && <p className="text-sm text-warn">Starttidspunktet er fram i tid.</p>}
+        <Button
+          full
+          disabled={!date || inFuture}
+          onClick={() => void updateWorkoutTimes(workout.id, { name, startedAt, durationMin: minutes }).then(onClose)}
+        >
+          Lagre endringer
+        </Button>
+      </div>
+    </Sheet>
   );
 }
 

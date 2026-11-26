@@ -1,25 +1,26 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { Workout } from '../../db/types';
 import {
   addExerciseToWorkout,
   deleteWorkout,
   finishWorkout,
+  lastSetTime,
   renameWorkout,
   restore,
   setsForWorkout,
   setWorkoutNotes,
   workoutExercises,
 } from '../../db/repo';
-import { Button, EmptyState, Page, Sheet, Stat, inputClass } from '../../components/ui';
+import { Button, EmptyState, NumberStepper, Page, Sheet, Stat, inputClass } from '../../components/ui';
 import { ExerciseCard } from './ExerciseCard';
 import { ExercisePicker, useExerciseMap } from './ExercisePicker';
 import { stopRest, useNow } from './restTimer';
 import { useWakeLock } from './useWakeLock';
 import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
-import { duration, num, toDisplay } from '../../lib/format';
+import { dateShort, duration, durationShort, isLongAgo, num, toDisplay } from '../../lib/format';
 import { volume } from '../../lib/calc';
 import { undoToast } from '../../components/toast';
 
@@ -33,17 +34,27 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
   useWakeLock(keepAwake);
   const wes = useLiveQuery(() => workoutExercises(workout.id), [workout.id], []);
   const sets = useLiveQuery(() => setsForWorkout(workout.id), [workout.id], []);
+  const location = useLocation();
   const [picker, setPicker] = useState(false);
-  const [finishing, setFinishing] = useState(false);
+  // Hjem kan sende hit med «avslutt nå» for en glemt økt.
+  const [finishing, setFinishing] = useState(() => !!(location.state as { finish?: boolean } | null)?.finish);
   const [name, setName] = useState(workout.name);
   const [notes, setNotes] = useState(workout.notes);
+  // Økter startet for lenge siden (glemt eller etterregistrert) får varighet satt for hånd.
+  const startMs = new Date(workout.started_at).getTime();
+  const longAgo = isLongAgo(workout.started_at, now);
+  const [durationMin, setDurationMin] = useState<number | null>(null);
+  const lastSet = useLiveQuery(() => lastSetTime(workout.id), [workout.id, sets.length]);
+  const suggestedMin = lastSet ? Math.max(10, Math.round((new Date(lastSet).getTime() - startMs) / 60_000 / 5) * 5 + 5) : 60;
+  const minutes = durationMin ?? Math.min(suggestedMin, 300);
 
   const doneSets = sets.filter((s) => s.completed_at);
   const vol = volume(sets);
 
   const finish = async () => {
     if (notes !== workout.notes) await setWorkoutNotes(workout.id, notes);
-    if (await finishWorkout(workout.id)) {
+    const endedAt = longAgo ? new Date(startMs + minutes * 60_000).toISOString() : undefined;
+    if (await finishWorkout(workout.id, endedAt)) {
       await stopRest();
       setFinishing(false);
       navigate(`/summary/${workout.id}`, { replace: true });
@@ -79,7 +90,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
       }
     >
       <div className="mb-3 grid grid-cols-3 gap-2">
-        <Stat label="Tid" value={duration(now - new Date(workout.started_at).getTime())} />
+        {longAgo ? <Stat label="Startet" value={dateShort(workout.started_at)} /> : <Stat label="Tid" value={duration(now - startMs)} />}
         <Stat label="Sets" value={`${doneSets.length}/${sets.length}`} />
         <Stat label={`Volum (${unit})`} value={num(toDisplay(vol, unit), 0)} />
       </div>
@@ -125,6 +136,14 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
           <p className="mb-4 text-muted">
             {doneSets.length} sets fullført. Sets som ikke er huket av blir fjernet.
           </p>
+        )}
+        {longAgo && (
+          <div className="mb-4">
+            <div className="mb-1.5 text-sm text-muted">
+              Økta startet {new Date(workout.started_at).toLocaleString('nb-NO', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. Hvor lenge varte den?
+            </div>
+            <NumberStepper label="Varighet" value={minutes} step={5} min={5} max={300} onChange={setDurationMin} format={(v) => durationShort(v * 60_000)} />
+          </div>
         )}
         <label className="mb-4 flex flex-col gap-1">
           <span className="text-sm text-muted">Notat (valgfritt)</span>

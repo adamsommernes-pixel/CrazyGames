@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../../auth/AuthProvider';
@@ -13,7 +13,7 @@ import { useNow } from '../workout/restTimer';
 import { usePRMap } from '../../lib/prs';
 import { useSetting } from '../../lib/settings';
 import { thisWeekCount, trainedDaysThisWeek, weekStreak, weeklySeries } from '../../lib/stats';
-import { dateShort, duration, num, toDisplay } from '../../lib/format';
+import { dateShort, duration, isLongAgo, num, toDisplay } from '../../lib/format';
 import { PR_LABEL } from '../../lib/calc';
 import { InstallHint } from '../profile/InstallHint';
 
@@ -34,6 +34,7 @@ export function Home() {
   const profile = useLiveQuery(() => getProfile(user.id), [user.id]);
   const active = useLiveQuery(() => getActiveWorkout(), []);
   const now = useNow(1000, !!active);
+  const [keepGoing, setKeepGoing] = useState(false);
   const data = useLiveQuery(async () => {
     const workouts = await db.workouts.toArray();
     const sets = (await db.sets.toArray()).filter((s) => !s.deleted && s.completed_at);
@@ -83,6 +84,29 @@ export function Home() {
       <main className="flex flex-col gap-4 px-4 pt-5 pb-44">
         <InstallHint />
 
+        {active && isLongAgo(active.started_at, now) && !keepGoing && (
+          <Card className="border-warn/40 p-4">
+            <div className="flex items-start gap-3">
+              <Icon name="timer" className="mt-0.5 shrink-0 text-warn" />
+              <div className="flex-1">
+                <h2 className="font-semibold">Glemte du å avslutte?</h2>
+                <p className="mt-0.5 text-sm text-muted">
+                  «{active.name}» startet{' '}
+                  {new Date(active.started_at).toLocaleString('nb-NO', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button className="flex-1" onClick={() => navigate('/workout', { state: { finish: true } })}>
+                Avslutt økta
+              </Button>
+              <Button variant="secondary" className="flex-1" onClick={() => setKeepGoing(true)}>
+                Fortsett
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {active && (
           <button type="button" onClick={() => navigate('/workout')} className="flex items-center gap-3 rounded-3xl bg-green p-4 text-left text-black shadow-glow">
             <span className="grid size-11 place-items-center rounded-2xl bg-black/15">
@@ -92,7 +116,9 @@ export function Home() {
               <span className="block text-sm font-medium opacity-75">Økt pågår</span>
               <span className="block text-lg font-bold">{active.name}</span>
             </span>
-            <span className="font-num text-2xl font-bold">{duration(now - new Date(active.started_at).getTime())}</span>
+            <span className="font-num text-2xl font-bold">
+              {isLongAgo(active.started_at, now) ? dateShort(active.started_at) : duration(now - new Date(active.started_at).getTime())}
+            </span>
           </button>
         )}
 

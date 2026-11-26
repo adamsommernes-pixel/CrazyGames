@@ -40,6 +40,27 @@ export function durationShort(ms: number): string {
   return `${Math.floor(min / 60)} t ${min % 60} min`;
 }
 
+/** En økt regnes som glemt eller etterregistrert når den startet for over 3 timer siden. */
+export const LONG_AGO_MS = 3 * 60 * 60 * 1000;
+export function isLongAgo(startedAt: string, now = Date.now()): boolean {
+  return now - new Date(startedAt).getTime() > LONG_AGO_MS;
+}
+
+/** «2026-11-26» i lokal tid, til `<input type="date">`. */
+export function toDateInput(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** «18:30» i lokal tid, til `<input type="time">`. */
+export function toTimeInput(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/** Lokal dato + klokkeslett fra skjemafelt → ISO. */
+export function fromDateTimeInputs(date: string, time: string): string {
+  return new Date(`${date}T${time || '00:00'}:00`).toISOString();
+}
+
 export function dateLong(iso: string): string {
   return new Date(iso).toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' });
 }

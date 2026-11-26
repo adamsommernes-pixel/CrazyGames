@@ -1,12 +1,12 @@
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/dexie';
 import { getActiveWorkout, nextRoutine, repeatWorkout, routineItems, startWorkout } from '../../db/repo';
-import { Card, Sheet, SectionTitle } from '../../components/ui';
+import { Button, Card, Sheet, SectionTitle, inputClass } from '../../components/ui';
 import { Icon } from '../../components/Icon';
 import { useExerciseMap } from './ExercisePicker';
-import { dateShort } from '../../lib/format';
+import { dateShort, fromDateTimeInputs, toDateInput } from '../../lib/format';
 import { buzz } from '../../lib/haptics';
 
 let open = false;
@@ -84,9 +84,52 @@ export function StartSheet() {
           </ul>
         </>
       )}
-      <button type="button" className="mt-4 w-full py-3 text-center font-medium text-green" onClick={() => { set(false); navigate('/routines'); }}>
+      <PastWorkout onStart={(startedAt) => void go(() => startWorkout({ startedAt }))} />
+      <button type="button" className="mt-2 w-full py-3 text-center font-medium text-green" onClick={() => { set(false); navigate('/routines'); }}>
         Administrer rutiner
       </button>
     </Sheet>
+  );
+}
+
+/** Glemte du telefonen? Registrer en økt i ettertid med dato og klokkeslett. */
+function PastWorkout({ onStart }: { onStart: (startedAt: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const yesterday = new Date(Date.now() - 86_400_000);
+  const [date, setDate] = useState(toDateInput(yesterday));
+  const [time, setTime] = useState('18:00');
+  const startedAt = fromDateTimeInputs(date, time);
+  const inFuture = new Date(startedAt).getTime() > Date.now();
+
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="card mt-4 flex min-h-14 w-full items-center gap-3 rounded-2xl px-4 text-left active:bg-raised">
+        <Icon name="calendar" className="text-green" />
+        <span className="flex-1">
+          <span className="block font-semibold">Logg tidligere økt</span>
+          <span className="block text-sm text-muted">Glemte du å logge? Legg den inn i ettertid.</span>
+        </span>
+      </button>
+    );
+  }
+  return (
+    <Card className="mt-4 flex flex-col gap-3 p-4">
+      <h3 className="font-semibold">Logg tidligere økt</h3>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm text-muted">Dato</span>
+          <input id="past-date" type="date" className={inputClass} value={date} max={toDateInput(new Date())} onChange={(e) => setDate(e.target.value)} />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm text-muted">Startet</span>
+          <input id="past-time" type="time" className={inputClass} value={time} onChange={(e) => setTime(e.target.value)} />
+        </label>
+      </div>
+      {inFuture && <p className="text-sm text-warn">Tidspunktet er fram i tid.</p>}
+      <Button full disabled={!date || inFuture} onClick={() => onStart(startedAt)}>
+        Start registrering
+      </Button>
+      <p className="text-xs text-faint">Du logger øvelser og sets som vanlig, og setter varigheten når du lagrer.</p>
+    </Card>
   );
 }
