@@ -1,3 +1,4 @@
+import { LiftLevel } from '../level/LiftLevel';
 import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -95,6 +96,7 @@ export function ExerciseDetail() {
       }
     >
       <ExerciseMeta exercise={exercise} />
+      <LiftLevel exerciseId={exercise.id} />
 
       <div className="mt-4 mb-4 grid grid-cols-2 gap-1 rounded-2xl bg-raised p-1" role="tablist">
         {(['overview', 'guide'] as const).map((tab_) => (
