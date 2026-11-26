@@ -1,3 +1,4 @@
+import { EditExerciseSheet } from './EditExerciseSheet';
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate } from 'react-router-dom';
@@ -35,6 +36,7 @@ export function ExerciseInfoSheet({ exercise, onClose }: { exercise: Exercise | 
   const unit = useSetting('unit');
   const favorites = useSetting('favorites');
   const [tab, setTab] = useState<'guide' | 'history'>('guide');
+  const [editing, setEditing] = useState(false);
   const sessions = useLiveQuery(async () => (exercise ? recentSessions(exercise.id) : []), [exercise?.id], []);
   if (!exercise) return null;
   const fav = favorites.includes(exercise.id);
@@ -86,10 +88,15 @@ export function ExerciseInfoSheet({ exercise, onClose }: { exercise: Exercise | 
         </ul>
       )}
 
+      {exercise.custom ? (
+        <Button variant="secondary" full icon="edit" className="mt-4" onClick={() => setEditing(true)}>
+          {t('Rediger øvelse', 'Edit exercise')}
+        </Button>
+      ) : null}
       <Button
         variant="ghost"
         full
-        className="mt-4"
+        className="mt-2"
         onClick={() => {
           onClose();
           navigate(`/exercise/${exercise.id}`);
@@ -97,6 +104,7 @@ export function ExerciseInfoSheet({ exercise, onClose }: { exercise: Exercise | 
       >
         <Icon name="chart" size={18} /> {t('Rekorder og grafer', 'Records and charts')}
       </Button>
+      {editing && <EditExerciseSheet exercise={exercise} onClose={() => setEditing(false)} onDeleted={() => { setEditing(false); onClose(); }} />}
     </Sheet>
   );
 }

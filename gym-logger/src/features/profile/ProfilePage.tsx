@@ -1,3 +1,4 @@
+import { Logo } from '../../components/Logo';
 import { useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link, useNavigate } from 'react-router-dom';
@@ -74,12 +75,15 @@ export function ProfilePage() {
       <SectionTitle>{t('Innstillinger', 'Settings')}</SectionTitle>
       <SettingsSection />
 
-      <p className="mt-8 text-center text-xs text-faint">
-        Repgrade v{__APP_VERSION__} ·{' '}
+      <div className="mt-10 flex flex-col items-center gap-1.5 text-center text-xs text-faint">
+        <Logo size={22} className="text-sm text-muted" />
+        <span>
+          {t('Versjon', 'Version')} {__APP_VERSION__} ({t('bygg', 'build')} {__APP_BUILD__}) · {new Date(__APP_BUILT_AT__).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' })}
+        </span>
         <Link to="/privacy" className="underline">
           {t('Personvern', 'Privacy')}
         </Link>
-      </p>
+      </div>
     </Page>
   );
 }

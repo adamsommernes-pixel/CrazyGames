@@ -1,7 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link, useNavigate } from 'react-router-dom';
-import { db } from '../../db/dexie';
-import { getActiveWorkout, nextRoutine, routineItems, startWorkout } from '../../db/repo';
+import { getActiveWorkout, nextRoutine, routineItems, sortedRoutines, startWorkout } from '../../db/repo';
 import { showInfo } from '../../components/confirm';
 import { Icon } from '../../components/Icon';
 import { t } from '../../i18n';
@@ -10,11 +9,12 @@ import { t } from '../../i18n';
 export function RoutinesSection() {
   const navigate = useNavigate();
   const data = useLiveQuery(async () => {
-    const list = (await db.routines.toArray()).filter((r) => !r.deleted);
+    const list = await sortedRoutines();
     const next = await nextRoutine();
     const withItems = await Promise.all(list.map(async (r) => ({ r, count: (await routineItems(r.id)).length })));
-    // Den som står for tur først, så resten alfabetisk.
-    withItems.sort((a, b) => Number(b.r.id === next?.id) - Number(a.r.id === next?.id) || a.r.name.localeCompare(b.r.name, 'nb'));
+    // Start med den som står for tur, så resten i brukerens rekkefølge (rundt til start igjen).
+    const at = withItems.findIndex((x) => x.r.id === next?.id);
+    if (at > 0) withItems.push(...withItems.splice(0, at));
     return { routines: withItems, nextId: next?.id };
   }, []);
   if (!data) return null;

@@ -1,3 +1,4 @@
+import { Logo } from '../../components/Logo';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
@@ -14,6 +15,7 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
     <div className="pt-safe pb-safe mx-auto flex min-h-full max-w-xl flex-col px-5">
       <div className="-ml-2 flex items-center justify-between pt-3">
         <IconButton icon="back" label={t('Tilbake', 'Back')} onClick={() => navigate('/welcome')} />
+        <Logo size={20} className="text-sm text-muted" />
         <LanguageToggle />
       </div>
       <h1 className="font-num mt-4 text-4xl font-bold tracking-tight">{title}</h1>

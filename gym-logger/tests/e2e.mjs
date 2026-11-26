@@ -248,10 +248,12 @@ try {
   await page.getByRole('heading', { name: 'Sidehev' }).waitFor();
   await page.getByRole('heading', { name: 'Benkpress' }).waitFor();
 
-  // 5f. Økta avviker fra rutinen → tilbud om å oppdatere rutinen (lar den stå av)
+  // 5f. Økta avviker fra rutinen → spørsmål om å lagre endringene i rutinen (bare denne gangen)
   await btn('Avslutt', { exact: true }).click();
-  await page.getByText('Oppdater rutinen «Fullkropp A»').waitFor();
   await btn('Lagre økt').click();
+  await dialog().getByText(/Du endret økta i forhold til rutinen «Fullkropp A»/).waitFor();
+  await shot('lagre-i-rutinen');
+  await btn('Bare denne gangen').click();
   await page.getByText('Økt fullført').waitFor();
   await page.getByText(/ny rekord|nye rekorder/).first().waitFor();
   await shot('oppsummering-pr');
@@ -374,6 +376,13 @@ try {
   await btn('Erstatt startrutinene').click();
   await page.getByRole('heading', { name: 'Rutiner', exact: true }).waitFor();
   await page.getByRole('heading', { name: 'Push B', exact: true }).waitFor();
+  // Rekkefølgen bestemmer hva som står for tur: flytt Pull øverst
+  const firstRoutine = () => page.getByRole('listitem').filter({ has: page.getByRole('heading', { level: 2 }) }).first().getByRole('heading', { level: 2 }).innerText();
+  assert.equal(await firstRoutine(), 'Push');
+  await btn('Flytt opp: Pull', { exact: true }).click();
+  await page.waitForTimeout(300);
+  assert.equal(await firstRoutine(), 'Pull');
+  await page.getByRole('listitem').first().getByText('Står for tur').waitFor();
   assert.equal(await page.getByRole('heading', { name: 'Fullkropp A', exact: true }).count(), 0, 'gamle startrutiner er erstattet');
   await page.getByRole('navigation').getByRole('link', { name: 'Hjem' }).click();
   await page.getByRole('heading', { name: 'Dine rutiner' }).waitFor();

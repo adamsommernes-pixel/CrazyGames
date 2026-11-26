@@ -2,7 +2,7 @@ import { useState, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/dexie';
-import { getActiveWorkout, nextRoutine, repeatWorkout, routineItems, startWorkout } from '../../db/repo';
+import { getActiveWorkout, nextRoutine, repeatWorkout, routineItems, sortedRoutines, startWorkout } from '../../db/repo';
 import { Button, Card, Sheet, inputClass } from '../../components/ui';
 import { Icon } from '../../components/Icon';
 import { useExerciseMap } from './ExercisePicker';
@@ -31,7 +31,7 @@ export function StartSheet() {
   const navigate = useNavigate();
   const exMap = useExerciseMap();
   const data = useLiveQuery(async () => {
-    const routines = (await db.routines.toArray()).filter((r) => !r.deleted).sort((a, b) => a.name.localeCompare(b.name, 'nb'));
+    const routines = await sortedRoutines();
     const withItems = await Promise.all(routines.map(async (r) => ({ r, items: await routineItems(r.id) })));
     const last = (await db.workouts.orderBy('started_at').reverse().toArray()).find((w) => !w.deleted && w.ended_at);
     return { routines: withItems, last, next: await nextRoutine() };

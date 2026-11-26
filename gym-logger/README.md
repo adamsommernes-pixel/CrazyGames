@@ -209,3 +209,10 @@ Ikke sjekket ennå (gjør dette selv før lansering, det tar noen minutter):
 - Kroppsvekt, høyde, fødselsår og kjønn behandles som mulige helseopplysninger (art. 9). Med sky-konto sendes de bare til Supabase etter uttrykkelig samtykke (avkrysning i oppstarten og under Rediger profil). Uten samtykke hoppes kroppsvekt-loggen over i synken og feltene sendes tomme (`src/db/consent.ts`). Trekkes samtykket, slettes kroppsvekt-loggen i skyen.
 - Ingen analyse, reklame eller sporingscookies.
 - **Før lansering:** få erklæringen gjennomgått av noen med juridisk kompetanse, og inngå databehandleravtale (DPA) med Supabase (de har en standard DPA i dashbordet).
+
+## Versjonsnummer
+
+Appen viser «Versjon 1.0.0 (bygg 42 · a1b2c3d)» nederst i Profil:
+
+- **1.0.0** står i `package.json`. Øk det ved hver utgivelse: siste tall for småfikser (1.0.1), midterste for nye funksjoner (1.1.0).
+- **Bygg** er GitHub Actions sitt løpenummer og commit-ID, så hver publisering har sitt eget, unike nummer automatisk. Lokalt står det «lokal».

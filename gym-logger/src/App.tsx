@@ -1,3 +1,4 @@
+import { Logo } from './components/Logo';
 import { Suspense, lazy, useEffect, useMemo } from 'react';
 import { HashRouter, MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -14,7 +15,6 @@ import { supabaseConfigError } from './lib/supabase';
 import { ToastHost } from './components/toast';
 import { LevelHost } from './components/levelUp';
 import { BottomNav } from './components/BottomNav';
-import { Icon } from './components/Icon';
 import { RestTimerBar, unlockAudio } from './features/workout/restTimer';
 import { StartSheet } from './features/workout/StartSheet';
 import { WorkoutTab } from './features/workout/WorkoutTab';
@@ -73,8 +73,9 @@ export default function App() {
 function Splash() {
   return (
     <div className="grid h-full place-items-center" aria-label={t('Laster', 'Loading')}>
-      <span className="grid size-14 animate-pulse place-items-center rounded-2xl bg-green text-black shadow-glow">
-        <Icon name="dumbbell" size={28} strokeWidth={2.4} />
+      <span className="flex animate-pulse flex-col items-center gap-3">
+        <Logo size={64} name={false} />
+        <span className="font-num text-lg font-bold tracking-tight text-muted">Repgrade</span>
       </span>
     </div>
   );

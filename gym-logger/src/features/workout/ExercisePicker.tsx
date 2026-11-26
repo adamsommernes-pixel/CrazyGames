@@ -19,6 +19,7 @@ import { Button, Chip, IconButton, Sheet, inputClass } from '../../components/ui
 import { MuscleDot } from '../../components/MuscleTag';
 import { Icon } from '../../components/Icon';
 import { ExerciseInfoSheet } from '../exercise/ExerciseInfoSheet';
+import { EditExerciseSheet } from '../exercise/EditExerciseSheet';
 import { matchesSearch } from '../../lib/search';
 import { useSetting } from '../../lib/settings';
 import { formatSetShort, registerKinds } from '../../lib/kinds';
@@ -77,6 +78,7 @@ export function ExercisePicker({
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [info, setInfo] = useState<Exercise | null>(null);
+  const [editing, setEditing] = useState<Exercise | null>(null);
 
   const byId = useMemo(() => new Map(exercises.map((e) => [e.id, e])), [exercises]);
   const filtered = useMemo(
@@ -147,7 +149,11 @@ export function ExercisePicker({
             </span>
           )}
         </button>
-        <IconButton icon="info" label={`${t('Slik gjør du', 'How to')}: ${exerciseName(e)}`} onClick={() => setInfo(e)} className="text-faint" />
+        {e.custom ? (
+          <IconButton icon="edit" label={`${t('Rediger', 'Edit')}: ${exerciseName(e)}`} onClick={() => setEditing(e)} className="text-faint" />
+        ) : (
+          <IconButton icon="info" label={`${t('Slik gjør du', 'How to')}: ${exerciseName(e)}`} onClick={() => setInfo(e)} className="text-faint" />
+        )}
       </li>
     );
   };
@@ -253,6 +259,7 @@ export function ExercisePicker({
         </div>
       )}
       <ExerciseInfoSheet exercise={info} onClose={() => setInfo(null)} />
+      {editing && <EditExerciseSheet exercise={editing} onClose={() => setEditing(null)} onDeleted={() => setEditing(null)} />}
     </Sheet>
   );
 }
