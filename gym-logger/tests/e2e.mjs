@@ -162,6 +162,29 @@ try {
   await shot('niva-opp');
   await levelUp().getByRole('button', { name: 'Fortsett' }).click();
   await levelUp().waitFor({ state: 'detached' });
+
+  // 4b. Hvilelinja: +15 og −15 virker
+  const timerText = async () => (await page.getByRole('timer').innerText()).match(/\d+:\d\d/)?.[0];
+  const toSec = (v) => v.split(':').reduce((m, x) => m * 60 + Number(x), 0);
+  const t0 = toSec(await timerText());
+  await page.getByRole('timer').getByRole('button', { name: '+15' }).click();
+  await page.waitForTimeout(400);
+  assert.ok(toSec(await timerText()) >= t0 + 13, 'hviletiden økte med 15 s');
+  await page.getByRole('timer').getByRole('button', { name: '−15' }).click();
+  await page.waitForTimeout(400);
+  assert.ok(toSec(await timerText()) <= t0 + 2, 'hviletiden gikk ned igjen');
+
+  // 4c. Ark oppå ark (velger → øvelsesinfo → rekorder) låser ikke scrollingen etterpå
+  const locked = () => page.evaluate(() => document.body.style.overflow === 'hidden');
+  await btn(/Legg til øvelse/).first().click();
+  await page.getByRole('button', { name: /^Slik gjør du: / }).first().click();
+  assert.ok(await locked(), 'låst mens arkene er åpne');
+  await btn('Rekorder og grafer').click();
+  await page.waitForTimeout(400);
+  assert.equal(await locked(), false, 'scrolling virker på øvelsessiden');
+  await page.goBack();
+  await page.getByText('Knebøy').first().waitFor();
+  assert.equal(await locked(), false, 'scrolling virker tilbake i økta');
   await page.getByRole('timer').waitFor();
   await logSet(2, 100, 5);
   await btn('Platekalkulator').first().click();

@@ -44,7 +44,7 @@ export default function App() {
   // Lyd for hviletimeren må låses opp av et trykk på iOS.
   useEffect(() => {
     const unlock = () => unlockAudio();
-    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('pointerdown', unlock);
     return () => window.removeEventListener('pointerdown', unlock);
   }, []);
 
