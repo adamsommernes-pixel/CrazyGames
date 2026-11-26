@@ -6,6 +6,8 @@ import type { Workout, WorkoutSet } from '../../db/types';
 import { Card, Chip, EmptyState, Page, PRBadge, SectionTitle } from '../../components/ui';
 import { Calendar, dayKey } from '../../components/Calendar';
 import { Icon } from '../../components/Icon';
+import { MuscleDot } from '../../components/MuscleTag';
+import { useExerciseMap } from '../workout/ExercisePicker';
 import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
 import { dateLong, durationShort, monthYear, num, plural, toDisplay } from '../../lib/format';
@@ -15,6 +17,7 @@ export function HistoryList() {
   const navigate = useNavigate();
   const unit = useSetting('unit');
   const prMap = usePRMap();
+  const exMap = useExerciseMap();
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [day, setDay] = useState<string | null>(null);
   const data = useLiveQuery(async () => {
@@ -70,7 +73,9 @@ export function HistoryList() {
             <ul className="flex flex-col gap-2">
               {g.items.map((w) => {
                 const sets = byWorkout.get(w.id) ?? [];
-                const exercises = new Set(sets.map((s) => s.exercise_id)).size;
+                const exerciseIds = [...new Set([...sets].sort((a, b) => (a.completed_at! < b.completed_at! ? -1 : 1)).map((s) => s.exercise_id))];
+                const exercises = exerciseIds.length;
+                const shown = exerciseIds.slice(0, 3).map((id) => exMap.get(id)).filter(Boolean);
                 const prs = sets.filter((s) => prMap.has(s.id)).length;
                 return (
                   <li key={w.id}>
@@ -86,6 +91,17 @@ export function HistoryList() {
                             {durationShort(new Date(w.ended_at!).getTime() - new Date(w.started_at).getTime())} · {plural(exercises, 'øvelse', 'øvelser')} ·{' '}
                             {plural(sets.length, 'set', 'sets')} · {num(toDisplay(volume(sets), unit), 0)} {unit}
                           </div>
+                          {shown.length > 0 && (
+                            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+                              {shown.map((e) => (
+                                <span key={e!.id} className="inline-flex items-center gap-1.5">
+                                  <MuscleDot group={e!.muscle_group} />
+                                  {e!.name}
+                                </span>
+                              ))}
+                              {exercises > 3 && <span className="text-faint">+{exercises - 3}</span>}
+                            </div>
+                          )}
                         </div>
                         <Icon name="chevron" className="text-faint" />
                       </Card>

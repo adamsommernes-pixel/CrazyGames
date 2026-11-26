@@ -110,7 +110,8 @@ export async function addExerciseToWorkout(
 ): Promise<void> {
   const existing = await workoutExercises(workoutId);
   const weId = uuid();
-  const rest = opts.restSeconds ?? (await getSetting('defaultRest'));
+  // Hviletid: rutinens verdi, ellers den du sist valgte for øvelsen, ellers standard.
+  const rest = opts.restSeconds ?? (await rememberedRest(exerciseId)) ?? (await getSetting('defaultRest'));
   await db.workout_exercises.add(
     touched<WorkoutExercise>({
       id: weId,
@@ -177,7 +178,7 @@ export async function addSet(we: WorkoutExercise): Promise<void> {
 // Endringer på sets leser først og skriver så. De kjøres i en rw-transaksjon, slik at Dexie
 // kjører dem én om gangen: en rask «fullfør» kan da ikke overskrive en vekt som akkurat ble lagret.
 
-export async function updateSet(id: string, patch: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'set_type'>>) {
+export async function updateSet(id: string, patch: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'set_type' | 'distance_km'>>) {
   await db.transaction('rw', db.sets, async () => {
     const s = await db.sets.get(id);
     if (s) await db.sets.put(touched({ ...s, ...patch }));
@@ -277,9 +278,79 @@ export async function editSet(id: string, weight: number, reps: number) {
   });
 }
 
+/** Endrer hviletiden i økta og husker den for øvelsen til neste gang. */
 export async function setExerciseRest(weId: string, seconds: number) {
   const we = await db.workout_exercises.get(weId);
-  if (we) await db.workout_exercises.put(touched({ ...we, rest_seconds: seconds }));
+  if (!we) return;
+  await db.workout_exercises.put(touched({ ...we, rest_seconds: seconds }));
+  await db.kv.put({ key: `rest:${we.exercise_id}`, value: seconds });
+}
+
+export async function rememberedRest(exerciseId: string): Promise<number | undefined> {
+  const v = (await db.kv.get(`rest:${exerciseId}`))?.value;
+  return typeof v === 'number' ? v : undefined;
+}
+
+/** Notatet fra sist gang øvelsen ble gjort i en ferdig økt (f.eks. «setehøyde 4»). */
+export async function lastNotes(exerciseId: string, excludeWorkoutId: string): Promise<string> {
+  const wes = alive(await db.workout_exercises.where('exercise_id').equals(exerciseId).toArray()).filter(
+    (we) => we.workout_id !== excludeWorkoutId && we.notes?.trim(),
+  );
+  if (!wes.length) return '';
+  const workouts = await db.workouts.bulkGet(wes.map((we) => we.workout_id));
+  const dated = wes
+    .map((we, i) => ({ we, w: workouts[i] }))
+    .filter((x) => x.w && !x.w.deleted && x.w.ended_at)
+    .sort((a, b) => (a.w!.started_at < b.w!.started_at ? 1 : -1));
+  return dated[0]?.we.notes ?? '';
+}
+
+/**
+ * Bytter øvelse midt i økta (f.eks. når maskinen er opptatt). Uferdige sets beholder antallet,
+ * men får vekt fra den nye øvelsens historikk. Er noen sets allerede gjort, blir de stående på
+ * den gamle øvelsen, og de uferdige flyttes til en ny øvelse rett under.
+ */
+export async function swapWorkoutExercise(weId: string, newExerciseId: string): Promise<void> {
+  const we = await db.workout_exercises.get(weId);
+  if (!we || we.exercise_id === newExerciseId) return;
+  const sets = alive(await db.sets.where('workout_exercise_id').equals(weId).toArray()).sort((a, b) => a.position - b.position);
+  const pending = sets.filter((s) => !s.completed_at);
+  const last = (await lastPerformance(newExerciseId, we.workout_id)).filter((s) => s.set_type !== 'warmup');
+  const rest = (await rememberedRest(newExerciseId)) ?? we.rest_seconds;
+
+  await db.transaction('rw', db.workout_exercises, db.sets, async () => {
+    let target = we;
+    if (pending.length === sets.length) {
+      target = touched({ ...we, exercise_id: newExerciseId, rest_seconds: rest, notes: '' });
+      await db.workout_exercises.put(target);
+    } else {
+      target = touched<WorkoutExercise>({
+        ...we,
+        id: uuid(),
+        exercise_id: newExerciseId,
+        position: we.position + 0.5,
+        rest_seconds: rest,
+        notes: '',
+        updated_at: '',
+        dirty: 1,
+      });
+      await db.workout_exercises.add(target);
+    }
+    await db.sets.bulkPut(
+      pending.map((s, i) => {
+        const ref = last[i] ?? last[last.length - 1];
+        return touched({
+          ...s,
+          workout_exercise_id: target.id,
+          exercise_id: newExerciseId,
+          position: i,
+          weight: ref?.weight ?? 0,
+          reps: ref?.reps ?? s.reps,
+          distance_km: ref?.distance_km ?? null,
+        });
+      }),
+    );
+  });
 }
 
 export async function removeWorkoutExercise(weId: string): Promise<Removed> {
@@ -358,6 +429,17 @@ export async function updateWorkoutTimes(id: string, patch: { name: string; star
     await db.workouts.put(touched({ ...w, name: patch.name.trim() || w.name, started_at: patch.startedAt, ended_at: end }));
     if (moved) await spreadSetTimes((await setsForWorkout(id)).filter((s) => s.completed_at), patch.startedAt, end);
   });
+}
+
+/** Første uferdige set i økta, i øvelsesrekkefølge (det neste du skal gjøre). */
+export function nextPendingSet(wes: WorkoutExercise[], sets: WorkoutSet[]): WorkoutSet | undefined {
+  for (const we of [...wes].sort((a, b) => a.position - b.position)) {
+    const next = sets
+      .filter((s) => s.workout_exercise_id === we.id && !s.completed_at && !s.deleted)
+      .sort((a, b) => a.position - b.position)[0];
+    if (next) return next;
+  }
+  return undefined;
 }
 
 /** Tidspunktet for siste fullførte set i økta (eller null). */

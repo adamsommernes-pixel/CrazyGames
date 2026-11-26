@@ -9,10 +9,28 @@ import { useExerciseMap } from '../workout/ExercisePicker';
 import { useSetting } from '../../lib/settings';
 import { best1RM, countsAsWork } from '../../lib/calc';
 import { muscleSplit, weeklySeries } from '../../lib/stats';
-import { dateShort, num, plural, toDisplay } from '../../lib/format';
-import type { WorkoutSet } from '../../db/types';
+import { dateShort, duration, num, plural, toDisplay } from '../../lib/format';
+import { kindOf } from '../../lib/kinds';
+import { MUSCLE_COLOR } from '../../lib/muscles';
+import { MuscleDot } from '../../components/MuscleTag';
+import type { ExerciseKind, WorkoutSet } from '../../db/types';
 
 type View = 'volume' | 'workouts';
+
+/** Nøkkeltallet som vises per øvelse i lista, tilpasset øvelsestypen. */
+function bestFor(kind: ExerciseKind, list: WorkoutSet[], unit: 'kg' | 'lbs') {
+  const maxReps = Math.max(...list.map((s) => s.reps));
+  switch (kind) {
+    case 'bodyweight':
+      return { value: String(maxReps), label: 'flest reps' };
+    case 'time':
+      return { value: duration(maxReps * 1000), label: 'lengste' };
+    case 'cardio':
+      return { value: num(Math.max(...list.map((s) => s.distance_km ?? 0)), 1), label: 'lengst km' };
+    default:
+      return { value: num(toDisplay(best1RM(list), unit), 0), label: `1RM ${unit}` };
+  }
+}
 
 export function ProgressList() {
   const navigate = useNavigate();
@@ -45,11 +63,11 @@ export function ProgressList() {
         exercise: exMap.get(id),
         last: list.reduce((m, s) => (s.completed_at! > m ? s.completed_at! : m), ''),
         sessions: new Set(list.map((s) => s.workout_id)).size,
-        e1rm: best1RM(list),
+        best: bestFor(kindOf(id), list, unit),
       }))
       .filter((r) => r.exercise && (!group || r.exercise.muscle_group === group))
       .sort((a, b) => (a.last < b.last ? 1 : -1));
-  }, [sets, exMap, group]);
+  }, [sets, exMap, group, unit]);
 
   const groups = useMemo(() => [...new Set(sets.map((s) => exMap.get(s.exercise_id)?.muscle_group).filter(Boolean))] as string[], [sets, exMap]);
 
@@ -94,10 +112,13 @@ export function ProgressList() {
               <SectionTitle>Muskelgrupper siste 30 dager</SectionTitle>
               <Card className="flex flex-col gap-2.5 p-4">
                 {split.map(([g, n]) => (
-                  <div key={g} className="grid grid-cols-[5.5rem_1fr_2.5rem] items-center gap-3 text-sm">
-                    <span className="text-muted">{g}</span>
+                  <div key={g} className="grid grid-cols-[6rem_1fr_2.5rem] items-center gap-3 text-sm">
+                    <span className="flex items-center gap-2 text-muted">
+                      <MuscleDot group={g} />
+                      {g}
+                    </span>
                     <span className="h-2.5 overflow-hidden rounded-full bg-line">
-                      <span className="block h-full rounded-full bg-green" style={{ width: `${(n / splitMax) * 100}%` }} />
+                      <span className="block h-full rounded-full" style={{ width: `${(n / splitMax) * 100}%`, background: MUSCLE_COLOR[g] }} />
                     </span>
                     <span className="font-num text-right font-bold">{n}</span>
                   </div>
@@ -125,6 +146,7 @@ export function ProgressList() {
               <li key={r.id}>
                 <button type="button" className="w-full text-left" onClick={() => navigate(`/exercise/${r.id}`)}>
                   <Card className="flex items-center gap-3 p-4">
+                    <MuscleDot group={r.exercise!.muscle_group} size={10} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-semibold">{r.exercise!.name}</div>
                       <div className="text-sm text-muted">
@@ -132,8 +154,8 @@ export function ProgressList() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-num text-xl font-bold text-green">{num(toDisplay(r.e1rm, unit), 0)}</div>
-                      <div className="text-[11px] text-faint">1RM {unit}</div>
+                      <div className="font-num text-xl font-bold text-green">{r.best.value}</div>
+                      <div className="text-[11px] text-faint">{r.best.label}</div>
                     </div>
                     <Icon name="chevron" size={18} className="text-faint" />
                   </Card>

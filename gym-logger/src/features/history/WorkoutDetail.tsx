@@ -7,6 +7,8 @@ import { SET_TYPE_SHORT, type Workout, type WorkoutSet } from '../../db/types';
 import { deleteWorkout, editSet, repeatWorkout, restore, routineFromWorkout, setsForWorkout, updateWorkoutTimes, workoutExercises } from '../../db/repo';
 import { ActionList, Button, Card, EmptyState, IconButton, NumberStepper, Page, PRBadge, Sheet, Stat, inputClass } from '../../components/ui';
 import { undoToast } from '../../components/toast';
+import { MuscleDot } from '../../components/MuscleTag';
+import { formatSet, kindOf } from '../../lib/kinds';
 import { useExerciseMap } from '../workout/ExercisePicker';
 import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
@@ -56,21 +58,28 @@ export function WorkoutDetail() {
           let n = 0;
           return (
             <Card key={we.id} className="p-4">
-              <button type="button" className="text-lg font-bold text-green" onClick={() => navigate(`/exercise/${we.exercise_id}`)}>
+              <button type="button" className="flex items-center gap-2 text-lg font-bold text-green" onClick={() => navigate(`/exercise/${we.exercise_id}`)}>
+                {exMap.get(we.exercise_id) && <MuscleDot group={exMap.get(we.exercise_id)!.muscle_group} size={9} />}
                 {exMap.get(we.exercise_id)?.name ?? 'Ukjent øvelse'}
               </button>
               <ul className="mt-2 flex flex-col gap-1.5">
                 {exSets.map((s) => {
                   const prs = prMap.get(s.id);
+                  const kind = kindOf(s.exercise_id);
+                  const text = formatSet(s, kind, unit);
                   return (
                     <li key={s.id} className="tabular flex flex-wrap items-center gap-x-3 gap-y-1">
                       <span className={`font-num w-6 text-center font-bold ${s.set_type === 'normal' ? 'text-faint' : 'text-warn'}`}>
                         {SET_TYPE_SHORT[s.set_type] || ++n}
                       </span>
-                      <button type="button" className="font-num font-bold underline decoration-line decoration-dotted underline-offset-4" aria-label={`Rediger set: ${num(toDisplay(s.weight, unit))} ${unit} × ${s.reps}`} onClick={() => setEditing(s)}>
-                        {num(toDisplay(s.weight, unit))} {unit} × {s.reps}
-                      </button>
-                      <span className="text-sm text-faint">1RM {num(toDisplay(estimate1RM(s.weight, s.reps), unit))}</span>
+                      {kind === 'cardio' ? (
+                        <span className="font-num font-bold">{text}</span>
+                      ) : (
+                        <button type="button" className="font-num font-bold underline decoration-line decoration-dotted underline-offset-4" aria-label={`Rediger set: ${text}`} onClick={() => setEditing(s)}>
+                          {text}
+                        </button>
+                      )}
+                      {kind === 'weight' && <span className="text-sm text-faint">1RM {num(toDisplay(estimate1RM(s.weight, s.reps), unit))}</span>}
                       {prs?.map((p) => <PRBadge key={p} label={PR_LABEL[p]} />)}
                     </li>
                   );

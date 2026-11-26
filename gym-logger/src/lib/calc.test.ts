@@ -28,6 +28,26 @@ describe('detectPRs', () => {
   it('oppvarming gir ikke PR', () => expect(detectPRs(s(200, 1, { set_type: 'warmup' }), history)).toEqual([]));
 });
 
+describe('rekorder per øvelsestype', () => {
+  it('tid: lengst tid', () => {
+    expect(detectPRs(s(0, 75), [s(0, 60)], 'time')).toEqual(['time']);
+    expect(detectPRs(s(0, 50), [s(0, 60)], 'time')).toEqual([]);
+  });
+  it('kondisjon: lengst distanse', () => {
+    expect(detectPRs({ ...s(0, 30), distance_km: 5.5 }, [{ ...s(0, 30), distance_km: 5 }], 'cardio')).toEqual(['distance']);
+    expect(detectPRs({ ...s(0, 40), distance_km: 4 }, [{ ...s(0, 30), distance_km: 5 }], 'cardio')).toEqual([]);
+  });
+  it('kroppsvekt: flest reps, ingen 1RM', () => {
+    expect(detectPRs(s(0, 12), [s(0, 10)], 'bodyweight')).toEqual(['reps']);
+    expect(detectPRs(s(10, 8), [s(0, 12)], 'bodyweight')).toEqual(['weight']);
+  });
+  it('volum teller ikke tid og kondisjon', () => {
+    const plank = { ...s(20, 60), exercise_id: 'ex-planke' };
+    const bench = { ...s(100, 5), exercise_id: 'ex-benkpress' };
+    expect(volume([plank, bench])).toBe(500);
+  });
+});
+
 describe('detectPRsInOrder', () => {
   it('merker bare ny beste i samme økt', () => {
     const session = [

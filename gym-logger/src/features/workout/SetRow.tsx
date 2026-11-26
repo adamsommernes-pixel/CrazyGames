@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import type { WorkoutSet } from '../../db/types';
+import type { ExerciseKind, WorkoutSet } from '../../db/types';
 import { SET_TYPE_SHORT } from '../../db/types';
 import { toggleSetDone, updateSet } from '../../db/repo';
 import { fromDisplay, num, parseNum, toDisplay } from '../../lib/format';
+import { formatSetShort, kindColumns } from '../../lib/kinds';
+import { useNow } from './restTimer';
 import { PR_LABEL, type PRKind } from '../../lib/calc';
 import { buzz } from '../../lib/haptics';
 import { Icon } from '../../components/Icon';
@@ -104,6 +106,8 @@ export function SetRow({
   onCompleted,
   onMenu,
   targetReps,
+  kind = 'weight',
+  current,
 }: {
   set: WorkoutSet;
   /** Nummer for vanlige sets. */
@@ -115,18 +119,49 @@ export function SetRow({
   onMenu: () => void;
   /** Mål-reps fra rutinen, vist som hint i et tomt reps-felt. */
   targetReps?: number | null;
+  kind?: ExerciseKind;
+  /** Neste set som skal gjøres i økta («du er her»). */
+  current?: boolean;
 }) {
   const done = !!set.completed_at;
+  const [timingFrom, setTimingFrom] = useState<number | null>(null);
+  const now = useNow(250, timingFrom !== null);
   const complete = async () => {
     if (await toggleSetDone(set.id)) {
       void buzz(20);
       onCompleted();
     }
   };
-  const prevLabel = previous ? `${num(toDisplay(previous.weight, unit))} × ${previous.reps}` : '–';
+  // Tidsøvelser: tomt set + ✓ starter tidtaking; neste trykk stopper, fyller inn sekundene og fullfører.
+  const usesStopwatch = kind === 'time' && !done && (set.reps === 0 || timingFrom !== null);
+  const onCheck = async () => {
+    if (!usesStopwatch) return complete();
+    if (timingFrom === null) {
+      setTimingFrom(Date.now());
+      void buzz(10);
+      return;
+    }
+    const secs = Math.max(1, Math.round((Date.now() - timingFrom) / 1000));
+    setTimingFrom(null);
+    await updateSet(set.id, { reps: secs });
+    await complete();
+  };
+  const prevLabel = previous ? formatSetShort(previous, kind, unit) : '–';
   const short = SET_TYPE_SHORT[set.set_type];
+  const cols = kindColumns(kind, unit);
+  const firstIsDistance = kind === 'cardio';
+  const firstValue = firstIsDistance ? (set.distance_km ?? 0) : toDisplay(set.weight, unit);
+  const saveFirst = (v: number) =>
+    updateSet(set.id, firstIsDistance ? { distance_km: v } : { weight: fromDisplay(v, unit) });
+  const secondLabel = kind === 'time' ? 'Sekunder' : kind === 'cardio' ? 'Minutter' : 'Reps';
+  const firstLabel = kind === 'cardio' ? 'Distanse' : kind === 'weight' ? 'Vekt' : 'Ekstra vekt';
   return (
-    <div className={`rounded-2xl transition-colors ${done ? 'bg-green-dim/25' : ''}`} data-set-row data-done={done ? '1' : '0'}>
+    <div
+      className={`rounded-2xl transition-colors ${done ? 'bg-green-dim/25' : current ? 'bg-raised/60 ring-1 ring-green/50' : ''}`}
+      data-set-row
+      data-done={done ? '1' : '0'}
+      aria-current={current ? 'step' : undefined}
+    >
       <div className={`${SET_GRID} px-1 py-1`}>
         <button
           type="button"
@@ -140,28 +175,31 @@ export function SetRow({
           type="button"
           className="font-num truncate text-left text-sm text-faint active:text-muted"
           aria-label={previous ? `Bruk forrige: ${prevLabel}` : 'Ingen forrige'}
-          onClick={() => previous && void updateSet(set.id, { weight: previous.weight, reps: previous.reps })}
+          onClick={() =>
+            previous && void updateSet(set.id, { weight: previous.weight, reps: previous.reps, distance_km: previous.distance_km ?? null })
+          }
         >
           {prevLabel}
         </button>
         <NumField
-          label={`Vekt set ${label} (${unit})`}
+          label={kind === 'weight' ? `Vekt set ${label} (${unit})` : `${firstLabel} set ${label} (${cols.first.replace('+', '')})`}
           field="weight"
           decimal
           done={done}
-          value={toDisplay(set.weight, unit)}
-          onCommit={(v) => void updateSet(set.id, { weight: fromDisplay(v, unit) })}
+          value={firstValue}
+          placeholder={kind === 'weight' ? '0' : '–'}
+          onCommit={(v) => void saveFirst(v)}
           onEnter={(v, el) => {
-            if (v !== toDisplay(set.weight, unit)) void updateSet(set.id, { weight: fromDisplay(v, unit) });
+            if (v !== firstValue) void saveFirst(v);
             el.closest('[data-set-row]')?.querySelector<HTMLInputElement>('[data-field="reps"]')?.focus();
           }}
         />
         <NumField
-          label={`Reps set ${label}`}
+          label={`${secondLabel} set ${label}`}
           field="reps"
           done={done}
-          value={set.reps}
-          placeholder={targetReps ? `mål ${targetReps}` : '0'}
+          value={timingFrom !== null ? Math.round((now - timingFrom) / 1000) : set.reps}
+          placeholder={targetReps ? `mål ${targetReps}` : kind === 'time' ? 'sek' : kind === 'cardio' ? 'min' : '0'}
           onCommit={(v) => void updateSet(set.id, { reps: Math.round(v) })}
           onEnter={async (v, el) => {
             // Lagre først, så fullføre: rekkefølgen hindrer at fullføringen overskriver reps.
@@ -172,12 +210,26 @@ export function SetRow({
         />
         <button
           type="button"
-          aria-label={done ? `Angre set ${label}` : `Fullfør set ${label}`}
+          aria-label={
+            done
+              ? `Angre set ${label}`
+              : usesStopwatch
+                ? timingFrom === null
+                  ? `Start tidtaking set ${label}`
+                  : `Stopp tidtaking set ${label}`
+                : `Fullfør set ${label}`
+          }
           aria-pressed={done}
-          className={`grid h-12 w-[3.25rem] place-items-center rounded-xl transition ${done ? 'animate-pop bg-green text-black shadow-glow' : 'border border-line bg-raised text-faint active:bg-line'}`}
-          onClick={() => void complete()}
+          className={`grid h-12 w-[3.25rem] place-items-center rounded-xl transition ${
+            done
+              ? 'animate-pop bg-green text-black shadow-glow'
+              : timingFrom !== null
+                ? 'animate-pulse border border-green bg-green-dim text-green-light'
+                : 'border border-line bg-raised text-faint active:bg-line'
+          }`}
+          onClick={() => void onCheck()}
         >
-          <Icon name="check" strokeWidth={3} />
+          <Icon name={usesStopwatch ? 'stopwatch' : 'check'} strokeWidth={usesStopwatch ? 2.2 : 3} />
         </button>
       </div>
       {prs && prs.length > 0 && (

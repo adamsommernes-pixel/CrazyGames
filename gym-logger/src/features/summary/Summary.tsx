@@ -11,6 +11,7 @@ import { usePRMap } from '../../lib/prs';
 import { useSetting } from '../../lib/settings';
 import { PR_LABEL, volume } from '../../lib/calc';
 import { durationShort, num, toDisplay } from '../../lib/format';
+import { formatSetShort, kindOf } from '../../lib/kinds';
 
 /** Oppsummering rett etter en økt: tall, rekorder og sammenligning med forrige gang. */
 export function Summary() {
@@ -54,7 +55,7 @@ export function Summary() {
       `${workout.name} – ${durationShort(minutes)}, ${num(toDisplay(vol, unit), 0)} ${unit} totalt`,
       ...wes.map((we) => {
         const ex = sets.filter((s) => s.workout_exercise_id === we.id);
-        return `${exMap.get(we.exercise_id)?.name ?? '?'}: ${ex.map((s) => `${num(toDisplay(s.weight, unit))}×${s.reps}`).join(', ')}`;
+        return `${exMap.get(we.exercise_id)?.name ?? '?'}: ${ex.map((s) => formatSetShort(s, kindOf(s.exercise_id), unit)).join(', ')}`;
       }),
       prSets.length ? `🏆 ${prSets.length} ny${prSets.length === 1 ? '' : 'e'} rekord${prSets.length === 1 ? '' : 'er'}` : '',
     ].filter(Boolean);
@@ -110,9 +111,7 @@ export function Summary() {
                     ))}
                   </span>
                 </span>
-                <span className="font-num text-xl font-bold">
-                  {num(toDisplay(s.weight, unit))} × {s.reps}
-                </span>
+                <span className="font-num text-xl font-bold">{formatSetShort(s, kindOf(s.exercise_id), unit)}</span>
               </div>
             ))}
           </Card>

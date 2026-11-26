@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { Workout } from '../../db/types';
@@ -7,6 +7,7 @@ import {
   deleteWorkout,
   finishWorkout,
   lastSetTime,
+  nextPendingSet,
   renameWorkout,
   restore,
   routineChanges,
@@ -58,6 +59,17 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
 
   const doneSets = sets.filter((s) => s.completed_at);
   const vol = volume(sets);
+
+  // «Du er her»: første uferdige set i øvelsesrekkefølge. Etter hvert fullførte set rulles det fram.
+  const currentSetId = nextPendingSet(wes, sets)?.id;
+  const doneCount = doneSets.length;
+  const prevDone = useRef(doneCount);
+  useEffect(() => {
+    if (doneCount > prevDone.current && currentSetId && !document.activeElement?.matches('input')) {
+      document.querySelector(`[aria-current="step"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    prevDone.current = doneCount;
+  }, [doneCount, currentSetId]);
 
   const finish = async () => {
     if (notes !== workout.notes) await setWorkoutNotes(workout.id, notes);
@@ -121,6 +133,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
               prMap={prMap}
               isFirst={i === 0}
               isLast={i === wes.length - 1}
+              currentSetId={currentSetId}
             />
           ))}
         </div>

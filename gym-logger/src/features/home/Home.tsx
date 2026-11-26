@@ -16,6 +16,7 @@ import { thisWeekCount, trainedDaysThisWeek, weekStreak, weeklySeries } from '..
 import { dateShort, duration, isLongAgo, num, toDisplay } from '../../lib/format';
 import { PR_LABEL } from '../../lib/calc';
 import { InstallHint } from '../profile/InstallHint';
+import { formatSetShort, kindOf } from '../../lib/kinds';
 
 function greeting(d = new Date()) {
   const h = d.getHours();
@@ -200,9 +201,7 @@ export function Home() {
                     <span className="block text-sm text-muted">{dateShort(s.completed_at!)}</span>
                   </span>
                   <span className="text-right">
-                    <span className="font-num block font-bold">
-                      {num(toDisplay(s.weight, unit))} × {s.reps}
-                    </span>
+                    <span className="font-num block font-bold">{formatSetShort(s, kindOf(s.exercise_id), unit)}</span>
                     <PRBadge label={PR_LABEL[prMap.get(s.id)![0]]} />
                   </span>
                 </Link>

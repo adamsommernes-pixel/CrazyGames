@@ -10,6 +10,9 @@ import {
   restore,
   setsForWorkout,
   startWorkout,
+  rememberedRest,
+  setExerciseRest,
+  swapWorkoutExercise,
   toggleSetDone,
   updateSet,
   updateWorkoutTimes,
@@ -19,6 +22,47 @@ import {
 let n = 0;
 beforeEach(() => {
   openUserDb(`test-${++n}`);
+});
+
+describe('bytt øvelse og husk hviletid', () => {
+  it('bytte uten fullførte sets bytter på plass og beholder antallet', async () => {
+    const w = await startWorkout();
+    await addExerciseToWorkout(w, 'ex-beinpress', { sets: 4 });
+    const [we] = await workoutExercises(w);
+    await swapWorkoutExercise(we.id, 'ex-hack-squat');
+    const after = await workoutExercises(w);
+    expect(after).toHaveLength(1);
+    expect(after[0].exercise_id).toBe('ex-hack-squat');
+    const sets = await setsForWorkout(w);
+    expect(sets).toHaveLength(4);
+    expect(sets.every((s) => s.exercise_id === 'ex-hack-squat' && s.workout_exercise_id === we.id)).toBe(true);
+  });
+
+  it('bytte etter fullførte sets flytter bare de uferdige til en ny øvelse', async () => {
+    const w = await startWorkout();
+    await addExerciseToWorkout(w, 'ex-beinpress', { sets: 3 });
+    const [we] = await workoutExercises(w);
+    const [first] = (await setsForWorkout(w)).sort((a, b) => a.position - b.position);
+    await updateSet(first.id, { weight: 100, reps: 10 });
+    await toggleSetDone(first.id);
+    await swapWorkoutExercise(we.id, 'ex-hack-squat');
+    const after = await workoutExercises(w);
+    expect(after.map((e) => e.exercise_id)).toEqual(['ex-beinpress', 'ex-hack-squat']);
+    const sets = await setsForWorkout(w);
+    expect(sets.filter((s) => s.exercise_id === 'ex-beinpress')).toHaveLength(1);
+    expect(sets.filter((s) => s.exercise_id === 'ex-hack-squat')).toHaveLength(2);
+  });
+
+  it('hviletid valgt for en øvelse brukes neste gang', async () => {
+    const w = await startWorkout();
+    await addExerciseToWorkout(w, 'ex-kneboy');
+    const [we] = await workoutExercises(w);
+    await setExerciseRest(we.id, 240);
+    expect(await rememberedRest('ex-kneboy')).toBe(240);
+    await addExerciseToWorkout(w, 'ex-kneboy');
+    const list = await workoutExercises(w);
+    expect(list[1].rest_seconds).toBe(240);
+  });
 });
 
 describe('samtidige endringer', () => {

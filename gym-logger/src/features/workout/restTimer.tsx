@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../db/dexie';
+import { getActiveWorkout, nextPendingSet, setsForWorkout, workoutExercises } from '../../db/repo';
 import { getSetting, setSetting, useSetting } from '../../lib/settings';
 import { duration } from '../../lib/format';
-import { Icon } from '../../components/Icon';
+import { formatSet } from '../../lib/kinds';
 import { buzz } from '../../lib/haptics';
 
 // Timeren lagrer sluttidspunktet, så den teller riktig selv om skjermen låses
@@ -74,6 +77,17 @@ export function RestTimerBar() {
   const now = useNow(250, !!timer);
   const notified = useRef<number | null>(null);
   const remaining = timer ? timer.endAt - now : 0;
+  const unit = useSetting('unit');
+  // Hva som står for tur, så du kan gjøre klar vekten mens du hviler.
+  const next = useLiveQuery(async () => {
+    if (!timer) return null;
+    const w = await getActiveWorkout();
+    if (!w) return null;
+    const s = nextPendingSet(await workoutExercises(w.id), await setsForWorkout(w.id));
+    if (!s) return null;
+    const ex = await db.exercises.get(s.exercise_id);
+    return `${ex?.name ?? 'Øvelse'} ${formatSet(s, ex?.kind ?? 'weight', unit)}`;
+  }, [!!timer, unit]);
 
   useEffect(() => {
     if (!timer || remaining > 0 || notified.current === timer.endAt) return;
@@ -86,16 +100,34 @@ export function RestTimerBar() {
 
   if (!timer) return null;
   const done = remaining <= 0;
-  const pct = done ? 100 : Math.min(100, 100 - (remaining / (timer.total * 1000)) * 100);
+  const frac = done ? 1 : Math.min(1, 1 - remaining / (timer.total * 1000));
+  const R = 17;
+  const C = 2 * Math.PI * R;
 
   return (
     <div className="mx-auto w-full max-w-xl px-3 pb-2" role="timer" aria-live="off">
-      <div className="relative overflow-hidden rounded-2xl border border-green/40 bg-surface shadow-lg shadow-black">
-        <div className="absolute inset-y-0 left-0 bg-green-dim/60 transition-[width] duration-200" style={{ width: `${pct}%` }} />
-        <div className="relative flex items-center gap-2 px-3 py-2">
-          <Icon name="timer" className="text-green" />
-          <span className={`tabular flex-1 text-xl font-bold ${done ? 'text-green-light' : ''}`}>
-            {done ? 'Klar for neste set!' : duration(remaining)}
+      <div className="relative overflow-hidden rounded-2xl border border-green/40 bg-surface/95 shadow-lg shadow-black backdrop-blur">
+        <div className="relative flex items-center gap-2 px-2.5 py-2">
+          <svg width="42" height="42" viewBox="0 0 42 42" className="shrink-0 -rotate-90" aria-hidden="true">
+            <circle cx="21" cy="21" r={R} fill="none" stroke="var(--color-line)" strokeWidth="4" />
+            <circle
+              cx="21"
+              cy="21"
+              r={R}
+              fill="none"
+              stroke="var(--color-green)"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeDasharray={C}
+              strokeDashoffset={C * (1 - frac)}
+              style={{ transition: 'stroke-dashoffset 250ms linear' }}
+            />
+          </svg>
+          <span className="min-w-0 flex-1">
+            <span className={`font-num block text-xl leading-tight font-bold ${done ? 'text-green-light' : ''}`}>
+              {done ? 'Klar for neste set!' : duration(remaining)}
+            </span>
+            {next && <span className="block truncate text-xs text-muted">Neste: {next}</span>}
           </span>
           {!done && (
             <>

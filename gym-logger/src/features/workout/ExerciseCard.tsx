@@ -1,28 +1,33 @@
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useNavigate } from 'react-router-dom';
-import type { Exercise, WorkoutExercise, WorkoutSet } from '../../db/types';
-import { SET_TYPES, SET_TYPE_LABEL } from '../../db/types';
+import type { Exercise, ExerciseKind, WorkoutExercise, WorkoutSet } from '../../db/types';
+import { KIND_LABEL, SET_TYPES, SET_TYPE_LABEL } from '../../db/types';
 import {
   addSet,
   addWarmupSets,
   applyWeightToPending,
   deleteSet,
+  lastNotes,
   lastPerformance,
   moveWorkoutExercise,
   removeWorkoutExercise,
   restore,
   setExerciseNotes,
   setExerciseRest,
+  swapWorkoutExercise,
   updateSet,
 } from '../../db/repo';
 import type { PRKind } from '../../lib/calc';
 import { stepFor, suggestNext, warmupSets } from '../../lib/progression';
+import { kindColumns } from '../../lib/kinds';
 import { ActionList, Button, Card, Chip, IconButton, NumberStepper, Sheet } from '../../components/ui';
 import { PlateCalculator } from '../../components/PlateCalculator';
+import { MuscleDot } from '../../components/MuscleTag';
 import { undoToast } from '../../components/toast';
 import { Icon } from '../../components/Icon';
 import { SET_GRID, SetRow } from './SetRow';
+import { ExercisePicker } from './ExercisePicker';
+import { ExerciseInfoSheet } from '../exercise/ExerciseInfoSheet';
 import { startRest } from './restTimer';
 import { duration, fromDisplay, num, toDisplay } from '../../lib/format';
 import { useSetting } from '../../lib/settings';
@@ -35,6 +40,7 @@ export function ExerciseCard({
   prMap,
   isFirst,
   isLast,
+  currentSetId,
 }: {
   we: WorkoutExercise;
   exercise?: Exercise;
@@ -43,15 +49,18 @@ export function ExerciseCard({
   prMap: Map<string, PRKind[]>;
   isFirst: boolean;
   isLast: boolean;
+  /** Neste set som skal gjøres i hele økta. */
+  currentSetId?: string;
 }) {
-  const navigate = useNavigate();
   const barWeight = useSetting('barWeight');
   const plates = useSetting('plates');
+  const kind: ExerciseKind = exercise?.kind ?? 'weight';
   const previous = useLiveQuery(
     async () => (await lastPerformance(we.exercise_id, we.workout_id)).filter((s) => s.set_type !== 'warmup'),
     [we.exercise_id, we.workout_id],
     [],
   );
+  const previousNote = useLiveQuery(() => lastNotes(we.exercise_id, we.workout_id), [we.exercise_id, we.workout_id], '');
   const [menu, setMenu] = useState(false);
   const [restSheet, setRestSheet] = useState(false);
   const [rest, setRest] = useState(we.rest_seconds);
@@ -60,6 +69,14 @@ export function ExerciseCard({
   const [plateTarget, setPlateTarget] = useState(barWeight);
   const [showNotes, setShowNotes] = useState(!!we.notes);
   const [notes, setNotes] = useState(we.notes);
+  const [info, setInfo] = useState(false);
+  const [swapping, setSwapping] = useState(false);
+
+  // Etter et bytte av øvelse hører notatet til den nye øvelsen.
+  useEffect(() => {
+    setNotes(we.notes);
+    setShowNotes(!!we.notes);
+  }, [we.exercise_id, we.notes]);
 
   const sorted = [...sets].sort((a, b) => a.position - b.position);
   const openRest = () => {
@@ -71,13 +88,15 @@ export function ExerciseCard({
     setPlateTarget(pending?.weight || barWeight);
     setPlateSheet(true);
   };
-  const barbell = exercise?.equipment === 'Stang';
+  const isWeight = kind === 'weight';
+  const barbell = isWeight && exercise?.equipment === 'Stang';
   const doneCount = sorted.filter((s) => s.completed_at).length;
   const pendingWork = sorted.filter((s) => !s.completed_at && s.set_type !== 'warmup');
   const workSetCount = sorted.filter((s) => s.set_type !== 'warmup').length;
+  const cols = kindColumns(kind, unit);
 
-  // Progresjon: nådde du målet på alle sett sist, foreslås ett steg tyngre.
-  const suggestion = suggestNext(previous, we.target_reps, stepFor(exercise?.equipment, unit));
+  // Progresjon: nådde du målet på alle sett sist, foreslås ett steg tyngre (bare vekt × reps).
+  const suggestion = isWeight ? suggestNext(previous, we.target_reps, stepFor(exercise?.equipment, unit)) : null;
   const showSuggestion = suggestion !== null && pendingWork.length > 0 && pendingWork.some((s) => Math.abs(s.weight - suggestion) > 0.001);
 
   // Oppvarming: bare for stang, og bare før første arbeidssett er gjort.
@@ -90,18 +109,42 @@ export function ExerciseCard({
   let warmIndex = 0;
 
   return (
-    <Card className="p-3">
+    <Card className={`p-3 transition-shadow ${sorted.some((s) => s.id === currentSetId) ? 'border-green/30' : ''}`}>
       <div className="mb-1 flex items-center gap-1 pl-1">
-        <button type="button" className="min-w-0 flex-1 text-left" onClick={() => navigate(`/exercise/${we.exercise_id}`)}>
-          <h2 className="truncate text-lg font-bold text-green">{exercise?.name ?? 'Ukjent øvelse'}</h2>
+        <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setInfo(true)} aria-label={`${exercise?.name ?? 'Øvelse'}: slik gjør du og historikk`}>
+          <h2 className="flex items-center gap-2 truncate text-lg font-bold text-green">
+            {exercise && <MuscleDot group={exercise.muscle_group} size={9} />}
+            <span className="truncate">{exercise?.name ?? 'Ukjent øvelse'}</span>
+          </h2>
           <p className="font-num text-xs text-faint">
             {doneCount}/{sorted.length} sets
-            {we.target_reps ? ` · mål ${workSetCount} × ${we.target_reps}` : ''} · hvile {duration(we.rest_seconds * 1000)}
+            {we.target_reps ? ` · mål ${workSetCount} × ${we.target_reps}` : ''}
+            {!isWeight ? ` · ${KIND_LABEL[kind]}` : ''} · hvile {duration(we.rest_seconds * 1000)}
           </p>
         </button>
+        <IconButton icon="info" label="Slik gjør du" onClick={() => setInfo(true)} />
         {barbell && <IconButton icon="plates" label="Platekalkulator" onClick={openPlates} />}
         <IconButton icon="more" label="Valg for øvelse" onClick={() => setMenu(true)} />
       </div>
+
+      {!showNotes && previousNote && (
+        <button
+          type="button"
+          onClick={() => {
+            setNotes(previousNote);
+            setShowNotes(true);
+            void setExerciseNotes(we.id, previousNote);
+          }}
+          className="mb-2 flex w-full items-center gap-2 rounded-xl bg-raised/70 px-3 py-2 text-left text-sm text-muted"
+          aria-label={`Notat fra sist: ${previousNote}. Trykk for å bruke det igjen.`}
+        >
+          <Icon name="note" size={15} className="shrink-0 text-faint" />
+          <span className="min-w-0 flex-1 truncate">
+            <span className="text-faint">Sist: </span>
+            {previousNote}
+          </span>
+        </button>
+      )}
 
       {showNotes && (
         <textarea
@@ -135,8 +178,8 @@ export function ExerciseCard({
       <div className={`${SET_GRID} px-1 pb-1 text-[11px] font-semibold tracking-wide text-faint uppercase`}>
         <span className="text-center">Set</span>
         <span>Forrige</span>
-        <span className="text-center">{unit}</span>
-        <span className="text-center">Reps</span>
+        <span className="text-center">{cols.first}</span>
+        <span className="text-center">{cols.second}</span>
         <span />
       </div>
       <div className="flex flex-col gap-1">
@@ -148,6 +191,8 @@ export function ExerciseCard({
             <SetRow
               key={s.id}
               set={s}
+              kind={kind}
+              current={s.id === currentSetId}
               label={s.set_type === 'normal' ? label : s.set_type === 'warmup' ? `oppvarming ${++warmIndex}` : `${label + 1} (${SET_TYPE_LABEL[s.set_type].toLowerCase()})`}
               previous={prev}
               unit={unit}
@@ -175,9 +220,11 @@ export function ExerciseCard({
                   },
                 ]
               : []),
+            { label: 'Slik gjør du', icon: 'book', onClick: () => { setMenu(false); setInfo(true); } },
+            { label: 'Bytt øvelse', icon: 'swap', onClick: () => { setMenu(false); setSwapping(true); } },
             { label: showNotes ? 'Skjul notat' : 'Legg til notat', icon: 'note', onClick: () => { setShowNotes(!showNotes); setMenu(false); } },
             { label: 'Endre hviletid', icon: 'timer', onClick: () => { setMenu(false); openRest(); } },
-            ...(barbell ? [] : [{ label: 'Platekalkulator', icon: 'plates' as const, onClick: () => { setMenu(false); openPlates(); } }]),
+            ...(isWeight && !barbell ? [{ label: 'Platekalkulator', icon: 'plates' as const, onClick: () => { setMenu(false); openPlates(); } }] : []),
             ...(!isFirst ? [{ label: 'Flytt opp', icon: 'up' as const, onClick: () => void moveWorkoutExercise(we.workout_id, we.id, -1).then(() => setMenu(false)) }] : []),
             ...(!isLast ? [{ label: 'Flytt ned', icon: 'down' as const, onClick: () => void moveWorkoutExercise(we.workout_id, we.id, 1).then(() => setMenu(false)) }] : []),
             {
@@ -195,7 +242,7 @@ export function ExerciseCard({
       </Sheet>
 
       <Sheet open={restSheet} onClose={() => setRestSheet(false)} title="Hviletid">
-        <p className="mb-3 text-muted">Timeren starter når du huker av et set.</p>
+        <p className="mb-3 text-muted">Timeren starter når du huker av et set. Hviletiden huskes for {exercise?.name ?? 'øvelsen'} til neste gang.</p>
         <NumberStepper label="Hviletid" size="lg" value={rest} step={15} min={0} max={600} onChange={setRest} format={(v) => (v ? duration(v * 1000) : 'Av')} />
         <Button full className="mt-4" onClick={() => void setExerciseRest(we.id, rest).then(() => setRestSheet(false))}>
           Lagre
@@ -219,42 +266,71 @@ export function ExerciseCard({
         <p className="mt-3 text-xs text-faint">Stangvekt og skiver endres under Profil → Innstillinger.</p>
       </Sheet>
 
-      <SetEditor set={editing} unit={unit} onClose={() => setEditing(null)} />
+      <SetEditor set={editing} unit={unit} kind={kind} onClose={() => setEditing(null)} />
+      {info && exercise && <ExerciseInfoSheet exercise={exercise} onClose={() => setInfo(false)} />}
+      <ExercisePicker
+        open={swapping}
+        single
+        title={`Bytt ut ${exercise?.name ?? 'øvelsen'}`}
+        onClose={() => setSwapping(false)}
+        onPick={([id]) => void swapWorkoutExercise(we.id, id)}
+      />
     </Card>
   );
 }
 
-/** Ark for ett set: vekt og reps med hold-inne-knapper, set-type og sletting. */
-function SetEditor({ set, unit, onClose }: { set: WorkoutSet | null; unit: 'kg' | 'lbs'; onClose: () => void }) {
-  const [weight, setWeight] = useState(0);
-  const [reps, setReps] = useState(0);
+/** Ark for ett set: verdier med hold-inne-knapper, set-type og sletting. Feltene følger øvelsestypen. */
+function SetEditor({ set, unit, kind, onClose }: { set: WorkoutSet | null; unit: 'kg' | 'lbs'; kind: ExerciseKind; onClose: () => void }) {
+  const [first, setFirst] = useState(0);
+  const [second, setSecond] = useState(0);
+  const cardio = kind === 'cardio';
   useEffect(() => {
     if (set) {
-      setWeight(toDisplay(set.weight, unit));
-      setReps(set.reps);
+      setFirst(cardio ? (set.distance_km ?? 0) : toDisplay(set.weight, unit));
+      setSecond(set.reps);
     }
-  }, [set, unit]);
+  }, [set, unit, cardio]);
   if (!set) return null;
+  const values = () => (cardio ? { distance_km: first, reps: second } : { weight: fromDisplay(first, unit), reps: second });
   const save = async () => {
-    await updateSet(set.id, { weight: fromDisplay(weight, unit), reps });
+    await updateSet(set.id, values());
     onClose();
   };
+  const cols = kindColumns(kind, unit);
+  const firstLabel = cardio ? 'Distanse (km)' : kind === 'weight' ? `Vekt (${unit})` : `Ekstra vekt (${unit})`;
+  const secondLabel = kind === 'time' ? 'Sekunder' : cardio ? 'Minutter' : 'Reps';
   return (
     <Sheet open onClose={() => void save()} title="Rediger set">
       <div className="grid grid-cols-1 gap-3">
         <div>
-          <div className="mb-1.5 text-sm text-muted">Vekt ({unit})</div>
-          <NumberStepper label="Vekt" size="lg" value={weight} step={unit === 'kg' ? 2.5 : 5} max={unit === 'kg' ? 500 : 1100} onChange={setWeight} format={(v) => num(v)} />
+          <div className="mb-1.5 text-sm text-muted">{firstLabel}</div>
+          <NumberStepper
+            label={cols.first}
+            size="lg"
+            value={first}
+            step={cardio ? 0.5 : unit === 'kg' ? 2.5 : 5}
+            max={cardio ? 200 : unit === 'kg' ? 500 : 1100}
+            onChange={setFirst}
+            format={(v) => num(v, 2)}
+          />
         </div>
         <div>
-          <div className="mb-1.5 text-sm text-muted">Reps</div>
-          <NumberStepper label="Reps" size="lg" value={reps} max={100} onChange={setReps} />
+          <div className="mb-1.5 text-sm text-muted">{secondLabel}</div>
+          <NumberStepper
+            label={secondLabel}
+            size="lg"
+            value={second}
+            step={kind === 'time' ? 5 : 1}
+            max={kind === 'time' ? 3600 : cardio ? 600 : 100}
+            onChange={setSecond}
+            format={(v) => (kind === 'time' ? duration(v * 1000) : String(v))}
+          />
         </div>
       </div>
       <div className="mt-5 mb-2 text-sm text-muted">Type set</div>
       <div className="flex flex-wrap gap-2">
         {SET_TYPES.map((t) => (
-          <Chip key={t} active={set.set_type === t} onClick={() => void updateSet(set.id, { set_type: t, weight: fromDisplay(weight, unit), reps }).then(onClose)}>
+          <Chip key={t} active={set.set_type === t} onClick={() => void updateSet(set.id, { set_type: t, ...values() }).then(onClose)}>
             {SET_TYPE_LABEL[t]}
           </Chip>
         ))}
