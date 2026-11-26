@@ -14,6 +14,7 @@ import { LanguageToggle } from '../../components/LanguageToggle';
 import { Icon, type IconName } from '../../components/Icon';
 import { t } from '../../i18n';
 import { SexPicker } from '../profile/SexPicker';
+import { HealthConsent } from '../legal/HealthConsent';
 
 const GOAL_INFO: Record<Goal, { icon: IconName; text: string }> = {
   strength: { icon: 'dumbbell', get text() { return t('Tunge løft, få reps, lang hvile.', 'Heavy lifts, few reps, long rest.'); } },
@@ -36,6 +37,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
   const [unit, setUnit] = useState<'kg' | 'lbs'>('kg');
   const [bodyweight, setBodyweight] = useState('');
   const [sex, setSex] = useState<Sex | null>(null);
+  const [consent, setConsent] = useState(false);
   const [legacy, setLegacy] = useState(0);
   const [moveLegacy, setMoveLegacy] = useState(true);
   const [starter, setStarter] = useState(true);
@@ -59,6 +61,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
       weekly_target: perWeek,
       experience,
       sex,
+      health_consent_at: user.kind === 'cloud' && consent ? now() : null,
       bodyweight_kg: bw > 0 ? fromDisplay(bw, unit) : null,
       created_at: user.created_at,
       onboarded_at: now(),
@@ -162,6 +165,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
               <input id="ob-bodyweight" className={inputClass} inputMode="decimal" placeholder={t('Valgfritt', 'Optional')} value={bodyweight} onChange={(e) => setBodyweight(e.target.value)} />
             </label>
             <SexPicker value={sex} onChange={setSex} />
+            {user.kind === 'cloud' && <HealthConsent checked={consent} onChange={setConsent} />}
           </Step>
         )}
 

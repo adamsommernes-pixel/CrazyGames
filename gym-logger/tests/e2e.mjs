@@ -104,6 +104,14 @@ try {
   await btn('Lag konto').waitFor();
   await shot('velkomst');
 
+  // 1a. Personvernerklæringen kan leses før man lager konto
+  await page.getByRole('link', { name: 'Personvern' }).click();
+  await page.getByRole('heading', { name: 'Kroppsdata er særlig beskyttet' }).waitFor();
+  await page.getByText(/Adam Sommernes er behandlingsansvarlig/).waitFor();
+  await shot('personvern');
+  await btn('Tilbake').click();
+  await btn('Lag konto').waitFor();
+
   // 2. Registrering med svakt passord gir feilmelding, så riktig
   await btn('Lag konto').click();
   await page.getByLabel('Navn').fill('Ola');
@@ -443,6 +451,9 @@ try {
   await ep.goto(URL);
   await ebtn('Lag konto').waitFor();
   await ep.getByRole('radio', { name: 'English' }).click();
+  await ep.getByRole('link', { name: 'Privacy' }).click();
+  await ep.getByRole('heading', { name: 'Body data gets extra protection' }).waitFor();
+  await ep.getByRole('button', { name: 'Back' }).click();
   await ebtn('Create account').click();
   await ep.getByLabel('Name').fill('Sam');
   await ep.getByLabel('Email').fill('sam@example.com');

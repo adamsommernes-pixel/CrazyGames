@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { db } from '../../db/dexie';
 import { getProfile } from '../../db/repo';
 import { backupFileName, downloadBlob, downloadJSON, exportBackup, exportCSV, importBackup, lastBackupAt, markBackedUp, parseBackup, summarizeBackup } from '../../db/backup';
@@ -70,7 +70,12 @@ export function ProfilePage() {
       <SectionTitle>{t('Innstillinger', 'Settings')}</SectionTitle>
       <SettingsSection />
 
-      <p className="mt-8 text-center text-xs text-faint">Repgrade v{__APP_VERSION__}</p>
+      <p className="mt-8 text-center text-xs text-faint">
+        Repgrade v{__APP_VERSION__} ·{' '}
+        <Link to="/privacy" className="underline">
+          {t('Personvern', 'Privacy')}
+        </Link>
+      </p>
     </Page>
   );
 }

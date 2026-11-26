@@ -150,6 +150,9 @@ Slik installeres den på telefonen:
    - `supabase/migrations/003_qol.sql` (mål-reps per øvelse i økta, til progresjonsforslag)
    - `supabase/migrations/004_kinds.sql` (øvelsestyper og distanse for kondisjon)
    - `supabase/migrations/005_sex.sql` (valgfritt kjønn i profilen, til styrkenivå)
+   - `supabase/migrations/006_consent.sql` (samtykke til kroppsdata i skyen)
+
+   Lag prosjektet i regionen **Central EU (Frankfurt)**, slik personvernerklæringen sier.
 3. Velg om e-post skal bekreftes, under **Authentication → Sign In / Providers → Email**:
    - Med bekreftelse ber appen brukeren sjekke e-posten etter registrering.
    - Uten bekreftelse logges brukeren inn med en gang.
@@ -186,3 +189,10 @@ Ikke sjekket ennå (gjør dette selv før lansering, det tar noen minutter):
 - **Domener:** søk etter `repgrade.com`, `repgrade.app` og `repgrade.no` hos en registrar, eller på [norid.no](https://www.norid.no/no/domenenavn/sok/) for .no.
 - **Brukernavn:** `instagram.com/repgrade` og `tiktok.com/@repgrade`.
 - **Varemerke:** søk «Repgrade» i [TMview](https://www.tmdn.org/tmview/) (EU og mange land) og i [Patentstyrets søk](https://search.patentstyret.no/), klasse 9 (programvare) og 41 (trening). Ved treff som ligner, eller før du bruker penger på merkevaren, bør du spørre en varemerkerådgiver.
+
+## Personvern (GDPR)
+
+- Personvernerklæringen ligger i appen under `/privacy` (`src/features/legal/PrivacyPage.tsx`), på norsk og engelsk, og lenkes fra velkomstsiden, registreringen, Profil og landingssiden. Behandlingsansvarlig: Adam Sommernes.
+- Kroppsvekt, høyde, fødselsår og kjønn behandles som mulige helseopplysninger (art. 9). Med sky-konto sendes de bare til Supabase etter uttrykkelig samtykke (avkrysning i oppstarten og under Rediger profil). Uten samtykke hoppes kroppsvekt-loggen over i synken og feltene sendes tomme (`src/db/consent.ts`). Trekkes samtykket, slettes kroppsvekt-loggen i skyen.
+- Ingen analyse, reklame eller sporingscookies.
+- **Før lansering:** få erklæringen gjennomgått av noen med juridisk kompetanse, og inngå databehandleravtale (DPA) med Supabase (de har en standard DPA i dashbordet).

@@ -188,3 +188,7 @@
   }
   .level-flash, .level-shine { display: none; }
 }
+
+/* Personvernsiden: vanlige lister. */
+.privacy ul { list-style: disc; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.privacy b { color: var(--color-ink); font-weight: 600; }

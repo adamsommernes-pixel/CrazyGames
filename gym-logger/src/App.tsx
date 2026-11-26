@@ -29,6 +29,7 @@ import { ProfilePage } from './features/profile/ProfilePage';
 import { EditProfile } from './features/profile/EditProfile';
 import { BodyweightPage } from './features/bodyweight/BodyweightPage';
 import { LevelPage } from './features/level/LevelPage';
+import { PrivacyPage } from './features/legal/PrivacyPage';
 
 // Grafbiblioteket er stort, så sider med grafer lastes først når de åpnes.
 const ProgressList = lazy(() => import('./features/progress/ProgressList').then((m) => ({ default: m.ProgressList })));
@@ -75,6 +76,7 @@ function Gate() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="*" element={<Welcome />} />
       </Routes>
     );
@@ -122,6 +124,7 @@ function SignedIn({ user }: { user: AuthUser }) {
         />
         <Route path="/bodyweight" element={<BodyweightPage />} />
         <Route path="/level" element={<LevelPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/edit" element={<EditProfile />} />
         <Route path="*" element={<Home />} />

@@ -184,6 +184,8 @@ export interface Profile extends Row {
   birth_year: number | null;
   /** Valgfritt. Brukes bare til standardene for styrkenivå. */
   sex?: Sex | null;
+  /** Når brukeren samtykket til at kroppsdata lagres i skyen (bare sky-kontoer). */
+  health_consent_at?: string | null;
   created_at: string;
   /** Satt når oppstartsveiviseren er fullført. */
   onboarded_at: string | null;

@@ -4,6 +4,7 @@ import { db } from './dexie';
 import { SYNCED_TABLES, type Row, type SyncedTable } from './types';
 import { normalizeRemote, remoteWins } from './merge';
 import { supabase } from '../lib/supabase';
+import { cloudPayload, hasHealthConsent, keepLocalSensitive, SENSITIVE_TABLES } from './consent';
 
 // ---------- Status (enkel global store) ----------
 
@@ -35,12 +36,23 @@ export function useSyncStatus(): SyncStatus {
 const PAGE = 500;
 const table = (t: SyncedTable) => db.table<Row & Record<string, unknown>, string>(t);
 
+/** Samtykke til kroppsdata i skyen, lest fra den lokale profilen. */
+async function consentFor(userId: string) {
+  return hasHealthConsent(await db.profiles.get(userId));
+}
+
 async function push(userId: string) {
+  const consent = await consentFor(userId);
   for (const t of SYNCED_TABLES) {
+    // Uten samtykke blir kroppsvekt-loggen liggende lokalt (fortsatt markert som ikke synket).
+    if (!consent && SENSITIVE_TABLES.includes(t)) continue;
     const rows = await table(t).where('dirty').equals(1).toArray();
     for (let i = 0; i < rows.length; i += PAGE) {
       const chunk = rows.slice(i, i + PAGE);
-      const payload = chunk.map(({ dirty: _dirty, ...r }) => ({ ...r, user_id: userId }));
+      const payload = chunk
+        .map(({ dirty: _dirty, ...r }) => cloudPayload(t, r as Record<string, unknown>, consent))
+        .filter((r) => r !== null)
+        .map((r) => ({ ...r, user_id: userId }));
       const { error } = await supabase!.from(t).upsert(payload, { onConflict: 'id' });
       if (error) throw new Error(`${t}: ${error.message}`);
       // Fjern dirty bare hvis raden ikke er endret igjen mens vi sendte.
@@ -55,6 +67,7 @@ async function push(userId: string) {
 }
 
 async function pull(userId: string) {
+  const consent = await consentFor(userId);
   for (const t of SYNCED_TABLES) {
     const cursorKey = `pull:${userId}:${t}`;
     let cursor = ((await db.kv.get(cursorKey))?.value as { at: string; id: string } | undefined) ?? {
@@ -75,7 +88,10 @@ async function pull(userId: string) {
         for (const raw of data) {
           const remote = normalizeRemote(raw as Row & Record<string, unknown>);
           const local = await table(t).get(remote.id);
-          if (remoteWins(local, remote)) await table(t).put({ ...remote, dirty: 0 });
+          if (remoteWins(local, remote)) {
+            const merged = t === 'profiles' ? keepLocalSensitive(remote, local, consent) : remote;
+            await table(t).put({ ...merged, dirty: 0 });
+          }
         }
         const last = data[data.length - 1] as { server_updated_at: string; id: string };
         cursor = { at: last.server_updated_at, id: last.id };
@@ -87,9 +103,40 @@ async function pull(userId: string) {
 }
 
 async function countPending() {
+  const user = supabase ? (await supabase.auth.getSession()).data.session?.user : undefined;
+  const consent = user ? await consentFor(user.id) : true;
   let n = 0;
-  for (const t of SYNCED_TABLES) n += await table(t).where('dirty').equals(1).count();
+  for (const t of SYNCED_TABLES) {
+    if (!consent && SENSITIVE_TABLES.includes(t)) continue;
+    n += await table(t).where('dirty').equals(1).count();
+  }
   return n;
+}
+
+/** Gir samtykke: kroppsvekt-loggen og profilfeltene lastes opp ved neste synk. */
+export async function grantHealthConsent(userId: string) {
+  const now = new Date().toISOString();
+  await db.transaction('rw', db.profiles, db.bodyweights, async () => {
+    const p = await db.profiles.get(userId);
+    if (p) await db.profiles.put({ ...p, health_consent_at: now, updated_at: now, dirty: 1 });
+    await db.bodyweights.toCollection().modify({ dirty: 1 });
+  });
+  void syncNow();
+}
+
+/**
+ * Trekker samtykket: sletter kroppsvekt-loggen i skyen og tømmer de sensitive profilfeltene der.
+ * Dataene blir liggende på telefonen.
+ */
+export async function withdrawHealthConsent(userId: string) {
+  const now = new Date().toISOString();
+  const p = await db.profiles.get(userId);
+  if (p) await db.profiles.put({ ...p, health_consent_at: null, updated_at: now, dirty: 1 });
+  if (supabase) {
+    const { error } = await supabase.from('bodyweights').delete().eq('user_id', userId);
+    if (error) throw new Error(error.message);
+    await syncNow(); // sender profilen uten de sensitive feltene
+  }
 }
 
 let running: Promise<void> | null = null;

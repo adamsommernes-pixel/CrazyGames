@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../auth/AuthProvider';
 import { PROFILE_COLORS, getProfile, saveProfile } from '../../db/repo';
@@ -8,6 +8,9 @@ import { Avatar } from '../../components/widgets';
 import { parseNum } from '../../lib/format';
 import { t } from '../../i18n';
 import { SexPicker } from './SexPicker';
+import { HealthConsent } from '../legal/HealthConsent';
+import { grantHealthConsent, withdrawHealthConsent } from '../../db/sync';
+import { showToast } from '../../components/toast';
 
 export function EditProfile() {
   const user = useUser();
@@ -15,6 +18,8 @@ export function EditProfile() {
   const [p, setP] = useState<Profile | null>(null);
   const [height, setHeight] = useState('');
   const [born, setBorn] = useState('');
+  const [consent, setConsent] = useState(false);
+  const hadConsent = useRef(false);
 
   useEffect(() => {
     void getProfile(user.id).then((prof) => {
@@ -22,6 +27,8 @@ export function EditProfile() {
       setP(prof);
       setHeight(prof.height_cm ? String(prof.height_cm) : '');
       setBorn(prof.birth_year ? String(prof.birth_year) : '');
+      hadConsent.current = !!prof.health_consent_at;
+      setConsent(!!prof.health_consent_at);
     });
   }, [user.id]);
 
@@ -41,6 +48,14 @@ export function EditProfile() {
       height_cm: h > 0 ? h : null,
       birth_year: b > 1900 && b <= new Date().getFullYear() ? b : null,
     });
+    if (user.kind === 'cloud' && consent !== hadConsent.current) {
+      try {
+        await (consent ? grantHealthConsent(user.id) : withdrawHealthConsent(user.id));
+      } catch {
+        showToast(t('Kunne ikke oppdatere samtykket. Prøv igjen når du er på nett.', 'Could not update consent. Try again when you are online.'));
+        return;
+      }
+    }
     navigate(-1);
   };
 
@@ -99,6 +114,7 @@ export function EditProfile() {
 
       <SectionTitle>{t('Om deg (valgfritt)', 'About you (optional)')}</SectionTitle>
       <SexPicker value={p.sex ?? null} onChange={(sex) => set({ sex })} />
+      {user.kind === 'cloud' && <HealthConsent checked={consent} onChange={setConsent} />}
       <div className="h-3" />
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1.5">

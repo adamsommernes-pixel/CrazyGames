@@ -95,6 +95,13 @@ export function SignUp() {
         <button type="submit" disabled={busy} className="mt-2 min-h-14 rounded-2xl bg-green text-lg font-semibold text-black shadow-glow disabled:opacity-50">
           {busy ? t('Lager konto …', 'Creating account …') : t('Lag konto', 'Create account')}
         </button>
+        <p className="text-center text-xs text-faint">
+          {t('Ved å lage konto godtar du', 'By creating an account you accept the')}{' '}
+          <Link to="/privacy" className="underline">
+            {t('personvernerklæringen', 'privacy policy')}
+          </Link>
+          .
+        </p>
       </form>
       <p className="mt-6 text-center text-muted">
         {t('Har du konto?', 'Already have an account?')}{' '}

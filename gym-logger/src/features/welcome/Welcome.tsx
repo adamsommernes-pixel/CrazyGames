@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui';
 import { Icon, type IconName } from '../../components/Icon';
 import { LanguageToggle } from '../../components/LanguageToggle';
@@ -56,6 +56,9 @@ export function Welcome() {
         <Button full variant="secondary" className="min-h-14" onClick={() => navigate('/login')}>
           {t('Jeg har konto', 'I have an account')}
         </Button>
+        <Link to="/privacy" className="mt-3 text-center text-sm text-faint underline">
+          {t('Personvern', 'Privacy')}
+        </Link>
       </div>
     </div>
   );
