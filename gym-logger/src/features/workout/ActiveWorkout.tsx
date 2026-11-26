@@ -19,6 +19,7 @@ import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
 import { duration, num, toDisplay } from '../../lib/format';
 import { volume } from '../../lib/calc';
+import { askConfirm } from '../../components/confirm';
 
 export function ActiveWorkout({ workout }: { workout: Workout }) {
   const navigate = useNavigate();
@@ -46,7 +47,8 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
   };
 
   const discard = async () => {
-    if (!confirm('Forkaste hele økta? Dette kan ikke angres.')) return;
+    setFinishing(false);
+    if (!(await askConfirm('Hele økta forkastes. Dette kan ikke angres.', { confirmLabel: 'Forkast økt' }))) return;
     await deleteWorkout(workout.id);
     await stopRest();
     setFinishing(false);

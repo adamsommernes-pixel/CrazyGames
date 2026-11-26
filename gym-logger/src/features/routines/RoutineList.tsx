@@ -4,6 +4,7 @@ import { db } from '../../db/dexie';
 import { getActiveWorkout, routineItems, startWorkout } from '../../db/repo';
 import { Button, Card, EmptyState, IconButton, Page } from '../../components/ui';
 import { useExerciseMap } from '../workout/ExercisePicker';
+import { showInfo } from '../../components/confirm';
 
 export function RoutineList() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export function RoutineList() {
 
   const start = async (routineId: string) => {
     if (await getActiveWorkout()) {
-      alert('Du har allerede en økt i gang. Avslutt den først.');
+      await showInfo('Du har allerede en økt i gang. Avslutt den før du starter en ny.');
       navigate('/');
       return;
     }

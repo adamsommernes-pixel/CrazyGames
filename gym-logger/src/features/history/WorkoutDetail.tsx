@@ -9,6 +9,7 @@ import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
 import { dateLong, durationShort, num, toDisplay } from '../../lib/format';
 import { PR_LABEL, estimate1RM, volume } from '../../lib/calc';
+import { askConfirm } from '../../components/confirm';
 
 export function WorkoutDetail() {
   const { id = '' } = useParams();
@@ -89,9 +90,11 @@ export function WorkoutDetail() {
               label: 'Slett økt',
               icon: 'trash',
               danger: true,
-              onClick: () => {
-                if (!confirm('Slette økta for godt?')) return;
-                void deleteWorkout(id).then(() => navigate('/history', { replace: true }));
+              onClick: async () => {
+                setMenu(false);
+                if (!(await askConfirm('Økta slettes for godt.', { confirmLabel: 'Slett økt' }))) return;
+                await deleteWorkout(id);
+                navigate('/history', { replace: true });
               },
             },
           ]}

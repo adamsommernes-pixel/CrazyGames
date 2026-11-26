@@ -4,15 +4,22 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // BASE_PATH settes av GitHub Actions (f.eks. /CrazyGames/). Lokalt: /
-const base = process.env.BASE_PATH ?? '/';
+// ARTIFACT=1 bygger en versjon for claude.ai: relative stier og ingen service worker.
+const artifact = process.env.ARTIFACT === '1';
+const base = artifact ? './' : (process.env.BASE_PATH ?? '/');
 
 export default defineConfig({
   base,
-  define: { __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '0.1.0') },
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '0.1.0'),
+    __ARTIFACT__: JSON.stringify(artifact),
+  },
+  build: artifact ? { outDir: 'dist-artifact' } : undefined,
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
+      disable: artifact,
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {

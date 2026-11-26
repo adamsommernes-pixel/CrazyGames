@@ -6,3 +6,4 @@ dev-dist
 *.log
 tests/screens
 *.tsbuildinfo
+dist-artifact

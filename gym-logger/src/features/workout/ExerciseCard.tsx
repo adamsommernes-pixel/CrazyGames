@@ -15,6 +15,7 @@ import { ActionList, Button, Card, IconButton, NumberStepper, Sheet } from '../.
 import { SetRow } from './SetRow';
 import { startRest } from './restTimer';
 import { duration } from '../../lib/format';
+import { askConfirm } from '../../components/confirm';
 
 export function ExerciseCard({
   we,
@@ -98,9 +99,11 @@ export function ExerciseCard({
               label: 'Fjern øvelse',
               icon: 'trash',
               danger: true,
-              onClick: () => {
-                if (confirm(`Fjerne ${exercise?.name ?? 'øvelsen'} fra økta?`)) void removeWorkoutExercise(we.id);
+              onClick: async () => {
                 setMenu(false);
+                if (await askConfirm(`${exercise?.name ?? 'Øvelsen'} og settene fjernes fra økta.`, { confirmLabel: 'Fjern' })) {
+                  await removeWorkoutExercise(we.id);
+                }
               },
             },
           ]}

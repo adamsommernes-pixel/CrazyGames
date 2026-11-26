@@ -26,7 +26,6 @@ const ctx = await browser.newContext({ ...devices['iPhone 13'], locale: 'nb-NO' 
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
-page.on('dialog', (d) => d.accept());
 const shot = (name) => page.screenshot({ path: `tests/screens/${name}.png`, fullPage: false });
 
 /** Logger én økt med benkpress og gitte sets. */

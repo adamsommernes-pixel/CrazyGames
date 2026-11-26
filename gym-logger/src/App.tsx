@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect } from 'react';
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, MemoryRouter, Route, Routes } from 'react-router-dom';
+import { ConfirmHost } from './components/confirm';
 import { BottomNav } from './components/BottomNav';
 import { RestTimerBar, unlockAudio } from './features/workout/restTimer';
 import { WorkoutTab } from './features/workout/WorkoutTab';
@@ -14,6 +15,9 @@ import { useAutoSync } from './db/sync';
 // Grafbiblioteket er stort, så grafsiden lastes først når den åpnes.
 const ExerciseProgress = lazy(() => import('./features/progress/ExerciseProgress').then((m) => ({ default: m.ExerciseProgress })));
 
+// I claude.ai-versjonen styres ikke adressefeltet av appen, så ruting skjer i minnet.
+const Router = __ARTIFACT__ ? MemoryRouter : HashRouter;
+
 export default function App() {
   useAutoSync();
   // Lyd for hviletimeren må låses opp av et trykk på iOS.
@@ -24,7 +28,7 @@ export default function App() {
   }, []);
 
   return (
-    <HashRouter>
+    <Router>
       <Routes>
         <Route path="/" element={<WorkoutTab />} />
         <Route path="/history" element={<HistoryList />} />
@@ -48,6 +52,7 @@ export default function App() {
         <RestTimerBar />
         <BottomNav />
       </div>
-    </HashRouter>
+      <ConfirmHost />
+    </Router>
   );
 }

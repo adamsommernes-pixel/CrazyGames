@@ -6,6 +6,7 @@ import { Button, Card, IconButton, NumberStepper, Page, inputClass } from '../..
 import { ExercisePicker, useExerciseMap } from '../workout/ExercisePicker';
 import { getSetting } from '../../lib/settings';
 import { duration } from '../../lib/format';
+import { askConfirm } from '../../components/confirm';
 
 export function RoutineEditor() {
   const { id } = useParams();
@@ -113,9 +114,10 @@ export function RoutineEditor() {
           variant="danger"
           icon="trash"
           className="mt-8"
-          onClick={() => {
-            if (!confirm('Slette rutinen?')) return;
-            void deleteRoutine(id).then(() => navigate('/routines', { replace: true }));
+          onClick={async () => {
+            if (!(await askConfirm('Rutinen slettes. Tidligere økter beholdes.', { confirmLabel: 'Slett rutine' }))) return;
+            await deleteRoutine(id);
+            navigate('/routines', { replace: true });
           }}
         >
           Slett rutine
