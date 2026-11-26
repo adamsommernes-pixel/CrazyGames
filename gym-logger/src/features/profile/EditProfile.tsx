@@ -7,6 +7,7 @@ import { Button, Chip, NumberStepper, Page, SectionTitle, inputClass } from '../
 import { Avatar } from '../../components/widgets';
 import { parseNum } from '../../lib/format';
 import { t } from '../../i18n';
+import { SexPicker } from './SexPicker';
 
 export function EditProfile() {
   const user = useUser();
@@ -36,6 +37,7 @@ export function EditProfile() {
       goal: p.goal,
       weekly_target: p.weekly_target,
       experience: p.experience,
+      sex: p.sex ?? null,
       height_cm: h > 0 ? h : null,
       birth_year: b > 1900 && b <= new Date().getFullYear() ? b : null,
     });
@@ -96,6 +98,8 @@ export function EditProfile() {
       </div>
 
       <SectionTitle>{t('Om deg (valgfritt)', 'About you (optional)')}</SectionTitle>
+      <SexPicker value={p.sex ?? null} onChange={(sex) => set({ sex })} />
+      <div className="h-3" />
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1.5">
           <span className="text-sm text-muted">{t('Høyde (cm)', 'Height (cm)')}</span>

@@ -166,6 +166,13 @@ export const EXPERIENCE_LABEL: Record<Experience, string> = {
 };
 
 /** Én rad per konto, med id = bruker-id. */
+export const SEXES = ['male', 'female'] as const;
+export type Sex = (typeof SEXES)[number];
+export const SEX_LABEL: Record<Sex, string> = {
+  get male() { return t('Mann', 'Male'); },
+  get female() { return t('Kvinne', 'Female'); },
+};
+
 export interface Profile extends Row {
   name: string;
   color: string;
@@ -175,6 +182,8 @@ export interface Profile extends Row {
   bodyweight_kg: number | null;
   height_cm: number | null;
   birth_year: number | null;
+  /** Valgfritt. Brukes bare til standardene for styrkenivå. */
+  sex?: Sex | null;
   created_at: string;
   /** Satt når oppstartsveiviseren er fullført. */
   onboarded_at: string | null;

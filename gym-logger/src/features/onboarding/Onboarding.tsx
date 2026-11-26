@@ -5,7 +5,7 @@ import { db, now } from '../../db/dexie';
 import { PROFILE_COLORS, createStarterRoutines, logBodyweight, saveProfile } from '../../db/repo';
 import { importLegacy, legacyWorkoutCount } from '../../db/legacy';
 import { pickTemplate, TEMPLATES } from '../../db/templates';
-import { EXPERIENCE, EXPERIENCE_LABEL, GOALS, GOAL_LABEL, type Experience, type Goal } from '../../db/types';
+import { EXPERIENCE, EXPERIENCE_LABEL, GOALS, GOAL_LABEL, type Experience, type Goal, type Sex } from '../../db/types';
 import { setSetting } from '../../lib/settings';
 import { fromDisplay, parseNum } from '../../lib/format';
 import { Button, Chip, IconButton, inputClass } from '../../components/ui';
@@ -13,6 +13,7 @@ import { Avatar, StepDots } from '../../components/widgets';
 import { LanguageToggle } from '../../components/LanguageToggle';
 import { Icon, type IconName } from '../../components/Icon';
 import { t } from '../../i18n';
+import { SexPicker } from '../profile/SexPicker';
 
 const GOAL_INFO: Record<Goal, { icon: IconName; text: string }> = {
   strength: { icon: 'dumbbell', get text() { return t('Tunge løft, få reps, lang hvile.', 'Heavy lifts, few reps, long rest.'); } },
@@ -34,6 +35,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
   const [experience, setExperience] = useState<Experience>('beginner');
   const [unit, setUnit] = useState<'kg' | 'lbs'>('kg');
   const [bodyweight, setBodyweight] = useState('');
+  const [sex, setSex] = useState<Sex | null>(null);
   const [legacy, setLegacy] = useState(0);
   const [moveLegacy, setMoveLegacy] = useState(true);
   const [starter, setStarter] = useState(true);
@@ -56,6 +58,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
       goal,
       weekly_target: perWeek,
       experience,
+      sex,
       bodyweight_kg: bw > 0 ? fromDisplay(bw, unit) : null,
       created_at: user.created_at,
       onboarded_at: now(),
@@ -144,7 +147,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
         )}
 
         {step === 3 && (
-          <Step title={t('Litt om deg', 'A bit about you')} text={t('Brukes til grafer og kroppsvekt-loggen. Kroppsvekt er valgfritt.', 'Used for charts and the bodyweight log. Bodyweight is optional.')}>
+          <Step title={t('Litt om deg', 'A bit about you')} text={t('Brukes til grafer og styrkenivået ditt. Alt her er valgfritt.', 'Used for charts and your strength level. Everything here is optional.')}>
             <h3 className="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{t('Vektenhet', 'Weight unit')}</h3>
             <div className="flex gap-2">
               <Chip active={unit === 'kg'} onClick={() => setUnit('kg')}>
@@ -158,6 +161,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
               <span className="text-sm text-muted">{t('Kroppsvekt', 'Bodyweight')} ({unit})</span>
               <input id="ob-bodyweight" className={inputClass} inputMode="decimal" placeholder={t('Valgfritt', 'Optional')} value={bodyweight} onChange={(e) => setBodyweight(e.target.value)} />
             </label>
+            <SexPicker value={sex} onChange={setSex} />
           </Step>
         )}
 
