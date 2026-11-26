@@ -3,217 +3,253 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Repgrade – treningsdagbok med styrkenivå</title>
-  <meta name="description" content="Repgrade er en gratis treningsdagbok for gymmen. Logg sets på sekunder, se fremgangen og klatre fra Nybegynner til Olympia. Virker uten nett, ingen reklame." />
-  <meta name="theme-color" content="#07090a" />
+  <title>Repgrade – treningsdagbok for styrketrening</title>
+  <meta name="description" content="Repgrade er en treningsdagbok for styrketrening. Logg sets mens du trener, se forrige økt og følg hvordan styrken utvikler seg over tid." />
+  <meta name="theme-color" content="#0b0d0c" />
   <link rel="icon" href="app/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="app/apple-touch-icon.png" />
-  <meta property="og:title" content="Repgrade – logg hvert løft, klatre hvert nivå" />
-  <meta property="og:description" content="Gratis treningsdagbok for gymmen med styrkenivå fra Nybegynner til Olympia. Virker uten nett." />
+  <meta property="og:title" content="Repgrade – treningsdagbok for styrketrening" />
+  <meta property="og:description" content="Logg sets mens du trener, se forrige økt og følg styrken over tid." />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="app/screenshots/levelup-en.webp" />
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta property="og:image" content="app/screenshots/home-nb.webp" />
+  <link rel="preload" href="fonts/space-grotesk-700.woff2" as="font" type="font/woff2" crossorigin />
   <style>
+    @font-face { font-family: "Space Grotesk"; font-weight: 700; font-display: swap; src: url(fonts/space-grotesk-700.woff2) format("woff2"); }
+    @font-face { font-family: "Space Grotesk"; font-weight: 500; font-display: swap; src: url(fonts/space-grotesk-500.woff2) format("woff2"); }
+    @font-face { font-family: "Inter"; font-weight: 100 900; font-display: swap; src: url(fonts/inter.woff2) format("woff2"); }
     :root {
       color-scheme: dark;
-      --bg: #07090a; --surface: #0f1311; --raised: #161b18; --line: #232a26;
-      --ink: #f2f5f3; --muted: #9aa59f; --faint: #5f6964; --green: #2bd66b; --green-light: #7dffaa;
+      --bg: #0b0d0c; --ink: #eceeed; --muted: #a3aaa6; --faint: #6d7571; --line: #222725; --accent: #3ccf73;
+      --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --display: "Space Grotesk", var(--sans);
     }
     * { box-sizing: border-box; }
     html { -webkit-text-size-adjust: 100%; background: var(--bg); }
-    body {
-      margin: 0; background: var(--bg); color: var(--ink);
-      font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background-image: radial-gradient(70% 45% at 85% -5%, rgb(43 214 107 / .22), transparent 70%),
-        radial-gradient(60% 40% at 0% 100%, rgb(43 214 107 / .08), transparent 70%);
-      background-repeat: no-repeat; min-height: 100vh;
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 var(--sans); }
+    a { color: inherit; }
+    img { display: block; max-width: 100%; height: auto; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+
+    header { border-bottom: 1px solid var(--line); }
+    header .wrap { display: flex; align-items: center; gap: 28px; min-height: 64px; }
+    .wordmark { font: 700 20px/1 var(--display); letter-spacing: -.01em; text-decoration: none; margin-right: auto; }
+    nav { display: flex; gap: 24px; font-size: 15px; }
+    nav a { color: var(--muted); text-decoration: none; }
+    nav a:hover { color: var(--ink); }
+    .lang { display: flex; gap: 6px; font-size: 14px; color: var(--faint); }
+    .lang button { all: unset; cursor: pointer; color: var(--faint); }
+    .lang button[aria-pressed="true"] { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+    @media (max-width: 640px) { nav { display: none; } }
+
+    h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: -.02em; margin: 0; }
+    h1 { font-size: clamp(34px, 5.2vw, 52px); line-height: 1.08; max-width: 14ch; }
+    h2 { font-size: clamp(26px, 3.4vw, 34px); line-height: 1.15; }
+    h3 { font-size: 24px; line-height: 1.25; }
+    .feature h3 { font-size: clamp(24px, 2.8vw, 30px); }
+    p { margin: 0; }
+    .lead { color: var(--muted); font-size: 18px; max-width: 34em; margin-top: 20px; }
+    .text { color: var(--muted); max-width: 30em; margin-top: 12px; }
+
+    .intro { display: grid; gap: 48px; align-items: center; padding-top: 72px; padding-bottom: 88px; }
+    @media (min-width: 820px) { .intro { grid-template-columns: 1.15fr .85fr; } }
+    .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin-top: 32px; }
+    .button { display: inline-block; padding: 14px 22px; border-radius: 10px; background: var(--accent); color: #07110b; font-weight: 600; text-decoration: none; }
+    .button:hover { background: #4bdc82; }
+    .link { color: var(--ink); text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: 4px; }
+    .phone { width: 100%; max-width: 300px; justify-self: center; border: 1px solid var(--line); border-radius: 28px; }
+
+    section { border-top: 1px solid var(--line); padding: 80px 0; }
+    .feature { display: grid; gap: 40px; align-items: center; }
+    .feature + .feature { margin-top: 96px; }
+    @media (min-width: 820px) {
+      .feature { grid-template-columns: 1fr 1fr; gap: 72px; }
+      .feature.flip .copy { order: 2; }
     }
-    a { color: var(--green); }
-    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
-    header { display: flex; align-items: center; gap: 10px; padding: 20px 0; }
-    .logo { width: 36px; height: 36px; border-radius: 10px; }
-    .brand { font-weight: 800; font-size: 20px; letter-spacing: -.02em; flex: 1; }
-    .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 12px; padding: 2px; background: var(--raised); }
-    .lang button { all: unset; cursor: pointer; padding: 6px 10px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--muted); }
-    .lang button[aria-pressed="true"] { background: var(--green); color: #000; }
-    .hero { display: grid; gap: 40px; align-items: center; padding: 32px 0 56px; }
-    @media (min-width: 860px) { .hero { grid-template-columns: 1.1fr .9fr; padding-top: 56px; } }
-    h1 { font-size: clamp(40px, 8vw, 68px); line-height: 1.02; letter-spacing: -.035em; margin: 0; font-weight: 800; }
-    h1 .accent { color: var(--green); }
-    .lead { color: var(--muted); font-size: 19px; max-width: 34rem; margin: 18px 0 26px; }
-    .ctas { display: flex; flex-wrap: wrap; gap: 12px; }
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 54px; padding: 0 24px; border-radius: 16px; font-weight: 700; text-decoration: none; font-size: 17px; }
-    .btn.primary { background: var(--green); color: #000; box-shadow: 0 0 32px rgb(43 214 107 / .35); }
-    .btn.secondary { border: 1px solid var(--line); color: var(--ink); background: var(--raised); }
-    .note { color: var(--faint); font-size: 14px; margin-top: 14px; }
-    .phones { display: flex; justify-content: center; gap: 14px; }
-    .phone { width: min(46%, 250px); height: auto; border-radius: 30px; border: 1px solid var(--line); box-shadow: 0 30px 80px -20px rgb(0 0 0 / .8), 0 0 60px -20px rgb(43 214 107 / .35); }
-    .phone.offset { margin-top: 48px; }
-    section { padding: 48px 0; border-top: 1px solid var(--line); }
-    h2 { font-size: clamp(28px, 5vw, 40px); letter-spacing: -.03em; margin: 0 0 8px; line-height: 1.1; }
-    .sub { color: var(--muted); margin: 0 0 28px; max-width: 40rem; }
-    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-    .card { background: rgb(15 19 17 / .85); border: 1px solid var(--line); border-radius: 24px; padding: 22px; }
-    .card h3 { margin: 10px 0 6px; font-size: 19px; }
-    .card p { margin: 0; color: var(--muted); font-size: 15.5px; }
-    .icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--raised); border: 1px solid var(--line); color: var(--green); font-size: 20px; }
-    .ladder { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-    .ladder span { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 14px; font-weight: 600; color: var(--muted); }
-    .ladder span:nth-child(n+4) { color: var(--green); border-color: rgb(43 214 107 / .35); }
-    .ladder span:last-child { color: #f5c542; border-color: rgb(245 197 66 / .5); }
-    .shots { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; }
-    .shots img { width: 220px; height: auto; flex: none; border-radius: 24px; border: 1px solid var(--line); scroll-snap-align: start; }
-    .steps { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-    .steps ol { margin: 10px 0 0; padding-left: 22px; color: var(--muted); }
-    .steps li { margin: 6px 0; }
-    .steps b { color: var(--ink); }
-    .pill { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--green); }
-    footer { border-top: 1px solid var(--line); padding: 28px 0 48px; color: var(--faint); font-size: 14px; display: flex; flex-wrap: wrap; gap: 8px 20px; }
+    .feature .phone { max-width: 270px; }
+    .ladder { margin: 20px 0 0; padding: 0; list-style: none; color: var(--faint); font-size: 15px; columns: 2; max-width: 22em; }
+    .ladder li { padding: 2px 0; }
+    .ladder li:last-child { color: var(--ink); }
+
+    .steps { display: grid; gap: 40px; margin-top: 32px; }
+    @media (min-width: 720px) { .steps { grid-template-columns: 1fr 1fr; } }
+    .steps ol { margin: 12px 0 0; padding-left: 20px; color: var(--muted); }
+    .steps li { margin: 6px 0; padding-left: 4px; }
+    .steps b { color: var(--ink); font-weight: 600; }
+    .note { color: var(--faint); font-size: 15px; margin-top: 32px; }
+
+    .faq { margin-top: 24px; max-width: 44em; }
+    details { border-bottom: 1px solid var(--line); }
+    summary { cursor: pointer; list-style: none; padding: 18px 0; font-weight: 600; display: flex; justify-content: space-between; gap: 16px; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--faint); font-weight: 400; }
+    details[open] summary::after { content: "–"; }
+    details p { color: var(--muted); padding: 0 0 20px; max-width: 38em; }
+
+    footer { border-top: 1px solid var(--line); padding: 28px 0 44px; color: var(--faint); font-size: 14px; }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 6px 18px; }
     footer a { color: var(--muted); }
+
     [data-en] { display: none; }
     html[lang="en"] [data-nb] { display: none; }
     html[lang="en"] [data-en] { display: revert; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <img class="logo" src="app/icon-192.png" alt="" width="36" height="36" />
-      <span class="brand">Repgrade</span>
+  <header>
+    <div class="wrap">
+      <a class="wordmark" href="./">Repgrade</a>
+      <nav aria-label="Hovedmeny">
+        <a href="#funksjoner"><span data-nb>Funksjoner</span><span data-en>Features</span></a>
+        <a href="#installer"><span data-nb>Installer</span><span data-en>Install</span></a>
+        <a href="app/#/privacy"><span data-nb>Personvern</span><span data-en>Privacy</span></a>
+      </nav>
       <div class="lang" role="group" aria-label="Språk / Language">
         <button type="button" data-set-lang="nb" aria-pressed="true">NO</button>
+        <span aria-hidden="true">/</span>
         <button type="button" data-set-lang="en" aria-pressed="false">EN</button>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <main>
-      <div class="hero">
-        <div>
-          <h1>
-            <span data-nb>Logg hvert løft.<br /><span class="accent">Klatre hvert nivå.</span></span>
-            <span data-en>Log every lift.<br /><span class="accent">Climb every level.</span></span>
-          </h1>
-          <p class="lead">
-            <span data-nb>Repgrade er treningsdagboka for gymmen. Logg et set med ett trykk, se forrige økt ved siden av, og gå fra Nybegynner til Olympia etter hvert som du blir sterkere.</span>
-            <span data-en>Repgrade is the training log for the gym. Log a set with one tap, see last session right next to it, and climb from Newbie to Olympia as you get stronger.</span>
-          </p>
-          <div class="ctas">
-            <a class="btn primary" href="app/"><span data-nb>Åpne appen</span><span data-en>Open the app</span></a>
-            <a class="btn secondary" href="#installer"><span data-nb>Slik installerer du</span><span data-en>How to install</span></a>
-          </div>
-          <p class="note">
-            <span data-nb>Gratis · ingen reklame · virker uten nett · dataene dine er dine</span>
-            <span data-en>Free · no ads · works offline · your data is yours</span>
-          </p>
-        </div>
-        <div class="phones">
-          <img data-nb class="phone" src="app/screenshots/home-nb.webp" width="540" height="919" alt="Hjem-skjermen med styrkenivå og ukemål / The home screen with strength level and weekly goal" />
-          <img data-en class="phone" src="app/screenshots/home-en.webp" width="540" height="919" alt="Hjem-skjermen med styrkenivå og ukemål / The home screen with strength level and weekly goal" />
-          <img data-nb class="phone offset" src="app/screenshots/levelup-nb.webp" width="540" height="919" alt="Nivå opp-animasjon / Level up animation" />
-          <img data-en class="phone offset" src="app/screenshots/levelup-en.webp" width="540" height="919" alt="Nivå opp-animasjon / Level up animation" />
+  <main>
+    <div class="wrap intro">
+      <div>
+        <h1>
+          <span data-nb>Treningsdagboka som holder følge med deg</span>
+          <span data-en>A training log that keeps up with you</span>
+        </h1>
+        <p class="lead">
+          <span data-nb>Logg et set på et par sekunder mellom øvelsene, med forrige økt rett ved siden av. Over tid ser du hvordan styrken din faktisk utvikler seg.</span>
+          <span data-en>Log a set in a couple of seconds between exercises, with your last session right next to it. Over time you see how your strength actually develops.</span>
+        </p>
+        <div class="actions">
+          <a class="button" href="app/"><span data-nb>Åpne appen</span><span data-en>Open the app</span></a>
+          <a class="link" href="#installer"><span data-nb>Slik installerer du →</span><span data-en>How to install →</span></a>
         </div>
       </div>
+      <img data-nb class="phone" src="app/screenshots/home-nb.webp" width="540" height="919" alt="Hjem-skjermen i Repgrade med ukemål og styrkenivå" />
+      <img data-en class="phone" src="app/screenshots/home-en.webp" width="540" height="919" alt="The Repgrade home screen with weekly goal and strength level" />
+    </div>
 
-      <section>
-        <h2><span data-nb>Alt du trenger på gymmen</span><span data-en>Everything you need at the gym</span></h2>
-        <p class="sub"><span data-nb>Laget for å brukes mellom settene, med svette fingre og dårlig dekning.</span><span data-en>Made to be used between sets, with sweaty fingers and bad signal.</span></p>
-        <div class="grid">
-          <div class="card">
-            <div class="icon" aria-hidden="true">✓</div>
-            <h3><span data-nb>Logg på sekunder</span><span data-en>Log in seconds</span></h3>
-            <p><span data-nb>Forrige økt står ved hvert set, hviletimeren starter av seg selv, og 131 øvelser har steg-for-steg-guide.</span><span data-en>Last session is shown on every set, the rest timer starts by itself, and 131 exercises come with step-by-step guides.</span></p>
+    <section id="funksjoner">
+      <div class="wrap">
+        <div class="feature">
+          <div class="copy">
+            <h3><span data-nb>Laget for å brukes mellom settene</span><span data-en>Made to be used between sets</span></h3>
+            <p class="text">
+              <span data-nb>Vekt og reps fra forrige gang står ved hvert set, og hviletimeren starter når du huker av. Alle 131 øvelsene har en kort forklaring på hvordan de gjøres.</span>
+              <span data-en>Weight and reps from last time are shown on every set, and the rest timer starts when you tick one off. All 131 exercises come with a short explanation of how to do them.</span>
+            </p>
           </div>
-          <div class="card">
-            <div class="icon" aria-hidden="true">⬢</div>
-            <h3><span data-nb>Styrkenivå</span><span data-en>Strength level</span></h3>
-            <p><span data-nb>Ti nivåer basert på ekte styrke mot kroppsvekt. Nytt beste løft gir en animasjon, og Olympia krever verdensklasse.</span><span data-en>Ten levels based on real strength relative to bodyweight. A new best lift pops an animation, and Olympia takes world-class strength.</span></p>
-          </div>
-          <div class="card">
-            <div class="icon" aria-hidden="true">◐</div>
-            <h3><span data-nb>Se hva du har trent</span><span data-en>See what you trained</span></h3>
-            <p><span data-nb>Et kroppskart forfra og bakfra viser hvilke muskler som har fått jobbe de siste 7 eller 30 dagene.</span><span data-en>A front-and-back body map shows which muscles have worked in the last 7 or 30 days.</span></p>
-          </div>
-          <div class="card">
-            <div class="icon" aria-hidden="true">↗</div>
-            <h3><span data-nb>Del økta</span><span data-en>Share your workout</span></h3>
-            <p><span data-nb>Fire delekort, fra enkle tall til hele økta, i story- eller postformat.</span><span data-en>Four share cards, from simple stats to the whole workout, in story or post format.</span></p>
-          </div>
+          <img data-nb class="phone" src="app/screenshots/workout-nb.webp" width="540" height="919" loading="lazy" alt="En økt i gang, med forrige økt ved hvert set" />
+          <img data-en class="phone" src="app/screenshots/workout-en.webp" width="540" height="919" loading="lazy" alt="A workout in progress, with last session next to each set" />
         </div>
-        <div class="ladder" aria-label="Nivåene / The levels">
-          <span data-nb>Nybegynner</span><span data-en>Newbie</span>
-          <span>Rookie</span>
-          <span data-nb>Stamgjest</span><span data-en>Regular</span>
-          <span data-nb>Gymrotte</span><span data-en>Gym Rat</span>
-          <span data-nb>Løfter</span><span data-en>Lifter</span>
-          <span data-nb>Sterk</span><span data-en>Strong</span>
-          <span data-nb>Beist</span><span data-en>Beast</span>
-          <span>Titan</span>
-          <span>Elite</span>
-          <span>Olympia</span>
-        </div>
-      </section>
 
-      <section>
-        <h2><span data-nb>Slik ser det ut</span><span data-en>What it looks like</span></h2>
-        <div class="shots">
-          <img data-nb src="app/screenshots/workout-nb.webp" width="540" height="919" loading="lazy" alt="Aktiv økt / Active workout" />
-          <img data-en src="app/screenshots/workout-en.webp" width="540" height="919" loading="lazy" alt="Aktiv økt / Active workout" />
-          <img data-nb src="app/screenshots/level-nb.webp" width="540" height="919" loading="lazy" alt="Styrkenivå / Strength level" />
-          <img data-en src="app/screenshots/level-en.webp" width="540" height="919" loading="lazy" alt="Styrkenivå / Strength level" />
-          <img data-nb src="app/screenshots/share-nb.webp" width="540" height="960" loading="lazy" alt="Delekort / Share cards" />
-          <img data-en src="app/screenshots/share-en.webp" width="540" height="960" loading="lazy" alt="Delekort / Share cards" />
-          <img data-nb src="app/screenshots/home-nb.webp" width="540" height="919" loading="lazy" alt="Hjem / Home" />
-          <img data-en src="app/screenshots/home-en.webp" width="540" height="919" loading="lazy" alt="Hjem / Home" />
-        </div>
-      </section>
-
-      <section id="installer">
-        <span class="pill"><span data-nb>Installer</span><span data-en>Install</span></span>
-        <h2><span data-nb>Legg den på hjemskjermen</span><span data-en>Put it on your home screen</span></h2>
-        <p class="sub"><span data-nb>Repgrade er en webapp: ingen App Store nødvendig. Installert åpnes den i fullskjerm, virker uten nett, og nettleseren sletter ikke dataene dine.</span><span data-en>Repgrade is a web app: no App Store needed. Once installed it opens full screen, works offline, and the browser won’t clear your data.</span></p>
-        <div class="steps">
-          <div class="card">
-            <h3>iPhone / iPad</h3>
-            <ol>
-              <li data-nb>Åpne <a href="app/">appen</a> i <b>Safari</b>.</li><li data-en>Open <a href="app/">the app</a> in <b>Safari</b>.</li>
-              <li data-nb>Trykk <b>Del</b>-knappen (firkant med pil opp).</li><li data-en>Tap the <b>Share</b> button (square with an arrow).</li>
-              <li data-nb>Velg <b>Legg til på Hjem-skjerm</b>, og trykk <b>Legg til</b>.</li><li data-en>Choose <b>Add to Home Screen</b>, then tap <b>Add</b>.</li>
+        <div class="feature flip">
+          <div class="copy">
+            <h3><span data-nb>Et styrkenivå som betyr noe</span><span data-en>A strength level that means something</span></h3>
+            <p class="text">
+              <span data-nb>Nivået regnes ut fra ditt beste beregnede 1RM i benk, knebøy, markløft, roing og pull-ups, sett opp mot kroppsvekten. Du må være sterk i både press, trekk og bein for å klatre, og toppnivået krever styrke på verdensklassenivå.</span>
+              <span data-en>Your level comes from your best estimated 1RM in bench, squat, deadlift, rows and pull-ups, measured against your bodyweight. You have to be strong in push, pull and legs to climb, and the top level takes world-class strength.</span>
+            </p>
+            <ol class="ladder" aria-label="Nivåene / The levels">
+              <li><span data-nb>Nybegynner</span><span data-en>Newbie</span></li>
+              <li>Rookie</li>
+              <li><span data-nb>Stamgjest</span><span data-en>Regular</span></li>
+              <li><span data-nb>Gymrotte</span><span data-en>Gym Rat</span></li>
+              <li><span data-nb>Løfter</span><span data-en>Lifter</span></li>
+              <li><span data-nb>Sterk</span><span data-en>Strong</span></li>
+              <li><span data-nb>Beist</span><span data-en>Beast</span></li>
+              <li>Titan</li>
+              <li>Elite</li>
+              <li>Olympia</li>
             </ol>
           </div>
-          <div class="card">
+          <img data-nb class="phone" src="app/screenshots/level-nb.webp" width="540" height="919" loading="lazy" alt="Siden for styrkenivå" />
+          <img data-en class="phone" src="app/screenshots/level-en.webp" width="540" height="919" loading="lazy" alt="The strength level page" />
+        </div>
+
+        <div class="feature">
+          <div class="copy">
+            <h3><span data-nb>Se hva du har trent, og del det</span><span data-en>See what you trained, and share it</span></h3>
+            <p class="text">
+              <span data-nb>En figur forfra og bakfra viser hvilke muskler som har fått jobbe den siste uka. Etter en økt kan du lage et bilde av den, fra enkle tall til hele økta, og dele det der du vil.</span>
+              <span data-en>A front and back figure shows which muscles have worked this past week. After a workout you can turn it into an image, from simple numbers to the whole session, and share it wherever you like.</span>
+            </p>
+          </div>
+          <img data-nb class="phone" src="app/screenshots/share-nb.webp" width="540" height="960" loading="lazy" alt="Et delekort med musklene som ble trent" />
+          <img data-en class="phone" src="app/screenshots/share-en.webp" width="540" height="960" loading="lazy" alt="A share card showing the muscles trained" />
+        </div>
+      </div>
+    </section>
+
+    <section id="installer">
+      <div class="wrap">
+        <h2><span data-nb>Slik installerer du</span><span data-en>How to install</span></h2>
+        <p class="text">
+          <span data-nb>Repgrade er en webapp, så den installeres fra nettleseren og ikke fra App Store. Når den ligger på hjemskjermen, åpnes den i fullskjerm og virker uten nett.</span>
+          <span data-en>Repgrade is a web app, so you install it from the browser rather than the App Store. Once it is on your home screen it opens full screen and works offline.</span>
+        </p>
+        <div class="steps">
+          <div>
+            <h3>iPhone</h3>
+            <ol>
+              <li><span data-nb>Åpne <a class="link" href="app/">appen</a> i <b>Safari</b>.</span><span data-en>Open <a class="link" href="app/">the app</a> in <b>Safari</b>.</span></li>
+              <li><span data-nb>Trykk på <b>Del</b>-knappen.</span><span data-en>Tap the <b>Share</b> button.</span></li>
+              <li><span data-nb>Velg <b>Legg til på Hjem-skjerm</b>.</span><span data-en>Choose <b>Add to Home Screen</b>.</span></li>
+            </ol>
+          </div>
+          <div>
             <h3>Android</h3>
             <ol>
-              <li data-nb>Åpne <a href="app/">appen</a> i <b>Chrome</b>.</li><li data-en>Open <a href="app/">the app</a> in <b>Chrome</b>.</li>
-              <li data-nb>Trykk <b>Installer appen</b> i appen, eller menyen <b>⋮</b> → <b>Installer app</b>.</li><li data-en>Tap <b>Install the app</b> in the app, or the <b>⋮</b> menu → <b>Install app</b>.</li>
-              <li data-nb>Repgrade dukker opp blant appene dine.</li><li data-en>Repgrade shows up among your apps.</li>
-            </ol>
-          </div>
-          <div class="card">
-            <h3><span data-nb>Datamaskin</span><span data-en>Computer</span></h3>
-            <ol>
-              <li data-nb>Åpne <a href="app/">appen</a> i Chrome eller Edge.</li><li data-en>Open <a href="app/">the app</a> in Chrome or Edge.</li>
-              <li data-nb>Klikk installer-ikonet i adressefeltet.</li><li data-en>Click the install icon in the address bar.</li>
+              <li><span data-nb>Åpne <a class="link" href="app/">appen</a> i <b>Chrome</b>.</span><span data-en>Open <a class="link" href="app/">the app</a> in <b>Chrome</b>.</span></li>
+              <li><span data-nb>Trykk på <b>Installer appen</b>, eller åpne menyen og velg <b>Installer app</b>.</span><span data-en>Tap <b>Install the app</b>, or open the menu and choose <b>Install app</b>.</span></li>
             </ol>
           </div>
         </div>
-      </section>
-
-      <section>
-        <h2><span data-nb>Dataene dine er dine</span><span data-en>Your data is yours</span></h2>
-        <p class="sub">
-          <span data-nb>Ingen reklame, ingen sporing. Med lokal konto blir alt på telefonen; med sky-konto lagres det i EU, og kroppsvekt deles bare med ditt samtykke. Last ned alt som JSON eller CSV når du vil.</span>
-          <span data-en>No ads, no tracking. With a local account everything stays on your phone; with a cloud account it is stored in the EU, and bodyweight is only shared with your consent. Download everything as JSON or CSV whenever you like.</span>
+        <p class="note">
+          <span data-nb>På datamaskin kan du installere den fra adressefeltet i Chrome eller Edge.</span>
+          <span data-en>On a computer you can install it from the address bar in Chrome or Edge.</span>
         </p>
-        <a class="btn secondary" href="app/#/privacy"><span data-nb>Les personvernerklæringen</span><span data-en>Read the privacy policy</span></a>
-      </section>
-    </main>
+      </div>
+    </section>
 
-    <footer>
+    <section>
+      <div class="wrap">
+        <h2><span data-nb>Spørsmål</span><span data-en>Questions</span></h2>
+        <div class="faq">
+          <details>
+            <summary><span data-nb>Koster det noe?</span><span data-en>Does it cost anything?</span></summary>
+            <p><span data-nb>Nei. Repgrade er gratis å bruke, og det er ingen reklame i appen.</span><span data-en>No. Repgrade is free to use, and there are no ads in the app.</span></p>
+          </details>
+          <details>
+            <summary><span data-nb>Hvor lagres dataene mine?</span><span data-en>Where is my data stored?</span></summary>
+            <p>
+              <span data-nb>Kontoen og øktene lagres hos Supabase i EU (Frankfurt), og en kopi ligger på telefonen din. Kroppsvekt lagres bare på nett hvis du samtykker til det. <a class="link" href="app/#/privacy">Les personvernerklæringen</a>.</span>
+              <span data-en>Your account and workouts are stored with Supabase in the EU (Frankfurt), with a copy on your phone. Bodyweight is only stored online if you consent. <a class="link" href="app/#/privacy">Read the privacy policy</a>.</span>
+            </p>
+          </details>
+          <details>
+            <summary><span data-nb>Virker den uten nett?</span><span data-en>Does it work offline?</span></summary>
+            <p><span data-nb>Ja. Du kan logge hele økta uten dekning, så synkes den når du er på nett igjen.</span><span data-en>Yes. You can log a whole workout without signal, and it syncs when you are back online.</span></p>
+          </details>
+          <details>
+            <summary><span data-nb>Hvordan sletter jeg kontoen?</span><span data-en>How do I delete my account?</span></summary>
+            <p><span data-nb>Under Profil i appen. Da slettes kontoen og alle øktene dine. Du kan laste ned en kopi først.</span><span data-en>Under Profile in the app. Your account and all your workouts are then deleted. You can download a copy first.</span></p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
       <span>© 2026 Repgrade</span>
+      <span data-nb>Laget i Norge av Adam Sommernes</span><span data-en>Made in Norway by Adam Sommernes</span>
       <a href="app/#/privacy"><span data-nb>Personvern</span><span data-en>Privacy</span></a>
-      <a href="app/"><span data-nb>Åpne appen</span><span data-en>Open the app</span></a>
-    </footer>
-  </div>
+      <a href="mailto:adamsommernes@icloud.com"><span data-nb>Kontakt</span><span data-en>Contact</span></a>
+    </div>
+  </footer>
 
   <script>
     (function () {
