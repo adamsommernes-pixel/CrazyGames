@@ -6,8 +6,11 @@ import { ErrorBoundary } from './components/ErrorScreen';
 import { showToast } from './components/toast';
 import { listenForInstall } from './lib/pwa';
 import { flushPendingSaves } from './lib/autosave';
+import { watchResume } from './lib/resume';
 import { t } from './i18n';
 import './index.css';
+
+watchResume();
 
 // Service worker (offline) bare i den vanlige PWA-versjonen.
 if (!__ARTIFACT__) {

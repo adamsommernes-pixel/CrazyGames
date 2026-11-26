@@ -14,12 +14,18 @@ import { t } from '../../i18n';
 
 let audio: AudioContext | null = null;
 
-/** Må kalles fra et trykk (iOS krever det) før lyd kan spilles senere. */
+/**
+ * Må kalles fra et trykk (iOS krever det). Kalles ved hvert trykk, fordi iPhone setter lyden
+ * på pause hver gang appen går i bakgrunnen.
+ */
 export function unlockAudio() {
   try {
+    // Spill lyd selv når iPhone står på lydløs (Safari 16.4+). Ellers dempes Web Audio av lydløs-bryteren.
+    const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
+    if (session && session.type !== 'playback') session.type = 'playback';
     const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     audio ??= new Ctx();
-    if (audio.state === 'suspended') void audio.resume();
+    if (audio.state !== 'running') void audio.resume();
   } catch {
     /* lyd er ikke tilgjengelig */
   }
@@ -28,6 +34,7 @@ export function unlockAudio() {
 function beep() {
   if (!audio) return;
   try {
+    if (audio.state !== 'running') void audio.resume();
     const t = audio.currentTime;
     for (const [i, freq] of [880, 880, 1320].entries()) {
       const osc = audio.createOscillator();
@@ -35,7 +42,7 @@ function beep() {
       osc.frequency.value = freq;
       osc.type = 'sine';
       gain.gain.setValueAtTime(0.0001, t + i * 0.25);
-      gain.gain.exponentialRampToValueAtTime(0.4, t + i * 0.25 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.8, t + i * 0.25 + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.25 + 0.2);
       osc.connect(gain).connect(audio.destination);
       osc.start(t + i * 0.25);

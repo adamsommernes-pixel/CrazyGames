@@ -32,14 +32,19 @@ try {
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(BASE);
-  await page.getByRole('heading', { name: /Logg hvert løft/ }).waitFor();
+  await page.getByRole('heading', { name: /Treningsdagboka som holder følge med deg/ }).waitFor();
   await page.screenshot({ path: 'tests/screens/site-mobil.png', fullPage: true });
   await page.getByRole('button', { name: 'EN' }).click();
-  await page.getByRole('heading', { name: /Log every lift/ }).waitFor();
+  await page.getByRole('heading', { name: /A training log that keeps up with you/ }).waitFor();
   await page.getByRole('button', { name: 'NO' }).click();
-  for (const img of await page.locator('img').all()) {
+  // Rull gjennom siden så lazy-bilder lastes, og sjekk alle synlige bilder.
+  for (let y = 0; y < 8000; y += 600) { await page.mouse.wheel(0, 600); await page.waitForTimeout(80); }
+  await page.waitForTimeout(500);
+  for (const img of await page.locator('img:visible').all()) {
     assert.ok(await img.evaluate((i) => i.complete && i.naturalWidth > 0), `bildet lastet: ${await img.getAttribute('src')}`);
   }
+  assert.equal(await page.getByText(/Gratis · ingen reklame/).count(), 0, 'ingen salgspunkt-linje');
+  await page.getByText('Hvor lagres dataene mine?').click();
   await page.getByRole('link', { name: 'Les personvernerklæringen' }).click();
   await page.getByRole('heading', { name: 'Kroppsdata er særlig beskyttet' }).waitFor();
   await page.goto(BASE);
@@ -68,7 +73,7 @@ try {
   const dp = await desk.newPage();
   dp.on('pageerror', (e) => errors.push(e.message));
   await dp.goto(BASE);
-  await dp.getByRole('heading', { name: /Log every lift/ }).waitFor();
+  await dp.getByRole('heading', { name: /A training log that keeps up with you/ }).waitFor();
   await dp.screenshot({ path: 'tests/screens/site-desktop.png', fullPage: true });
   await desk.close();
 
