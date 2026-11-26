@@ -357,7 +357,7 @@ function bodyBlock(ctx: Ctx, body: HTMLImageElement, x: number, y: number, maxW:
 
 function strip(ctx: Ctx, data: ShareData, y: number, size: number) {
   font(ctx, 500, size);
-  draw(ctx, `${data.duration}  ·  ${data.sets} sets  ·  ${data.volume} ${data.unit}`, PAD, y, C.muted);
+  draw(ctx, `${data.duration}  ·  ${data.sets} ${data.sets === 1 ? 'set' : 'sets'}  ·  ${data.volume} ${data.unit}`, PAD, y, C.muted);
 }
 
 function highlights(ctx: Ctx, w: number, h: number, data: ShareData, top: number, bottom: number, body: HTMLImageElement) {

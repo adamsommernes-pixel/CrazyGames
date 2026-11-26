@@ -114,7 +114,7 @@ export default function ShareSheet({ workoutId, onClose }: { workoutId: string; 
           </div>
           <p className="text-center text-xs text-faint">{CARD_LEVELS[level - 1].text}</p>
 
-          <div className="mx-auto w-full" style={{ maxWidth: `calc(40vh * ${ratio})` }}>
+          <div className="mx-auto w-full" style={{ maxWidth: `calc(34vh * ${ratio})` }}>
             <div className="relative w-full overflow-hidden rounded-2xl border border-line bg-black shadow-2xl" style={{ aspectRatio: `${ratio}` }}>
               {preview ? (
                 <img src={preview} alt={t(`Delekort: ${CARD_LEVELS[level - 1].name}`, `Share card: ${CARD_LEVELS[level - 1].name}`)} className="h-full w-full animate-fade" />

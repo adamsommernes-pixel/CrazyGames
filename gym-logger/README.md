@@ -6,6 +6,8 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
 > - Available in **Norwegian and English**. Switch on the welcome page (NO / EN) or under Profile → Settings → Language. On first visit the app follows the browser language.
 > - Built-in exercises have English names and how-to guides, and search finds them in both languages («squat» finds Knebøy).
 > - **Muscles trained**: a front and back body figure on Home shows which muscle groups you have trained in the last 7 or 30 days. Secondary muscles count half a set. Tap a muscle for sets and the date you last trained it.
+> - **Strength level**: ten levels from Newbie to Olympia, based on your best estimated 1RM in key lifts (bench, squat, deadlift, overhead press, rows, pull-ups, dips and variations) relative to bodyweight, with separate standards for men and women. Push, pull and legs are averaged. A new best lift pops up a record card, and a new overall level shows a full-screen «Level up». The level shows on Home and on its own page.
+> - **Share cards**: after a workout (or from History) share an image in four levels: Basic, Stats, Highlights (muscle figure, records, top sets) and Full workout, in story 9:16 or post 4:5.
 > - Development: `npm install`, `npm run dev`, `npm test`, `npm run build && npm run e2e`.
 
 ## Funksjoner
@@ -69,6 +71,16 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
 - **Glemt å avslutte?** Hjem spør når en økt har stått åpen i over 3 timer, og du setter varigheten selv.
 - **Logg tidligere økt**: registrer en økt i ettertid med dato og klokkeslett.
 
+**Styrkenivå**
+- Ti nivåer: Nybegynner, Rookie, Stamgjest, Gymrotte, Løfter, Sterk, Beist, Titan, Elite og Olympia.
+- Regnes ut fra beste beregnede 1RM i nøkkelløft (benk, knebøy, markløft, skulderpress, roing, pull-ups, dips og varianter) delt på kroppsvekt, med egne standarder for menn og kvinner (snitt hvis kjønn ikke er valgt). Snittet av press, trekk og bein gir nivået.
+- Nytt beste løft viser et rekordkort med animert poengsum; nytt totalnivå gir fullskjerm «Nivå opp» med konfetti.
+- Merke med fremgang under hilsenen på Hjem, egen nivåside med stigen og hvert løft, og nivå per løft på øvelsessiden.
+
+**Delekort**
+- Etter en økt (og fra Historikk) kan du dele et bilde i fire nivåer: Enkel, Tall, Høydepunkter (muskelfigur, rekorder, toppsett) og Hele økta.
+- Story 9:16 eller post 4:5. Deles via telefonens delemeny, eller lastes ned.
+
 **Oversikt**
 - **Trent kropp** på Hjem: en figur forfra og bakfra som farges etter hvor mange arbeidssett hver muskelgruppe har fått siste 7 eller 30 dager (1–3, 4–8, 9–15 og 16+ sets per uke). Sekundære muskler teller et halvt sett. Trykk på en muskel for antall sets og når den sist ble trent.
 - **Historikk** som liste eller kalender. Du kan rette vekt og reps, og endre navn, dato og varighet på ferdige økter.
@@ -121,6 +133,7 @@ Slik installeres den på telefonen:
    - `supabase/migrations/002_profiles.sql` (profiler, kroppsvekt, set-typer og sletting av konto)
    - `supabase/migrations/003_qol.sql` (mål-reps per øvelse i økta, til progresjonsforslag)
    - `supabase/migrations/004_kinds.sql` (øvelsestyper og distanse for kondisjon)
+   - `supabase/migrations/005_sex.sql` (valgfritt kjønn i profilen, til styrkenivå)
 3. Velg om e-post skal bekreftes, under **Authentication → Sign In / Providers → Email**:
    - Med bekreftelse ber appen brukeren sjekke e-posten etter registrering.
    - Uten bekreftelse logges brukeren inn med en gang.
@@ -136,6 +149,7 @@ Synken skriver alt lokalt først. Når det er nett, sendes endringene og nye end
 
 ```
 src/
+  features/share  delekort (canvas)
   i18n/        språk: t('norsk', 'english'), valgt språk og locale
   auth/        innlogging: lokal og Supabase bak samme grensesnitt, passord-hashing
   db/          Dexie-skjema (én database per konto), datafunksjoner, maler, synk, backup, v1-migrering

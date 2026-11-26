@@ -61,7 +61,7 @@ async function signUp(name, email, password) {
   await page.getByText(`Hei, ${name}!`).waitFor();
 }
 
-async function onboard({ goal, perWeek }, shots = false) {
+async function onboard({ goal, perWeek, sex }, shots = false) {
   if (shots) await shot('oppstart-navn');
   await btn('Fortsett').click();
   await page.getByRole('radio', { name: new RegExp(goal) }).click();
@@ -69,6 +69,8 @@ async function onboard({ goal, perWeek }, shots = false) {
   await btn('Fortsett').click();
   await page.getByRole('radio', { name: new RegExp(`^${perWeek}`) }).click();
   await btn('Fortsett').click();
+  if (sex) await btn(sex, { exact: true }).click();
+  if (shots) await shot('oppstart-om-deg');
   await btn('Fortsett').click();
   if (shots) await shot('oppstart-klart');
   await btn('Start å trene').click();
@@ -80,6 +82,14 @@ async function logSet(i, weight, reps) {
   await page.getByLabel(`Reps set ${i}`).first().fill(String(reps));
   await page.getByLabel(`Reps set ${i}`).first().blur();
   await btn(`Fullfør set ${i}`).first().click();
+  await dismissLevelUp();
+}
+
+/** «Nivå opp» dekker skjermen til man trykker Fortsett. */
+const levelUp = () => page.getByRole('dialog').filter({ has: page.getByText('Nivå opp') });
+async function dismissLevelUp() {
+  await page.waitForTimeout(250);
+  if (await levelUp().count()) await levelUp().getByRole('button', { name: 'Fortsett' }).click();
 }
 
 async function finish() {
@@ -107,7 +117,8 @@ try {
   await page.getByText('Hei, Ola!').waitFor();
 
   // 3. Oppstart → Hjem med startrutiner
-  await onboard({ goal: 'Bli sterkere', perWeek: 3 }, true);
+  await onboard({ goal: 'Bli sterkere', perWeek: 3, sex: 'Mann' }, true);
+  await page.getByRole('link', { name: /^Styrkenivå: Nybegynner/ }).waitFor();
   await page.getByRole('img', { name: '0 av 3 økter denne uka' }).waitFor();
   await page.getByText('Fullkropp A').first().waitFor();
   await shot('hjem-ny');
@@ -116,7 +127,17 @@ try {
   await btn('Start Fullkropp A').click();
   await page.getByText('Knebøy').first().waitFor();
   await btn('Fullfør set 5').first().waitFor(); // styrkerutine gir 5 sets
-  await logSet(1, 100, 5);
+  // 4a. Første knebøy gir nytt totalnivå: fullskjerm «Nivå opp»
+  await page.getByLabel('Vekt set 1 (kg)').first().fill('100');
+  await page.getByLabel('Reps set 1').first().fill('5');
+  await page.getByLabel('Reps set 1').first().blur();
+  await btn('Fullfør set 1').first().click();
+  await levelUp().waitFor();
+  await levelUp().getByRole('heading', { name: 'Rookie' }).waitFor();
+  await page.waitForTimeout(2200);
+  await shot('niva-opp');
+  await levelUp().getByRole('button', { name: 'Fortsett' }).click();
+  await levelUp().waitFor({ state: 'detached' });
   await page.getByRole('timer').waitFor();
   await logSet(2, 100, 5);
   await btn('Platekalkulator').first().click();
@@ -185,9 +206,38 @@ try {
   await page.getByText('Økt fullført').waitFor();
   await page.getByText(/ny rekord|nye rekorder/).first().waitFor();
   await shot('oppsummering-pr');
+
+  // 5d. Delekort: fire nivåer i to formater, og nedlasting gir en PNG
+  await btn('Del økta').click();
+  const share = page.getByRole('dialog', { name: 'Del økta' });
+  await share.getByRole('img', { name: /Delekort/ }).waitFor();
+  for (const [i, name] of [[1, /Enkel/], [2, /Tall/], [3, /Høyde.?punkter/], [4, /Hele økta/]]) {
+    await share.getByRole('tab', { name }).click();
+    await share.getByRole('tab', { name, selected: true }).waitFor();
+    await page.waitForTimeout(500);
+    if (i === 3) await shot('delekort-hoydepunkter');
+  }
+  await share.getByRole('button', { name: 'Post 4:5' }).click();
+  await page.waitForTimeout(600);
+  await shot('delekort-full-post');
+  const [download] = await Promise.all([page.waitForEvent('download'), share.getByRole('button', { name: 'Last ned' }).click()]);
+  assert.match(download.suggestedFilename(), /\.png$/);
+  const { size } = await (await import('node:fs/promises')).stat(await download.path());
+  assert.ok(size > 50_000, `PNG er ${size} bytes`);
+  await share.getByRole('button', { name: 'Lukk' }).last().click();
+  await share.waitFor({ state: 'detached' });
   await btn('Ferdig').click();
   await page.getByText('Siste rekorder').waitFor();
   await shot('hjem-med-data');
+
+  // 5b2. Nivåmerket på Hjem og nivåsiden
+  await page.getByRole('link', { name: /^Styrkenivå: / }).click();
+  await page.getByRole('heading', { name: 'Styrkenivå' }).waitFor();
+  await page.getByText('Olympia').waitFor();
+  await page.getByText(/Logg (press|trekk).*-øvelser/).waitFor();
+  await shot('styrkeniva');
+  await btn('Tilbake').click();
+  await page.getByText('Siste rekorder').waitFor();
 
   // 5c. Kroppskartet: knebøy farger beina, brystet er ikke trent
   const bodyMap = page.getByRole('img', { name: /^Trent: .*bein/ });
@@ -389,9 +439,15 @@ try {
   await ep.getByLabel('Reps set 1').first().fill('5');
   await ep.getByLabel('Reps set 1').first().blur();
   await ebtn('Complete set 1').first().click();
+  const enLevel = ep.getByRole('dialog').filter({ has: ep.getByText('Level up') });
+  await enLevel.waitFor();
+  await enLevel.getByRole('button', { name: 'Continue' }).click();
   await ebtn('Finish', { exact: true }).click();
   await ebtn('Save workout').click();
   await ep.getByText('Workout complete').waitFor();
+  await ebtn('Share workout').click();
+  await ep.getByRole('dialog', { name: 'Share workout' }).getByRole('img', { name: /Share card/ }).waitFor();
+  await ep.getByRole('dialog', { name: 'Share workout' }).getByRole('button', { name: 'Close' }).last().click();
   await ebtn('Done').click();
   await ep.getByRole('img', { name: /^Trained: .*legs/ }).waitFor();
   await ep.waitForTimeout(350);
