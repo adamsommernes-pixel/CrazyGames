@@ -231,7 +231,7 @@ Oppsett (én gang, ca. 10 minutter):
 1. **Lag nøkler** på din egen maskin: `npx web-push generate-vapid-keys`. Du får en offentlig og en privat nøkkel.
 2. **GitHub:** Settings → Secrets and variables → Actions → **Variables** → ny variabel `VITE_VAPID_PUBLIC_KEY` = den offentlige nøkkelen (den er ikke hemmelig).
 3. **Supabase → Edge Functions → Secrets:** legg inn `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (f.eks. `mailto:deg@eksempel.no`) og `CRON_SECRET` (en lang tilfeldig tekst du finner på).
-4. **Deploy funksjonen** (Supabase CLI): `supabase functions deploy rest-alarms --no-verify-jwt --project-ref <prosjekt-id>`. Eller lim inn `supabase/functions/rest-alarms/index.ts` i Supabase → Edge Functions → «Deploy a new function», kall den `rest-alarms` og slå av «Verify JWT».
+4. **Deploy funksjonen** (navnet kan bli noe annet enn `rest-alarms` i editoren; bruk da det navnet i adressen i steg 5) (Supabase CLI): `supabase functions deploy rest-alarms --no-verify-jwt --project-ref <prosjekt-id>`. Eller lim inn `supabase/functions/rest-alarms/index.ts` i Supabase → Edge Functions → «Deploy a new function», kall den `rest-alarms` og slå av «Verify JWT».
 5. **Supabase → SQL Editor**, kjør (bytt ut verdiene):
    ```sql
    select vault.create_secret('https://<prosjekt-id>.supabase.co/functions/v1/rest-alarms', 'rest_alarm_url');

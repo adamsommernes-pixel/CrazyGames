@@ -29,6 +29,8 @@ create policy "egne pausealarmer" on public.rest_alarms
 create index if not exists rest_alarms_send_at on public.rest_alarms (send_at);
 
 grant select, insert, update, delete on public.push_subscriptions, public.rest_alarms to authenticated;
+-- Edge-funksjonen bruker service_role og må kunne lese og slette alarmer og abonnement.
+grant select, insert, update, delete on public.push_subscriptions, public.rest_alarms to service_role;
 
 -- Jobben: kall funksjonen bare når en alarm er forfalt (billig når ingen trener).
 create extension if not exists pg_cron;
