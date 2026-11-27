@@ -6,6 +6,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { Link, useNavigate } from 'react-router-dom';
 import { db } from '../../db/dexie';
 import { getProfile, saveProfile } from '../../db/repo';
+import { isLyfto } from '../../db/importLyfto';
 import { backupFileName, downloadBlob, downloadJSON, exportBackup, exportCSV, importBackup, lastBackupAt, markBackedUp, parseBackup, summarizeBackup } from '../../db/backup';
 import { requestPersist, useStorageStatus } from '../../lib/storage';
 import { syncNow, useSyncStatus } from '../../db/sync';
@@ -371,6 +372,7 @@ function DataSection() {
       <Button variant="secondary" icon="upload" full onClick={() => fileRef.current?.click()}>
         {t('Gjenopprett fra backup', 'Restore from backup')}
       </Button>
+      <p className="text-xs text-faint">{t('Bytter du fra Lyfto? Velg eksportfila derfra (JSON), så hentes øktene inn.', 'Switching from Lyfto? Choose its export file (JSON) to bring your workouts over.')}</p>
       <input
         ref={fileRef}
         type="file"
@@ -382,12 +384,13 @@ function DataSection() {
           e.target.value = '';
           if (!file) return;
           try {
-            const backup = parseBackup(JSON.parse(await file.text()));
+            const raw: unknown = JSON.parse(await file.text());
+            const backup = parseBackup(raw);
             const sum = summarizeBackup(backup);
             const ok = await askConfirm(
               t(
-                `Backup fra ${dateShort(sum.exportedAt)}: ${sum.workouts} økter, ${sum.sets} sets, ${sum.routines} rutiner og ${sum.bodyweights} kroppsvekter. Slå sammen med det du har? Nyeste versjon av hver rad beholdes, ingenting slettes.`,
-                `Backup from ${dateShort(sum.exportedAt)}: ${sum.workouts} workouts, ${sum.sets} sets, ${sum.routines} routines and ${sum.bodyweights} bodyweights. Merge with what you have? The newest version of each row is kept, nothing is deleted.`,
+                `${isLyfto(raw) ? 'Lyfto-eksport' : 'Backup'} fra ${dateShort(sum.exportedAt)}: ${sum.workouts} økter, ${sum.sets} sets, ${sum.routines} rutiner og ${sum.bodyweights} kroppsvekter. Slå sammen med det du har? Nyeste versjon av hver rad beholdes, ingenting slettes.`,
+                `${isLyfto(raw) ? 'Lyfto export' : 'Backup'} from ${dateShort(sum.exportedAt)}: ${sum.workouts} workouts, ${sum.sets} sets, ${sum.routines} routines and ${sum.bodyweights} bodyweights. Merge with what you have? The newest version of each row is kept, nothing is deleted.`,
               ),
               { confirmLabel: t('Slå sammen', 'Merge'), danger: false },
             );
