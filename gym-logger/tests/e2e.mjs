@@ -262,6 +262,11 @@ try {
 
   // 5d. Slett et set og angre
   await btn('Set 2, rediger').first().click();
+  assert.equal(await dialog().locator('[data-set-type]').getAttribute('data-set-type'), 'normal', 'set-menyen viser typen i farge');
+  await dialog().getByRole('button', { name: 'Oppvarming' }).waitFor();
+  await page.waitForTimeout(300);
+  await shot('set-meny');
+  assert.ok(await page.locator('header').getByText('RepGrade').count(), 'logo og RepGrade øverst i økta');
   await dialog().getByRole('button', { name: 'Slett' }).click();
   await page.getByText('Settet er slettet').waitFor();
   assert.equal(await btn('Set 2, rediger').count(), 0);

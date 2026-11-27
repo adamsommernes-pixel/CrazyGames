@@ -12,6 +12,10 @@ describe('hva er nytt', () => {
     expect(w?.items.length).toBeGreaterThanOrEqual(1);
     for (const i of w!.items) expect(i.nb && i.en).toBeTruthy();
   });
+  it('ukjente ikoner ignoreres', () => {
+    expect(parseWhatsNew({ version: '1', items: [{ nb: 'a', en: 'b', icon: 'finnes-ikke' }] })?.items[0].icon).toBeUndefined();
+    expect(parseWhatsNew({ version: '1', items: [{ nb: 'a', en: 'b', icon: 'trophy' }] })?.items[0].icon).toBe('trophy');
+  });
   it('ugyldig fil gir null', () => {
     expect(parseWhatsNew({ version: '1' })).toBeNull();
     expect(parseWhatsNew(null)).toBeNull();
