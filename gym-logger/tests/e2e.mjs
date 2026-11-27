@@ -391,6 +391,17 @@ try {
   await btn('Kalender').click();
   await shot('kalender');
 
+  // 6b. Etter en oppdatering fra 1.0 (uten nyhetsskjerm): «Nytt i denne versjonen» vises én gang
+  await page.evaluate(() => localStorage.removeItem('repgrade-seen-version'));
+  await page.reload();
+  await page.getByRole('heading', { name: 'Nytt i denne versjonen' }).waitFor();
+  await shot('nytt-etter-oppdatering');
+  await page.getByRole('dialog').getByRole('button', { name: 'Fortsett' }).click();
+  await page.reload();
+  await page.getByRole('navigation').first().waitFor();
+  await page.waitForTimeout(800);
+  assert.equal(await page.getByRole('heading', { name: 'Nytt i denne versjonen' }).count(), 0, 'nyhetene vises bare én gang');
+
   // 7. Fremgang og øvelse
   await page.getByRole('navigation').getByRole('link', { name: 'Fremgang' }).click();
   await page.getByText('Siste 12 uker').waitFor();

@@ -15,7 +15,34 @@ export interface WhatsNew {
   items: { nb: string; en: string; icon?: IconName }[];
 }
 
-let current: { news: WhatsNew; update: () => void; later: () => void } | null = null;
+// mode «update»: før oppdatering (Oppdater nå / Senere). «info»: etter oppdatering (bare Fortsett).
+let current: { news: WhatsNew; update: () => void; later: () => void; mode: 'update' | 'info' } | null = null;
+
+/** Siste versjon brukeren har sett nyhetene for (per enhet). */
+const SEEN_KEY = 'repgrade-seen-version';
+export const seenVersion = () => {
+  try {
+    return localStorage.getItem(SEEN_KEY);
+  } catch {
+    return null;
+  }
+};
+export const markVersionSeen = (v: string) => {
+  try {
+    localStorage.setItem(SEEN_KEY, v);
+  } catch {
+    /* lagring utilgjengelig */
+  }
+};
+
+/**
+ * Skal «Nytt i versjon X» vises etter oppdatering? Bare når brukeren har brukt appen før
+ * (har økter) og ikke har sett nyhetene for denne versjonen, f.eks. fordi forrige versjon bare
+ * viste et lite varsel. Nye brukere får ingen nyhetsliste.
+ */
+export function shouldShowAfterUpdate(current: string, seen: string | null, hasWorkouts: boolean): boolean {
+  return seen !== current && hasWorkouts;
+}
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -38,8 +65,8 @@ export async function fetchWhatsNew(): Promise<WhatsNew | null> {
   }
 }
 
-export function showWhatsNew(news: WhatsNew, update: () => void, later: () => void) {
-  current = { news, update, later };
+export function showWhatsNew(news: WhatsNew, update: () => void, later: () => void, mode: 'update' | 'info' = 'update') {
+  current = { news, update, later, mode };
   emit();
 }
 
@@ -93,20 +120,32 @@ function WhatsNewScreen({ state }: { state: NonNullable<typeof current> }) {
           ))}
         </ul>
         <div className="flex flex-col gap-2 pt-2 pb-5">
-          <p className="mb-1 text-center text-xs text-muted">{t('Øktene dine er lagret. Oppdateringen tar et par sekunder.', 'Your workouts are saved. Updating takes a couple of seconds.')}</p>
-          <Button
-            full
-            className="min-h-13 text-lg"
-            onClick={() => {
-              close();
-              state.update();
-            }}
-          >
-            {t('Oppdater nå', 'Update now')}
-          </Button>
-          <Button full variant="ghost" onClick={later}>
-            {t('Senere', 'Later')}
-          </Button>
+          {state.mode === 'update' && (
+            <p className="mb-1 text-center text-xs text-muted">{t('Øktene dine er lagret. Oppdateringen tar et par sekunder.', 'Your workouts are saved. Updating takes a couple of seconds.')}</p>
+          )}
+          {state.mode === 'update' ? (
+            <>
+              <Button
+                full
+                className="min-h-13 text-lg"
+                onClick={() => {
+                  // Nyhetene er sett nå, så de vises ikke en gang til etter oppdateringen.
+                  markVersionSeen(state.news.version);
+                  close();
+                  state.update();
+                }}
+              >
+                {t('Oppdater nå', 'Update now')}
+              </Button>
+              <Button full variant="ghost" onClick={later}>
+                {t('Senere', 'Later')}
+              </Button>
+            </>
+          ) : (
+            <Button full className="min-h-13 text-lg" onClick={later}>
+              {t('Fortsett', 'Continue')}
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { openUserDb } from '../../src/db/dexie';
 import { LevelHost, showLevelEvent } from '../../src/components/levelUp';
 import { WhatsNewHost, fetchWhatsNew, showWhatsNew } from '../../src/components/whatsNew';
 import { MemoryRouter } from 'react-router-dom';
+import { PushPromptView } from '../../src/components/PushPrompt';
 import { tierAt, type LevelEvent, type LiftScore, type StrengthProfile } from '../../src/lib/strength';
 import { applyAccent } from '../../src/lib/theme';
 import { setLang } from '../../src/i18n';
@@ -34,7 +35,8 @@ createRoot(document.getElementById('root')!).render(
   <MemoryRouter>
     <LevelHost />
     <WhatsNewHost />
+    {kase === 'push' && <PushPromptView busy={false} error={null} onEnable={() => {}} onClose={() => {}} />}
   </MemoryRouter>,
 );
 if (kase === 'whatsnew') void fetchWhatsNew().then((n) => n && showWhatsNew(n, () => {}, () => {}));
-else setTimeout(() => showLevelEvent(ev, label, 82), 100);
+else if (kase !== 'push') setTimeout(() => showLevelEvent(ev, label, 82), 100);
