@@ -21,7 +21,7 @@ export function InstallHint() {
   if (hidden) return null;
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
   return (
-    <div className="mb-4 flex items-start gap-3 rounded-2xl border border-accent/40 bg-accent-soft/30 p-3">
+    <div className="mb-4 flex items-start gap-3 rounded-xl border border-accent/40 bg-accent-soft/30 p-3">
       <Icon name="share" className="mt-0.5 shrink-0 text-accent" />
       <p className="flex-1 text-sm">
         <span className="font-semibold">{t('Installer appen', 'Install the app')}: </span>

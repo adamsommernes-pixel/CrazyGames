@@ -46,7 +46,7 @@ export function ProfilePage() {
     <Page title={t('Profil', 'Profile')}>
       <section className="flex flex-col items-center pt-2 pb-6 text-center">
         <Avatar name={profile?.name || user.name} color={profile?.color ?? '#2bd66b'} size={88} />
-        <h2 className="font-num mt-4 text-3xl font-bold">{profile?.name || user.name}</h2>
+        <h2 className="mt-4 text-2xl font-bold">{profile?.name || user.name}</h2>
         <p className="mt-1 text-muted">
           {profile ? GOAL_LABEL[profile.goal] : ''} · {profile?.weekly_target ?? 3} {t('økter i uka', 'workouts a week')}
         </p>
@@ -92,10 +92,9 @@ export function ProfilePage() {
 
 function BigStat({ icon, label, value }: { icon: IconName; label: string; value: string }) {
   return (
-    <div className="card rounded-3xl p-4">
-      <Icon name={icon} size={20} className="text-accent" />
-      <div className="font-num mt-2 text-3xl font-bold">{value}</div>
-      <div className="text-xs text-muted">{label}</div>
+    <div className="card rounded-xl p-4" data-icon={icon}>
+      <div className="font-num text-2xl font-bold">{value}</div>
+      <div className="mt-0.5 text-sm text-muted">{label}</div>
     </div>
   );
 }
@@ -196,7 +195,7 @@ function PasswordSheet({ open, onClose, onSubmit }: { open: boolean; onClose: ()
             {msg.text}
           </p>
         )}
-        <button type="submit" disabled={busy || !oldPw || !newPw} className="min-h-12 rounded-2xl bg-accent font-semibold text-on-accent disabled:opacity-40">
+        <button type="submit" disabled={busy || !oldPw || !newPw} className="min-h-12 rounded-xl bg-accent font-semibold text-on-accent disabled:opacity-40">
           {busy ? t('Bytter …', 'Changing …') : t('Bytt passord', 'Change password')}
         </button>
       </form>
@@ -225,7 +224,7 @@ function DeleteSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () =
           }
         }}
       >
-        <p className="rounded-2xl bg-danger/10 p-3 text-sm text-danger">
+        <p className="rounded-xl bg-danger/10 p-3 text-sm text-danger">
           {t('Kontoen og alle økter, rutiner og rekorder slettes for godt. Ta gjerne en backup først under Data.', 'Your account and all workouts, routines and records are deleted for good. Consider taking a backup under Data first.')}
         </p>
         <label className="flex flex-col gap-1.5">
@@ -238,7 +237,7 @@ function DeleteSheet({ open, onClose, onSubmit }: { open: boolean; onClose: () =
             {err}
           </p>
         )}
-        <button type="submit" disabled={busy || word.trim().toUpperCase() !== t('SLETT', 'DELETE') || !pw} className="min-h-12 rounded-2xl bg-danger font-semibold text-black disabled:opacity-40">
+        <button type="submit" disabled={busy || word.trim().toUpperCase() !== t('SLETT', 'DELETE') || !pw} className="min-h-12 rounded-xl bg-danger font-semibold text-black disabled:opacity-40">
           {busy ? t('Sletter …', 'Deleting …') : t('Slett konto for godt', 'Delete account for good')}
         </button>
       </form>
@@ -328,7 +327,7 @@ function DataSection() {
   return (
     <Card className="flex flex-col gap-3 p-4">
       {cloud ? (
-        <div className="flex items-start gap-3 rounded-2xl bg-raised px-3 py-2.5 text-sm" role="status">
+        <div className="flex items-start gap-3 rounded-xl bg-raised px-3 py-2.5 text-sm" role="status">
           <Icon name="check" size={18} className="mt-0.5 shrink-0 text-accent" />
           <div className="min-w-0 flex-1">
             <div className="font-semibold">{t('Dataene dine ligger trygt på nett', 'Your data is stored safely online')}</div>
@@ -341,7 +340,7 @@ function DataSection() {
           </div>
         </div>
       ) : (
-        <div className="flex items-start gap-3 rounded-2xl bg-raised px-3 py-2.5 text-sm" role="status">
+        <div className="flex items-start gap-3 rounded-xl bg-raised px-3 py-2.5 text-sm" role="status">
         <Icon name={storage?.persisted ? 'check' : 'info'} size={18} className={`mt-0.5 shrink-0 ${storage?.persisted ? 'text-accent' : 'text-warn'}`} />
         <div className="min-w-0 flex-1">
           <div className="font-semibold">

@@ -24,7 +24,6 @@
   --color-danger: #ff6b6b;
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Space Grotesk', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
-  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.4);
   --animate-pop: pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
   --animate-sheet: sheet 240ms cubic-bezier(0.2, 0.9, 0.3, 1);
   --animate-fade: fade 200ms ease-out;
@@ -123,7 +122,6 @@
 @utility card {
   background: var(--color-surface);
   border: 1px solid var(--color-line);
-  box-shadow: var(--shadow-card);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -137,10 +135,6 @@
 }
 
 /* ---------- Styrkenivå ---------- */
-.level-glow {
-  display: inline-flex;
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--glow, #2bd66b) 55%, transparent));
-}
 
 @keyframes level-card-in {
   from { transform: translateY(-120%); opacity: 0; }
@@ -150,44 +144,22 @@
   to { transform: translateY(-120%); opacity: 0; }
 }
 @keyframes level-emblem-in {
-  0% { transform: scale(0.2) rotate(-25deg); opacity: 0; }
-  60% { transform: scale(1.15) rotate(6deg); opacity: 1; }
-  80% { transform: scale(0.95) rotate(-2deg); }
-  100% { transform: scale(1) rotate(0); }
-}
-@keyframes level-rays {
-  to { transform: rotate(360deg); }
-}
-@keyframes level-shine {
-  0% { transform: translateX(-120%) skewX(-20deg); }
-  100% { transform: translateX(220%) skewX(-20deg); }
-}
-@keyframes level-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.55; }
-  50% { transform: scale(1.12); opacity: 0.9; }
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 @keyframes level-text-in {
   from { transform: translateY(16px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
-@keyframes level-flash {
-  0% { opacity: 0.9; }
-  100% { opacity: 0; }
-}
 .level-card { animation: level-card-in 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
 .level-card.leaving { animation: level-card-out 260ms ease-in both; }
-.level-emblem-in { animation: level-emblem-in 900ms cubic-bezier(0.34, 1.56, 0.64, 1) 250ms both; }
-.level-rays { animation: level-rays 14s linear infinite; }
-.level-pulse { animation: level-pulse 2.4s ease-in-out infinite; }
-.level-shine { animation: level-shine 1.4s ease-in-out 1s both; }
+.level-emblem-in { animation: level-emblem-in 500ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
 .level-text-in { animation: level-text-in 600ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
-.level-flash { animation: level-flash 700ms ease-out both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .level-card, .level-emblem-in, .level-rays, .level-pulse, .level-shine, .level-text-in, .level-flash {
+  .level-card, .level-emblem-in, .level-text-in {
     animation: none !important;
   }
-  .level-flash, .level-shine { display: none; }
 }
 
 /* Personvernsiden: vanlige lister. */

@@ -24,12 +24,11 @@ export function LevelPage() {
     <Page title={t('Styrkenivå', 'Strength level')} back>
       <div className="flex flex-col items-center pt-2 pb-6 text-center">
         <div className="relative grid place-items-center">
-          <div className="level-pulse absolute size-36 rounded-full blur-2xl" style={{ background: accent, opacity: 0.35 }} aria-hidden="true" />
-          <span className="level-glow relative" style={{ ['--glow' as string]: accent }}>
+          <span className="relative">
             <TierEmblem index={s.tier.index} size={128} />
           </span>
         </div>
-        <h2 className="font-num mt-4 text-4xl font-bold" style={{ color: accent }}>
+        <h2 className="mt-4 text-3xl font-bold" style={{ color: accent }}>
           {s.tier.name}
         </h2>
         <p className="mt-1 text-sm text-muted">
@@ -176,5 +175,5 @@ export function LevelPage() {
 }
 
 function Note({ children }: { children: React.ReactNode }) {
-  return <p className="rounded-2xl border border-line bg-raised px-4 py-3 text-sm text-muted">{children}</p>;
+  return <p className="rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">{children}</p>;
 }

@@ -7,7 +7,7 @@ import { t } from '../../i18n';
 export function HealthConsent({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="mt-4 rounded-2xl border border-line bg-raised p-3">
+    <div className="mt-4 rounded-xl border border-line bg-raised p-3">
       <label className="flex cursor-pointer items-start gap-3">
         <input type="checkbox" className="mt-1 size-5 shrink-0 accent-[#2bd66b]" checked={checked} onChange={(e) => onChange(e.target.checked)} />
         <span className="text-sm">

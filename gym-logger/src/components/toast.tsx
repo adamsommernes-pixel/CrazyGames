@@ -50,7 +50,7 @@ export function ToastHost() {
   if (!toast) return null;
   return (
     <div className="mx-auto w-full max-w-xl px-3 pb-2" role="status" aria-live="polite">
-      <div key={toast.id} className="flex animate-rise items-center gap-3 rounded-2xl border border-line bg-raised py-2 pr-2 pl-4 shadow-lg shadow-black">
+      <div key={toast.id} className="flex animate-rise items-center gap-3 rounded-xl border border-line bg-raised py-2 pr-2 pl-4 shadow-lg shadow-black">
         <span className="flex-1 text-sm">{toast.message}</span>
         {toast.action && (
           <button

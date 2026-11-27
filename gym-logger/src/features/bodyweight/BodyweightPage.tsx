@@ -51,13 +51,13 @@ export function BodyweightPage() {
       ) : (
         <>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <div className="card rounded-2xl p-4">
+            <div className="card rounded-xl p-4">
               <div className="text-xs text-muted">{t('Nå', 'Now')}</div>
               <div className="font-num text-3xl font-bold">
                 {num(toDisplay(latest.weight_kg, unit))} <span className="text-base text-faint">{unit}</span>
               </div>
             </div>
-            <div className="card rounded-2xl p-4">
+            <div className="card rounded-xl p-4">
               <div className="text-xs text-muted">{t('Endring siden', 'Change since')} {dateShort(oldest.date)}</div>
               <div className={`font-num text-3xl font-bold ${change === null ? 'text-faint' : ''}`}>
                 {change === null ? '–' : `${change > 0 ? '+' : change < 0 ? '−' : ''}${num(Math.abs(toDisplay(change, unit)))}`}

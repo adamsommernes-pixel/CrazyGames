@@ -18,7 +18,7 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
         <Logo size={20} className="text-sm text-muted" />
         <LanguageToggle />
       </div>
-      <h1 className="font-num mt-4 text-4xl font-bold tracking-tight">{title}</h1>
+      <h1 className="mt-4 text-3xl font-bold tracking-tight">{title}</h1>
       <p className="mt-2 text-muted">{subtitle}</p>
       <div className="mt-8">{children}</div>
     </div>
@@ -29,7 +29,7 @@ function LocalNote() {
   const { backend } = useAuth();
   if (backend.kind !== 'local') return null;
   return (
-    <p className="mt-6 flex gap-2 rounded-2xl border border-line bg-surface p-3 text-sm text-muted">
+    <p className="mt-6 flex gap-2 rounded-xl border border-line bg-surface p-3 text-sm text-muted">
       <Icon name="lock" size={18} className="mt-0.5 shrink-0 text-accent" />
       {t('Kontoen og øktene lagres på denne enheten, med kryptert passord. Sky-synk mellom enheter kan slås på senere.', 'Your account and workouts are stored on this device, with an encrypted password. Cloud sync between devices can be turned on later.')}
     </p>
@@ -94,7 +94,7 @@ export function SignUp() {
         </label>
         <PasswordField id="signup-password" label={t('Passord (minst 8 tegn)', 'Password (at least 8 characters)')} value={password} onChange={setPassword} autoComplete="new-password" showStrength />
         <ErrorText error={error} />
-        <button type="submit" disabled={busy} className="mt-2 min-h-14 rounded-2xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-50">
+        <button type="submit" disabled={busy} className="mt-2 min-h-14 rounded-xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-50">
           {busy ? t('Lager konto …', 'Creating account …') : t('Lag konto', 'Create account')}
         </button>
         <p className="text-center text-xs text-faint">
@@ -152,7 +152,7 @@ export function Login() {
             {t('Sjekk e-posten for en lenke til å lage nytt passord.', 'Check your email for a link to set a new password.')}
           </p>
         )}
-        <button type="submit" disabled={busy} className="mt-2 min-h-14 rounded-2xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-50">
+        <button type="submit" disabled={busy} className="mt-2 min-h-14 rounded-xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-50">
           {busy ? t('Logger inn …', 'Logging in …') : t('Logg inn', 'Log in')}
         </button>
         {backend.resetPassword && (

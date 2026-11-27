@@ -30,7 +30,7 @@ export function OneRepMaxTable({ oneRm, equipment }: { oneRm: number; equipment?
       <Card className="overflow-hidden">
         <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-line text-[11px] tracking-wide text-faint uppercase">
+            <tr className="border-b border-line text-[11px] text-faint">
               <th className="px-4 py-2 font-semibold">{t('Prosent', 'Percent')}</th>
               <th className="px-4 py-2 font-semibold">{t('Vekt', 'Weight')} ({unit})</th>
               <th className="px-4 py-2 text-right font-semibold">≈ Reps</th>

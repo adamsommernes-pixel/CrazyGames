@@ -71,7 +71,7 @@ export function HistoryList() {
       ) : (
         groups.map((g, gi) => (
           <section key={g.month}>
-            {gi === 0 ? <h2 className="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{g.month}</h2> : <SectionTitle>{g.month}</SectionTitle>}
+            {gi === 0 ? <h2 className="mb-2 text-[15px] font-semibold text-ink">{g.month}</h2> : <SectionTitle>{g.month}</SectionTitle>}
             <ul className="flex flex-col gap-2">
               {g.items.map((w) => {
                 const sets = byWorkout.get(w.id) ?? [];

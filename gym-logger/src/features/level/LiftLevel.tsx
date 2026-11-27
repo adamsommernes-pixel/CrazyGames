@@ -18,7 +18,7 @@ export function LiftLevel({ exerciseId }: { exerciseId: string }) {
   };
   const next = lift && lift.tier.index < TIER_COUNT - 1 ? tierAt(lift.tier.index + 1) : null;
   return (
-    <Link to="/level" className="mt-3 flex items-center gap-3 rounded-2xl border border-line bg-raised px-3 py-2.5">
+    <Link to="/level" className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-raised px-3 py-2.5">
       <TierEmblem index={lift?.tier.index ?? 0} size={36} />
       <div className="min-w-0 flex-1 text-sm">
         <div className="font-semibold" style={lift ? { color: tierAccent(lift.tier.index) } : undefined}>

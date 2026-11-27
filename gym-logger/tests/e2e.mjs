@@ -73,7 +73,7 @@ async function signUp(name, email, password) {
   await page.getByLabel('E-post').fill(email);
   await page.getByLabel('Passord (minst 8 tegn)').fill(password);
   await page.locator('form').getByRole('button', { name: 'Lag konto' }).click();
-  await page.getByText(`Hei, ${name}!`).waitFor();
+  await page.getByText(new RegExp(`^Hei, ${name}$`)).waitFor();
 }
 
 async function onboard({ goal, perWeek, sex, program }, shots = false) {
@@ -103,7 +103,7 @@ async function logSet(i, weight, reps) {
 }
 
 /** «Nivå opp» dekker skjermen til man trykker Fortsett. */
-const levelUp = () => page.getByRole('dialog').filter({ has: page.getByText('Nivå opp') });
+const levelUp = () => page.getByRole('dialog').filter({ has: page.getByText('Nytt nivå', { exact: true }) });
 async function dismissLevelUp() {
   await page.waitForTimeout(250);
   if (await levelUp().count()) await levelUp().getByRole('button', { name: 'Fortsett' }).click();
@@ -146,7 +146,7 @@ try {
   await page.getByLabel('Passord (minst 8 tegn)').fill('Sterkt-passord-2026');
   await shot('lag-konto');
   await page.locator('form').getByRole('button', { name: 'Lag konto' }).click();
-  await page.getByText('Hei, Ola!').waitFor();
+  await page.getByText(/^Hei, Ola$/).waitFor();
 
   // 3. Oppstart → Hjem med startrutiner
   await onboard({ goal: 'Bli sterkere', perWeek: 3, sex: 'Mann', program: 'Fullkropp A/B' }, true);
@@ -554,7 +554,7 @@ try {
   await ep.getByLabel('Email').fill('sam@example.com');
   await ep.getByLabel('Password (at least 8 characters)').fill('Strong-password-26');
   await ep.locator('form').getByRole('button', { name: 'Create account' }).click();
-  await ep.getByText('Hi, Sam!').waitFor();
+  await ep.getByText(/^Hi, Sam$/).waitFor();
   await ebtn('Continue').click();
   await ep.getByRole('radio', { name: /Get stronger/ }).click();
   await ebtn('Continue').click();
@@ -571,7 +571,7 @@ try {
   await ep.getByLabel('Reps set 1').first().fill('5');
   await ep.getByLabel('Reps set 1').first().blur();
   await ebtn('Complete set 1').first().click();
-  const enLevel = ep.getByRole('dialog').filter({ has: ep.getByText('Level up') });
+  const enLevel = ep.getByRole('dialog').filter({ has: ep.getByText('New level', { exact: true }) });
   await enLevel.waitFor();
   await enLevel.getByRole('button', { name: 'Continue' }).click();
   await ebtn('Finish', { exact: true }).click();

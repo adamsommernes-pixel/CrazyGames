@@ -27,7 +27,7 @@ export function Calendar({
   const count = cells.filter((d) => d && marked.has(key(d))).length;
 
   return (
-    <div className="card rounded-3xl p-3">
+    <div className="card rounded-xl p-3">
       <div className="mb-2 flex items-center">
         <IconButton icon="back" label={t('Forrige måned', 'Previous month')} onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} />
         <div className="flex-1 text-center">

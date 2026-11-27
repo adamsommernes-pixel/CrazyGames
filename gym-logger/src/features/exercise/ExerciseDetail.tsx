@@ -98,7 +98,7 @@ export function ExerciseDetail() {
       <ExerciseMeta exercise={exercise} />
       <LiftLevel exerciseId={exercise.id} />
 
-      <div className="mt-4 mb-4 grid grid-cols-2 gap-1 rounded-2xl bg-raised p-1" role="tablist">
+      <div className="mt-4 mb-4 grid grid-cols-2 gap-1 rounded-xl bg-raised p-1" role="tablist">
         {(['overview', 'guide'] as const).map((tab_) => (
           <button
             key={tab_}
@@ -226,7 +226,7 @@ function Records({ kind, sessions, unit }: { kind: ExerciseKind; sessions: Sessi
     <>
       <div className="grid grid-cols-3 gap-2 text-center">
         {tiles.map((t) => (
-          <div key={t.label} className="card rounded-2xl border-accent/30 py-2.5">
+          <div key={t.label} className="card rounded-xl border-accent/30 py-2.5">
             <div className="text-xs text-muted">{t.label}</div>
             <div className="font-num text-2xl font-bold text-accent">{t.value}</div>
             <div className="text-xs text-faint">{t.sub}</div>

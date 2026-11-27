@@ -1,22 +1,24 @@
-import { useId } from 'react';
+// Emblem for styrkenivå: flat sekskant med 1–3 chevroner. Grått for de laveste nivåene, brukerens
+// aksentfarge for resten, gull med laurbær for Olympia. Farger settes med style, så CSS-variabler virker.
 
-// Emblem for styrkenivå: sekskant med chevroner. Tre bånd (grått, grønt, lysende) med 1–3 chevroner,
-// og Olympia i gull med laurbær. Bare faste farger, så det også kan tegnes på delekort.
+/** Farger for emblemet. `accent`/`on` kan være CSS-variabler (appen) eller faste farger (delekort). */
+export interface EmblemPalette {
+  accent: string;
+  on: string;
+}
+const CSS_PALETTE: EmblemPalette = { accent: 'var(--color-accent)', on: 'var(--color-on-accent)' };
+const GOLD = '#e2b93b';
 
-const BANDS = [
-  { from: '#3a423e', to: '#1c211f', line: '#7f8a84', mark: '#c9d1cc' }, // 0–2
-  { from: '#1f7a45', to: '#0e2f1c', line: '#2bd66b', mark: '#e9fff1' }, // 3–5
-  { from: '#2bd66b', to: '#0f5a30', line: '#7dffaa', mark: '#ffffff' }, // 6–8
-];
-const GOLD = { from: '#ffe28a', to: '#b8860b', line: '#fff1b8', mark: '#3b2a00' };
-
-export function tierColors(index: number) {
-  return index >= 9 ? GOLD : BANDS[Math.min(2, Math.floor(index / 3))];
+export function tierColors(index: number, p: EmblemPalette = CSS_PALETTE) {
+  if (index >= 9) return { fill: GOLD, line: GOLD, mark: '#1a1300' };
+  if (index >= 6) return { fill: p.accent, line: p.accent, mark: p.on };
+  if (index >= 3) return { fill: '#1c1c1e', line: p.accent, mark: p.accent };
+  return { fill: '#1c1c1e', line: '#6c6c72', mark: '#a1a1a6' };
 }
 
-/** Hovedfarge for tekst og glød rundt et nivå. */
-export function tierAccent(index: number): string {
-  return index >= 9 ? '#f5c542' : index >= 6 ? '#7dffaa' : index >= 3 ? '#2bd66b' : '#9aa59f';
+/** Tekstfarge for et nivå: grå for de laveste, aksent for resten, gull for Olympia. */
+export function tierAccent(index: number, accent = 'var(--color-accent-strong)'): string {
+  return index >= 9 ? GOLD : index >= 3 ? accent : 'var(--color-muted)';
 }
 
 const HEX = 'M50 4 L90 27 L90 73 L50 96 L10 73 L10 27 Z';
@@ -27,7 +29,7 @@ function Chevrons({ n, color }: { n: number; color: string }) {
   const total = n * h + (n - 1) * 3;
   const top = 50 - total / 2;
   return (
-    <g fill="none" stroke={color} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round">
+    <g fill="none" style={{ stroke: color }} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round">
       {Array.from({ length: n }, (_, i) => {
         const y = top + i * (h + 3);
         return <path key={i} d={`M33 ${y + h} L50 ${y} L67 ${y + h}`} />;
@@ -39,7 +41,7 @@ function Chevrons({ n, color }: { n: number; color: string }) {
 function Laurel({ color }: { color: string }) {
   const leaves = [0, 1, 2, 3, 4];
   return (
-    <g fill={color} opacity={0.95}>
+    <g style={{ fill: color }}>
       {leaves.map((i) => (
         <g key={i}>
           <ellipse cx={30 - i * 1.2} cy={70 - i * 8} rx={3.2} ry={6.5} transform={`rotate(${-35 + i * 6} ${30 - i * 1.2} ${70 - i * 8})`} />
@@ -51,29 +53,17 @@ function Laurel({ color }: { color: string }) {
 }
 
 function Star({ color }: { color: string }) {
-  return <path d="M50 30 L55.9 42 L69 43.8 L59.5 53 L61.8 66 L50 59.8 L38.2 66 L40.5 53 L31 43.8 L44.1 42 Z" fill={color} />;
+  return <path d="M50 30 L55.9 42 L69 43.8 L59.5 53 L61.8 66 L50 59.8 L38.2 66 L40.5 53 L31 43.8 L44.1 42 Z" style={{ fill: color }} />;
 }
 
-/** Emblem som SVG-element. `idPrefix` gjør gradient-id-ene unike når flere vises samtidig. */
-export function TierEmblem({ index, size = 48, idPrefix }: { index: number; size?: number; idPrefix?: string }) {
-  const auto = useId().replace(/:/g, '');
-  const id = `tb${idPrefix ?? auto}`;
-  const c = tierColors(index);
+/** Emblem som SVG-element. `palette` brukes på delekort, der CSS-variabler ikke finnes. */
+export function TierEmblem({ index, size = 48, palette }: { index: number; size?: number; palette?: EmblemPalette; idPrefix?: string }) {
+  const c = tierColors(index, palette);
   const gold = index >= 9;
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id={`${id}g`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={c.from} />
-          <stop offset="1" stopColor={c.to} />
-        </linearGradient>
-        <linearGradient id={`${id}s`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#ffffff" stopOpacity={0.35} />
-          <stop offset="0.45" stopColor="#ffffff" stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      <path d={HEX} fill={`url(#${id}g)`} stroke={c.line} strokeWidth={3} strokeLinejoin="round" />
-      {index >= 3 && <path d={HEX_IN} fill="none" stroke={c.line} strokeOpacity={0.6} strokeWidth={1.5} strokeLinejoin="round" />}
+      <path d={HEX} style={{ fill: c.fill, stroke: c.line }} strokeWidth={3} strokeLinejoin="round" />
+      {index >= 3 && index < 6 && <path d={HEX_IN} fill="none" style={{ stroke: c.line }} strokeOpacity={0.5} strokeWidth={1.5} strokeLinejoin="round" />}
       {gold ? (
         <>
           <Laurel color={c.mark} />
@@ -82,7 +72,6 @@ export function TierEmblem({ index, size = 48, idPrefix }: { index: number; size
       ) : (
         <Chevrons n={(index % 3) + 1} color={c.mark} />
       )}
-      <path d={HEX} fill={`url(#${id}s)`} />
     </svg>
   );
 }

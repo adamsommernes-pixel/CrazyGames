@@ -159,7 +159,7 @@ export function ExercisePicker({
   };
 
   const Header = ({ children, group: g }: { children: string; group?: MuscleGroup | null }) => (
-    <h3 className="sticky top-[7.75rem] z-[5] -mx-4 flex items-center gap-2 bg-surface/95 px-4 pt-4 pb-1.5 text-xs font-semibold tracking-wide text-muted uppercase backdrop-blur">
+    <h3 className="sticky top-[7.75rem] z-[5] -mx-4 flex items-center gap-2 bg-surface px-4 pt-4 pb-1.5 text-sm font-semibold text-muted">
       {g && <MuscleDot group={g} />}
       {children}
     </h3>
@@ -298,7 +298,7 @@ export function NewExerciseForm({
         <Button variant="secondary" className="flex-1" onClick={onCancel}>
           {t('Avbryt', 'Cancel')}
         </Button>
-        <button type="submit" className="min-h-12 flex-1 rounded-2xl bg-accent font-semibold text-on-accent">
+        <button type="submit" className="min-h-12 flex-1 rounded-xl bg-accent font-semibold text-on-accent">
           {t('Lagre og velg', 'Save and select')}
         </button>
       </div>

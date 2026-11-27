@@ -85,7 +85,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
           <div className="mb-2 flex justify-end">
             <LanguageToggle size="md" />
           </div>
-          <Step title={`${t('Hei', 'Hi')}${user.name ? `, ${user.name.split(' ')[0]}` : ''}!`} text={t('Hva vil du kalles, og hvilken farge vil du ha?', 'What should we call you, and which colour do you want?')}>
+          <Step title={`${t('Hei', 'Hi')}${user.name ? `, ${user.name.split(' ')[0]}` : ''}`} text={t('Hva vil du kalles, og hvilken farge vil du ha?', 'What should we call you, and which colour do you want?')}>
             <div className="flex items-center gap-4">
               <Avatar name={name || '?'} color={color} size={64} />
               <input id="ob-name" aria-label={t('Navn', 'Name')} className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
@@ -117,7 +117,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
                   role="radio"
                   aria-checked={perWeek === n}
                   onClick={() => setPerWeek(n)}
-                  className={`font-num flex aspect-square flex-col items-center justify-center rounded-2xl border text-2xl font-bold transition ${
+                  className={`font-num flex aspect-square flex-col items-center justify-center rounded-xl border text-2xl font-bold transition ${
                     perWeek === n ? 'border-accent bg-accent text-on-accent' : 'border-line bg-raised'
                   }`}
                 >
@@ -126,7 +126,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
                 </button>
               ))}
             </div>
-            <h3 className="mt-8 mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{t('Erfaring', 'Experience')}</h3>
+            <h3 className="mt-8 mb-2 text-sm font-semibold text-muted">{t('Erfaring', 'Experience')}</h3>
             <div className="flex flex-wrap gap-2">
               {EXPERIENCE.map((e) => (
                 <Chip key={e} active={experience === e} onClick={() => setExperience(e)}>
@@ -139,7 +139,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
 
         {step === 3 && (
           <Step title={t('Litt om deg', 'A bit about you')} text={t('Brukes til grafer og styrkenivået ditt. Alt her er valgfritt.', 'Used for charts and your strength level. Everything here is optional.')}>
-            <h3 className="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{t('Vektenhet', 'Weight unit')}</h3>
+            <h3 className="mb-2 text-sm font-semibold text-muted">{t('Vektenhet', 'Weight unit')}</h3>
             <div className="flex gap-2">
               <Chip active={unit === 'kg'} onClick={() => setUnit('kg')}>
                 {t('Kilo (kg)', 'Kilograms (kg)')}
@@ -190,7 +190,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
 function Step({ title, text, children }: { title: string; text: string; children: ReactNode }) {
   return (
     <section className="pt-6">
-      <h1 className="font-num text-4xl font-bold tracking-tight">{title}</h1>
+      <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
       <p className="mt-2 mb-8 text-muted">{text}</p>
       {children}
     </section>
@@ -204,7 +204,7 @@ function Choice({ selected, onClick, icon, title, text }: { selected: boolean; o
       role="radio"
       aria-checked={selected}
       onClick={onClick}
-      className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition ${selected ? 'border-accent bg-accent-soft/40' : 'border-line bg-surface'}`}
+      className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${selected ? 'border-accent bg-accent-soft/40' : 'border-line bg-surface'}`}
     >
       <span className={`grid size-11 shrink-0 place-items-center rounded-xl ${selected ? 'bg-accent text-on-accent' : 'bg-raised text-accent'}`}>
         <Icon name={icon} />
@@ -227,7 +227,7 @@ function Toggle({ checked, onChange, title, text }: { checked: boolean; onChange
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${checked ? 'border-accent/60 bg-accent-soft/30' : 'border-line bg-surface'}`}
+      className={`flex items-start gap-3 rounded-xl border p-4 text-left transition ${checked ? 'border-accent/60 bg-accent-soft/30' : 'border-line bg-surface'}`}
     >
       <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-lg border-2 ${checked ? 'border-accent bg-accent text-on-accent' : 'border-line'}`}>
         {checked && <Icon name="check" size={14} strokeWidth={3.5} />}

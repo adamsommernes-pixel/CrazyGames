@@ -16,9 +16,9 @@ export function LevelBadge({ strength }: { strength: StrengthProfile }) {
         `Styrkenivå: ${tier.name}, ${Math.floor(score)} poeng. Se nivåene`,
         `Strength level: ${tier.name}, ${Math.floor(score)} points. See the levels`,
       )}
-      className="mt-2 flex max-w-xs items-center gap-2.5 rounded-2xl border border-line bg-surface/80 py-1.5 pr-3 pl-1.5 transition active:scale-[0.98]"
+      className="mt-2 flex max-w-xs items-center gap-2.5 rounded-xl border border-line bg-surface/80 py-1.5 pr-3 pl-1.5 transition active:scale-[0.98]"
     >
-      <span className="level-glow shrink-0" style={{ ['--glow' as string]: accent }}>
+      <span className="shrink-0">
         <TierEmblem index={tier.index} size={34} />
       </span>
       <span className="min-w-0 flex-1">

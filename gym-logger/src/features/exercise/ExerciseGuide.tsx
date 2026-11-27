@@ -25,7 +25,7 @@ function Block({ icon, title, tone, items, ordered }: { icon: IconName; title: s
   if (!items.length) return null;
   return (
     <section>
-      <h3 className={`mb-2 flex items-center gap-2 text-sm font-semibold tracking-wide uppercase ${tone}`}>
+      <h3 className={`mb-2 flex items-center gap-2 text-sm font-semibold ${tone}`}>
         <Icon name={icon} size={16} />
         {title}
       </h3>
@@ -50,7 +50,7 @@ export function ExerciseGuide({ exercise }: { exercise: Exercise }) {
   const guide = guideFor(exercise.id);
   if (!guide) {
     return (
-      <p className="rounded-2xl border border-line bg-raised p-4 text-sm text-muted">
+      <p className="rounded-xl border border-line bg-raised p-4 text-sm text-muted">
         {t('Dette er en egen øvelse, så den har ingen innebygd fremgangsmåte. Skriv dine egne stikkord under «Mine notater».', 'This is a custom exercise, so it has no built-in guide. Write your own notes under “My notes”.')}
       </p>
     );

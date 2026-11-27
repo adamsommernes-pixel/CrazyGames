@@ -34,7 +34,7 @@ export function ProgramList({
           role="radio"
           aria-checked={selected === 'none'}
           onClick={() => onSelect('none')}
-          className={`rounded-2xl border p-4 text-left transition ${selected === 'none' ? 'border-accent bg-accent-soft/30' : 'border-line bg-raised'}`}
+          className={`rounded-xl border p-4 text-left transition ${selected === 'none' ? 'border-accent bg-accent-soft/30' : 'border-line bg-raised'}`}
         >
           <span className="block font-semibold">{t('Ingen program, jeg lager mine egne', 'No program, I make my own')}</span>
           <span className="mt-0.5 block text-sm text-muted">{t('Du kan velge et program senere under Rutiner.', 'You can pick a program later under Routines.')}</span>
@@ -48,7 +48,7 @@ function ProgramOption({ program, recommended, selected, onSelect }: { program: 
   const [open, setOpen] = useState(false);
   const exMap = useExerciseMap();
   return (
-    <div className={`rounded-2xl border transition ${selected ? 'border-accent bg-accent-soft/30' : 'border-line bg-raised'}`}>
+    <div className={`rounded-xl border transition ${selected ? 'border-accent bg-accent-soft/30' : 'border-line bg-raised'}`}>
       <button type="button" role="radio" aria-checked={selected} onClick={onSelect} className="w-full p-4 pb-2 text-left">
         <span className="flex items-start justify-between gap-2">
           <span className="font-semibold">{program.name}</span>

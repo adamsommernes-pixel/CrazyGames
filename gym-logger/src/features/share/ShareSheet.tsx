@@ -108,7 +108,7 @@ export default function ShareSheet({ workoutId, onClose }: { workoutId: string; 
                 role="tab"
                 aria-selected={level === c.level}
                 onClick={() => setLevel(c.level)}
-                className={`flex flex-col items-center gap-0.5 rounded-2xl border px-1 py-2 text-xs font-semibold transition ${
+                className={`flex flex-col items-center gap-0.5 rounded-xl border px-1 py-2 text-xs font-semibold transition ${
                   level === c.level ? 'border-accent bg-accent-soft/40 text-accent-strong' : 'border-line bg-raised text-muted'
                 }`}
               >
@@ -120,7 +120,7 @@ export default function ShareSheet({ workoutId, onClose }: { workoutId: string; 
           <p className="text-center text-xs text-faint">{CARD_LEVELS[level - 1].text}</p>
 
           <div className="mx-auto w-full" style={{ maxWidth: `calc(34vh * ${ratio})` }}>
-            <div className="relative w-full overflow-hidden rounded-2xl border border-line bg-black shadow-2xl" style={{ aspectRatio: `${ratio}` }}>
+            <div className="relative w-full overflow-hidden rounded-xl border border-line bg-black shadow-2xl" style={{ aspectRatio: `${ratio}` }}>
               {preview ? (
                 <img src={preview} alt={t(`Delekort: ${CARD_LEVELS[level - 1].name}`, `Share card: ${CARD_LEVELS[level - 1].name}`)} className="h-full w-full animate-fade" />
               ) : (
@@ -148,7 +148,7 @@ export default function ShareSheet({ workoutId, onClose }: { workoutId: string; 
         <div className="fixed inset-0 z-[90] flex animate-fade flex-col items-center justify-center gap-3 bg-black/95 p-4" role="dialog" aria-modal="true" aria-label={t('Bilde', 'Image')}>
           <img src={fullImage} alt={t('Delekort', 'Share card')} className="max-h-[80vh] max-w-full rounded-xl" />
           <p className="text-sm text-muted">{t('Hold inne på bildet for å lagre eller dele det.', 'Press and hold the image to save or share it.')}</p>
-          <button type="button" onClick={() => setFullImage(null)} className="flex min-h-12 items-center gap-2 rounded-2xl bg-raised px-5 font-semibold">
+          <button type="button" onClick={() => setFullImage(null)} className="flex min-h-12 items-center gap-2 rounded-xl bg-raised px-5 font-semibold">
             <Icon name="x" size={18} /> {t('Lukk', 'Close')}
           </button>
         </div>

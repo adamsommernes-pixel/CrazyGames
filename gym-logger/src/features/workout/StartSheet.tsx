@@ -48,7 +48,7 @@ export function StartSheet() {
     <Sheet open={isOpen} onClose={() => set(false)} title={t('Start økt', 'Start workout')}>
       {data && data.routines.length > 0 && (
         <>
-          <h3 className="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{t('Dine rutiner', 'Your routines')}</h3>
+          <h3 className="mb-2 text-sm font-semibold text-muted">{t('Dine rutiner', 'Your routines')}</h3>
           <ul className="mb-5 flex flex-col gap-2">
             {data.routines.map(({ r, items }) => (
               <li key={r.id}>
@@ -70,12 +70,12 @@ export function StartSheet() {
         </>
       )}
       <div className="flex flex-col gap-2">
-        <button type="button" onClick={() => void go(() => startWorkout())} className="flex min-h-16 items-center gap-3 rounded-2xl bg-accent px-4 text-left font-semibold text-on-accent active:scale-[0.99]">
+        <button type="button" onClick={() => void go(() => startWorkout())} className="flex min-h-16 items-center gap-3 rounded-xl bg-accent px-4 text-left font-semibold text-on-accent active:scale-[0.99]">
           <Icon name="plus" size={24} strokeWidth={2.6} />
           <span className="flex-1 text-lg">{t('Tom økt', 'Empty workout')}</span>
         </button>
         {data?.last && (
-          <button type="button" onClick={() => void go(() => repeatWorkout(data.last!.id))} className="card flex min-h-14 items-center gap-3 rounded-2xl px-4 text-left active:bg-raised">
+          <button type="button" onClick={() => void go(() => repeatWorkout(data.last!.id))} className="card flex min-h-14 items-center gap-3 rounded-xl px-4 text-left active:bg-raised">
             <Icon name="repeat" className="text-accent" />
             <span className="flex-1">
               <span className="block font-semibold">{t('Gjenta forrige', 'Repeat last')}</span>
@@ -110,7 +110,7 @@ function PastWorkout({ onStart }: { onStart: (startedAt: string) => void }) {
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="card mt-4 flex min-h-14 w-full items-center gap-3 rounded-2xl px-4 text-left active:bg-raised">
+      <button type="button" onClick={() => setOpen(true)} className="card mt-4 flex min-h-14 w-full items-center gap-3 rounded-xl px-4 text-left active:bg-raised">
         <Icon name="calendar" className="text-accent" />
         <span className="flex-1">
           <span className="block font-semibold">{t('Logg tidligere økt', 'Log a past workout')}</span>

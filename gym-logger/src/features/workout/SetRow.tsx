@@ -177,7 +177,7 @@ export function SetRow({
   const firstLabel = kind === 'cardio' ? t('Distanse', 'Distance') : kind === 'weight' ? t('Vekt', 'Weight') : t('Ekstra vekt', 'Extra weight');
   return (
     <div
-      className={`rounded-2xl transition-colors ${done ? 'bg-accent-soft/25' : current ? 'bg-raised/60 ring-1 ring-accent/50' : ''}`}
+      className={`rounded-xl transition-colors ${done ? 'bg-accent-soft/25' : current ? 'bg-raised/60 ring-1 ring-accent/50' : ''}`}
       data-set-row
       data-done={done ? '1' : '0'}
       aria-current={current ? 'step' : undefined}

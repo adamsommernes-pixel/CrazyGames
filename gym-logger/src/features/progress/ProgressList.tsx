@@ -75,7 +75,7 @@ export function ProgressList() {
 
   return (
     <Page title={t('Fremgang', 'Progress')}>
-      <Link to="/bodyweight" className="card mb-4 flex items-center gap-3 rounded-3xl p-4 active:bg-raised">
+      <Link to="/bodyweight" className="card mb-4 flex items-center gap-3 rounded-xl p-4 active:bg-raised">
         <span className="grid size-10 place-items-center rounded-xl bg-raised text-accent">
           <Icon name="scale" size={20} />
         </span>

@@ -173,7 +173,7 @@ export function ExerciseCard({
           onClick={() => void applyWeightToPending(we.id, suggestion)}
           className="mb-2 flex w-full items-center gap-2 rounded-xl border border-accent/40 bg-accent-soft/30 px-3 py-2 text-left text-sm active:bg-accent-soft/50"
         >
-          <Icon name="sparkle" size={16} className="shrink-0 text-accent" />
+          <Icon name="up" size={16} className="shrink-0 text-accent" />
           <span className="flex-1">
             {t('Du klarte målet sist. Forslag:', 'You hit the goal last time. Suggestion:')}{' '}
             <span className="font-num font-bold text-accent-strong">
@@ -184,7 +184,7 @@ export function ExerciseCard({
         </button>
       )}
 
-      <div className={`${SET_GRID} px-1 pb-1 text-[11px] font-semibold tracking-wide text-faint uppercase`}>
+      <div className={`${SET_GRID} px-1 pb-1 text-[11px] font-semibold text-faint`}>
         <span className="text-center">Set</span>
         <span>{t('Forrige', 'Previous')}</span>
         <span className="text-center">{cols.first}</span>

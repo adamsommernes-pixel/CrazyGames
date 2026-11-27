@@ -24,7 +24,7 @@ export function Welcome() {
       </header>
 
       <section className="pt-10">
-        <h1 className="font-num text-[44px] leading-[1.02] font-bold tracking-tight">
+        <h1 className="text-[38px] leading-[1.05] font-bold tracking-tight">
           {t('Logg hvert løft.', 'Log every lift.')}
           <br />
           <span className="text-accent">{t('Se hver fremgang.', 'See every gain.')}</span>
@@ -75,7 +75,7 @@ function DemoCard() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div className="card mt-8 rounded-3xl p-4" aria-hidden="true">
+    <div className="card mt-8 rounded-xl p-4" aria-hidden="true">
       <div className="mb-3 flex items-center justify-between">
         <span className="font-num text-lg font-bold text-accent">{t('Benkpress', 'Bench press')}</span>
         <span className="text-sm text-faint">{t('Forrige', 'Last')}: 80 × 8</span>

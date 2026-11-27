@@ -38,7 +38,7 @@ export function BottomNav() {
   const active = useLiveQuery(() => getActiveWorkout(), []);
   const now = useNow(1000, !!active);
   return (
-    <nav className="pb-safe border-t border-line bg-bg/90 backdrop-blur-lg" aria-label={t('Hovedmeny', 'Main menu')}>
+    <nav className="pb-safe border-t border-line bg-bg" aria-label={t('Hovedmeny', 'Main menu')}>
       <ul className="mx-auto flex max-w-xl items-end">
         {left().map((t) => (
           <Tab key={t.to} {...t} />

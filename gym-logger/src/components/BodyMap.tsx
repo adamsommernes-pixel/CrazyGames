@@ -113,7 +113,7 @@ function Figure({
           );
         })}
       </svg>
-      <figcaption className="text-[11px] font-semibold tracking-wide text-faint uppercase">{title}</figcaption>
+      <figcaption className="text-[11px] font-semibold text-faint">{title}</figcaption>
     </figure>
   );
 }
@@ -165,7 +165,7 @@ export function BodyMap({ load, days, cardioSessions }: { load: Map<MuscleGroup,
       </div>
 
       {selected && (
-        <p className="mt-3 animate-fade rounded-2xl bg-raised px-4 py-3 text-sm" role="status">
+        <p className="mt-3 animate-fade rounded-xl bg-raised px-4 py-3 text-sm" role="status">
           <span className="font-semibold">{MUSCLE_LABEL[selected]}</span>
           {' · '}
           {sel && sel.sets > 0 ? (

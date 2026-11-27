@@ -26,7 +26,7 @@ export function EditExerciseSheet({ exercise, onClose, onDeleted }: { exercise: 
         {kind !== (exercise.kind ?? 'weight') && (
           <p className="rounded-xl bg-warn/10 px-3 py-2 text-sm text-warn">{t('Tidligere sets beholder tallene sine, men vises med den nye typen.', 'Earlier sets keep their numbers but are shown with the new type.')}</p>
         )}
-        <button type="submit" className="min-h-12 rounded-2xl bg-accent font-semibold text-on-accent">
+        <button type="submit" className="min-h-12 rounded-xl bg-accent font-semibold text-on-accent">
           {t('Lagre endringer', 'Save changes')}
         </button>
         <Button
