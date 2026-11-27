@@ -1,6 +1,8 @@
 import type { Exercise } from '../../db/types';
 import { EQUIPMENT_LABEL, KIND_LABEL, LEVEL_LABEL } from '../../db/types';
 import { guideFor } from '../../db/exercises';
+import { Link } from 'react-router-dom';
+import { isRanked } from '../../lib/strength';
 import { MuscleTag } from '../../components/MuscleTag';
 import { Icon, type IconName } from '../../components/Icon';
 import { t } from '../../i18n';
@@ -14,6 +16,12 @@ export function ExerciseMeta({ exercise }: { exercise: Exercise }) {
     <div className="flex flex-wrap items-center gap-1.5">
       <MuscleTag group={exercise.muscle_group} />
       {guide?.secondary.map((m) => <MuscleTag key={m} group={m} secondary />)}
+      {isRanked(exercise.id) && (
+        <Link to="/level" className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent-strong">
+          <Icon name="trophy" size={12} />
+          {t('Teller i styrkenivået', 'Counts towards your strength level')}
+        </Link>
+      )}
       <span className="rounded-full border border-line px-2.5 py-1 text-xs text-muted">{EQUIPMENT_LABEL[exercise.equipment]}</span>
       {guide && <span className="rounded-full border border-line px-2.5 py-1 text-xs text-muted">{LEVEL_LABEL[guide.level]}</span>}
       {exercise.kind && exercise.kind !== 'weight' && (
@@ -80,8 +88,8 @@ export function PerHandNote({ exercise }: { exercise: Exercise }) {
         <p className="mt-0.5 text-muted">
           {perHandHint(hand)}{' '}
           {t(
-            'Bruker du to manualer på 20 kg, skriver du 20. Rekordene og fremgangen din regnes ut fra dette, så de blir feil hvis du skriver 40.',
-            'If you use two 20 kg dumbbells, enter 20. Your records and progress are calculated from this, so entering 40 makes them wrong.',
+            'Bruker du to manualer på 20 kg, skriver du 20. Rekorder, fremgang og styrkenivå regnes ut fra dette, så de blir feil hvis du skriver 40.',
+            'If you use two 20 kg dumbbells, enter 20. Records, progress and strength level are calculated from this, so entering 40 makes them wrong.',
           )}
         </p>
       </div>

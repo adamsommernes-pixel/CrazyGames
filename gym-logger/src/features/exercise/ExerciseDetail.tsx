@@ -1,5 +1,7 @@
 import { Icon } from '../../components/Icon';
 import { Demo3DBadge, hasDemo } from './demo3d';
+import { RangePicker, useRange } from '../../components/RangePicker';
+import { inRange, rangeBounds, yearsWithData } from '../../lib/range';
 import { perHand, perHandHint } from '../../lib/perHand';
 import { halveSetWeights, restoreSetWeights, setIdsForExercise } from '../../db/repo';
 import { askConfirm } from '../../components/confirm';
@@ -71,13 +73,19 @@ export function ExerciseDetail() {
   const metric = METRICS[kind][Math.min(metricIdx, METRICS[kind].length - 1)];
   const fmt = (v: number) =>
     metric.suffix === 'weight' ? `${num(toDisplay(v, unit))} ${unit}` : metric.suffix === 'sec' ? duration(v * 1000) : `${num(v, 1)} ${metric.suffix}`;
+  const [range, setRange] = useRange();
+  const periodSessions = useMemo(() => {
+    const b = rangeBounds(range);
+    return (data?.sessions ?? []).filter((p) => inRange(p.date, b));
+  }, [data, range]);
+  const years = useMemo(() => yearsWithData((data?.sessions ?? []).map((p) => p.date)), [data]);
   const chart = useMemo(
     () =>
-      (data?.sessions ?? []).map((p) => ({
+      periodSessions.map((p) => ({
         date: dateShort(p.date),
         value: metric.suffix === 'weight' ? Math.round(toDisplay(p[metric.key], unit) * 10) / 10 : p[metric.key],
       })),
-    [data, metric, unit],
+    [periodSessions, metric, unit],
   );
 
   if (!data) return <Page title="" back>{null}</Page>;
@@ -181,7 +189,10 @@ export function ExerciseDetail() {
           )}
           <Records kind={kind} sessions={sessions} unit={unit} />
 
-          <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4">
+          <div className="mt-4">
+            <RangePicker value={range} onChange={setRange} years={years} />
+          </div>
+          <div className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4">
             {METRICS[kind].map((m, i) => (
               <Chip key={m.key} active={metric.key === m.key} onClick={() => setMetricIdx(i)}>
                 {m.label}
@@ -191,7 +202,11 @@ export function ExerciseDetail() {
 
           <Card className="mt-3 p-2 pt-4">
             {chart.length < 2 ? (
-              <p className="p-6 text-center text-muted">{t('Grafen vises når du har logget øvelsen minst to ganger.', 'The chart appears once you have logged the exercise at least twice.')}</p>
+              <p className="p-6 text-center text-muted">
+                {sessions.length >= 2
+                  ? t('For få økter i denne perioden til en graf. Velg et lengre tidsrom.', 'Too few workouts in this period for a chart. Choose a longer range.')
+                  : t('Grafen vises når du har logget øvelsen minst to ganger.', 'The chart appears once you have logged the exercise at least twice.')}
+              </p>
             ) : (
               <div className="h-56" role="img" aria-label={`${t('Graf', 'Chart')}: ${metric.label} ${t('over tid', 'over time')}`}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -215,7 +230,7 @@ export function ExerciseDetail() {
 
           <SectionTitle>{t('Økter', 'Workouts')}</SectionTitle>
           <ul className="flex flex-col gap-2">
-            {[...sessions].reverse().map((p) => (
+            {[...periodSessions].reverse().map((p) => (
               <li key={p.workoutId}>
                 <button type="button" className="w-full text-left" onClick={() => navigate(`/history/${p.workoutId}`)}>
                   <Card className="p-3">

@@ -1,8 +1,9 @@
 {
   "version": "1.2.0",
   "items": [
-    { "icon": "trophy", "nb": "Nytt styrkenivå: 11 løft teller. Benkpress, skråbenk, smal benk og militærpress; pull-ups, stangroing og nedtrekk; knebøy, markløft, rumensk markløft og beinspark. Nivået ditt kan derfor endre seg.", "en": "New strength level: 11 lifts count. Bench, incline bench, close-grip bench and overhead press; pull-ups, barbell row and lat pulldown; squat, deadlift, Romanian deadlift and leg extension. Your level may change." },
-    { "icon": "calendar", "nb": "Løft du ikke har trent på 30 dager, vises grått og teller ikke. Tren dem igjen, så teller de med en gang.", "en": "Lifts you have not trained in 30 days are shown in grey and do not count. Train them again and they count right away." },
+    { "icon": "calendar", "nb": "Velg tidsrom for all data og alle grafer: 7 dager, 30 dager, 12 måneder eller et bestemt år", "en": "Choose a time range for all data and charts: 7 days, 30 days, 12 months or a specific year" },
+    { "icon": "trophy", "nb": "Nytt styrkenivå: øvelsene som teller er merket «Nivå». Bl.a. benk, militærpress, pull-ups, roing, nedtrekk, knebøy, markløft, beinpress og manualbenk. Nivået ditt kan endre seg.", "en": "New strength level: exercises that count are marked “Level”. Including bench, overhead press, pull-ups, rows, lat pulldown, squat, deadlift, leg press and dumbbell bench. Your level may change." },
+    { "icon": "repeat", "nb": "Løft du ikke har trent på 30 dager, vises grått og teller ikke. Tren dem igjen, så teller de med en gang.", "en": "Lifts you have not trained in 30 days are shown in grey and do not count. Train them again and they count right away." },
     { "icon": "dumbbell", "nb": "Manualer og kettlebells: logg vekten på én. «Del på to» retter opp om du har logget begge til sammen.", "en": "Dumbbells and kettlebells: log the weight of one. “Halve it” fixes it if you logged both together." }
   ]
 }

@@ -9,6 +9,7 @@ import {
   strengthProfile,
   tierFor,
   fallbackBodyweight,
+  RANKED,
 } from './strength';
 
 const ANCH = [0.5, 0.75, 1.0, 1.5, 1.9, 2.4];
@@ -68,11 +69,6 @@ describe('strength scoring', () => {
     expect(inc.nextTierKg).toBeCloseTo(liftScore('ex-benkpress', 80, 80, 'male')!.nextTierKg! * 0.85);
   });
 
-  it('only main lifts are ranked: machines and dumbbells give no level', () => {
-    for (const slug of ['beinpress', 'hack-squat', 'sittende-roing', 'smith-benkpress', 'benkpress-med-manualer', 'skulderpress-med-manualer', 'hip-thrust', 'bulgarsk-splittboy', 't-bar-roing'])
-      expect(liftScore(`ex-${slug}`, 100, 80, 'male'), slug).toBeNull();
-    expect(liftScore('ex-benkpress', 100, 80, 'male')).not.toBeNull();
-  });
 
   it('ignores warm-ups, high-rep sets and unranked exercises', () => {
     const best = bestLifts([set('benkpress', 200, 1, 'warmup'), set('benkpress', 60, 20), set('sidehev', 20, 10)], 80);
@@ -110,11 +106,18 @@ describe('strength scoring', () => {
     expect(levelEventFor(first, [first], 80, 'male')!.before).toBeNull();
   });
 
-  it('only the 12 chosen lifts count; machines, dumbbells and other variants give no level', () => {
-    for (const slug of ['benkpress', 'skrabenk', 'smal-benkpress', 'militaerpress', 'pull-ups', 'stangroing', 'nedtrekk', 'kneboy', 'markloft', 'rumensk-markloft', 'beinspark'])
-      expect(liftScore(`ex-${slug}`, 100, 80, 'male'), slug).not.toBeNull();
-    for (const slug of ['dips', 'chin-ups', 'frontboy', 'sumo-markloft', 'trap-bar-markloft', 'pendlay-roing', 'sittende-militaerpress', 'box-squat', 'beinpress', 'benkpress-med-manualer', 'hip-thrust'])
+  it('exactly the chosen lifts count; other machines, dumbbell work and variants give no level', () => {
+    const counted = ['benkpress', 'skrabenk', 'smal-benkpress', 'militaerpress', 'benkpress-med-manualer', 'skrabenk-med-manualer', 'pull-ups', 'stangroing', 'nedtrekk', 'bicepscurl-med-manualer', 'kneboy', 'markloft', 'rumensk-markloft', 'beinspark', 'sumo-markloft', 'trap-bar-markloft', 'bulgarsk-splittboy', 'beinpress', 'hack-squat'];
+    expect(Object.keys(RANKED).sort()).toEqual([...counted].sort());
+    for (const slug of ['dips', 'chin-ups', 'frontboy', 'pendlay-roing', 'sittende-militaerpress', 'box-squat', 'hip-thrust', 'sittende-roing', 'smith-benkpress', 'skulderpress-med-manualer', 'bicepscurl-med-stang'])
       expect(liftScore(`ex-${slug}`, 100, 80, 'male'), slug).toBeNull();
+  });
+
+  it('dumbbell curl is scored per dumbbell against bodyweight and counts as pull', () => {
+    const c = liftScore('ex-bicepscurl-med-manualer', 18, 80, 'male')!; // 18/80 = 0,225 ≈ «middels»
+    expect(c.category).toBe('pull');
+    expect(c.score).toBeGreaterThan(45);
+    expect(c.score).toBeLessThan(55);
   });
 
   it('lifts not trained in the last 30 days are greyed out and do not count', () => {

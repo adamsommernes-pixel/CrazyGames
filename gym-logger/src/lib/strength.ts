@@ -56,7 +56,7 @@ export function progressInTier(score: number): number {
 type Anchors = [number, number, number, number, number, number];
 const SCORES = [10, 30, 50, 70, 85, 98];
 
-type AnchorId = 'bench' | 'squat' | 'deadlift' | 'ohp' | 'row' | 'pullup' | 'dip';
+type AnchorId = 'bench' | 'squat' | 'deadlift' | 'ohp' | 'row' | 'pullup' | 'dip' | 'curl';
 
 const STANDARDS: Record<AnchorId, { male: Anchors; female: Anchors; category: Category }> = {
   bench: { male: [0.5, 0.75, 1.0, 1.5, 1.9, 2.4], female: [0.3, 0.5, 0.8, 1.15, 1.5, 1.85], category: 'push' },
@@ -66,6 +66,8 @@ const STANDARDS: Record<AnchorId, { male: Anchors; female: Anchors; category: Ca
   pullup: { male: [1.0, 1.12, 1.3, 1.55, 1.85, 2.2], female: [0.9, 1.0, 1.15, 1.4, 1.65, 1.95], category: 'pull' },
   squat: { male: [0.75, 1.15, 1.5, 2.0, 2.6, 3.2], female: [0.5, 0.8, 1.2, 1.7, 2.3, 2.8], category: 'legs' },
   deadlift: { male: [1.0, 1.4, 1.85, 2.5, 3.0, 3.6], female: [0.65, 1.0, 1.45, 2.0, 2.6, 3.2], category: 'legs' },
+  // Bicepscurl med manual: 1RM per manual som andel av kroppsvekt. Teller under trekk.
+  curl: { male: [0.1, 0.15, 0.22, 0.3, 0.38, 0.48], female: [0.06, 0.09, 0.14, 0.2, 0.26, 0.33], category: 'pull' },
 };
 
 /** Sets som er mer enn så mye over verdensklasse regnes som tastefeil og teller ikke. */
@@ -79,7 +81,7 @@ export const MAX_REPS = 10;
  * `load: 'bw'` betyr at kroppsvekten legges til ekstravekten (pull-ups, dips).
  */
 /**
- * Løftene som teller i styrkenivået (11 stk). Alt annet logges som vanlig, men gir ikke nivå.
+ * Løftene som teller i styrkenivået (19 stk). Alt annet logges som vanlig, men gir ikke nivå.
  */
 export const RANKED: Record<string, { anchor: AnchorId; factor: number; load?: 'bw' }> = {
   // Press
@@ -87,15 +89,26 @@ export const RANKED: Record<string, { anchor: AnchorId; factor: number; load?: '
   skrabenk: { anchor: 'bench', factor: 0.85 },
   'smal-benkpress': { anchor: 'bench', factor: 0.9 },
   militaerpress: { anchor: 'ohp', factor: 1 },
+  // Manualer: vekten på én manual (40 kg per manual på flat benk ≈ 100 kg benkpress).
+  'benkpress-med-manualer': { anchor: 'bench', factor: 0.4 },
+  'skrabenk-med-manualer': { anchor: 'bench', factor: 0.35 },
   // Trekk
   'pull-ups': { anchor: 'pullup', factor: 1, load: 'bw' },
   stangroing: { anchor: 'row', factor: 1 },
   // Nedtrekk: vekta på stabelen tilsvarer omtrent kroppsvekt + ekstravekt i pull-ups.
   nedtrekk: { anchor: 'pullup', factor: 0.95 },
+  'bicepscurl-med-manualer': { anchor: 'curl', factor: 1 },
   // Bein
   kneboy: { anchor: 'squat', factor: 1 },
   markloft: { anchor: 'deadlift', factor: 1 },
   'rumensk-markloft': { anchor: 'deadlift', factor: 0.75 },
+  'sumo-markloft': { anchor: 'deadlift', factor: 1 },
+  'trap-bar-markloft': { anchor: 'deadlift', factor: 1.05 },
+  // Bulgarsk splittbøy: vekten på én manual (ca. 30 % av knebøy per manual).
+  'bulgarsk-splittboy': { anchor: 'squat', factor: 0.3 },
+  // Maskiner: stablene varierer, så faktorene er grove snitt.
+  beinpress: { anchor: 'squat', factor: 2.4 },
+  'hack-squat': { anchor: 'squat', factor: 1.15 },
   // Beinspark: maskinstabler varierer, men et typisk 1RM er rundt 70 % av knebøy.
   beinspark: { anchor: 'squat', factor: 0.7 },
 };

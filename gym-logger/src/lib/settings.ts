@@ -15,6 +15,8 @@ export interface Settings {
   haptics: boolean;
   /** Varsel fra serveren når pausen er over (virker med låst skjerm). Per enhet. */
   restPush: boolean;
+  /** Valgt tidsrom for data og grafer (felles for alle sider). */
+  statsRange: import('./range').Range;
   /** Hold skjermen på mens en økt pågår. */
   keepAwake: boolean;
   /** Øvelser merket med stjerne, vises først i øvelsesvelgeren. */
@@ -30,6 +32,7 @@ export const DEFAULTS: Settings = {
   sound: true,
   haptics: true,
   restPush: false,
+  statsRange: { kind: '30d' },
   keepAwake: true,
   favorites: [],
 };

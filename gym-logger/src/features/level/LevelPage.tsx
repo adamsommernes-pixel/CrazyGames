@@ -52,7 +52,7 @@ export function LevelPage() {
       <SectionTitle>{t('Dine løft', 'Your lifts')}</SectionTitle>
       {s.lifts.length === 0 ? (
         <Card className="p-3.5 text-sm text-muted">
-          {t('Logg benkpress, knebøy, markløft, roing eller pull-ups for å få et nivå.', 'Log bench press, squat, deadlift, rows or pull-ups to get a level.')}
+          {t('Logg en av øvelsene merket «Nivå», f.eks. benkpress, knebøy, markløft, roing eller pull-ups, for å få et nivå.', 'Log one of the exercises marked “Level”, e.g. bench press, squat, deadlift, rows or pull-ups, to get a level.')}
         </Card>
       ) : (
         <Card className="divide-y divide-line" data-lift-levels>
@@ -184,8 +184,8 @@ export function LevelPage() {
         </p>
         <p>
           {t(
-            `Elleve løft teller: benkpress, skråbenk, smal benkpress og militærpress (press), pull-ups, stangroing og nedtrekk (trekk), knebøy, markløft, rumensk markløft og beinspark (bein). Alt annet logges som vanlig, men gir ikke nivå. Et løft må være trent de siste ${ACTIVE_DAYS} dagene for å telle; ellers vises det grått. Olympia krever nær verdensklasse i alle tre kategoriene.`,
-            `Eleven lifts count: bench press, incline bench, close-grip bench and overhead press (push), pull-ups, barbell row and lat pulldown (pull), squat, deadlift, Romanian deadlift and leg extension (legs). Everything else is logged as usual but gives no level. A lift must be trained in the last ${ACTIVE_DAYS} days to count; otherwise it is shown in grey. Olympia needs close to world-class strength in all three categories.`,
+            `Disse løftene teller: se listen under Kategorier, og øvelsene er merket med «Nivå» i appen. Alt annet logges som vanlig, men gir ikke nivå. Et løft må være trent de siste ${ACTIVE_DAYS} dagene for å telle; ellers vises det grått. Olympia krever nær verdensklasse i alle tre kategoriene.`,
+            `These lifts count: see the list under Categories; the exercises are marked “Level” in the app. Everything else is logged as usual but gives no level. A lift must be trained in the last ${ACTIVE_DAYS} days to count; otherwise it is shown in grey. Olympia needs close to world-class strength in all three categories.`,
           )}
         </p>
       </Card>
@@ -195,9 +195,9 @@ export function LevelPage() {
 
 /** Hvilke løft som teller i hver kategori. */
 const CATEGORY_LIFTS: Record<Category, () => string> = {
-  push: () => t('benk, skråbenk, smal benk, militærpress', 'bench, incline bench, close-grip bench, overhead press'),
-  pull: () => t('pull-ups, stangroing, nedtrekk', 'pull-ups, barbell row, lat pulldown'),
-  legs: () => t('knebøy, markløft, rumensk markløft, beinspark', 'squat, deadlift, Romanian deadlift, leg extension'),
+  push: () => t('benk, skråbenk og smal benk (stang), benk og skråbenk med manualer, militærpress', 'bench, incline and close-grip bench (barbell), dumbbell bench and incline, overhead press'),
+  pull: () => t('pull-ups, stangroing, nedtrekk, bicepscurl med manualer', 'pull-ups, barbell row, lat pulldown, dumbbell curl'),
+  legs: () => t('knebøy, markløft, sumo- og trap bar-markløft, rumensk markløft, bulgarsk splittbøy, beinpress, hack squat, beinspark', 'squat, deadlift, sumo and trap bar deadlift, Romanian deadlift, Bulgarian split squat, leg press, hack squat, leg extension'),
 };
 
 function Note({ children }: { children: React.ReactNode }) {

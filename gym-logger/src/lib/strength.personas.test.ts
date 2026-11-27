@@ -23,8 +23,8 @@ const P: Persona[] = [
   { name: 'M avansert', sex: 'male', bw: 80, tiers: [6, 7], lifts: [['benkpress', 120], ['kneboy', 160], ['markloft', 200], ['pull-ups', 30, 5]] },
   { name: 'M nasjonalt nivå', sex: 'male', bw: 80, tiers: [8, 8], lifts: [['benkpress', 160], ['kneboy', 210], ['markloft', 240], ['pull-ups', 40, 5]] },
   { name: 'M verdensklasse', sex: 'male', bw: 80, tiers: [9, 9], lifts: [['benkpress', 195], ['kneboy', 260], ['markloft', 290], ['pull-ups', 60, 5]] },
-  { name: 'M bare maskiner (bare nedtrekk teller)', sex: 'male', bw: 80, tiers: [0, 1], lifts: [['beinpress', 300], ['hip-thrust', 200], ['smith-benkpress', 100], ['nedtrekk', 90]] },
-  { name: 'M enorme maskintall (bare nedtrekk teller)', sex: 'male', bw: 80, tiers: [0, 3], lifts: [['beinpress', 600], ['hip-thrust', 400], ['smith-benkpress', 200], ['nedtrekk', 160]] },
+  { name: 'M bare maskiner (beinpress og nedtrekk teller)', sex: 'male', bw: 80, tiers: [1, 3], lifts: [['beinpress', 300], ['hip-thrust', 200], ['smith-benkpress', 100], ['nedtrekk', 90]] },
+  { name: 'M enorme maskintall (beinpress og nedtrekk teller)', sex: 'male', bw: 80, tiers: [4, 6], lifts: [['beinpress', 600], ['hip-thrust', 400], ['smith-benkpress', 200], ['nedtrekk', 160]] },
   { name: 'M bare benk', sex: 'male', bw: 80, tiers: [1, 3], lifts: [['benkpress', 120]] },
   // Kvinner, 62 kg
   { name: 'K første måned', sex: 'female', bw: 62, tiers: [0, 1], lifts: [['benkpress', 20], ['kneboy', 30], ['stangroing', 20], ['nedtrekk', 30]] },

@@ -317,7 +317,7 @@ try {
   await lr.getByLabel('Vekt set 1 (kg)').blur();
 
   // 5e2. Endre rekkefølge: dra første øvelse ned én plass og flytt siste opp med pil
-  const cardTitles = () => page.locator('main h2').allInnerTexts();
+  const cardTitles = async () => (await page.locator('main h2').allInnerTexts()).map((x) => x.split('\n')[0].trim());
   await btn('Endre rekkefølge').click();
   await page.waitForTimeout(500); // arket glir opp
   const items = () => dialog().locator('[data-reorder-item]').allInnerTexts();
@@ -394,13 +394,18 @@ try {
   await bodyMap.waitFor();
   assert.match(await bodyMap.getAttribute('aria-label'), /Ikke trent: .*bryst/);
   await btn('Bein', { exact: true }).click();
-  await page.getByRole('status').filter({ hasText: /Bein · .*sets siste 7 dager/ }).waitFor();
+  await page.getByRole('status').filter({ hasText: /Bein · .*sets siste 30 dager/ }).waitFor();
   await page.waitForTimeout(350);
   await page.getByRole('region', { name: 'Trent kropp' })
     .screenshot({ path: `tests/screens/${String(++n).padStart(2, '0')}-kroppskart.png` });
-  await btn('30 d').click();
-  await page.getByRole('status').filter({ hasText: /siste 30 dager/ }).waitFor();
+  // Tidsrom: 7 d, 12 mnd og år virker på kroppskartet
   await btn('7 d').click();
+  await page.getByRole('status').filter({ hasText: /siste 7 dager/ }).waitFor();
+  await btn('12 mnd').click();
+  await page.getByRole('status').filter({ hasText: /siste 12 måneder/ }).waitFor();
+  await page.getByLabel('Velg år').selectOption(String(new Date().getFullYear()));
+  await page.getByRole('status').filter({ hasText: new RegExp(`Bein · .* i ${new Date().getFullYear()}`) }).waitFor();
+  await btn('30 d').click();
 
   // 6. Historikk og kalender
   await page.getByRole('navigation').getByRole('link', { name: 'Historikk' }).click();
@@ -422,8 +427,11 @@ try {
 
   // 7. Fremgang og øvelse
   await page.getByRole('navigation').getByRole('link', { name: 'Fremgang' }).click();
-  await page.getByText('Siste 12 uker').waitFor();
+  await page.getByRole('heading', { name: 'Siste 30 dager', exact: true }).waitFor();
+  await btn('12 mnd').click();
+  await page.getByRole('heading', { name: 'Siste 12 måneder', exact: true }).waitFor();
   await shot('fremgang');
+  await btn('30 d').click();
   await btn(/Knebøy/).click();
   await page.getByRole('img', { name: /Graf/ }).waitFor();
   await page.getByText('Prosent av 1RM').waitFor();

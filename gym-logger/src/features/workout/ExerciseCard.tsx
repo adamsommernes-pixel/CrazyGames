@@ -36,6 +36,7 @@ import { SET_GRID, SetRow } from './SetRow';
 import { ExercisePicker } from './ExercisePicker';
 import { ExerciseInfoSheet } from '../exercise/ExerciseInfoSheet';
 import { Demo3DBadge, hasDemo } from '../exercise/demo3d';
+import { RankedBadge } from '../level/RankedBadge';
 import { startRest } from './restTimer';
 import { duration, fromDisplay, num, toDisplay } from '../../lib/format';
 import { useSetting } from '../../lib/settings';
@@ -137,6 +138,7 @@ export function ExerciseCard({
           <h2 className="flex items-center gap-2 truncate text-base font-bold text-accent">
             {exercise && <MuscleDot group={exercise.muscle_group} size={9} />}
             <span className="truncate">{exerciseName(exercise)}</span>
+            <RankedBadge exerciseId={we.exercise_id} />
           </h2>
           <p className="font-num text-xs text-faint">
             {doneCount}/{sorted.length} sets
