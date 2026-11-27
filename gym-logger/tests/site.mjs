@@ -44,6 +44,12 @@ try {
     assert.ok(await img.evaluate((i) => i.complete && i.naturalWidth > 0), `bildet lastet: ${await img.getAttribute('src')}`);
   }
   assert.equal(await page.getByText(/Gratis · ingen reklame/).count(), 0, 'ingen salgspunkt-linje');
+  // Nettsiden er svart-hvit: ingen farger i CSS-en (skjermbildene er bilder og teller ikke).
+  const css = await page.evaluate(() => [...document.styleSheets].flatMap((sh) => [...sh.cssRules].map((r) => r.cssText)).join(' '));
+  const colours = [...css.matchAll(/#([0-9a-f]{6})\b/gi)].map((m) => m[1].toLowerCase());
+  const grey = (h) => h.slice(0, 2) === h.slice(2, 4) && h.slice(2, 4) === h.slice(4, 6);
+  assert.deepEqual(colours.filter((h) => !grey(h)), [], 'bare gråtoner i nettsidens CSS');
+  assert.ok(!/rgb\((?!(\d+), \1, \1)/.test(css), 'ingen fargede rgb()-verdier');
   await page.getByText('Hvor lagres dataene mine?').click();
   await page.getByRole('link', { name: 'Les personvernerklæringen' }).click();
   await page.getByRole('heading', { name: 'Kroppsdata er særlig beskyttet' }).waitFor();

@@ -148,7 +148,7 @@ export function ExerciseDetail() {
                       labelStyle={{ color: '#9ba59f' }}
                       formatter={(v) => [metric.suffix === 'weight' ? `${num(Number(v))} ${unit}` : fmt(Number(v)), metric.label]}
                     />
-                    <Line type="monotone" dataKey="value" stroke={currentAccent().accent} strokeWidth={2.5} dot={{ r: 3, fill: '#2bd66b', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#7dffaa' }} />
+                    <Line type="monotone" dataKey="value" stroke={currentAccent().accent} strokeWidth={2.5} dot={{ r: 3, fill: 'var(--color-accent, #34c56a)', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#7dffaa' }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

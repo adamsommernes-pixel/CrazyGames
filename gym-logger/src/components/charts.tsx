@@ -19,7 +19,7 @@ export function LineTrend({ data, label, unit }: { data: { x: string; y: number 
           <XAxis dataKey="x" {...AXIS} minTickGap={16} />
           <YAxis {...AXIS} width={44} domain={['auto', 'auto']} />
           <Tooltip {...TOOLTIP} formatter={(v) => [`${Number(v).toLocaleString(locale(), { maximumFractionDigits: 1 })} ${unit}`, label]} />
-          <Line type="monotone" dataKey="y" stroke={currentAccent().accent} strokeWidth={2.5} dot={{ r: 3, fill: '#2bd66b', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#7dffaa' }} />
+          <Line type="monotone" dataKey="y" stroke={currentAccent().accent} strokeWidth={2.5} dot={{ r: 3, fill: 'var(--color-accent, #34c56a)', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#7dffaa' }} />
         </LineChart>
       </ResponsiveContainer>
     </div>
