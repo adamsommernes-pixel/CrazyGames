@@ -1,3 +1,5 @@
+import { Icon } from '../../components/Icon';
+import { Demo3DBadge, hasDemo } from './demo3d';
 import { currentAccent } from '../../lib/theme';
 import { LiftLevel } from '../level/LiftLevel';
 import { useMemo, useState } from 'react';
@@ -51,6 +53,7 @@ export function ExerciseDetail() {
   const prMap = usePRMap();
   const [metricIdx, setMetricIdx] = useState(0);
   const [tab, setTab] = useState<'overview' | 'guide' | null>(null);
+  const [autoDemo, setAutoDemo] = useState(false);
   const [editing, setEditing] = useState(false);
   const data = useLiveQuery(async () => {
     const exercise = await db.exercises.get(exerciseId);
@@ -111,16 +114,38 @@ export function ExerciseDetail() {
             className={`min-h-10 rounded-xl text-sm font-semibold transition ${shownTab === tab_ ? 'bg-surface text-ink shadow' : 'text-muted'}`}
           >
             {tab_ === 'overview' ? t('Oversikt', 'Overview') : t('Slik gjør du', 'How to')}
+            {tab_ === 'guide' && hasDemo(exercise) && <Demo3DBadge className="ml-1.5 align-middle" />}
           </button>
         ))}
       </div>
 
       {shownTab === 'guide' ? (
         <>
-          <ExerciseGuide exercise={exercise} />
+          <ExerciseGuide exercise={exercise} autoStartDemo={autoDemo} />
           <ExerciseNotes exerciseId={exerciseId} />
         </>
-      ) : sessions.length === 0 ? (
+      ) : (
+        <>
+          {hasDemo(exercise) && (
+            <button
+              type="button"
+              onClick={() => {
+                setAutoDemo(true);
+                setTab('guide');
+              }}
+              className="mb-3 flex w-full items-center gap-3 rounded-xl border border-line bg-raised px-3 py-2.5 text-left active:bg-line"
+            >
+              <span className="grid size-9 place-items-center rounded-lg bg-accent-soft text-accent-strong">
+                <Icon name="play" size={16} filled />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold">{t('Se øvelsen i 3D', 'Watch it in 3D')}</span>
+                <span className="block text-xs text-muted">{t('Animert demo av riktig teknikk', 'Animated demo of the right technique')}</span>
+              </span>
+              <Demo3DBadge />
+            </button>
+          )}
+          {sessions.length === 0 ? (
         <EmptyState icon="chart" title={t('Ingen fullførte sets', 'No completed sets')} text={t('Logg øvelsen i en økt for å se rekorder og grafer.', 'Log the exercise in a workout to see records and charts.')} />
       ) : (
         <>
@@ -178,6 +203,8 @@ export function ExerciseDetail() {
               </li>
             ))}
           </ul>
+        </>
+          )}
         </>
       )}
 

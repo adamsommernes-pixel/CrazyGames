@@ -31,7 +31,7 @@ async function recentSessions(exerciseId: string, limit = 5) {
  * Infoark for en øvelse, tilgjengelig uten å forlate økta:
  * fremgangsmåte og de siste øktene. Stjerne for favoritt.
  */
-export function ExerciseInfoSheet({ exercise, onClose }: { exercise: Exercise | null; onClose: () => void }) {
+export function ExerciseInfoSheet({ exercise, onClose, demo = false }: { exercise: Exercise | null; onClose: () => void; demo?: boolean }) {
   const navigate = useNavigate();
   const unit = useSetting('unit');
   const favorites = useSetting('favorites');
@@ -68,7 +68,7 @@ export function ExerciseInfoSheet({ exercise, onClose }: { exercise: Exercise | 
       </div>
 
       {tab === 'guide' ? (
-        <ExerciseGuide exercise={exercise} />
+        <ExerciseGuide exercise={exercise} autoStartDemo={demo} />
       ) : sessions.length === 0 ? (
         <p className="py-6 text-center text-muted">{t('Du har ikke logget denne øvelsen ennå.', 'You have not logged this exercise yet.')}</p>
       ) : (

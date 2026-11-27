@@ -24,6 +24,7 @@ import { matchesSearch } from '../../lib/search';
 import { useSetting } from '../../lib/settings';
 import { formatSetShort, registerKinds } from '../../lib/kinds';
 import { exerciseName, searchNames } from '../../lib/exerciseName';
+import { Demo3DBadge, hasDemo } from '../exercise/demo3d';
 import { t } from '../../i18n';
 
 export function useExercises(): Exercise[] {
@@ -135,7 +136,10 @@ export function ExercisePicker({
         >
           <MuscleDot group={e.muscle_group} size={10} />
           <span className="min-w-0 flex-1">
-            <span className={`block truncate font-medium ${on ? 'text-accent-strong' : ''}`}>{exerciseName(e)}</span>
+            <span className={`flex items-center gap-1.5 font-medium ${on ? 'text-accent-strong' : ''}`}>
+              <span className="truncate">{exerciseName(e)}</span>
+              {hasDemo(e) && <Demo3DBadge className="shrink-0" />}
+            </span>
             <span className="block truncate text-sm text-muted">
               {MUSCLE_LABEL[e.muscle_group]} · {EQUIPMENT_LABEL[e.equipment]}
               {e.custom ? ` · ${t('Egen', 'Custom')}` : ''}

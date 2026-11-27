@@ -32,6 +32,7 @@ import { Icon } from '../../components/Icon';
 import { SET_GRID, SetRow } from './SetRow';
 import { ExercisePicker } from './ExercisePicker';
 import { ExerciseInfoSheet } from '../exercise/ExerciseInfoSheet';
+import { Demo3DBadge, hasDemo } from '../exercise/demo3d';
 import { startRest } from './restTimer';
 import { duration, fromDisplay, num, toDisplay } from '../../lib/format';
 import { useSetting } from '../../lib/settings';
@@ -77,6 +78,7 @@ export function ExerciseCard({
   const [notes, setNotes] = useState(we.notes);
   const notesSave = useAutosave(600);
   const [info, setInfo] = useState(false);
+  const [demo, setDemo] = useState(false);
   const navigate = useNavigate();
   const [swapping, setSwapping] = useState(false);
 
@@ -131,7 +133,20 @@ export function ExerciseCard({
             {!isWeight ? ` · ${KIND_LABEL[kind]}` : ''} · {t('hvile', 'rest')} {duration(we.rest_seconds * 1000)}
           </p>
         </button>
-        <IconButton icon="info" label={t('Slik gjør du', 'How to')} onClick={() => setInfo(true)} />
+        {exercise && hasDemo(exercise) && (
+          <button
+            type="button"
+            aria-label={t(`3D-demo av ${exerciseName(exercise)}`, `3D demo of ${exerciseName(exercise)}`)}
+            onClick={() => {
+              setDemo(true);
+              setInfo(true);
+            }}
+            className="grid size-10 shrink-0 place-items-center rounded-lg active:bg-raised"
+          >
+            <Demo3DBadge className="px-2 py-0.5 text-[11px]" />
+          </button>
+        )}
+        <IconButton icon="info" label={t('Slik gjør du', 'How to')} onClick={() => { setDemo(false); setInfo(true); }} />
         {barbell && <IconButton icon="plates" label={t('Platekalkulator', 'Plate calculator')} onClick={openPlates} />}
         <IconButton icon="more" label={t('Valg for øvelse', 'Exercise options')} onClick={() => setMenu(true)} />
       </div>
@@ -287,7 +302,7 @@ export function ExerciseCard({
       </Sheet>
 
       <SetEditor set={editing} unit={unit} kind={kind} onClose={() => setEditing(null)} />
-      {info && exercise && <ExerciseInfoSheet exercise={exercise} onClose={() => setInfo(false)} />}
+      {info && exercise && <ExerciseInfoSheet exercise={exercise} demo={demo} onClose={() => setInfo(false)} />}
       <ExercisePicker
         open={swapping}
         single

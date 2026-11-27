@@ -187,6 +187,11 @@ try {
   await levelUp().getByRole('button', { name: 'Se styrkenivå' }).waitFor();
   await levelUp().getByRole('button', { name: 'Fortsett' }).click();
   await levelUp().waitFor({ state: 'detached' });
+  // 3D-knappen på Knebøy-kortet åpner demoen direkte
+  await btn('3D-demo av Knebøy').click();
+  await dialog().locator('[data-demo3d="kneboy"] canvas').waitFor();
+  await dialog().getByRole('button', { name: 'Lukk' }).last().click();
+  await dialog().waitFor({ state: 'detached' });
   // Trykk på øvelsesnavnet åpner øvelsessiden; tilbake går til økta som fortsatt pågår
   await btn(/^Knebøy: rekorder, grafer og historikk/).first().click();
   await page.getByRole('tab', { name: 'Oversikt' }).waitFor();

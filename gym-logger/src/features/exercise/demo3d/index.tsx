@@ -8,6 +8,15 @@ import { t } from '../../../i18n';
 // three.js lastes først når en demo vises, så resten av appen ikke blir tyngre.
 const ExerciseDemo3D = lazy(() => import('./ExerciseDemo3D'));
 
+/** Lite «3D»-merke for øvelser med demo (velgeren, fanen og knappen i økta). */
+export function Demo3DBadge({ className = '' }: { className?: string }) {
+  return (
+    <span className={`inline-flex items-center rounded-md border border-accent/40 bg-accent-soft px-1.5 text-[10px] leading-4 font-bold text-accent-strong ${className}`} aria-hidden="true">
+      3D
+    </span>
+  );
+}
+
 /** De 12 store løftene har 3D-demo (samme liste som beholder norsk navn; testene sjekker at de stemmer). */
 export const hasDemo = (ex: Pick<Exercise, 'id' | 'custom'>) => !ex.custom && NB_NAMED.has(ex.id.replace(/^ex-/, ''));
 
@@ -15,8 +24,8 @@ export const hasDemo = (ex: Pick<Exercise, 'id' | 'custom'>) => !ex.custom && NB
  * 3D-demo for de store løftene. Viser først et stillbilde med ▶; three.js lastes og starter først
  * når brukeren trykker, så siden er like rask som før for dem som bare vil lese.
  */
-export function ExerciseDemo({ exercise }: { exercise: Exercise }) {
-  const [started, setStarted] = useState(false);
+export function ExerciseDemo({ exercise, autoStart = false }: { exercise: Exercise; autoStart?: boolean }) {
+  const [started, setStarted] = useState(autoStart);
   if (!hasDemo(exercise)) return null;
   const slug = exercise.id.replace(/^ex-/, '');
   const name = exerciseName(exercise);
