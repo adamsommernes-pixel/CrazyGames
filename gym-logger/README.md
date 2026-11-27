@@ -216,3 +216,7 @@ Appen viser «Versjon 1.0.0 (bygg 42 · a1b2c3d)» nederst i Profil:
 
 - **1.0.0** står i `package.json`. Øk det ved hver utgivelse: siste tall for småfikser (1.0.1), midterste for nye funksjoner (1.1.0).
 - **Bygg** er GitHub Actions sitt løpenummer og commit-ID, så hver publisering har sitt eget, unike nummer automatisk. Lokalt står det «lokal».
+
+## Tredjepartsinnhold
+
+- **Kroppskartet** bruker muskelpolygoner fra [react-body-highlighter](https://github.com/giavinh79/react-body-highlighter) (MIT-lisens, Copyright (c) 2020 GV79), glattet og omtegnet i `src/components/bodymap/anatomy.ts`.

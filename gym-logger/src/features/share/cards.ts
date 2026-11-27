@@ -1,7 +1,7 @@
 import { createElement, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { StaticBody } from '../../components/BodyMap';
+import { STATIC_BODY_RATIO, StaticBody } from '../../components/BodyMap';
 import { TierEmblem, tierAccent } from '../../components/TierBadge';
 import { currentAccent } from '../../lib/theme';
 import type { MuscleGroup } from '../../db/types';
@@ -302,7 +302,7 @@ function stats(ctx: Ctx, w: number, h: number, data: ShareData, top: number, bot
 }
 
 function bodyBlock(ctx: Ctx, body: HTMLImageElement, x: number, y: number, maxW: number, maxH: number) {
-  const ratio = 234 / 250;
+  const ratio = STATIC_BODY_RATIO;
   let bw = maxW;
   let bh = bw * ratio;
   if (bh > maxH) {
