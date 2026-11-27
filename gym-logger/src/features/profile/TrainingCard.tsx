@@ -54,10 +54,10 @@ export function TrainingCard() {
               key={g}
               type="button"
               onClick={() => { save({ goal: g }); setEditing(null); }}
-              className={`flex items-start gap-3 rounded-2xl border p-3 text-left ${p.goal === g ? 'border-green bg-green-dim/30' : 'border-line bg-raised'}`}
+              className={`flex items-start gap-3 rounded-xl border p-3 text-left ${p.goal === g ? 'border-accent bg-accent-soft/30' : 'border-line bg-raised'}`}
               aria-pressed={p.goal === g}
             >
-              <Icon name={GOAL_INFO[g].icon} className="mt-0.5 text-green" />
+              <Icon name={GOAL_INFO[g].icon} className="mt-0.5 text-accent" />
               <span>
                 <span className="block font-semibold">{GOAL_LABEL[g]}</span>
                 <span className="block text-sm text-muted">{GOAL_INFO[g].text}</span>
@@ -76,13 +76,13 @@ export function TrainingCard() {
               type="button"
               aria-pressed={p.weekly_target === n}
               onClick={() => { save({ weekly_target: n }); setEditing(null); }}
-              className={`font-num aspect-square rounded-2xl border text-xl font-bold ${p.weekly_target === n ? 'border-green bg-green text-black' : 'border-line bg-raised'}`}
+              className={`font-num aspect-square rounded-xl border text-xl font-bold ${p.weekly_target === n ? 'border-accent bg-accent text-on-accent' : 'border-line bg-raised'}`}
             >
               {n}
             </button>
           ))}
         </div>
-        <Link to={`/programs?days=${Math.min(6, Math.max(2, p.weekly_target))}`} className="mt-4 block text-center text-sm font-semibold text-green" onClick={() => setEditing(null)}>
+        <Link to={`/programs?days=${Math.min(6, Math.max(2, p.weekly_target))}`} className="mt-4 block text-center text-sm font-semibold text-accent" onClick={() => setEditing(null)}>
           {t('Finn et program for dette antallet dager →', 'Find a program for this many days →')}
         </Link>
       </Sheet>
@@ -107,12 +107,12 @@ export function TrainingCard() {
 function Row({ icon, label, value, onClick, to, action }: { icon: IconName; label: string; value: string; onClick?: () => void; to?: string; action?: string }) {
   const inner = (
     <>
-      <Icon name={icon} size={20} className="shrink-0 text-green" />
+      <Icon name={icon} size={20} className="shrink-0 text-accent" />
       <span className="min-w-0 flex-1">
         <span className="block text-sm text-muted">{label}</span>
         <span className="block truncate font-semibold">{value}</span>
       </span>
-      {action ? <span className="text-sm font-semibold text-green">{action}</span> : <Icon name="chevron" size={18} className="text-faint" />}
+      {action ? <span className="text-sm font-semibold text-accent">{action}</span> : <Icon name="chevron" size={18} className="text-faint" />}
     </>
   );
   const cls = 'flex w-full items-center gap-3 px-4 py-3 text-left active:bg-raised';

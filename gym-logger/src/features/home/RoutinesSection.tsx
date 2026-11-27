@@ -31,19 +31,19 @@ export function RoutinesSection() {
 
   return (
     <section aria-labelledby="routines-title">
-      <div className="mb-2 flex items-baseline justify-between px-1">
-        <h2 id="routines-title" className="text-sm font-semibold tracking-wide text-muted uppercase">
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <h2 id="routines-title" className="px-1 text-[15px] font-semibold text-ink">
           {t('Dine rutiner', 'Your routines')}
         </h2>
-        <div className="flex gap-4 text-sm font-medium text-green">
+        <div className="flex gap-4 text-sm font-medium text-accent">
           <Link to="/programs">{t('Finn et program', 'Find a program')}</Link>
           {data.routines.length > 0 && <Link to="/routines">{t('Se alle', 'See all')}</Link>}
         </div>
       </div>
 
       {data.routines.length === 0 ? (
-        <Link to="/programs" className="card flex items-center gap-3 rounded-3xl p-4">
-          <span className="grid size-10 place-items-center rounded-xl bg-green text-black">
+        <Link to="/programs" className="card flex items-center gap-3 rounded-xl p-4">
+          <span className="grid size-10 place-items-center rounded-xl bg-accent text-on-accent">
             <Icon name="list" size={20} />
           </span>
           <span className="min-w-0 flex-1">
@@ -53,12 +53,12 @@ export function RoutinesSection() {
           <Icon name="chevron" size={18} className="text-faint" />
         </Link>
       ) : (
-        <ul className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1" aria-label={t('Rutiner', 'Routines')}>
+        <ul className="-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1" aria-label={t('Rutiner', 'Routines')}>
           {data.routines.map(({ r, count }) => (
             <li key={r.id} className="w-44 shrink-0 snap-start">
-              <div className={`card flex h-full flex-col rounded-3xl p-4 ${r.id === data.nextId ? 'border-green/60' : ''}`}>
-                {r.id === data.nextId && <span className="mb-1 text-[11px] font-semibold tracking-wide text-green uppercase">{t('Står for tur', 'Up next')}</span>}
-                <Link to={`/routines/${r.id}`} className="font-num line-clamp-2 text-lg leading-tight font-bold">
+              <div className={`card flex h-full flex-col rounded-xl p-4 ${r.id === data.nextId ? 'border-accent/60' : ''}`}>
+                {r.id === data.nextId && <span className="mb-1 text-[11px] font-semibold text-muted">{t('Står for tur', 'Up next')}</span>}
+                <Link to={`/routines/${r.id}`} className="line-clamp-2 text-base leading-tight font-semibold">
                   {r.name}
                 </Link>
                 <span className="mt-1 text-sm text-muted">{t(`${count} øvelser`, `${count} exercises`)}</span>
@@ -67,7 +67,7 @@ export function RoutinesSection() {
                   disabled={!count}
                   onClick={() => void start(r.id)}
                   aria-label={`${t('Start rutinen', 'Start the routine')} ${r.name}`}
-                  className="mt-auto flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-raised pt-0 text-sm font-semibold text-green disabled:opacity-40"
+                  className="mt-auto flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-raised pt-0 text-sm font-semibold text-accent disabled:opacity-40"
                   style={{ marginTop: 12 }}
                 >
                   <Icon name="play" size={16} /> {t('Start', 'Start')}

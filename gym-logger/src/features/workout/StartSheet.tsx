@@ -48,20 +48,20 @@ export function StartSheet() {
     <Sheet open={isOpen} onClose={() => set(false)} title={t('Start økt', 'Start workout')}>
       {data && data.routines.length > 0 && (
         <>
-          <h3 className="mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{t('Dine rutiner', 'Your routines')}</h3>
+          <h3 className="mb-2 text-sm font-semibold text-muted">{t('Dine rutiner', 'Your routines')}</h3>
           <ul className="mb-5 flex flex-col gap-2">
             {data.routines.map(({ r, items }) => (
               <li key={r.id}>
                 <button type="button" className="w-full text-left" disabled={!items.length} onClick={() => void go(() => startWorkout({ routineId: r.id }))}>
-                  <Card className={`flex items-center gap-3 p-4 ${data.next?.id === r.id ? 'border-green/60' : ''}`}>
+                  <Card className={`flex items-center gap-3 p-4 ${data.next?.id === r.id ? 'border-accent/60' : ''}`}>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span className="font-semibold">{r.name}</span>
-                        {data.next?.id === r.id && <span className="rounded-full bg-green-dim px-2 py-0.5 text-[11px] font-semibold text-green-light">{t('Neste', 'Next')}</span>}
+                        {data.next?.id === r.id && <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent-strong">{t('Neste', 'Next')}</span>}
                       </span>
                       <span className="mt-0.5 line-clamp-1 block text-sm text-muted">{items.map((i) => exerciseName(exMap.get(i.exercise_id))).join(', ')}</span>
                     </span>
-                    <Icon name="play" className="text-green" />
+                    <Icon name="play" className="text-accent" />
                   </Card>
                 </button>
               </li>
@@ -70,13 +70,13 @@ export function StartSheet() {
         </>
       )}
       <div className="flex flex-col gap-2">
-        <button type="button" onClick={() => void go(() => startWorkout())} className="flex min-h-16 items-center gap-3 rounded-2xl bg-green px-4 text-left font-semibold text-black shadow-glow active:scale-[0.99]">
+        <button type="button" onClick={() => void go(() => startWorkout())} className="flex min-h-16 items-center gap-3 rounded-xl bg-accent px-4 text-left font-semibold text-on-accent active:scale-[0.99]">
           <Icon name="plus" size={24} strokeWidth={2.6} />
           <span className="flex-1 text-lg">{t('Tom økt', 'Empty workout')}</span>
         </button>
         {data?.last && (
-          <button type="button" onClick={() => void go(() => repeatWorkout(data.last!.id))} className="card flex min-h-14 items-center gap-3 rounded-2xl px-4 text-left active:bg-raised">
-            <Icon name="repeat" className="text-green" />
+          <button type="button" onClick={() => void go(() => repeatWorkout(data.last!.id))} className="card flex min-h-14 items-center gap-3 rounded-xl px-4 text-left active:bg-raised">
+            <Icon name="repeat" className="text-accent" />
             <span className="flex-1">
               <span className="block font-semibold">{t('Gjenta forrige', 'Repeat last')}</span>
               <span className="block text-sm text-muted">
@@ -88,10 +88,10 @@ export function StartSheet() {
       </div>
       <PastWorkout onStart={(startedAt) => void go(() => startWorkout({ startedAt }))} />
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <button type="button" className="py-3 text-center font-medium text-green" onClick={() => { set(false); navigate('/routines'); }}>
+        <button type="button" className="py-3 text-center font-medium text-accent" onClick={() => { set(false); navigate('/routines'); }}>
           {t('Administrer rutiner', 'Manage routines')}
         </button>
-        <button type="button" className="py-3 text-center font-medium text-green" onClick={() => { set(false); navigate('/programs'); }}>
+        <button type="button" className="py-3 text-center font-medium text-accent" onClick={() => { set(false); navigate('/programs'); }}>
           {t('Finn et program', 'Find a program')}
         </button>
       </div>
@@ -110,8 +110,8 @@ function PastWorkout({ onStart }: { onStart: (startedAt: string) => void }) {
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="card mt-4 flex min-h-14 w-full items-center gap-3 rounded-2xl px-4 text-left active:bg-raised">
-        <Icon name="calendar" className="text-green" />
+      <button type="button" onClick={() => setOpen(true)} className="card mt-4 flex min-h-14 w-full items-center gap-3 rounded-xl px-4 text-left active:bg-raised">
+        <Icon name="calendar" className="text-accent" />
         <span className="flex-1">
           <span className="block font-semibold">{t('Logg tidligere økt', 'Log a past workout')}</span>
           <span className="block text-sm text-muted">{t('Glemte du å logge? Legg den inn i ettertid.', 'Forgot to log? Add it afterwards.')}</span>

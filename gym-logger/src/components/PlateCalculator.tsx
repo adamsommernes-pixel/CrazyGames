@@ -19,7 +19,7 @@ export function PlateCalculator({ targetKg, barKg, plates }: { targetKg: number;
   const r = platesPerSide(targetKg, barKg, plates);
   return (
     <div>
-      <div className="card relative flex h-32 items-center overflow-hidden rounded-3xl px-3" role="img" aria-label={`${t('Hver side', 'Each side')}: ${r.perSide.length ? r.perSide.map((p) => `${num(p, 2)} kg`).join(', ') : t('ingen skiver', 'no plates')}`}>
+      <div className="card relative flex h-32 items-center overflow-hidden rounded-xl px-3" role="img" aria-label={`${t('Hver side', 'Each side')}: ${r.perSide.length ? r.perSide.map((p) => `${num(p, 2)} kg`).join(', ') : t('ingen skiver', 'no plates')}`}>
         <div className="absolute inset-x-3 top-1/2 h-2.5 -translate-y-1/2 rounded-full bg-[#7c847f]" />
         <div className="relative z-10 h-8 w-4 rounded-sm bg-[#9ba59f]" />
         <div className="relative z-10 flex items-center gap-[3px] pl-1">

@@ -28,13 +28,13 @@ export function RoutineList() {
   };
 
   return (
-    <Page title={t('Rutiner', 'Routines')} actions={<IconButton icon="plus" label={t('Ny rutine', 'New routine')} className="text-green" onClick={() => navigate('/routines/new')} />}>
+    <Page title={t('Rutiner', 'Routines')} actions={<IconButton icon="plus" label={t('Ny rutine', 'New routine')} className="text-accent" onClick={() => navigate('/routines/new')} />}>
       <button
         type="button"
         onClick={() => navigate('/programs')}
-        className="mb-4 flex w-full items-center gap-3 rounded-2xl border border-green/40 bg-green-dim/20 p-4 text-left"
+        className="mb-4 flex w-full items-center gap-3 rounded-xl border border-accent/40 bg-accent-soft/20 p-4 text-left"
       >
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-green text-black">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-on-accent">
           <Icon name="list" size={20} />
         </span>
         <span className="min-w-0 flex-1">
@@ -45,7 +45,7 @@ export function RoutineList() {
       </button>
       {routines && routines.length > 0 && (
         <>
-          <h2 className="text-sm font-semibold tracking-wide text-muted uppercase">{t('Mine rutiner', 'My routines')}</h2>
+          <h2 className="text-[15px] font-semibold text-ink">{t('Mine rutiner', 'My routines')}</h2>
           <p className="mt-1 mb-3 text-sm text-faint">
             {t('Rekkefølgen bestemmer hvilken rutine som står for tur. Etter den siste begynner den på toppen igjen.', 'The order decides which routine is up next. After the last one it starts from the top again.')}
           </p>
@@ -61,10 +61,10 @@ export function RoutineList() {
       <ul className="flex flex-col gap-3">
         {routines?.map(({ routine, items, next }, i) => (
           <li key={routine.id}>
-            <Card className={`p-4 ${next ? 'border-green/60' : ''}`}>
+            <Card className={`p-4 ${next ? 'border-accent/60' : ''}`}>
               <div className="flex items-start gap-2">
               <button type="button" className="min-w-0 flex-1 text-left" onClick={() => navigate(`/routines/${routine.id}`)}>
-                {next && <span className="mb-0.5 block text-[11px] font-semibold tracking-wide text-green uppercase">{t('Står for tur', 'Up next')}</span>}
+                {next && <span className="mb-0.5 block text-[11px] font-semibold text-muted">{t('Står for tur', 'Up next')}</span>}
                 <h2 className="text-lg font-bold">{routine.name}</h2>
                 <p className="mt-1 line-clamp-2 text-sm text-muted">
                   {items.length

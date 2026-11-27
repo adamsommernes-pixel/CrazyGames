@@ -78,7 +78,7 @@ export function RoutineEditor() {
         {items.map((it, i) => (
           <Card key={it.id ?? `${it.exercise_id}-${i}`} className="p-3">
             <div className="mb-3 flex items-center gap-1">
-              <h2 className="min-w-0 flex-1 truncate font-bold text-green">{exerciseName(exMap.get(it.exercise_id))}</h2>
+              <h2 className="min-w-0 flex-1 truncate font-bold text-accent">{exerciseName(exMap.get(it.exercise_id))}</h2>
               <IconButton icon="up" label={t('Flytt opp', 'Move up')} disabled={i === 0} onClick={() => move(i, -1)} className="disabled:opacity-30" />
               <IconButton icon="down" label={t('Flytt ned', 'Move down')} disabled={i === items.length - 1} onClick={() => move(i, 1)} className="disabled:opacity-30" />
               <IconButton icon="trash" label={t('Fjern', 'Remove')} className="text-danger" onClick={() => setItems((l) => l.filter((_, j) => j !== i))} />
@@ -116,7 +116,7 @@ export function RoutineEditor() {
         ))}
       </div>
 
-      <Button full variant="secondary" icon="plus" className="mt-4 border-green/50 text-green" onClick={() => setPicker(true)}>
+      <Button full variant="secondary" icon="plus" className="mt-4 border-accent/50 text-accent" onClick={() => setPicker(true)}>
         {t('Legg til øvelse', 'Add exercise')}
       </Button>
 

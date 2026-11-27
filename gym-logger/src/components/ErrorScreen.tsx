@@ -22,7 +22,7 @@ export function ErrorScreen({ title, message, hint }: { title: string; message: 
             }
             location.reload();
           }}
-          style={{ minHeight: 48, padding: '0 20px', borderRadius: 14, border: 0, background: '#2bd66b', color: '#000', fontWeight: 700, fontSize: 16 }}
+          style={{ minHeight: 48, padding: '0 20px', borderRadius: 14, border: 0, background: '#f2f2f3', color: '#000', fontWeight: 700, fontSize: 16 }}
         >
           Last inn på nytt / Reload
         </button>

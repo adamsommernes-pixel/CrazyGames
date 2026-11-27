@@ -4,26 +4,26 @@
 @import '@fontsource/space-grotesk/latin-700.css';
 
 /*
- * Repgrade — grafittsvart med grønt skjær, ett kraftig grønt aksentlys.
- * Space Grotesk til tall og titler, Inter til tekst. Tall er helten.
+ * Repgrade — nøytralt mørkt, med én aksentfarge som brukeren velger selv (src/lib/theme.ts).
+ * Aksenten brukes sparsomt: hovedhandlinger, valgt tilstand og data. Space Grotesk bare til tall.
  */
 @theme {
-  --color-bg: #07090a;
-  --color-surface: #0f1311;
-  --color-raised: #161b18;
-  --color-line: #232a26;
-  --color-green: #2bd66b;
-  --color-green-light: #7dffaa;
-  --color-green-dim: #0f3b22;
-  --color-ink: #f2f5f3;
-  --color-muted: #9ba59f;
-  --color-faint: #66706a;
+  --color-bg: #0b0b0c;
+  --color-surface: #141415;
+  --color-raised: #1c1c1e;
+  --color-line: #2a2a2d;
+  /* Standard aksent; byttes ved innlogging til brukerens farge (applyAccent). */
+  --color-accent: #34c56a;
+  --color-accent-strong: #7dd89e;
+  --color-accent-soft: #123a22;
+  --color-on-accent: #0b0b0c;
+  --color-ink: #f2f2f3;
+  --color-muted: #a1a1a6;
+  --color-faint: #6c6c72;
   --color-warn: #f5b942;
   --color-danger: #ff6b6b;
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Space Grotesk', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
-  --shadow-glow: 0 0 24px rgb(43 214 107 / 0.35);
-  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.4);
   --animate-pop: pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
   --animate-sheet: sheet 240ms cubic-bezier(0.2, 0.9, 0.3, 1);
   --animate-fade: fade 200ms ease-out;
@@ -63,7 +63,7 @@
   body {
     margin: 0;
     background:
-      radial-gradient(120% 60% at 50% -10%, rgb(43 214 107 / 0.07), transparent 60%),
+      radial-gradient(120% 60% at 50% -10%, rgb(52 197 106 / 0.07), transparent 60%),
       var(--color-bg);
     background-attachment: fixed;
     color: var(--color-ink);
@@ -90,7 +90,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-green);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
 
@@ -122,7 +122,6 @@
 @utility card {
   background: var(--color-surface);
   border: 1px solid var(--color-line);
-  box-shadow: var(--shadow-card);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -136,10 +135,6 @@
 }
 
 /* ---------- Styrkenivå ---------- */
-.level-glow {
-  display: inline-flex;
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--glow, #2bd66b) 55%, transparent));
-}
 
 @keyframes level-card-in {
   from { transform: translateY(-120%); opacity: 0; }
@@ -149,46 +144,35 @@
   to { transform: translateY(-120%); opacity: 0; }
 }
 @keyframes level-emblem-in {
-  0% { transform: scale(0.2) rotate(-25deg); opacity: 0; }
-  60% { transform: scale(1.15) rotate(6deg); opacity: 1; }
-  80% { transform: scale(0.95) rotate(-2deg); }
-  100% { transform: scale(1) rotate(0); }
-}
-@keyframes level-rays {
-  to { transform: rotate(360deg); }
-}
-@keyframes level-shine {
-  0% { transform: translateX(-120%) skewX(-20deg); }
-  100% { transform: translateX(220%) skewX(-20deg); }
-}
-@keyframes level-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.55; }
-  50% { transform: scale(1.12); opacity: 0.9; }
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 @keyframes level-text-in {
   from { transform: translateY(16px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
-@keyframes level-flash {
-  0% { opacity: 0.9; }
-  100% { opacity: 0; }
-}
 .level-card { animation: level-card-in 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
 .level-card.leaving { animation: level-card-out 260ms ease-in both; }
-.level-emblem-in { animation: level-emblem-in 900ms cubic-bezier(0.34, 1.56, 0.64, 1) 250ms both; }
-.level-rays { animation: level-rays 14s linear infinite; }
-.level-pulse { animation: level-pulse 2.4s ease-in-out infinite; }
-.level-shine { animation: level-shine 1.4s ease-in-out 1s both; }
+.level-emblem-in { animation: level-emblem-in 500ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
 .level-text-in { animation: level-text-in 600ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
-.level-flash { animation: level-flash 700ms ease-out both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .level-card, .level-emblem-in, .level-rays, .level-pulse, .level-shine, .level-text-in, .level-flash {
+  .level-card, .level-emblem-in, .level-text-in {
     animation: none !important;
   }
-  .level-flash, .level-shine { display: none; }
 }
 
 /* Personvernsiden: vanlige lister. */
 .privacy ul { list-style: disc; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
 .privacy b { color: var(--color-ink); font-weight: 600; }
+
+/* ---------- Intro ved oppstart ---------- */
+@keyframes intro-logo-in { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+@keyframes intro-name-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes intro-bar { from { width: 0; } to { width: 100%; } }
+.intro-logo { animation: intro-logo-in 320ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.intro-name { animation: intro-name-in 360ms ease-out 180ms both; }
+.intro-bar { animation: intro-bar 1500ms linear both; }
+@media (prefers-reduced-motion: reduce) {
+  .intro-logo, .intro-name, .intro-bar { animation: none; }
+}

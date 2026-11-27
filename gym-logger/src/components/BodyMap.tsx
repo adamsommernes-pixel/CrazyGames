@@ -1,87 +1,97 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import type { MuscleGroup } from '../db/types';
 import { MUSCLE_LABEL } from '../db/types';
 import { loadLevel, type MuscleLoad } from '../lib/stats';
 import { t } from '../i18n';
 import { dateLong, num } from '../lib/format';
+import { BACK, BACK_BODY, FRONT, FRONT_BODY, type Part } from './bodymap/anatomy';
 
-// Stilisert kropp forfra og bakfra. Hver region tilhører én muskelgruppe og fylles med grønt
-// etter hvor mye gruppen er trent. Bevisst geometrisk, ikke anatomisk tegning.
+// Anatomisk kropp forfra og bakfra. Musklene (se bodymap/anatomy.ts) glattes til myke former og
+// fylles med brukerens aksentfarge etter hvor mye gruppen er trent. Silhuetten ligger bak og gir
+// tynne skillelinjer mellom musklene.
 
-type Region = { group: MuscleGroup; shape: ReactNode };
+/** Glatter et polygon med Chaikins algoritme (hjørner kuttes til runde kurver). */
+function smooth(flat: number[], iterations: number): string {
+  let p: [number, number][] = [];
+  for (let i = 0; i + 1 < flat.length; i += 2) p.push([flat[i], flat[i + 1]]);
+  for (let k = 0; k < iterations; k++) {
+    const q: [number, number][] = [];
+    for (let i = 0; i < p.length; i++) {
+      const a = p[i];
+      const b = p[(i + 1) % p.length];
+      q.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]], [0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]);
+    }
+    p = q;
+  }
+  return `M${p.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join('L')}Z`;
+}
 
-const FILL = [
-  'var(--color-raised)',
-  'rgb(43 214 107 / 0.32)',
-  'rgb(43 214 107 / 0.5)',
-  'rgb(43 214 107 / 0.75)',
-  'var(--color-green)',
-];
+type Shape = { group: MuscleGroup | null; d: string };
+const shapes = (parts: Part[]): Shape[] => parts.map(([group, , pts]) => ({ group, d: smooth(pts, 3) }));
+const silhouette = (parts: Part[], extra: number[][]) => [...extra, ...parts.map((p) => p[2])].map((pts) => smooth(pts, 2));
 
-/** Speilet par: venstre og høyre side av kroppen. */
-const pair = (make: (side: 1 | -1) => ReactNode) => (
-  <>
-    {make(1)}
-    {make(-1)}
-  </>
-);
-const mx = (x: number, side: 1 | -1) => (side === 1 ? x : 120 - x);
+const VIEW = { w: 100, h: 206 };
+const FIGURES = {
+  front: { muscles: shapes(FRONT), body: silhouette(FRONT, FRONT_BODY) },
+  back: { muscles: shapes(BACK), body: silhouette(BACK, BACK_BODY) },
+};
 
-const FRONT: Region[] = [
-  { group: 'Skuldre', shape: pair((s) => <ellipse key={s} cx={mx(36, s)} cy={52} rx={10} ry={9} />) },
-  { group: 'Bryst', shape: pair((s) => <rect key={s} x={s === 1 ? 46 : 61} y={45} width={13} height={21} rx={6} />) },
-  { group: 'Biceps', shape: pair((s) => <ellipse key={s} cx={mx(30, s)} cy={75} rx={6.5} ry={13} />) },
-  { group: 'Underarmer', shape: pair((s) => <ellipse key={s} cx={mx(25, s)} cy={103} rx={5.5} ry={14} transform={`rotate(${s * 8} ${mx(25, s)} 103)`} />) },
-  {
-    group: 'Mage',
-    shape: (
-      <>
-        <rect x={49} y={68} width={22} height={40} rx={7} />
-        <path d="M51 80h18M51 91h18M60 70v36" stroke="var(--color-bg)" strokeOpacity={0.55} strokeWidth={1} fill="none" />
-      </>
-    ),
-  },
-  { group: 'Bein', shape: pair((s) => <rect key={s} x={s === 1 ? 44 : 61} y={123} width={15} height={48} rx={7} />) },
-  { group: 'Bein', shape: pair((s) => <rect key={`c${s}`} x={s === 1 ? 46 : 63} y={181} width={11} height={40} rx={5} />) },
-];
+/** Faste flatefarger for kroppen (mørkt tema). */
+const SKIN = { body: '#232326', muscle: '#38383d', neutral: '#2d2d31' };
+const MIX = [0, 34, 56, 78, 100];
 
-const BACK: Region[] = [
-  { group: 'Rygg', shape: <path d="M60 37 L77 47 L60 61 L43 47 Z" strokeLinejoin="round" /> },
-  { group: 'Skuldre', shape: pair((s) => <ellipse key={s} cx={mx(36, s)} cy={52} rx={10} ry={9} />) },
-  { group: 'Rygg', shape: pair((s) => <path key={s} d={s === 1 ? 'M46 56 L58 63 L58 88 L49 84 L45 66 Z' : 'M74 56 L62 63 L62 88 L71 84 L75 66 Z'} strokeLinejoin="round" />) },
-  { group: 'Rygg', shape: <rect x={50} y={90} width={20} height={18} rx={5} /> },
-  { group: 'Triceps', shape: pair((s) => <ellipse key={s} cx={mx(30, s)} cy={75} rx={6.5} ry={13} />) },
-  { group: 'Underarmer', shape: pair((s) => <ellipse key={s} cx={mx(25, s)} cy={103} rx={5.5} ry={14} transform={`rotate(${s * 8} ${mx(25, s)} 103)`} />) },
-  { group: 'Rumpe', shape: pair((s) => <ellipse key={s} cx={mx(52, s)} cy={118} rx={9} ry={9.5} />) },
-  { group: 'Bein', shape: pair((s) => <rect key={s} x={s === 1 ? 44 : 61} y={130} width={15} height={41} rx={7} />) },
-  { group: 'Bein', shape: pair((s) => <ellipse key={`c${s}`} cx={mx(51, s)} cy={198} rx={6.5} ry={17} />) },
-];
+/** Fyllfarge for et nivå 0–4 med aksentfargen som CSS-variabel (appen). */
+const FILL = MIX.map((p) => (p ? `color-mix(in srgb, var(--color-accent) ${p}%, ${SKIN.muscle})` : SKIN.muscle));
 
-/** Hode, nakke, hender, hofte, knær og føtter: deler uten egen muskelgruppe. */
-function Base({ back }: { back?: boolean }) {
+function BodySvg({
+  view,
+  fillOf,
+  strokeOf,
+  onSelect,
+  className,
+}: {
+  view: keyof typeof FIGURES;
+  fillOf: (g: MuscleGroup) => string;
+  strokeOf?: (g: MuscleGroup) => string | undefined;
+  onSelect?: (g: MuscleGroup) => void;
+  className?: string;
+}) {
+  const fig = FIGURES[view];
   return (
-    <g fill="var(--color-surface)" stroke="var(--color-line)" strokeWidth={1}>
-      <circle cx={60} cy={20} r={13} />
-      <rect x={55} y={31} width={10} height={8} rx={3} />
-      {!back && <path d="M47 108 H73 L71 122 H49 Z" strokeLinejoin="round" />}
-      {pair((s) => <circle key={`h${s}`} cx={mx(22, s)} cy={121} r={5} />)}
-      {pair((s) => <circle key={`k${s}`} cx={mx(52, s)} cy={176} r={4} />)}
-      {pair((s) => <ellipse key={`f${s}`} cx={mx(51, s)} cy={226} rx={7} ry={4} />)}
+    <g className={className}>
+      <g style={{ fill: SKIN.body, stroke: SKIN.body }} strokeWidth={3.2} strokeLinejoin="round">
+        {fig.body.map((d, i) => (
+          <path key={i} d={d} />
+        ))}
+      </g>
+      {fig.muscles.map((m, i) => {
+        if (!m.group) return <path key={i} d={m.d} style={{ fill: SKIN.neutral }} />;
+        const g = m.group;
+        const stroke = strokeOf?.(g);
+        return (
+          <path
+            key={i}
+            d={m.d}
+            style={{ fill: fillOf(g), stroke: stroke ?? 'none', cursor: onSelect ? 'pointer' : undefined, transition: 'fill 400ms ease' }}
+            strokeWidth={stroke ? 0.6 : 0}
+            strokeLinejoin="round"
+            onClick={onSelect ? () => onSelect(g) : undefined}
+          />
+        );
+      })}
     </g>
   );
 }
 
 function Figure({
-  regions,
-  back,
+  view,
   load,
   days,
   selected,
   onSelect,
   title,
 }: {
-  regions: Region[];
-  back?: boolean;
+  view: keyof typeof FIGURES;
   load: Map<MuscleGroup, MuscleLoad>;
   days: number;
   selected: MuscleGroup | null;
@@ -90,30 +100,15 @@ function Figure({
 }) {
   return (
     <figure className="flex flex-col items-center gap-1">
-      <svg viewBox="0 0 120 234" className="h-auto w-full max-w-[150px]" aria-hidden="true">
-        <Base back={back} />
-        {regions.map((r, i) => {
-          const level = loadLevel(load.get(r.group)?.sets ?? 0, days);
-          const isSel = selected === r.group;
-          return (
-            <g
-              key={i}
-              fill={FILL[level]}
-              stroke={isSel ? 'var(--color-ink)' : level ? 'rgb(43 214 107 / 0.55)' : 'var(--color-line)'}
-              strokeWidth={isSel ? 2 : 1}
-              style={{
-                cursor: 'pointer',
-                filter: level === 4 ? 'drop-shadow(0 0 4px rgb(43 214 107 / 0.6))' : undefined,
-                transition: 'fill 400ms ease',
-              }}
-              onClick={() => onSelect(r.group)}
-            >
-              {r.shape}
-            </g>
-          );
-        })}
+      <svg viewBox={`-2 -2 ${VIEW.w + 4} ${VIEW.h + 4}`} className="h-auto w-full max-w-[150px]" aria-hidden="true">
+        <BodySvg
+          view={view}
+          fillOf={(g) => FILL[loadLevel(load.get(g)?.sets ?? 0, days)]}
+          strokeOf={(g) => (selected === g ? 'var(--color-ink)' : undefined)}
+          onSelect={onSelect}
+        />
       </svg>
-      <figcaption className="text-[11px] font-semibold tracking-wide text-faint uppercase">{title}</figcaption>
+      <figcaption className="text-[11px] font-semibold text-faint">{title}</figcaption>
     </figure>
   );
 }
@@ -139,8 +134,8 @@ export function BodyMap({ load, days, cardioSessions }: { load: Map<MuscleGroup,
   return (
     <div>
       <div className="grid grid-cols-2 gap-2" role="img" aria-label={summary}>
-        <Figure regions={FRONT} load={load} days={days} selected={selected} onSelect={toggle} title={t('Forfra', 'Front')} />
-        <Figure regions={BACK} back load={load} days={days} selected={selected} onSelect={toggle} title={t('Bakfra', 'Back')} />
+        <Figure view="front" load={load} days={days} selected={selected} onSelect={toggle} title={t('Forfra', 'Front')} />
+        <Figure view="back" load={load} days={days} selected={selected} onSelect={toggle} title={t('Bakfra', 'Back')} />
       </div>
 
       {/* Samme valg som knapper, så kartet kan brukes med tastatur og skjermleser. */}
@@ -154,7 +149,7 @@ export function BodyMap({ load, days, cardioSessions }: { load: Map<MuscleGroup,
               aria-pressed={selected === g}
               onClick={() => toggle(g)}
               className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition ${
-                selected === g ? 'border-ink text-ink' : level ? 'border-green/40 text-green-light' : 'border-line text-faint'
+                selected === g ? 'border-ink text-ink' : level ? 'border-accent/40 text-accent-strong' : 'border-line text-faint'
               }`}
             >
               <span className="size-2 rounded-full" style={{ background: level ? FILL[level] : 'var(--color-line)' }} />
@@ -165,7 +160,7 @@ export function BodyMap({ load, days, cardioSessions }: { load: Map<MuscleGroup,
       </div>
 
       {selected && (
-        <p className="mt-3 animate-fade rounded-2xl bg-raised px-4 py-3 text-sm" role="status">
+        <p className="mt-3 animate-fade rounded-xl bg-raised px-4 py-3 text-sm" role="status">
           <span className="font-semibold">{MUSCLE_LABEL[selected]}</span>
           {' · '}
           {sel && sel.sets > 0 ? (
@@ -203,43 +198,32 @@ export function BodyMap({ load, days, cardioSessions }: { load: Map<MuscleGroup,
   );
 }
 
-const STATIC = {
-  raised: '#1b211e',
-  surface: '#121614',
-  line: '#2a322e',
-  green: '#2bd66b',
-};
-const STATIC_FILL = [STATIC.raised, 'rgb(43 214 107 / 0.32)', 'rgb(43 214 107 / 0.5)', 'rgb(43 214 107 / 0.75)', STATIC.green];
+/** Blander to hex-farger: `p` prosent av `a` inn i `b`. */
+function mixHex(a: string, b: string, p: number): string {
+  const ch = (h: string, i: number) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
+  return `#${[0, 1, 2].map((i) => Math.round(ch(a, i) * (p / 100) + ch(b, i) * (1 - p / 100)).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Bredde/høyde-forholdet for StaticBody (brukes av delekortene). */
+export const STATIC_BODY_RATIO = (VIEW.h + 4) / (VIEW.w * 2 + 16);
 
 /**
  * Begge figurene i én SVG med faste farger, for delekort (tegnes på canvas via et bilde).
  * `levelOf` gir 0–4 per muskelgruppe.
  */
-export function StaticBody({ levelOf }: { levelOf: (g: MuscleGroup) => number }) {
-  const figure = (regions: Region[], back: boolean, x: number) => (
-    <g transform={`translate(${x} 0)`}>
-      <g fill={STATIC.surface} stroke={STATIC.line} strokeWidth={1}>
-        <circle cx={60} cy={20} r={13} />
-        <rect x={55} y={31} width={10} height={8} rx={3} />
-        {!back && <path d="M47 108 H73 L71 122 H49 Z" strokeLinejoin="round" />}
-        {pair((s) => <circle key={`h${s}`} cx={mx(22, s)} cy={121} r={5} />)}
-        {pair((s) => <circle key={`k${s}`} cx={mx(52, s)} cy={176} r={4} />)}
-        {pair((s) => <ellipse key={`f${s}`} cx={mx(51, s)} cy={226} rx={7} ry={4} />)}
-      </g>
-      {regions.map((r, i) => {
-        const level = Math.max(0, Math.min(4, levelOf(r.group)));
-        return (
-          <g key={i} fill={STATIC_FILL[level]} stroke={level ? 'rgb(43 214 107 / 0.7)' : STATIC.line} strokeWidth={1}>
-            {r.shape}
-          </g>
-        );
-      })}
-    </g>
-  );
+export function StaticBody({ levelOf, accent }: { levelOf: (g: MuscleGroup) => number; accent: string }) {
+  const fill = (g: MuscleGroup) => {
+    const level = Math.max(0, Math.min(4, levelOf(g)));
+    return level ? mixHex(accent, SKIN.muscle, MIX[level]) : SKIN.muscle;
+  };
+  const w = VIEW.w * 2 + 16;
+  const h = VIEW.h + 4;
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 234" width={1000} height={936}>
-      {figure(FRONT, false, 0)}
-      {figure(BACK, true, 130)}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox={`-2 -2 ${w} ${h}`} width={w * 5} height={h * 5}>
+      <BodySvg view="front" fillOf={fill} />
+      <g transform={`translate(${VIEW.w + 12} 0)`}>
+        <BodySvg view="back" fillOf={fill} />
+      </g>
     </svg>
   );
 }

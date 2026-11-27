@@ -74,7 +74,7 @@ export function ExerciseInfoSheet({ exercise, onClose }: { exercise: Exercise | 
       ) : (
         <ul className="flex flex-col gap-2">
           {sessions.map(({ workout, sets }) => (
-            <li key={workout.id} className="rounded-2xl border border-line bg-raised p-3">
+            <li key={workout.id} className="rounded-xl border border-line bg-raised p-3">
               <div className="mb-1 text-sm text-muted">
                 {dateShort(workout.started_at)} · {workout.name}
               </div>

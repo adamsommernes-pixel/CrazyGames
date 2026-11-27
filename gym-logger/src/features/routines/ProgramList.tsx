@@ -34,7 +34,7 @@ export function ProgramList({
           role="radio"
           aria-checked={selected === 'none'}
           onClick={() => onSelect('none')}
-          className={`rounded-2xl border p-4 text-left transition ${selected === 'none' ? 'border-green bg-green-dim/30' : 'border-line bg-raised'}`}
+          className={`rounded-xl border p-4 text-left transition ${selected === 'none' ? 'border-accent bg-accent-soft/30' : 'border-line bg-raised'}`}
         >
           <span className="block font-semibold">{t('Ingen program, jeg lager mine egne', 'No program, I make my own')}</span>
           <span className="mt-0.5 block text-sm text-muted">{t('Du kan velge et program senere under Rutiner.', 'You can pick a program later under Routines.')}</span>
@@ -48,18 +48,18 @@ function ProgramOption({ program, recommended, selected, onSelect }: { program: 
   const [open, setOpen] = useState(false);
   const exMap = useExerciseMap();
   return (
-    <div className={`rounded-2xl border transition ${selected ? 'border-green bg-green-dim/30' : 'border-line bg-raised'}`}>
+    <div className={`rounded-xl border transition ${selected ? 'border-accent bg-accent-soft/30' : 'border-line bg-raised'}`}>
       <button type="button" role="radio" aria-checked={selected} onClick={onSelect} className="w-full p-4 pb-2 text-left">
         <span className="flex items-start justify-between gap-2">
           <span className="font-semibold">{program.name}</span>
           {recommended && (
-            <span className="shrink-0 rounded-full bg-green px-2 py-0.5 text-[11px] font-bold text-black">{t('Anbefalt', 'Recommended')}</span>
+            <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-on-accent">{t('Anbefalt', 'Recommended')}</span>
           )}
         </span>
         <span className="mt-0.5 block text-sm text-muted">{program.description}</span>
         <span className="mt-1.5 block text-xs text-faint">{program.routines.map((r) => r.name).join(' · ')}</span>
       </button>
-      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="flex items-center gap-1 px-4 pb-3 text-xs font-semibold text-green">
+      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="flex items-center gap-1 px-4 pb-3 text-xs font-semibold text-accent">
         {open ? t('Skjul øvelser', 'Hide exercises') : t('Se øvelser', 'See exercises')}
         <Icon name={open ? 'up' : 'down'} size={14} />
       </button>

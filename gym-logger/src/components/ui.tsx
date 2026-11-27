@@ -7,9 +7,9 @@ import { t } from '../i18n';
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-green text-black font-semibold shadow-glow active:bg-green-light active:scale-[0.98]',
+  primary: 'bg-accent text-on-accent font-semibold active:bg-accent-strong active:scale-[0.98]',
   secondary: 'bg-raised text-ink border border-line font-medium active:bg-line active:scale-[0.98]',
-  ghost: 'text-green font-medium active:bg-raised',
+  ghost: 'text-accent font-medium active:bg-raised',
   danger: 'bg-raised text-danger border border-line font-medium active:bg-line',
 };
 
@@ -24,7 +24,7 @@ export function Button({
   return (
     <button
       type="button"
-      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-base transition disabled:opacity-40 disabled:shadow-none ${
+      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-base transition disabled:opacity-40 disabled:shadow-none ${
         VARIANTS[variant]
       } ${full ? 'w-full' : ''} ${className}`}
       {...rest}
@@ -47,7 +47,7 @@ export function IconButton({
       type="button"
       aria-label={label}
       title={label}
-      className={`grid size-11 shrink-0 place-items-center rounded-xl text-muted active:bg-raised ${className}`}
+      className={`grid size-11 shrink-0 place-items-center rounded-lg text-muted active:bg-raised ${className}`}
       {...rest}
     >
       <Icon name={icon} filled={filled} />
@@ -56,7 +56,7 @@ export function IconButton({
 }
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`card rounded-3xl ${className}`}>{children}</div>;
+  return <div className={`card rounded-xl ${className}`}>{children}</div>;
 }
 
 /** Sidehode med valgfri tilbakeknapp og handlinger til høyre. */
@@ -74,7 +74,7 @@ export function Page({
   const navigate = useNavigate();
   return (
     <div className="mx-auto w-full max-w-xl">
-      <header className="pt-safe sticky top-0 z-20 border-b border-line bg-bg/95 backdrop-blur">
+      <header className="pt-safe sticky top-0 z-20 border-b border-line bg-bg">
         <div className="flex min-h-14 items-center gap-1 px-2">
           {back ? (
             <IconButton icon="back" label={t('Tilbake', 'Back')} onClick={() => navigate(-1)} />
@@ -98,9 +98,8 @@ export function EmptyState({ icon, title, text, children }: {
 }) {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
-      <div className="relative mb-5 grid size-20 place-items-center">
-        <div className="absolute inset-0 rounded-full bg-green/10 blur-xl" />
-        <div className="relative grid size-20 place-items-center rounded-full border border-green/30 bg-green-dim/40 text-green">
+      <div className="relative mb-4 grid size-16 place-items-center">
+        <div className="relative grid size-16 place-items-center rounded-full bg-raised text-muted">
           <Icon name={icon} size={34} strokeWidth={1.6} />
         </div>
       </div>
@@ -141,9 +140,9 @@ export function Sheet({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
-      <button type="button" aria-label={t('Lukk', 'Close')} className="absolute inset-0 animate-fade bg-black/70 backdrop-blur-[2px]" onClick={onClose} />
+      <button type="button" aria-label={t('Lukk', 'Close')} className="absolute inset-0 animate-fade bg-black/70]" onClick={onClose} />
       <div
-        className={`pb-safe relative flex w-full max-w-xl animate-sheet flex-col rounded-t-[28px] border-t border-line bg-surface shadow-[0_-12px_40px_rgb(0_0_0/0.6)] ${
+        className={`pb-safe relative flex w-full max-w-xl animate-sheet flex-col rounded-t-2xl border-t border-line bg-surface shadow-[0_-12px_40px_rgb(0_0_0/0.6)] ${
           tall ? 'h-[88vh]' : 'max-h-[88vh]'
         }`}
       >
@@ -242,9 +241,9 @@ export function NumberStepper({
   };
   const minus = useRepeat(() => change(-step));
   const plus = useRepeat(() => change(step));
-  const btn = `grid place-items-center text-green active:bg-line select-none touch-none ${size === 'lg' ? 'size-14 text-2xl' : 'size-11 text-xl'}`;
+  const btn = `grid place-items-center text-accent active:bg-line select-none touch-none ${size === 'lg' ? 'size-14 text-2xl' : 'size-11 text-xl'}`;
   return (
-    <div className="flex items-center rounded-2xl border border-line bg-raised" role="group" aria-label={label}>
+    <div className="flex items-center rounded-xl border border-line bg-raised" role="group" aria-label={label}>
       <button type="button" aria-label={`${label} minus`} className={`${btn} rounded-l-2xl`} {...minus}>
         −
       </button>
@@ -265,7 +264,7 @@ export function Chip({ active, children, onClick }: { active?: boolean; children
       onClick={onClick}
       aria-pressed={active}
       className={`min-h-9 shrink-0 rounded-full border px-3 text-sm ${
-        active ? 'border-green bg-green-dim text-green-light' : 'border-line bg-raised text-muted'
+        active ? 'border-accent bg-accent-soft text-accent-strong' : 'border-line bg-raised text-muted'
       }`}
     >
       {children}
@@ -275,7 +274,7 @@ export function Chip({ active, children, onClick }: { active?: boolean; children
 
 export function PRBadge({ label }: { label?: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-green-dim px-2 py-0.5 text-xs font-semibold text-green-light">
+    <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent-strong">
       <Icon name="trophy" size={13} />
       {label ?? 'PR'}
     </span>
@@ -283,13 +282,13 @@ export function PRBadge({ label }: { label?: string }) {
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mt-6 mb-2 text-sm font-semibold tracking-wide text-muted uppercase">{children}</h2>;
+  return <h2 className="mt-7 mb-2 text-[15px] font-semibold text-ink">{children}</h2>;
 }
 
 /** Liten nøkkeltall-boks. */
 export function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card rounded-2xl py-2.5 text-center">
+    <div className="card rounded-xl py-2.5 text-center">
       <div className="font-num text-xl font-bold">{value}</div>
       <div className="text-xs text-muted">{label}</div>
     </div>
@@ -297,4 +296,4 @@ export function Stat({ label, value }: { label: string; value: string }) {
 }
 
 export const inputClass =
-  'min-h-12 w-full rounded-xl border border-line bg-raised px-3 text-base outline-none placeholder:text-faint focus:border-green';
+  'min-h-12 w-full rounded-xl border border-line bg-raised px-3 text-base outline-none placeholder:text-faint focus:border-accent';

@@ -22,10 +22,25 @@ await new Promise((res, rej) => {
 
 await rm('tests/screens', { recursive: true, force: true });
 await mkdir('tests/screens', { recursive: true });
-const browser = await chromium.launch();
+// SwiftShader gir WebGL uten skjermkort, så 3D-demoene kan testes.
+const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+// 0. Intro ved oppstart: logo og navn i ca. 1,5 s, så flyr logoen til hjørnet og forsvinner
+{
+  const ic = await browser.newContext({ ...devices['iPhone 13'], locale: 'nb-NO' });
+  const ip = await ic.newPage();
+  await ip.goto(URL);
+  await ip.locator('[data-intro="show"]').waitFor({ timeout: 3000 });
+  await ip.waitForTimeout(1000);
+  assert.equal(await ip.locator('[data-intro="show"]').count(), 1, 'logoen vises fortsatt etter 1 s');
+  await ip.locator('[data-intro]').waitFor({ state: 'detached', timeout: 3500 });
+  await ip.locator('[data-logo-anchor]').waitFor();
+  await ic.close();
+}
+
 const ctx = await browser.newContext({ ...devices['iPhone 13'], locale: 'nb-NO' });
 // Headless Chromium har ingen skjermlås: tell kallene i stedet, så vi ser at appen ber om den.
 await ctx.addInitScript(() => {
+  localStorage.setItem('repgrade-skip-intro', '1');
   // Hovedflyten kjøres på norsk; den engelske har egen kontekst lenger ned.
   if (!sessionStorage.getItem('lang-set')) {
     localStorage.setItem('gym-lang', 'nb');
@@ -59,7 +74,7 @@ async function signUp(name, email, password) {
   await page.getByLabel('E-post').fill(email);
   await page.getByLabel('Passord (minst 8 tegn)').fill(password);
   await page.locator('form').getByRole('button', { name: 'Lag konto' }).click();
-  await page.getByText(`Hei, ${name}!`).waitFor();
+  await page.getByText(new RegExp(`^Hei, ${name}$`)).waitFor();
 }
 
 async function onboard({ goal, perWeek, sex, program }, shots = false) {
@@ -89,7 +104,7 @@ async function logSet(i, weight, reps) {
 }
 
 /** «Nivå opp» dekker skjermen til man trykker Fortsett. */
-const levelUp = () => page.getByRole('dialog').filter({ has: page.getByText('Nivå opp') });
+const levelUp = () => page.getByRole('dialog').filter({ has: page.getByText('Nytt nivå', { exact: true }) });
 async function dismissLevelUp() {
   await page.waitForTimeout(250);
   if (await levelUp().count()) await levelUp().getByRole('button', { name: 'Fortsett' }).click();
@@ -132,7 +147,7 @@ try {
   await page.getByLabel('Passord (minst 8 tegn)').fill('Sterkt-passord-2026');
   await shot('lag-konto');
   await page.locator('form').getByRole('button', { name: 'Lag konto' }).click();
-  await page.getByText('Hei, Ola!').waitFor();
+  await page.getByText(/^Hei, Ola$/).waitFor();
 
   // 3. Oppstart → Hjem med startrutiner
   await onboard({ goal: 'Bli sterkere', perWeek: 3, sex: 'Mann', program: 'Fullkropp A/B' }, true);
@@ -241,22 +256,33 @@ try {
   await page.getByRole('checkbox', { name: /^Knebøy/ }).first().waitFor();
   await page.getByPlaceholder('Søk blant øvelser').fill('');
   await page.getByRole('checkbox', { name: /^Benkpress Bryst/ }).click();
-  await page.getByPlaceholder('Søk blant øvelser').fill('sidehev');
-  await page.getByRole('checkbox', { name: /^Sidehev Skuldre/ }).click();
+  await page.getByPlaceholder('Søk blant øvelser').fill('tåhev');
+  await page.getByRole('checkbox', { name: /^Standing calf raise/ }).waitFor();
+  await page.getByPlaceholder('Søk blant øvelser').fill('sidehev') // norsk søk finner det engelske navnet;
+  await page.getByRole('checkbox', { name: /^Lateral raise Skuldre/ }).click();
   await shot('flervalg');
   await btn('Legg til (2)').click();
-  await page.getByRole('heading', { name: 'Sidehev' }).waitFor();
+  await page.getByRole('heading', { name: 'Lateral raise' }).waitFor();
   await page.getByRole('heading', { name: 'Benkpress' }).waitFor();
 
   // 5f. Økta avviker fra rutinen → spørsmål om å lagre endringene i rutinen (bare denne gangen)
   await btn('Avslutt', { exact: true }).click();
+  // 5e. Egen tittel på økta når den avsluttes
+  assert.equal(await page.locator('#finish-title').inputValue(), 'Fullkropp A');
+  await page.locator('#finish-title').fill('Tunge bein');
   await btn('Lagre økt').click();
   await dialog().getByText(/Du endret økta i forhold til rutinen «Fullkropp A»/).waitFor();
   await shot('lagre-i-rutinen');
   await btn('Bare denne gangen').click();
   await page.getByText('Økt fullført').waitFor();
   await page.getByText(/ny rekord|nye rekorder/).first().waitFor();
+  await page.getByRole('heading', { name: 'Tunge bein' }).waitFor();
   await shot('oppsummering-pr');
+  // …og kan endres fra oppsummeringen
+  await btn(/^Endre tittel: Tunge bein/).click();
+  await page.locator('#summary-title').fill('Tunge bein – ny PR');
+  await dialog().getByRole('button', { name: 'Lagre' }).click();
+  await page.getByRole('heading', { name: 'Tunge bein – ny PR' }).waitFor();
 
   // 5d. Delekort: fire nivåer i to formater, og nedlasting gir en PNG
   await btn('Del økta').click();
@@ -318,6 +344,35 @@ try {
   await page.getByRole('img', { name: /Graf/ }).waitFor();
   await page.getByText('Prosent av 1RM').waitFor();
   await shot('ovelse');
+
+  // 7b. 3D-demo for et stort løft: lerretet tegnes, pause og sakte film virker, og figuren kan snus
+  await page.getByRole('tab', { name: 'Slik gjør du' }).click();
+  const demo = page.locator('[data-demo3d="kneboy"]');
+  await demo.locator('canvas').waitFor();
+  await demo.getByText(/Ned: hofta bak|Opp: press gjennom/).waitFor();
+  await page.waitForTimeout(600);
+  const pixels = async () => (await demo.locator('canvas').screenshot({ animations: 'allow' })).toString('base64');
+  const a = await pixels();
+  await page.waitForTimeout(500);
+  assert.notEqual(await pixels(), a, '3D-figuren beveger seg');
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await shot('3d-demo');
+  await demo.getByRole('button', { name: 'Pause' }).click();
+  await demo.getByRole('button', { name: 'Spill av' }).waitFor();
+  await page.waitForTimeout(200);
+  const still = await pixels();
+  await page.waitForTimeout(400);
+  assert.equal(await pixels(), still, 'står stille på pause');
+  const box = await demo.locator('canvas').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 2, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(500);
+  assert.notEqual(await pixels(), still, 'figuren snus når man drar');
+  await demo.getByRole('button', { name: '0,5×' }).click();
+  assert.equal(await demo.getByRole('button', { name: '0,5×' }).getAttribute('aria-pressed'), 'true');
+  await demo.getByRole('button', { name: 'Spill av' }).click();
 
   // 8. Kroppsvekt
   await page.goBack();
@@ -395,6 +450,23 @@ try {
   await dialog().getByRole('button', { name: '3', exact: true }).click();
   await btn(/^Økter per uke: 3/).waitFor();
 
+  // 9-1. Appfarge: velg blå, se at knapper og grafer følger, og at valget huskes
+  await page.getByRole('radiogroup', { name: 'Appfarge' }).getByRole('radio', { name: 'Blå' }).click();
+  const accentNow = () => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim());
+  assert.equal(await accentNow(), '#4d9bf0');
+  await page.getByRole('navigation').getByRole('link', { name: 'Hjem' }).click();
+  await page.getByRole('heading', { name: 'Dine rutiner' }).waitFor();
+  const primary = page.locator('main button.bg-accent').first();
+  await primary.waitFor();
+  const startBg = await primary.evaluate((el) => getComputedStyle(el).backgroundColor);
+  assert.equal(startBg, 'rgb(77, 155, 240)', 'hovedknappen er blå');
+  await page.reload();
+  await page.getByText('Dine rutiner').first().waitFor();
+  assert.equal(await accentNow(), '#4d9bf0', 'fargen huskes etter omlasting');
+  await shot('hjem-blaa');
+  await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
+  await page.getByText('Økter totalt').waitFor();
+
   // 9a. Data og backup: JSON og CSV lastes ned, og backupen kan leses inn igjen
   const { readFile } = await import('node:fs/promises');
   const [jsonDl] = await Promise.all([page.waitForEvent('download'), btn('Last ned backup (JSON)').click()]);
@@ -431,13 +503,14 @@ try {
   await btn(/^Tom økt/).click();
   await btn('Legg til øvelse').click();
   await page.getByPlaceholder('Søk blant øvelser').fill('planke');
-  await btn('Slik gjør du: Planke').click();
+  await btn('Slik gjør du: Plank').click();
   await page.getByText('Støtt deg på underarmene og tærne.').waitFor();
   await btn('Legg til i favoritter').click();
   await btn('Fjern fra favoritter').waitFor();
   await shot('fremgangsmate');
+  assert.equal(await page.locator('[data-demo3d]').count(), 0, 'ingen 3D-demo for andre øvelser');
   await dialog().last().getByRole('button', { name: 'Lukk' }).last().click();
-  await page.getByRole('checkbox', { name: /^Planke Mage/ }).click();
+  await page.getByRole('checkbox', { name: /^Plank Mage/ }).click();
   await page.getByPlaceholder('Søk blant øvelser').fill('tredem');
   await page.getByRole('checkbox', { name: /^Tredemølle Kondisjon/ }).click();
   await btn('Legg til (2)').click();
@@ -531,7 +604,7 @@ try {
   await ep.getByLabel('Email').fill('sam@example.com');
   await ep.getByLabel('Password (at least 8 characters)').fill('Strong-password-26');
   await ep.locator('form').getByRole('button', { name: 'Create account' }).click();
-  await ep.getByText('Hi, Sam!').waitFor();
+  await ep.getByText(/^Hi, Sam$/).waitFor();
   await ebtn('Continue').click();
   await ep.getByRole('radio', { name: /Get stronger/ }).click();
   await ebtn('Continue').click();
@@ -548,7 +621,7 @@ try {
   await ep.getByLabel('Reps set 1').first().fill('5');
   await ep.getByLabel('Reps set 1').first().blur();
   await ebtn('Complete set 1').first().click();
-  const enLevel = ep.getByRole('dialog').filter({ has: ep.getByText('Level up') });
+  const enLevel = ep.getByRole('dialog').filter({ has: ep.getByText('New level', { exact: true }) });
   await enLevel.waitFor();
   await enLevel.getByRole('button', { name: 'Continue' }).click();
   await ebtn('Finish', { exact: true }).click();

@@ -1,4 +1,5 @@
 import { Logo } from './components/Logo';
+import { applyAccent } from './lib/theme';
 import { Suspense, lazy, useEffect, useMemo } from 'react';
 import { HashRouter, MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -72,8 +73,8 @@ export default function App() {
 
 function Splash() {
   return (
-    <div className="grid h-full place-items-center" aria-label={t('Laster', 'Loading')}>
-      <span className="flex animate-pulse flex-col items-center gap-3">
+    <div data-splash className="grid h-full place-items-center" aria-label={t('Laster', 'Loading')}>
+      <span className="flex flex-col items-center gap-3">
         <Logo size={64} name={false} />
         <span className="font-num text-lg font-bold tracking-tight text-muted">Repgrade</span>
       </span>
@@ -110,6 +111,11 @@ function SignedIn({ user }: { user: AuthUser }) {
     void requestPersist();
   }, []);
   const profile = useLiveQuery(() => getProfile(user.id), [user.id], null);
+  // Brukerens appfarge; tilbake til standard ved utlogging.
+  useEffect(() => {
+    if (profile?.color) applyAccent(profile.color);
+  }, [profile?.color]);
+  useEffect(() => () => applyAccent(null), []);
   if (profile === null) return <Splash />;
   if (!profile?.onboarded_at) return <Onboarding user={user} />;
 

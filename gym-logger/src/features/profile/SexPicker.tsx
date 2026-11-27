@@ -6,7 +6,7 @@ import { t } from '../../i18n';
 export function SexPicker({ value, onChange }: { value: Sex | null; onChange: (s: Sex | null) => void }) {
   return (
     <div className="mt-6" role="group" aria-label={t('Kjønn (for styrkenivå)', 'Sex (for strength level)')}>
-      <h3 className="mb-1 text-sm font-semibold tracking-wide text-muted uppercase">{t('Kjønn (for styrkenivå)', 'Sex (for strength level)')}</h3>
+      <h3 className="mb-1 text-sm font-semibold text-muted">{t('Kjønn (for styrkenivå)', 'Sex (for strength level)')}</h3>
       <p className="mb-2 text-xs text-faint">{t('Styrkestandardene er ulike for menn og kvinner.', 'Strength standards differ for men and women.')}</p>
       <div className="flex flex-wrap gap-2">
         {SEXES.map((s) => (

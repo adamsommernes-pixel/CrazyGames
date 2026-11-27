@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorScreen';
+import { Intro } from './components/Intro';
 import { showToast } from './components/toast';
 import { listenForInstall } from './lib/pwa';
 import { flushPendingSaves } from './lib/autosave';
@@ -38,6 +39,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
       <App />
+      <Intro />
     </ErrorBoundary>
   </StrictMode>,
 );

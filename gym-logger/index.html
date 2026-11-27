@@ -27,7 +27,7 @@
             '<div style="max-width:420px"><h1 style="font-size:22px;margin:0 0 8px">Repgrade kunne ikke starte</h1>' +
             '<p style="color:#9aa59f;line-height:1.5">Prøv å laste inn på nytt. Dataene dine er trygge. / The app could not start. Try reloading.</p>' +
             '<p style="color:#5f6964;font-size:13px;word-break:break-word">' + String(msg || '').replace(/</g, '&lt;') + '</p>' +
-            '<button onclick="location.reload()" style="min-height:48px;padding:0 20px;border-radius:14px;border:0;background:#2bd66b;color:#000;font-weight:700;font-size:16px">Last inn på nytt / Reload</button></div></div>';
+            '<button onclick="location.reload()" style="min-height:48px;padding:0 20px;border-radius:14px;border:0;background:#f2f2f3;color:#0b0b0c;font-weight:700;font-size:16px">Last inn på nytt / Reload</button></div></div>';
         }
         window.addEventListener('error', function (e) { setTimeout(function () { fallback(e.message); }, 1500); });
         window.addEventListener('unhandledrejection', function (e) { setTimeout(function () { fallback(e.reason && e.reason.message); }, 1500); });

@@ -1,3 +1,4 @@
+import { accentPalette } from '../lib/theme';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Icon } from './Icon';
 import { passwordStrength } from '../auth/crypto';
@@ -31,18 +32,18 @@ export function ProgressRing({
   return (
     <div className="relative grid place-items-center" style={{ width: size, height: size }} role="img" aria-label={label}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-line)" strokeWidth={stroke} />
+        <circle style={{ stroke: 'var(--color-line)' }} cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="var(--color-green)"
+         
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - shown)}
-          style={{ transition: 'stroke-dashoffset 900ms cubic-bezier(0.2,0.9,0.3,1)', filter: pct >= 1 ? 'drop-shadow(0 0 8px rgb(43 214 107 / 0.6))' : undefined }}
+          style={{ stroke: 'var(--color-accent)',  transition: 'stroke-dashoffset 900ms cubic-bezier(0.2,0.9,0.3,1)' }}
         />
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">{children}</div>
@@ -57,10 +58,11 @@ export function initials(name: string): string {
 }
 
 export function Avatar({ name, color, size = 48 }: { name: string; color: string; size?: number }) {
+  const p = accentPalette(color);
   return (
     <div
-      className="font-num grid shrink-0 place-items-center rounded-full font-bold text-black"
-      style={{ width: size, height: size, background: color, fontSize: size * 0.38, boxShadow: `0 0 0 3px var(--color-bg), 0 0 0 4px ${color}55` }}
+      className="font-num grid shrink-0 place-items-center rounded-full font-bold"
+      style={{ width: size, height: size, background: p.accent, color: p.on, fontSize: size * 0.38 }}
       aria-hidden="true"
     >
       {initials(name)}
@@ -80,9 +82,9 @@ export function WeekStrip({ trained, today }: { trained: boolean[]; today: numbe
           <span
             className={`grid size-8 place-items-center rounded-full border ${
               trained[i]
-                ? 'border-green bg-green text-black'
+                ? 'border-accent bg-accent text-on-accent'
                 : i === today
-                  ? 'border-green/60 text-green'
+                  ? 'border-accent/60 text-accent'
                   : 'border-line text-transparent'
             }`}
             aria-label={trained[i] ? t('Trent', 'Trained') : i === today ? t('I dag', 'Today') : t('Ikke trent', 'Not trained')}
@@ -113,7 +115,7 @@ export function PasswordField({
   const [show, setShow] = useState(false);
   const strength = passwordStrength(value);
   const words = ['', t('Svakt', 'Weak'), t('Greit', 'Fair'), t('Bra', 'Good'), t('Sterkt', 'Strong')];
-  const colors = ['bg-line', 'bg-danger', 'bg-warn', 'bg-green', 'bg-green-light'];
+  const colors = ['bg-line', 'bg-danger', 'bg-warn', 'bg-accent', 'bg-accent-strong'];
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-sm text-muted">
@@ -129,7 +131,7 @@ export function PasswordField({
           autoComplete={autoComplete}
           required
         />
-        <button type="button" className="absolute top-1/2 right-2 -translate-y-1/2 rounded-lg px-2 py-1.5 text-sm font-medium text-green" onClick={() => setShow((s) => !s)}>
+        <button type="button" className="absolute top-1/2 right-2 -translate-y-1/2 rounded-lg px-2 py-1.5 text-sm font-medium text-accent" onClick={() => setShow((s) => !s)}>
           {show ? t('Skjul', 'Hide') : t('Vis', 'Show')}
         </button>
       </div>
@@ -159,7 +161,8 @@ export function Confetti({ fire }: { fire: number }) {
     canvas.width = innerWidth * dpr;
     canvas.height = innerHeight * dpr;
     ctx.scale(dpr, dpr);
-    const colors = ['#2bd66b', '#7dffaa', '#f2f5f3', '#0f3b22'];
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim() || '#34c56a';
+    const colors = [accent, '#f2f2f3', '#a1a1a6'];
     const parts = Array.from({ length: 90 }, () => ({
       x: innerWidth / 2,
       y: innerHeight * 0.35,
@@ -200,7 +203,7 @@ export function StepDots({ step, total }: { step: number; total: number }) {
   return (
     <div className="flex items-center gap-1.5" aria-label={t(`Steg ${step + 1} av ${total}`, `Step ${step + 1} of ${total}`)}>
       {Array.from({ length: total }, (_, i) => (
-        <span key={i} className={`h-1.5 rounded-full transition-all ${i === step ? 'w-6 bg-green' : i < step ? 'w-1.5 bg-green/60' : 'w-1.5 bg-line'}`} />
+        <span key={i} className={`h-1.5 rounded-full transition-all ${i === step ? 'w-6 bg-accent' : i < step ? 'w-1.5 bg-accent/60' : 'w-1.5 bg-line'}`} />
       ))}
     </div>
   );

@@ -63,8 +63,8 @@ function NumField({
       data-field={field}
       inputMode={decimal ? 'decimal' : 'numeric'}
       enterKeyHint={field === 'weight' ? 'next' : 'done'}
-      className={`font-num h-12 w-full min-w-0 rounded-xl border text-center text-xl font-bold outline-none transition-colors placeholder:text-sm placeholder:font-medium placeholder:text-faint focus:border-green focus:bg-bg ${
-        done ? 'border-transparent bg-green-dim/50 text-green-light' : 'border-line bg-raised'
+      className={`font-num h-12 w-full min-w-0 rounded-xl border text-center text-xl font-bold outline-none transition-colors placeholder:text-sm placeholder:font-medium placeholder:text-faint focus:border-accent focus:bg-bg ${
+        done ? 'border-transparent bg-accent-soft/50 text-accent-strong' : 'border-line bg-raised'
       }`}
       value={text}
       placeholder={placeholder}
@@ -177,7 +177,7 @@ export function SetRow({
   const firstLabel = kind === 'cardio' ? t('Distanse', 'Distance') : kind === 'weight' ? t('Vekt', 'Weight') : t('Ekstra vekt', 'Extra weight');
   return (
     <div
-      className={`rounded-2xl transition-colors ${done ? 'bg-green-dim/25' : current ? 'bg-raised/60 ring-1 ring-green/50' : ''}`}
+      className={`rounded-xl transition-colors ${done ? 'bg-accent-soft/25' : current ? 'bg-raised/60 ring-1 ring-accent/50' : ''}`}
       data-set-row
       data-done={done ? '1' : '0'}
       aria-current={current ? 'step' : undefined}
@@ -242,9 +242,9 @@ export function SetRow({
           aria-pressed={done}
           className={`grid h-12 w-[3.25rem] place-items-center rounded-xl transition ${
             done
-              ? 'animate-pop bg-green text-black shadow-glow'
+              ? 'animate-pop bg-accent text-on-accent'
               : timingFrom !== null
-                ? 'animate-pulse border border-green bg-green-dim text-green-light'
+                ? 'animate-pulse border border-accent bg-accent-soft text-accent-strong'
                 : 'border border-line bg-raised text-faint active:bg-line'
           }`}
           onClick={() => void onCheck()}

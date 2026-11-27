@@ -23,8 +23,7 @@ import { EditExerciseSheet } from '../exercise/EditExerciseSheet';
 import { matchesSearch } from '../../lib/search';
 import { useSetting } from '../../lib/settings';
 import { formatSetShort, registerKinds } from '../../lib/kinds';
-import { exerciseName } from '../../lib/exerciseName';
-import { englishName } from '../../db/exercises';
+import { exerciseName, searchNames } from '../../lib/exerciseName';
 import { t } from '../../i18n';
 
 export function useExercises(): Exercise[] {
@@ -84,8 +83,8 @@ export function ExercisePicker({
   const filtered = useMemo(
     () =>
       exercises
-        .filter((e) => (!group || e.muscle_group === group) && (!equipment || e.equipment === equipment) && (matchesSearch(e.name, query) || matchesSearch(englishName(e.id) ?? '', query)))
-        .sort((a, b) => a.name.localeCompare(b.name, 'nb')),
+        .filter((e) => (!group || e.muscle_group === group) && (!equipment || e.equipment === equipment) && searchNames(e).some((n) => matchesSearch(n, query)))
+        .sort((a, b) => exerciseName(a).localeCompare(exerciseName(b), 'nb')),
     [exercises, query, group, equipment],
   );
   const browsing = !query.trim() && !group && !equipment;
@@ -131,12 +130,12 @@ export function ExercisePicker({
           type="button"
           role={single ? undefined : 'checkbox'}
           aria-checked={single ? undefined : on}
-          className={`flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-xl px-2 text-left transition-colors ${on ? 'bg-green-dim/30' : 'active:bg-raised'}`}
+          className={`flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-xl px-2 text-left transition-colors ${on ? 'bg-accent-soft/30' : 'active:bg-raised'}`}
           onClick={() => toggle(e.id)}
         >
           <MuscleDot group={e.muscle_group} size={10} />
           <span className="min-w-0 flex-1">
-            <span className={`block truncate font-medium ${on ? 'text-green-light' : ''}`}>{exerciseName(e)}</span>
+            <span className={`block truncate font-medium ${on ? 'text-accent-strong' : ''}`}>{exerciseName(e)}</span>
             <span className="block truncate text-sm text-muted">
               {MUSCLE_LABEL[e.muscle_group]} · {EQUIPMENT_LABEL[e.equipment]}
               {e.custom ? ` · ${t('Egen', 'Custom')}` : ''}
@@ -144,7 +143,7 @@ export function ExercisePicker({
             </span>
           </span>
           {!single && (
-            <span className={`grid size-7 shrink-0 place-items-center rounded-lg border-2 transition ${on ? 'border-green bg-green text-black' : 'border-line text-transparent'}`}>
+            <span className={`grid size-7 shrink-0 place-items-center rounded-lg border-2 transition ${on ? 'border-accent bg-accent text-on-accent' : 'border-line text-transparent'}`}>
               {on ? <span className="font-num text-xs font-bold">{selected.indexOf(e.id) + 1}</span> : <Icon name="check" size={14} />}
             </span>
           )}
@@ -159,7 +158,7 @@ export function ExercisePicker({
   };
 
   const Header = ({ children, group: g }: { children: string; group?: MuscleGroup | null }) => (
-    <h3 className="sticky top-[7.75rem] z-[5] -mx-4 flex items-center gap-2 bg-surface/95 px-4 pt-4 pb-1.5 text-xs font-semibold tracking-wide text-muted uppercase backdrop-blur">
+    <h3 className="sticky top-[7.75rem] z-[5] -mx-4 flex items-center gap-2 bg-surface px-4 pt-4 pb-1.5 text-sm font-semibold text-muted">
       {g && <MuscleDot group={g} />}
       {children}
     </h3>
@@ -298,7 +297,7 @@ export function NewExerciseForm({
         <Button variant="secondary" className="flex-1" onClick={onCancel}>
           {t('Avbryt', 'Cancel')}
         </Button>
-        <button type="submit" className="min-h-12 flex-1 rounded-2xl bg-green font-semibold text-black">
+        <button type="submit" className="min-h-12 flex-1 rounded-xl bg-accent font-semibold text-on-accent">
           {t('Lagre og velg', 'Save and select')}
         </button>
       </div>
@@ -352,7 +351,7 @@ export function ExerciseFields(p: {
               type="button"
               aria-pressed={p.kind === k}
               onClick={() => p.setKind(k)}
-              className={`rounded-xl border p-3 text-left ${p.kind === k ? 'border-green bg-green-dim/30' : 'border-line bg-raised'}`}
+              className={`rounded-xl border p-3 text-left ${p.kind === k ? 'border-accent bg-accent-soft/30' : 'border-line bg-raised'}`}
             >
               <span className="block text-sm font-semibold">{KIND_LABEL[k]}</span>
               <span className="block text-xs text-muted">{KIND_HINT[k]}</span>

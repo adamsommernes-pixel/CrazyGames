@@ -1,11 +1,10 @@
 import { Logo } from '../../components/Logo';
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { db } from '../../db/dexie';
-import { setsForWorkout, workoutExercises } from '../../db/repo';
-import { Button, Card, PRBadge, SectionTitle, Stat } from '../../components/ui';
-import { Confetti } from '../../components/widgets';
+import { renameWorkout, setsForWorkout, workoutExercises } from '../../db/repo';
+import { Button, Card, PRBadge, SectionTitle, Sheet, Stat, inputClass } from '../../components/ui';
 import { Icon } from '../../components/Icon';
 import { useExerciseMap } from '../workout/ExercisePicker';
 import { usePRMap } from '../../lib/prs';
@@ -29,8 +28,9 @@ export function Summary() {
   const exMap = useExerciseMap();
   const prMap = usePRMap();
   const [copied, setCopied] = useState(false);
-  const [fire, setFire] = useState(0);
   const [sharing, setSharing] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [title, setTitle] = useState('');
 
   const data = useLiveQuery(async () => {
     const workout = await db.workouts.get(id);
@@ -47,9 +47,6 @@ export function Summary() {
   }, [id]);
 
   const prSets = useMemo(() => (data?.sets ?? []).filter((s) => prMap.has(s.id)), [data, prMap]);
-  useEffect(() => {
-    if (prSets.length) setFire((f) => f + 1);
-  }, [prSets.length]);
 
   if (data === undefined) return null;
   if (data === null) return <Navigate to="/" replace />;
@@ -78,19 +75,20 @@ export function Summary() {
 
   return (
     <div className="pt-safe mx-auto w-full max-w-xl px-4 pb-44">
-      <Confetti fire={fire} />
-      <section className="flex flex-col items-center pt-10 pb-6 text-center">
-        <div className="relative mb-5 grid size-24 place-items-center">
-          <div className="absolute inset-0 rounded-full bg-green/25 blur-2xl" />
-          <div className="relative grid size-24 animate-pop place-items-center rounded-full bg-green text-black shadow-glow">
-            <Icon name={prSets.length ? 'trophy' : 'check'} size={44} strokeWidth={2.4} />
-          </div>
-        </div>
-        <p className="text-sm font-semibold tracking-wide text-green uppercase">{t('Økt fullført', 'Workout complete')}</p>
-        <h1 className="font-num mt-1 text-4xl font-bold tracking-tight">{workout.name}</h1>
+      <section className="flex flex-col items-start pt-10 pb-6">
+        <p className="flex items-center gap-2 text-sm font-semibold text-muted">
+          <span className="grid size-6 animate-pop place-items-center rounded-full bg-accent text-on-accent">
+            <Icon name="check" size={14} strokeWidth={3} />
+          </span>
+          {t('Økt fullført', 'Workout complete')}
+        </p>
+        <button type="button" onClick={() => { setTitle(workout.name); setRenaming(true); }} className="mt-2 flex items-center gap-2 text-left" aria-label={`${t('Endre tittel', 'Change title')}: ${workout.name}`}>
+          <h1 className="text-3xl font-bold tracking-tight">{workout.name}</h1>
+          <Icon name="edit" size={18} className="text-faint" />
+        </button>
         {prSets.length > 0 && (
-          <p className="mt-2 text-lg text-green-light">
-            {prText(prSets.length)}!
+          <p className="mt-1 text-accent-strong">
+            {prText(prSets.length)}
           </p>
         )}
       </section>
@@ -101,7 +99,7 @@ export function Summary() {
         <Stat label={`${t('Volum', 'Volume')} (${unit})`} value={num(toDisplay(vol, unit), 0)} />
       </div>
       {diff !== null && (
-        <p className={`mt-3 rounded-2xl px-4 py-3 text-center font-medium ${diff >= 0 ? 'bg-green-dim/40 text-green-light' : 'bg-raised text-muted'}`}>
+        <p className={`mt-3 rounded-xl px-4 py-3 text-center font-medium ${diff >= 0 ? 'bg-accent-soft/40 text-accent-strong' : 'bg-raised text-muted'}`}>
           {diff >= 0 ? '▲' : '▼'} {num(Math.abs(diff), 0)} % {t('volum mot forrige gang', 'volume vs. last time')}
         </p>
       )}
@@ -148,7 +146,7 @@ export function Summary() {
           {t('Del økta', 'Share workout')}
         </Button>
         <Button full variant="ghost" onClick={() => void share()}>
-          {copied ? t('Kopiert!', 'Copied!') : t('Kopier som tekst', 'Copy as text')}
+          {copied ? t('Kopiert', 'Copied') : t('Kopier som tekst', 'Copy as text')}
         </Button>
         <Button full variant="ghost" onClick={() => navigate(`/history/${id}`)}>
           {t('Se detaljer', 'See details')}
@@ -157,6 +155,20 @@ export function Summary() {
       <div className="mt-10 flex justify-center">
         <Logo size={18} className="text-sm text-faint" />
       </div>
+      <Sheet open={renaming} onClose={() => setRenaming(false)} title={t('Tittel på økta', 'Workout title')}>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (title.trim()) await renameWorkout(id, title.trim());
+            setRenaming(false);
+          }}
+        >
+          <input id="summary-title" className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} autoFocus />
+          <Button full type="submit" className="mt-4">
+            {t('Lagre', 'Save')}
+          </Button>
+        </form>
+      </Sheet>
       {sharing && (
         <Suspense fallback={null}>
           <ShareSheet workoutId={id} onClose={() => setSharing(false)} />

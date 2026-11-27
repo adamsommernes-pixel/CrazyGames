@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { TierEmblem, tierAccent } from './TierBadge';
-import { Confetti } from './widgets';
 import { TIER_COUNT, tierAt, type LevelEvent } from '../lib/strength';
 import { buzz } from '../lib/haptics';
 import { num, toDisplay } from '../lib/format';
@@ -25,8 +24,6 @@ export function showLevelEvent(ev: LevelEvent, exerciseLabel: string, bw: number
     void buzz(up ? [60, 40, 60, 40, 200] : [25, 40, 25]);
   });
 }
-
-const HEX_CLIP = 'polygon(50% 4%, 90% 27%, 90% 73%, 50% 96%, 10% 73%, 10% 27%)';
 
 export const isLevelUp = (ev: LevelEvent) => ev.overallAfter.tier.index > ev.overallBefore.tier.index;
 
@@ -106,16 +103,15 @@ function RecordCard({ ev }: { ev: ShownLevelEvent }) {
         role="status"
         aria-live="polite"
         onClick={() => close(ev.id)}
-        className={`level-card pointer-events-auto relative mt-3 w-full max-w-md overflow-hidden rounded-3xl border bg-surface/95 p-4 text-left shadow-2xl backdrop-blur ${leaving ? 'leaving' : ''}`}
-        style={{ borderColor: `${accent}66`, boxShadow: `0 10px 40px -10px ${accent}55` }}
+        className={`level-card pointer-events-auto relative mt-3 w-full max-w-md overflow-hidden rounded-xl border bg-surface p-4 text-left shadow-2xl ${leaving ? 'leaving' : ''}`}
+        
       >
-        <span className="level-shine pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/10 to-transparent" aria-hidden="true" />
-        <div className="flex items-center gap-3">
-          <span className="level-glow level-emblem-in shrink-0" style={{ ['--glow' as string]: accent }}>
+                <div className="flex items-center gap-3">
+          <span className="level-emblem-in shrink-0">
             <TierEmblem index={tier.index} size={56} />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-bold tracking-widest uppercase" style={{ color: accent }}>
+            <div className="text-[11px] font-semibold" style={{ color: accent }}>
               {liftUp && before ? t('Nytt nivå på løftet', 'Lift level up') : before ? t('Ny rekord', 'New record') : t('Nytt rangert løft', 'New ranked lift')}
             </div>
             <div className="truncate font-semibold">
@@ -155,14 +151,10 @@ function RecordCard({ ev }: { ev: ShownLevelEvent }) {
 /** Nytt totalnivå: fullskjerm med lysstråler, emblem som spretter inn og konfetti. */
 function LevelUpOverlay({ ev }: { ev: ShownLevelEvent }) {
   const tier = ev.overallAfter.tier;
-  const accent = tierAccent(tier.index);
-  const score = useTween(ev.overallBefore.score, ev.overallAfter.score, 1400, 700);
-  const [fire, setFire] = useState(0);
+  const score = useTween(ev.overallBefore.score, ev.overallAfter.score, 900, 300);
   const btn = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    const id = setTimeout(() => setFire((f) => f + 1), 650);
     btn.current?.focus({ preventScroll: true });
-    return () => clearTimeout(id);
   }, []);
 
   return (
@@ -170,45 +162,32 @@ function LevelUpOverlay({ ev }: { ev: ShownLevelEvent }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="level-up-title"
-      className="fixed inset-0 z-[80] flex animate-fade flex-col items-center justify-center overflow-hidden bg-black/90 px-6 text-center backdrop-blur-sm"
+      className="fixed inset-0 z-[80] flex animate-fade flex-col items-center justify-center overflow-hidden bg-bg/95 px-6 text-center"
     >
-      <div className="level-flash pointer-events-none absolute inset-0" style={{ background: `radial-gradient(circle at 50% 42%, ${accent}aa, transparent 60%)` }} aria-hidden="true" />
-      <div className="relative grid size-72 place-items-center">
-        <div
-          className="level-rays absolute inset-[-40%] opacity-60"
-          style={{ background: `repeating-conic-gradient(from 0deg, ${accent}55 0deg 8deg, transparent 8deg 24deg)`, maskImage: 'radial-gradient(circle, black 20%, transparent 65%)', WebkitMaskImage: 'radial-gradient(circle, black 20%, transparent 65%)' }}
-          aria-hidden="true"
-        />
-        <div className="level-pulse absolute size-48 rounded-full blur-3xl" style={{ background: accent }} aria-hidden="true" />
-        <div className="level-emblem-in relative" style={{ filter: `drop-shadow(0 0 24px ${accent})` }}>
-          <div className="relative overflow-hidden" style={{ clipPath: HEX_CLIP }}>
-            <TierEmblem index={tier.index} size={176} />
-            <span className="level-shine pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent" aria-hidden="true" />
-          </div>
-        </div>
+      <div className="level-emblem-in relative">
+        <TierEmblem index={tier.index} size={128} />
       </div>
-      <p className="level-text-in mt-2 text-sm font-bold tracking-[0.35em] uppercase" style={{ color: accent, animationDelay: '900ms' }}>
-        {t('Nivå opp', 'Level up')}
+      <p className="level-text-in mt-6 text-sm font-semibold text-muted" style={{ animationDelay: '250ms' }}>
+        {t('Nytt nivå', 'New level')}
       </p>
-      <h2 id="level-up-title" className="level-text-in font-num mt-2 text-5xl font-bold text-ink" style={{ animationDelay: '1050ms' }}>
+      <h2 id="level-up-title" className="level-text-in mt-1 text-4xl font-bold text-ink" style={{ animationDelay: '350ms' }}>
         {tier.name}
       </h2>
-      <p className="level-text-in mt-3 text-muted" style={{ animationDelay: '1200ms' }}>
-        {ev.overallBefore.tier.name} → <span style={{ color: accent }}>{tier.name}</span> · <span className="font-num">{num(score, 1)}</span> {t('poeng', 'points')}
+      <p className="level-text-in mt-3 text-muted" style={{ animationDelay: '450ms' }}>
+        {ev.overallBefore.tier.name} → {tier.name} · <span className="font-num">{num(score, 1)}</span> {t('poeng', 'points')}
       </p>
-      <p className="level-text-in mt-1 text-sm text-faint" style={{ animationDelay: '1300ms' }}>
+      <p className="level-text-in mt-1 text-sm text-faint" style={{ animationDelay: '500ms' }}>
         {ev.exerciseLabel} · {setText(ev)}
       </p>
       <button
         ref={btn}
         type="button"
         onClick={() => close(ev.id)}
-        className="level-text-in mt-10 min-h-14 w-full max-w-xs rounded-2xl font-semibold text-black"
-        style={{ background: accent, animationDelay: '1500ms', boxShadow: `0 0 30px ${accent}88` }}
+        className="level-text-in mt-10 min-h-12 w-full max-w-xs rounded-xl bg-accent font-semibold text-on-accent"
+        style={{ animationDelay: '600ms' }}
       >
         {t('Fortsett', 'Continue')}
       </button>
-      <Confetti fire={fire} />
     </div>
   );
 }

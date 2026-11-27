@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Repgrade – treningsdagbok for styrketrening</title>
   <meta name="description" content="Repgrade er en treningsdagbok for styrketrening. Logg sets mens du trener, se forrige økt og følg hvordan styrken utvikler seg over tid." />
-  <meta name="theme-color" content="#0b0d0c" />
-  <link rel="icon" href="app/favicon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230a0a0a'/%3E%3Cg fill='%23f5f5f5'%3E%3Crect x='96' y='176' width='56' height='160' rx='16'/%3E%3Crect x='360' y='176' width='56' height='160' rx='16'/%3E%3Crect x='56' y='216' width='40' height='80' rx='12'/%3E%3Crect x='416' y='216' width='40' height='80' rx='12'/%3E%3Crect x='152' y='234' width='208' height='44' rx='10'/%3E%3C/g%3E%3C/svg%3E" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="app/apple-touch-icon.png" />
   <meta property="og:title" content="Repgrade – treningsdagbok for styrketrening" />
   <meta property="og:description" content="Logg sets mens du trener, se forrige økt og følg styrken over tid." />
@@ -19,7 +19,7 @@
     @font-face { font-family: "Inter"; font-weight: 100 900; font-display: swap; src: url(fonts/inter.woff2) format("woff2"); }
     :root {
       color-scheme: dark;
-      --bg: #0b0d0c; --ink: #eceeed; --muted: #a3aaa6; --faint: #6d7571; --line: #222725; --accent: #3ccf73;
+      --bg: #0a0a0a; --ink: #f5f5f5; --muted: #a3a3a3; --faint: #737373; --line: #262626;
       --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       --display: "Space Grotesk", var(--sans);
     }
@@ -32,7 +32,9 @@
 
     header { border-bottom: 1px solid var(--line); }
     header .wrap { display: flex; align-items: center; gap: 28px; min-height: 64px; }
-    .wordmark { font: 700 20px/1 var(--display); letter-spacing: -.01em; text-decoration: none; margin-right: auto; }
+    .wordmark { display: inline-flex; align-items: center; gap: 10px; font: 700 20px/1 var(--display); letter-spacing: -.01em; text-decoration: none; margin-right: auto; }
+    .mark { display: inline-grid; place-items: center; width: 28px; height: 28px; border: 1.5px solid var(--ink); border-radius: 7px; }
+    .mark svg { width: 20px; height: 20px; }
     nav { display: flex; gap: 24px; font-size: 15px; }
     nav a { color: var(--muted); text-decoration: none; }
     nav a:hover { color: var(--ink); }
@@ -53,8 +55,8 @@
     .intro { display: grid; gap: 48px; align-items: center; padding-top: 72px; padding-bottom: 88px; }
     @media (min-width: 820px) { .intro { grid-template-columns: 1.15fr .85fr; } }
     .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin-top: 32px; }
-    .button { display: inline-block; padding: 14px 22px; border-radius: 10px; background: var(--accent); color: #07110b; font-weight: 600; text-decoration: none; }
-    .button:hover { background: #4bdc82; }
+    .button { display: inline-block; padding: 14px 22px; border-radius: 10px; background: var(--ink); color: var(--bg); font-weight: 600; text-decoration: none; }
+    .button:hover { background: #d4d4d4; }
     .link { color: var(--ink); text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: 4px; }
     .phone { width: 100%; max-width: 300px; justify-self: center; border: 1px solid var(--line); border-radius: 28px; }
 
@@ -97,7 +99,7 @@
 <body>
   <header>
     <div class="wrap">
-      <a class="wordmark" href="./">Repgrade</a>
+      <a class="wordmark" href="./"><span class="mark"><svg viewBox="0 0 512 512" aria-hidden="true" fill="currentColor"><rect x="96" y="176" width="56" height="160" rx="16"/><rect x="360" y="176" width="56" height="160" rx="16"/><rect x="56" y="216" width="40" height="80" rx="12"/><rect x="416" y="216" width="40" height="80" rx="12"/><rect x="152" y="234" width="208" height="44" rx="10"/></svg></span>Repgrade</a>
       <nav aria-label="Hovedmeny">
         <a href="#funksjoner"><span data-nb>Funksjoner</span><span data-en>Features</span></a>
         <a href="#installer"><span data-nb>Installer</span><span data-en>Install</span></a>

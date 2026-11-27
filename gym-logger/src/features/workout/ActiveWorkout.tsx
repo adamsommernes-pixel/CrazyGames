@@ -28,6 +28,7 @@ import { dateShort, duration, durationShort, isLongAgo, num, plural, toDisplay }
 import { volume } from '../../lib/calc';
 import { undoToast } from '../../components/toast';
 import { askConfirm } from '../../components/confirm';
+import { Icon } from '../../components/Icon';
 import { locale, t } from '../../i18n';
 
 export function ActiveWorkout({ workout }: { workout: Workout }) {
@@ -74,6 +75,8 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
 
   const finish = async () => {
     if (notes !== workout.notes) await setWorkoutNotes(workout.id, notes);
+    // Egen tittel på økta; tomt felt beholder det gamle navnet.
+    if (name.trim() && name.trim() !== workout.name) await renameWorkout(workout.id, name.trim());
     const endedAt = longAgo ? new Date(startMs + minutes * 60_000).toISOString() : undefined;
     if (await finishWorkout(workout.id, endedAt)) {
       void requestPersist();
@@ -108,13 +111,17 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
   return (
     <Page
       title={
-        <input
-          aria-label={t('Navn på økt', 'Workout name')}
-          className="w-full truncate bg-transparent outline-none focus:text-green"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={() => name.trim() && name !== workout.name && void renameWorkout(workout.id, name.trim())}
-        />
+        <label className="flex min-w-0 items-center gap-1.5">
+          <input
+            aria-label={t('Navn på økt', 'Workout name')}
+            title={t('Trykk for å gi økta et navn', 'Tap to name the workout')}
+            className="min-w-0 flex-1 truncate bg-transparent outline-none focus:text-accent"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => name.trim() && name !== workout.name && void renameWorkout(workout.id, name.trim())}
+          />
+          <Icon name="edit" size={16} className="shrink-0 text-faint" />
+        </label>
       }
       actions={
         <Button className="min-h-10 px-4" onClick={() => setFinishing(true)}>
@@ -128,7 +135,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
         <Stat label={`${t('Volum', 'Volume')} (${unit})`} value={num(toDisplay(vol, unit), 0)} />
       </div>
       <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-line" role="progressbar" aria-label={t('Fremdrift i økta', 'Workout progress')} aria-valuenow={doneSets.length} aria-valuemax={sets.length}>
-        <div className="h-full rounded-full bg-green shadow-glow transition-[width] duration-500" style={{ width: `${sets.length ? (doneSets.length / sets.length) * 100 : 0}%` }} />
+        <div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${sets.length ? (doneSets.length / sets.length) * 100 : 0}%` }} />
       </div>
 
       {wes.length === 0 ? (
@@ -151,7 +158,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
         </div>
       )}
 
-      <Button full icon="plus" variant="secondary" className="mt-4 min-h-14 border-green/50 text-green" onClick={() => setPicker(true)}>
+      <Button full icon="plus" variant="secondary" className="mt-4 min-h-14 border-accent/50 text-accent" onClick={() => setPicker(true)}>
         {t('Legg til øvelse', 'Add exercise')}
       </Button>
 
@@ -164,6 +171,19 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
       />
 
       <Sheet open={finishing} onClose={() => setFinishing(false)} title={t('Avslutt økt', 'Finish workout')}>
+        {doneSets.length > 0 && (
+          <label className="mb-4 flex flex-col gap-1">
+            <span className="text-sm text-muted">{t('Tittel', 'Title')}</span>
+            <input
+              id="finish-title"
+              className={inputClass}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t('F.eks. Tunge bein – ny PR på knebøy', 'E.g. Heavy legs – new squat PR')}
+              maxLength={80}
+            />
+          </label>
+        )}
         {doneSets.length === 0 ? (
           <p className="mb-4 text-muted">{t('Du har ikke huket av noen sets ennå. Hak av settene du har gjort, eller forkast økta.', 'You have not ticked off any sets yet. Tick off the sets you did, or discard the workout.')}</p>
         ) : (

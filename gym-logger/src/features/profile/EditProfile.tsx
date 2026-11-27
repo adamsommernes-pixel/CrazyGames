@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../auth/AuthProvider';
-import { PROFILE_COLORS, getProfile, saveProfile } from '../../db/repo';
+import { getProfile, saveProfile } from '../../db/repo';
+import { ColorPicker } from '../../components/ColorPicker';
+import { applyAccent } from '../../lib/theme';
 import { EXPERIENCE, EXPERIENCE_LABEL, GOALS, GOAL_LABEL, type Profile } from '../../db/types';
 import { Button, Chip, NumberStepper, Page, SectionTitle, inputClass } from '../../components/ui';
 import { Avatar } from '../../components/widgets';
@@ -76,19 +78,8 @@ export function EditProfile() {
           <input id="edit-name" className={inputClass} value={p.name} onChange={(e) => set({ name: e.target.value })} />
         </label>
       </div>
-      <div className="mt-4 flex gap-3" role="radiogroup" aria-label={t('Profilfarge', 'Profile colour')}>
-        {PROFILE_COLORS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            role="radio"
-            aria-checked={c === p.color}
-            aria-label={`${t('Farge', 'Colour')} ${c}`}
-            className={`size-10 rounded-full ${c === p.color ? 'ring-2 ring-ink ring-offset-2 ring-offset-bg' : ''}`}
-            style={{ background: c }}
-            onClick={() => set({ color: c })}
-          />
-        ))}
+      <div className="mt-4">
+        <ColorPicker value={p.color} label={t('Appfarge', 'App colour')} onChange={(c) => { set({ color: c }); applyAccent(c); }} />
       </div>
 
       <SectionTitle>{t('Mål', 'Goal')}</SectionTitle>

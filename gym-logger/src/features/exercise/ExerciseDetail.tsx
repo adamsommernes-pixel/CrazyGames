@@ -1,3 +1,4 @@
+import { currentAccent } from '../../lib/theme';
 import { LiftLevel } from '../level/LiftLevel';
 import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -98,7 +99,7 @@ export function ExerciseDetail() {
       <ExerciseMeta exercise={exercise} />
       <LiftLevel exerciseId={exercise.id} />
 
-      <div className="mt-4 mb-4 grid grid-cols-2 gap-1 rounded-2xl bg-raised p-1" role="tablist">
+      <div className="mt-4 mb-4 grid grid-cols-2 gap-1 rounded-xl bg-raised p-1" role="tablist">
         {(['overview', 'guide'] as const).map((tab_) => (
           <button
             key={tab_}
@@ -147,7 +148,7 @@ export function ExerciseDetail() {
                       labelStyle={{ color: '#9ba59f' }}
                       formatter={(v) => [metric.suffix === 'weight' ? `${num(Number(v))} ${unit}` : fmt(Number(v)), metric.label]}
                     />
-                    <Line type="monotone" dataKey="value" stroke="#2bd66b" strokeWidth={2.5} dot={{ r: 3, fill: '#2bd66b', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#7dffaa' }} />
+                    <Line type="monotone" dataKey="value" stroke={currentAccent().accent} strokeWidth={2.5} dot={{ r: 3, fill: 'var(--color-accent, #34c56a)', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#7dffaa' }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -226,9 +227,9 @@ function Records({ kind, sessions, unit }: { kind: ExerciseKind; sessions: Sessi
     <>
       <div className="grid grid-cols-3 gap-2 text-center">
         {tiles.map((t) => (
-          <div key={t.label} className="card rounded-2xl border-green/30 py-2.5">
+          <div key={t.label} className="card rounded-xl border-accent/30 py-2.5">
             <div className="text-xs text-muted">{t.label}</div>
-            <div className="font-num text-2xl font-bold text-green">{t.value}</div>
+            <div className="font-num text-2xl font-bold text-accent">{t.value}</div>
             <div className="text-xs text-faint">{t.sub}</div>
           </div>
         ))}
