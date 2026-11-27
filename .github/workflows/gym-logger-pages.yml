@@ -36,6 +36,7 @@ jobs:
         env:
           # Eget domene: legg inn repository-variabelen SITE_DOMAIN (f.eks. repgrade.no). Tom = github.io-adressen.
           SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+          SITE_ORIGIN: ${{ vars.SITE_DOMAIN && format('https://{0}', vars.SITE_DOMAIN) || format('https://{0}.github.io', github.repository_owner) }}
           SITE_BASE: ${{ vars.SITE_DOMAIN && '/' || format('/{0}/', github.event.repository.name) }}
           # Valgfritt: legg inn som repository secrets for å slå på sky-synk.
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
