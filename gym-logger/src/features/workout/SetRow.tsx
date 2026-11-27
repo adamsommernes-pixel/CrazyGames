@@ -9,7 +9,7 @@ import { SET_TYPE_SHORT } from '../../db/types';
 import { toggleSetDone, updateSet } from '../../db/repo';
 import { fromDisplay, num, parseNum, toDisplay } from '../../lib/format';
 import { formatSetShort, kindColumns } from '../../lib/kinds';
-import { useNow } from './restTimer';
+import { stopRest, useNow } from './restTimer';
 import { PR_LABEL, type PRKind } from '../../lib/calc';
 import { buzz } from '../../lib/haptics';
 import { Icon } from '../../components/Icon';
@@ -145,6 +145,9 @@ export function SetRow({
       void buzz(20);
       onCompleted();
       void celebrateSet(user.id, set.id, showLevelEvent, (m) => showToast(m, undefined, 7000));
+    } else {
+      // Settet ble angret: hvilen (og varselet på serveren) gjelder ikke lenger.
+      void stopRest();
     }
   };
   // Tidsøvelser: tomt set + ✓ starter tidtaking; neste trykk stopper, fyller inn sekundene og fullfører.

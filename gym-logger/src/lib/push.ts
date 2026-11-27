@@ -47,11 +47,42 @@ export async function enableRestPush(): Promise<void> {
   const uid = await userId();
   if (!uid) throw new Error(t('Logg inn med konto for å få varsler.', 'Log in with an account to get notifications.'));
   const reg = await navigator.serviceWorker.ready;
-  const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToBytes(VAPID) as BufferSource }));
+  // Et gammelt abonnement kan tilhøre en annen konto på samme telefon. Lag alltid et nytt, så
+  // varsler aldri går til feil person (det gamle ryddes bort av serveren når det ikke virker lenger).
+  await (await reg.pushManager.getSubscription())?.unsubscribe().catch(() => undefined);
+  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToBytes(VAPID) as BufferSource });
   const json = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
   const { error } = await supabase!.from('push_subscriptions').upsert({ endpoint: json.endpoint, user_id: uid, p256dh: json.keys.p256dh, auth: json.keys.auth });
   if (error) throw new Error(error.message);
   await setSetting('restPush', true);
+}
+
+/** Endepunktet til denne enheten (eller null), så varselet bare sendes hit. */
+async function deviceEndpoint(): Promise<string | null> {
+  try {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return null;
+    const reg = await navigator.serviceWorker.getRegistration();
+    return (await reg?.pushManager.getSubscription())?.endpoint ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Ved utlogging: fjern denne telefonens abonnement og eventuell alarm, og slå av varsler for kontoen her. */
+export async function unregisterPushDevice(): Promise<void> {
+  try {
+    if (!(await getSetting('restPush'))) return;
+    await cancelRestAlarm();
+    const reg = typeof navigator !== 'undefined' && 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
+    const sub = await reg?.pushManager.getSubscription();
+    if (sub) {
+      await supabase?.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+      await sub.unsubscribe();
+    }
+    await setSetting('restPush', false);
+  } catch {
+    /* utlogging skal aldri stoppe av dette */
+  }
 }
 
 export async function disableRestPush(): Promise<void> {
@@ -81,9 +112,11 @@ export async function scheduleRestAlarm(endAt: number, body: string): Promise<st
   const uid = await userId();
   if (!uid) return (lastError = t('Ikke innlogget med konto.', 'Not logged in with an account.'));
   try {
-    const { error } = await supabase
-      .from('rest_alarms')
-      .upsert({ user_id: uid, send_at: new Date(endAt).toISOString(), title: t('Pausen er over', 'Rest is over'), body }, { onConflict: 'user_id' });
+    const row = { user_id: uid, send_at: new Date(endAt).toISOString(), title: t('Pausen er over', 'Rest is over'), body };
+    // endpoint: bare enheten som startet pausen får varselet (ikke iPad og PC i tillegg).
+    let { error } = await supabase.from('rest_alarms').upsert({ ...row, endpoint: await deviceEndpoint() }, { onConflict: 'user_id' });
+    // Databasen er ikke oppdatert med migrering 011 ennå: lagre uten endepunkt (varsel til alle enheter).
+    if (error && /endpoint/i.test(error.message)) ({ error } = await supabase.from('rest_alarms').upsert(row, { onConflict: 'user_id' }));
     lastError = error ? `${error.code ?? ''} ${error.message}`.trim() : null;
   } catch (e) {
     lastError = e instanceof Error ? e.message : String(e);

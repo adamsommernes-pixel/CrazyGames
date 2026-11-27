@@ -24,6 +24,8 @@ Deno.serve(async (req) => {
   await Promise.all(
     (subs ?? []).map(async (s) => {
       const alarm = due.find((a) => a.user_id === s.user_id)!;
+      // Bare enheten som startet pausen (eldre alarmer uten endepunkt går til alle brukerens enheter).
+      if (alarm.endpoint && alarm.endpoint !== s.endpoint) return;
       try {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
