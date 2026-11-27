@@ -42,9 +42,10 @@ async function userId(): Promise<string | null> {
 export async function enableRestPush(): Promise<void> {
   const status = pushStatus();
   if (status !== 'ready') throw new Error(pushStatusText(status));
+  // Spør om lov først, direkte i trykket: iPhone overser forespørselen hvis appen venter på noe før.
+  if ((await Notification.requestPermission()) !== 'granted') throw new Error(pushStatusText('denied'));
   const uid = await userId();
   if (!uid) throw new Error(t('Logg inn med konto for å få varsler.', 'Log in with an account to get notifications.'));
-  if ((await Notification.requestPermission()) !== 'granted') throw new Error(pushStatusText('denied'));
   const reg = await navigator.serviceWorker.ready;
   const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToBytes(VAPID) as BufferSource }));
   const json = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
