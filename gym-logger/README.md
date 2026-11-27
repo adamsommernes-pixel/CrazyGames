@@ -221,3 +221,23 @@ Appen viser «Versjon 1.0.0 (bygg 42 · a1b2c3d)» nederst i Profil:
 
 - **Kroppskartet** bruker muskelpolygoner fra [react-body-highlighter](https://github.com/giavinh79/react-body-highlighter) (MIT-lisens, Copyright (c) 2020 GV79), glattet og omtegnet i `src/components/bodymap/anatomy.ts`.
 - **3D-demoene** (de 12 store løftene) er laget her: en mannekeng tegnet med [three.js](https://threejs.org) (MIT-lisens). Bevegelsene står i `src/features/exercise/demo3d/moves.ts`; knær og albuer regnes ut med invers kinematikk i `rig.ts`, og `moves.test.ts` sjekker at hendene holder stanga, føttene står i gulvet og leddvinklene er normale. Etter endringer: `npm run demo:stills` lager stillbildene som vises uten WebGL, og `node scripts/demo/shots.mjs <mappe>` tar bilder av alle demoene til visuell sjekk.
+
+## Varsel når pausen er over (låst skjerm)
+
+Nettleseren stopper appen når skjermen låses, så lyd og vibrasjon fra appen selv virker ikke da. I stedet sender serveren et varsel (web push) når pausen er over. Telefonen spiller lyd og vibrerer etter sine egne innstillinger for varsler. Det krever konto på nett, og på iPhone at appen er lagt på Hjem-skjermen (iOS 16.4+). Brukeren slår det på under Profil → «Varsel når pausen er over».
+
+Oppsett (én gang, ca. 10 minutter):
+
+1. **Lag nøkler** på din egen maskin: `npx web-push generate-vapid-keys`. Du får en offentlig og en privat nøkkel.
+2. **GitHub:** Settings → Secrets and variables → Actions → **Variables** → ny variabel `VITE_VAPID_PUBLIC_KEY` = den offentlige nøkkelen (den er ikke hemmelig).
+3. **Supabase → Edge Functions → Secrets:** legg inn `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (f.eks. `mailto:deg@eksempel.no`) og `CRON_SECRET` (en lang tilfeldig tekst du finner på).
+4. **Deploy funksjonen** (Supabase CLI): `supabase functions deploy rest-alarms --no-verify-jwt --project-ref <prosjekt-id>`. Eller lim inn `supabase/functions/rest-alarms/index.ts` i Supabase → Edge Functions → «Deploy a new function», kall den `rest-alarms` og slå av «Verify JWT».
+5. **Supabase → SQL Editor**, kjør (bytt ut verdiene):
+   ```sql
+   select vault.create_secret('https://<prosjekt-id>.supabase.co/functions/v1/rest-alarms', 'rest_alarm_url');
+   select vault.create_secret('<samme CRON_SECRET som i steg 3>', 'rest_alarm_secret');
+   ```
+6. Kjør så `supabase/migrations/010_push.sql` i SQL Editor (lager tabellene og jobben som sjekker hvert 5. sekund).
+7. Publiser appen på nytt (merge til main), så bygget får den offentlige nøkkelen.
+
+Sjekk: slå på varselet i Profil, start en økt, fullfør et set og lås telefonen. Når pausen er over, kommer «Pausen er over – Benkpress – neste set». Funksjonens logg i Supabase viser `{"alarms":1,"sent":1}`.

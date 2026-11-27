@@ -8,6 +8,7 @@ import { formatSet } from '../../lib/kinds';
 import { exerciseName } from '../../lib/exerciseName';
 import { buzz } from '../../lib/haptics';
 import { t } from '../../i18n';
+import { cancelRestAlarm, scheduleRestAlarm } from '../../lib/push';
 
 // Timeren lagrer sluttidspunktet, så den teller riktig selv om skjermen låses
 // eller appen lukkes og åpnes igjen.
@@ -70,20 +71,44 @@ function beep() {
   }
 }
 
+/** «Benkpress – neste set» til varselet. */
+async function nextSetText(): Promise<string> {
+  try {
+    const w = await getActiveWorkout();
+    if (!w) return '';
+    const wes = await workoutExercises(w.id);
+    const s = nextPendingSet(wes, await setsForWorkout(w.id));
+    if (!s) return t('Økta er ferdig. Bra jobba!', 'Workout done. Nice work!');
+    const ex = await db.exercises.get(s.exercise_id);
+    return `${exerciseName(ex)} – ${t('neste set', 'next set')}`;
+  } catch {
+    return '';
+  }
+}
+
 export async function startRest(seconds: number) {
   if (seconds <= 0) return;
-  await setSetting('restTimer', { endAt: Date.now() + seconds * 1000, total: seconds });
+  const endAt = Date.now() + seconds * 1000;
+  await setSetting('restTimer', { endAt, total: seconds });
+  void nextSetText().then((body) => scheduleRestAlarm(endAt, body));
 }
 
 export async function adjustRest(delta: number) {
   const t = await getSetting('restTimer');
   if (!t) return;
   const endAt = t.endAt + delta * 1000;
-  if (endAt <= Date.now()) return setSetting('restTimer', null);
+  if (endAt <= Date.now()) {
+    void cancelRestAlarm();
+    return setSetting('restTimer', null);
+  }
   await setSetting('restTimer', { endAt, total: Math.max(1, t.total + delta) });
+  void nextSetText().then((body) => scheduleRestAlarm(endAt, body));
 }
 
-export const stopRest = () => setSetting('restTimer', null);
+export const stopRest = () => {
+  void cancelRestAlarm();
+  return setSetting('restTimer', null);
+};
 
 export function useNow(intervalMs = 1000, active = true) {
   const [now, setNow] = useState(Date.now());

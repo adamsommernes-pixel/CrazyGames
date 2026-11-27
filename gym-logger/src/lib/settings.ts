@@ -13,6 +13,8 @@ export interface Settings {
   plates: number[];
   sound: boolean;
   haptics: boolean;
+  /** Varsel fra serveren når pausen er over (virker med låst skjerm). Per enhet. */
+  restPush: boolean;
   /** Hold skjermen på mens en økt pågår. */
   keepAwake: boolean;
   /** Øvelser merket med stjerne, vises først i øvelsesvelgeren. */
@@ -27,6 +29,7 @@ export const DEFAULTS: Settings = {
   plates: [25, 20, 15, 10, 5, 2.5, 1.25],
   sound: true,
   haptics: true,
+  restPush: false,
   keepAwake: true,
   favorites: [],
 };

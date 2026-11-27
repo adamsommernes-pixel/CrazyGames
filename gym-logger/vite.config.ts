@@ -65,6 +65,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png}', '**/*latin*.woff2', 'demos/*.jpg'],
         globIgnores: ['screenshots/**'],
         navigateFallback: 'index.html',
+        // Varsler når pausen er over (web push), se public/push-sw.js.
+        importScripts: ['push-sw.js'],
       },
     }),
   ],
