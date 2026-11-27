@@ -3,6 +3,7 @@ import { Demo3DBadge, hasDemo } from './demo3d';
 import { RangePicker, useRange } from '../../components/RangePicker';
 import { inRange, rangeBounds, yearsWithData } from '../../lib/range';
 import { perHand, perHandHint } from '../../lib/perHand';
+import { DumbbellCheck } from '../level/DumbbellCheck';
 import { halveSetWeights, restoreSetWeights, setIdsForExercise } from '../../db/repo';
 import { askConfirm } from '../../components/confirm';
 import { undoToast } from '../../components/toast';
@@ -161,6 +162,7 @@ export function ExerciseDetail() {
         <EmptyState icon="chart" title={t('Ingen fullførte sets', 'No completed sets')} text={t('Logg øvelsen i en økt for å se rekorder og grafer.', 'Log the exercise in a workout to see records and charts.')} />
       ) : (
         <>
+          <DumbbellCheck only={exercise.id} />
           {perHand(exercise) && (
             <div className="mb-3 flex items-start gap-2.5 rounded-xl border border-line bg-raised px-3 py-2.5 text-xs text-muted" data-per-hand-history>
               <Icon name="info" size={15} className="mt-0.5 shrink-0 text-faint" />

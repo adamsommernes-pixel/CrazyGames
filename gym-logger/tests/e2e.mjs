@@ -305,6 +305,7 @@ try {
   await lr.getByLabel('Vekt set 1 (kg)').fill('60');
   await lr.getByLabel('Vekt set 1 (kg)').blur();
   await lr.locator('[data-per-hand="warn"]').waitFor();
+  await page.getByText(/60 kg per manual\?/).waitFor(); // varsel hver gang over 50 kg
   await lr.scrollIntoViewIfNeeded();
   await shot('manual-del-pa-to');
   await lr.getByRole('button', { name: 'Logget feil? Del på to' }).click();
@@ -315,6 +316,10 @@ try {
   assert.equal(await lr.getByLabel('Vekt set 1 (kg)').inputValue(), '60', 'angre gir tilbake vekten');
   await lr.getByLabel('Vekt set 1 (kg)').fill('0');
   await lr.getByLabel('Vekt set 1 (kg)').blur();
+  // «Skjul» fjerner merknaden (for denne og de neste 3 øktene)
+  await lr.locator('[data-per-hand="hint"]').getByRole('button', { name: 'Skjul' }).click();
+  await page.getByText(/Skjult for denne og de neste 3 øktene/).waitFor();
+  await lr.locator('[data-per-hand]').waitFor({ state: 'detached' });
 
   // 5e2. Endre rekkefølge: dra første øvelse ned én plass og flytt siste opp med pil
   const cardTitles = async () => (await page.locator('main h2').allInnerTexts()).map((x) => x.split('\n')[0].trim());

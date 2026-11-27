@@ -19,6 +19,10 @@ export interface Settings {
   statsRange: import('./range').Range;
   /** Løft brukeren har sagt at de ikke trener lenger (øvelses-id → tidspunkt). Varsles ikke om. */
   retiredLifts: Record<string, string>;
+  /** Manual-merknaden er skjult til antall fullførte økter når dette tallet. */
+  perHandHintHideUntil: number;
+  /** Manualøvelser brukeren har bekreftet at er logget riktig (ingen ny sjekk). */
+  dumbbellChecked: string[];
   /** Hold skjermen på mens en økt pågår. */
   keepAwake: boolean;
   /** Øvelser merket med stjerne, vises først i øvelsesvelgeren. */
@@ -36,6 +40,8 @@ export const DEFAULTS: Settings = {
   restPush: false,
   statsRange: { kind: '30d' },
   retiredLifts: {},
+  perHandHintHideUntil: 0,
+  dumbbellChecked: [],
   keepAwake: true,
   favorites: [],
 };

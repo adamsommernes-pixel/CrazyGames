@@ -30,7 +30,7 @@ import { MuscleDot } from '../../components/MuscleTag';
 import { SwipeToDelete } from '../../components/SwipeToDelete';
 import { SET_TYPE_COLOR, setTypeSoft } from '../../lib/setTypes';
 import { SUSPICIOUS_KG, perHand, perHandColumn, perHandHint, type PerHand } from '../../lib/perHand';
-import { undoToast } from '../../components/toast';
+import { showToast, undoToast } from '../../components/toast';
 import { Icon } from '../../components/Icon';
 import { SET_GRID, SetRow } from './SetRow';
 import { ExercisePicker } from './ExercisePicker';
@@ -39,7 +39,8 @@ import { Demo3DBadge, hasDemo } from '../exercise/demo3d';
 import { RankedBadge } from '../level/RankedBadge';
 import { startRest } from './restTimer';
 import { duration, fromDisplay, num, toDisplay } from '../../lib/format';
-import { useSetting } from '../../lib/settings';
+import { setSetting, useSetting } from '../../lib/settings';
+import { db } from '../../db/dexie';
 import { exerciseName } from '../../lib/exerciseName';
 import { t } from '../../i18n';
 
@@ -113,6 +114,10 @@ export function ExerciseCard({
   const hand = perHand(exercise);
   const weighted = sorted.filter((s) => s.weight > 0);
   const suspicious = !!hand && weighted.some((s) => s.weight >= SUSPICIOUS_KG);
+  // «Skjul» på merknaden gjelder denne og de neste 3 øktene. Advarselen over 50 kg vises alltid.
+  const finishedCount = useLiveQuery(async () => (await db.workouts.toArray()).filter((w) => !w.deleted && w.ended_at).length, [], 0);
+  const hideUntil = useSetting('perHandHintHideUntil');
+  const hintHidden = !suspicious && finishedCount < hideUntil;
   const halve = async () => {
     const prev = await halveSetWeights(weighted.map((s) => s.id));
     undoToast(t(`Vektene er delt på to (${prev.length} set)`, `Weights halved (${prev.length} sets)`), () => restoreSetWeights(prev));
@@ -216,7 +221,7 @@ export function ExerciseCard({
         </button>
       )}
 
-      {hand && (
+      {hand && !hintHidden && (
         <div
           className={`mb-1.5 flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs ${suspicious ? 'border border-warn/50 bg-warn/10 text-ink' : 'text-muted'}`}
           data-per-hand={suspicious ? 'warn' : 'hint'}
@@ -229,6 +234,18 @@ export function ExerciseCard({
           {weighted.length > 0 && (
             <button type="button" onClick={() => void halve()} className="shrink-0 font-semibold text-accent">
               {t('Logget feil? Del på to', 'Logged wrong? Halve it')}
+            </button>
+          )}
+          {!suspicious && (
+            <button
+              type="button"
+              onClick={() => {
+                void setSetting('perHandHintHideUntil', finishedCount + 4);
+                showToast(t('Skjult for denne og de neste 3 øktene.', 'Hidden for this and the next 3 workouts.'));
+              }}
+              className="shrink-0 font-semibold text-faint"
+            >
+              {t('Skjul', 'Hide')}
             </button>
           )}
         </div>
@@ -256,6 +273,7 @@ export function ExerciseCard({
               <SetRow
                 set={s}
                 kind={kind}
+                perHand={!!hand}
                 current={s.id === currentSetId}
                 label={s.set_type === 'normal' ? label : s.set_type === 'warmup' ? `${t('oppvarming', 'warm-up')} ${++warmIndex}` : `${label + 1} (${SET_TYPE_LABEL[s.set_type].toLowerCase()})`}
                 previous={prev}

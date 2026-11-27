@@ -16,6 +16,7 @@ import { Icon } from '../../components/Icon';
 import { PRBadge } from '../../components/ui';
 import { t } from '../../i18n';
 import { SET_TYPE_COLOR } from '../../lib/setTypes';
+import { SUSPICIOUS_KG } from '../../lib/perHand';
 
 
 /**
@@ -120,6 +121,7 @@ export function SetRow({
   onMenu,
   targetReps,
   kind = 'weight',
+  perHand = false,
   current,
 }: {
   set: WorkoutSet;
@@ -133,6 +135,8 @@ export function SetRow({
   /** Mål-reps fra rutinen, vist som hint i et tomt reps-felt. */
   targetReps?: number | null;
   kind?: ExerciseKind;
+  /** Manual/kettlebell: vekten gjelder én (advarsel over 50 kg). */
+  perHand?: boolean;
   /** Neste set som skal gjøres i økta («du er her»). */
   current?: boolean;
 }) {
@@ -169,8 +173,18 @@ export function SetRow({
   const cols = kindColumns(kind, unit);
   const firstIsDistance = kind === 'cardio';
   const firstValue = firstIsDistance ? (set.distance_km ?? 0) : toDisplay(set.weight, unit);
-  const saveFirst = (v: number) =>
-    updateSet(set.id, firstIsDistance ? { distance_km: v } : { weight: fromDisplay(v, unit) });
+  const saveFirst = async (v: number) => {
+    const kg = fromDisplay(v, unit);
+    await updateSet(set.id, firstIsDistance ? { distance_km: v } : { weight: kg });
+    // Manualer: over 50 kg per stk er trolig begge lagt sammen. Si fra hver gang, med «Del på to» rett i varselet.
+    if (perHand && kind === 'weight' && kg >= SUSPICIOUS_KG && kg !== set.weight) {
+      showToast(
+        t(`${num(v)} ${unit} per manual? Logg vekten på én, ikke begge til sammen.`, `${num(v)} ${unit} per dumbbell? Log the weight of one, not both together.`),
+        { label: t('Del på to', 'Halve it'), onClick: () => void updateSet(set.id, { weight: Math.round((kg / 2) * 100) / 100 }) },
+        9000,
+      );
+    }
+  };
   const secondLabel = kind === 'time' ? t('Sekunder', 'Seconds') : kind === 'cardio' ? t('Minutter', 'Minutes') : 'Reps';
   const firstLabel = kind === 'cardio' ? t('Distanse', 'Distance') : kind === 'weight' ? t('Vekt', 'Weight') : t('Ekstra vekt', 'Extra weight');
   return (

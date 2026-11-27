@@ -6,6 +6,7 @@ import { ACTIVE_DAYS, CATEGORIES, type StrengthProfile, CATEGORY_LABEL, TIER_COU
 import { useExerciseMap } from '../workout/ExercisePicker';
 import { exerciseName } from '../../lib/exerciseName';
 import { setSetting, useSetting } from '../../lib/settings';
+import { DumbbellCheck } from './DumbbellCheck';
 import { num, toDisplay } from '../../lib/format';
 import { t } from '../../i18n';
 
@@ -49,6 +50,9 @@ export function LevelPage() {
         </a>
       </div>
 
+      <div className="mt-4">
+        <DumbbellCheck />
+      </div>
       <LiftSections lifts={s.lifts} bw={bw} unit={unit} names={(id) => exerciseName(exMap.get(id))} />
 
       <SectionTitle>{t('Kategorier', 'Categories')}</SectionTitle>

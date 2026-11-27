@@ -35,3 +35,13 @@ describe('del på to', () => {
     expect((await db.sets.get(s.id))?.weight).toBe(80);
   });
 });
+
+describe('sjekk av manualvekt mot stang', () => {
+  it('flagger manualbenk som er mer enn 60 % av stangbenk per manual', async () => {
+    const { suspiciousDumbbells } = await import('./perHand');
+    const best = new Map([['ex-benkpress', 100], ['ex-benkpress-med-manualer', 80], ['ex-kneboy', 140], ['ex-bulgarsk-splittboy', 30]]);
+    expect(suspiciousDumbbells(best).map((x) => x.dumbbell)).toEqual(['ex-benkpress-med-manualer']);
+    expect(suspiciousDumbbells(best, ['ex-benkpress-med-manualer'])).toEqual([]);
+    expect(suspiciousDumbbells(new Map([['ex-benkpress', 100], ['ex-benkpress-med-manualer', 40]]))).toEqual([]);
+  });
+});
