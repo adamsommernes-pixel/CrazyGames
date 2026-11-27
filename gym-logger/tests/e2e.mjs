@@ -354,6 +354,10 @@ try {
 
   // 7b. 3D-demo for et stort løft: lerretet tegnes, pause og sakte film virker, og figuren kan snus
   await page.getByRole('tab', { name: 'Slik gjør du' }).click();
+  // Demoen viser først et stillbilde; 3D lastes først ved trykk.
+  await page.locator('[data-demo-poster="kneboy"]').waitFor();
+  assert.equal(await page.locator('[data-demo3d]').count(), 0, '3D lastes ikke før man trykker');
+  await btn('Vis 3D-demo av Knebøy').click();
   const demo = page.locator('[data-demo3d="kneboy"]');
   await demo.locator('canvas').waitFor();
   await demo.getByText(/Ned: hofta bak|Opp: press gjennom/).waitFor();

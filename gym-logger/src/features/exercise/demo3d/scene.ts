@@ -6,6 +6,10 @@ import type { MuscleGroup } from '../../../db/types';
 import { BODY, FOOT_R, RADII, trunkPoint, type Joints, type V3 } from './rig';
 import { sample, type Move } from './moves';
 
+const FRAME_MS = 1000 / 30;
+/** Sekunder demoen spiller før den stopper av seg selv. */
+export const AUTO_STOP_S = 20;
+
 const SKIN = '#a3a3ab';
 const PROP = '#3b3b41';
 const METAL = '#c9c9cf';
@@ -24,9 +28,8 @@ const v = (p: V3) => new THREE.Vector3(p[0], p[1], p[2]);
 class Limb {
   mesh: THREE.Mesh;
   constructor(length: number, r: readonly [number, number], mat: THREE.Material, parent: THREE.Object3D) {
-    const geo = new THREE.CylinderGeometry(r[1], r[0], length, 20, 1);
+    const geo = new THREE.CylinderGeometry(r[1], r[0], length, 12, 1);
     this.mesh = new THREE.Mesh(geo, mat);
-    this.mesh.castShadow = true;
     parent.add(this.mesh);
   }
   place(a: V3, b: V3) {
@@ -39,21 +42,18 @@ class Limb {
 }
 
 function blob(mat: THREE.Material, parent: THREE.Object3D, r: number, s: V3 = [1, 1, 1], at: V3 = [0, 0, 0]) {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 24, 16), mat);
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat);
   m.scale.set(s[0], s[1], s[2]);
   m.position.set(at[0], at[1], at[2]);
-  m.castShadow = true;
   parent.add(m);
   return m;
 }
 
 function cyl(mat: THREE.Material, parent: THREE.Object3D, r: number, length: number, axis: 'x' | 'y' | 'z', at: V3) {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, length, 24), mat);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, length, 16), mat);
   if (axis === 'x') m.rotation.z = Math.PI / 2;
   if (axis === 'z') m.rotation.x = Math.PI / 2;
   m.position.set(at[0], at[1], at[2]);
-  m.castShadow = true;
-  m.receiveShadow = true;
   parent.add(m);
   return m;
 }
@@ -61,8 +61,6 @@ function cyl(mat: THREE.Material, parent: THREE.Object3D, r: number, length: num
 function box(mat: THREE.Material, parent: THREE.Object3D, size: V3, at: V3) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), mat);
   m.position.set(at[0], at[1], at[2]);
-  m.castShadow = true;
-  m.receiveShadow = true;
   parent.add(m);
   return m;
 }
@@ -88,6 +86,7 @@ export class DemoScene {
   private limbs: Record<string, Limb[]> = {};
   private joints: Record<string, THREE.Mesh[]> = {};
   private torso = new THREE.Group();
+  private shadow?: THREE.Mesh;
   private feet: THREE.Mesh[] = [];
   private bar?: THREE.Group;
   private dumbbells: THREE.Group[] = [];
@@ -100,10 +99,9 @@ export class DemoScene {
     opts: SceneOptions,
   ) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: false });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    // Ytelse: maks 1,5× skarphet og ingen sanntidsskygger (en myk skygge-flekk under figuren i stedet).
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
     this.lights();
@@ -130,17 +128,6 @@ export class DemoScene {
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x303036, 1.5));
     const key = new THREE.DirectionalLight(0xffffff, 2.2);
     key.position.set(2.2, 4.5, 3);
-    key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
-    const c = key.shadow.camera;
-    c.left = -2;
-    c.right = 2;
-    c.top = 3;
-    c.bottom = -1;
-    c.near = 0.5;
-    c.far = 12;
-    key.shadow.bias = -0.0005;
-    key.shadow.radius = 4;
     this.scene.add(key);
     const rim = new THREE.DirectionalLight(0xffffff, 0.8);
     rim.position.set(-3, 2.5, -2.5);
@@ -148,10 +135,25 @@ export class DemoScene {
   }
 
   private floor() {
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(1.5, 64), new THREE.MeshStandardMaterial({ color: '#202023', roughness: 1 }));
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(1.5, 48), new THREE.MeshBasicMaterial({ color: '#202023' }));
     floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
     this.scene.add(floor);
+    // Myk skygge-flekk som følger figuren (billig erstatning for sanntidsskygger).
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d');
+    if (g) {
+      const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0, 'rgba(0,0,0,0.55)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, 64, 64);
+    }
+    this.shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+    this.shadow.rotation.x = -Math.PI / 2;
+    this.shadow.position.y = 0.002;
+    this.shadow.scale.set(0.8, 0.55, 1);
+    this.scene.add(this.shadow);
   }
 
   private materials(opts: SceneOptions) {
@@ -184,8 +186,7 @@ export class DemoScene {
     this.joints.hand = [0, 1].map(() => blob(m.skin, s, 0.04, [1, 1.15, 0.8]));
     this.joints.delt = [0, 1].map(() => blob(m.muscle('Skuldre'), s, 0.064));
     this.feet = [0, 1].map(() => {
-      const f = new THREE.Mesh(new THREE.CapsuleGeometry(FOOT_R, 0.17, 6, 16), m.skin);
-      f.castShadow = true;
+      const f = new THREE.Mesh(new THREE.CapsuleGeometry(FOOT_R, 0.17, 4, 10), m.skin);
       s.add(f);
       return f;
     });
@@ -306,6 +307,12 @@ export class DemoScene {
       this.feet[i].quaternion.setFromUnitVectors(Y, dir.normalize());
     }
     this.torso.position.set(...j.pelvis);
+    if (this.shadow) {
+      // Liggende eller hengende figur: flekken under midten av kroppen.
+      const mid = v(j.ankles[0]).add(v(j.ankles[1])).multiplyScalar(0.25).add(v(j.pelvis).multiplyScalar(0.5));
+      this.shadow.position.x = mid.x;
+      this.shadow.position.z = mid.z;
+    }
     this.torso.rotation.x = (j.trunk * Math.PI) / 180;
     const mid = v(j.wrists[0]).add(v(j.wrists[1])).multiplyScalar(0.5);
     if (this.bar) this.bar.position.copy(mid);
@@ -365,14 +372,26 @@ export class DemoScene {
     this.requestRender();
   }
 
+  /** Sekunder animasjonen har gått siden siste start. Stopper av seg selv etter AUTO_STOP for å spare batteri. */
+  private playedFor = 0;
+  private lastFrame = 0;
+  onAutoPause?: () => void;
+
   private tick = (now: number) => {
     this.raf = 0;
-    const dt = Math.min(0.1, (now - this.last) / 1000);
-    this.last = now;
     if (!this.visible) return;
     const animating = this.playing;
+    // Maks 30 bilder i sekundet: godt nok for en rolig demo og halvparten av arbeidet.
+    if (animating && now - this.lastFrame < FRAME_MS - 2) {
+      this.raf = requestAnimationFrame(this.tick);
+      return;
+    }
+    const dt = Math.min(0.1, (now - this.last) / 1000);
+    this.last = now;
+    this.lastFrame = now;
     if (animating) {
       this.phase = (this.phase + (dt * this.speed) / this.move.duration) % 1;
+      this.playedFor += dt;
       this.update(this.phase);
     }
     const damping = this.controls.update();
@@ -380,12 +399,18 @@ export class DemoScene {
       this.renderer.render(this.scene, this.camera);
       this.needsRender = false;
     }
+    if (animating && this.playedFor >= AUTO_STOP_S) {
+      this.playing = false;
+      this.onAutoPause?.();
+      return;
+    }
     if (animating || damping) this.raf = requestAnimationFrame(this.tick);
   };
 
   /** Fortsetter animasjonen (etter pause). */
   play() {
     this.playing = true;
+    this.playedFor = 0;
     this.last = performance.now();
     this.requestRender();
   }
