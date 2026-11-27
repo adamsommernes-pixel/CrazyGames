@@ -42,9 +42,10 @@ async function userId(): Promise<string | null> {
 export async function enableRestPush(): Promise<void> {
   const status = pushStatus();
   if (status !== 'ready') throw new Error(pushStatusText(status));
+  // Spør om lov først, direkte i trykket: iPhone overser forespørselen hvis appen venter på noe før.
+  if ((await Notification.requestPermission()) !== 'granted') throw new Error(pushStatusText('denied'));
   const uid = await userId();
   if (!uid) throw new Error(t('Logg inn med konto for å få varsler.', 'Log in with an account to get notifications.'));
-  if ((await Notification.requestPermission()) !== 'granted') throw new Error(pushStatusText('denied'));
   const reg = await navigator.serviceWorker.ready;
   const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToBytes(VAPID) as BufferSource }));
   const json = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
@@ -67,33 +68,43 @@ export async function disableRestPush(): Promise<void> {
   }
 }
 
-/** Planlegger varselet. Feiler stille (uten nett ringer appen fortsatt selv når den er åpen). */
-export async function scheduleRestAlarm(endAt: number, body: string): Promise<void> {
-  if (!supabase || !(await getSetting('restPush'))) return;
+/** Siste feil fra serveren ved planlegging av varsel (vises i Profil, så feil kan finnes). */
+let lastError: string | null = null;
+export const lastPushError = () => lastError;
+
+/**
+ * Planlegger varselet. Returnerer en feilmelding eller null. Feil stopper ikke appen
+ * (uten nett piper den fortsatt selv når den er åpen), men huskes og vises i Profil.
+ */
+export async function scheduleRestAlarm(endAt: number, body: string): Promise<string | null> {
+  if (!supabase || !(await getSetting('restPush'))) return null;
   const uid = await userId();
-  if (!uid) return;
-  await supabase
-    .from('rest_alarms')
-    .upsert({ user_id: uid, send_at: new Date(endAt).toISOString(), title: t('Pausen er over', 'Rest is over'), body })
-    .then(
-      () => undefined,
-      () => undefined,
-    );
+  if (!uid) return (lastError = t('Ikke innlogget med konto.', 'Not logged in with an account.'));
+  try {
+    const { error } = await supabase
+      .from('rest_alarms')
+      .upsert({ user_id: uid, send_at: new Date(endAt).toISOString(), title: t('Pausen er over', 'Rest is over'), body }, { onConflict: 'user_id' });
+    lastError = error ? `${error.code ?? ''} ${error.message}`.trim() : null;
+  } catch (e) {
+    lastError = e instanceof Error ? e.message : String(e);
+  }
+  if (lastError) console.warn('Varsel kunne ikke planlegges:', lastError);
+  return lastError;
 }
 
 export async function cancelRestAlarm(): Promise<void> {
   if (!supabase || !(await getSetting('restPush'))) return;
   const uid = await userId();
   if (!uid) return;
-  await supabase
-    .from('rest_alarms')
-    .delete()
-    .eq('user_id', uid)
-    .then(
-      () => undefined,
-      () => undefined,
-    );
+  try {
+    await supabase.from('rest_alarms').delete().eq('user_id', uid);
+  } catch {
+    /* ikke viktig */
+  }
 }
+
+/** Testvarsel om 15 sekunder. Gir feilmelding eller null. */
+export const sendTestAlarm = () => scheduleRestAlarm(Date.now() + 15_000, t('Testvarsel fra RepGrade. Det virker!', 'Test notification from RepGrade. It works!'));
 
 export function pushStatusText(s: PushStatus): string {
   switch (s) {
