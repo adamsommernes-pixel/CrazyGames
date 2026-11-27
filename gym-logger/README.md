@@ -76,7 +76,7 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
 **Styrkenivå**
 - Ti nivåer: Nybegynner, Rookie, Stamgjest, Gymrotte, Løfter, Sterk, Beist, Titan, Elite og Olympia.
 - Regnes ut fra beste beregnede 1RM i nøkkelløft (benk, knebøy, markløft, skulderpress, roing, pull-ups, dips og varianter) delt på kroppsvekt, med egne standarder for menn og kvinner (snitt hvis kjønn ikke er valgt). Snittet av press, trekk og bein gir nivået.
-- Disse løftene gir nivå (merket «Nivå» i appen): benkpress, skråbenk, smal benkpress, benk og skråbenk med manualer, militærpress; pull-ups (også med vekt), stangroing, nedtrekk, bicepscurl med manualer; knebøy, markløft, sumo- og trap bar-markløft, rumensk markløft, bulgarsk splittbøy, beinpress, hack squat og beinspark. Manualøvelser regnes per manual. Alt annet logges som vanlig, men teller ikke. Et løft teller bare hvis det er trent de siste 30 dagene (ellers vises det grått). Alle grafer og tall kan vises for 7 dager, 30 dager, 12 måneder eller et bestemt år.
+- Disse løftene gir nivå (merket «Nivå» i appen): benkpress, skråbenk, smal benkpress, benk og skråbenk med manualer, militærpress; pull-ups (også med vekt), stangroing, nedtrekk, bicepscurl med manualer; knebøy, markløft, sumo- og trap bar-markløft, rumensk markløft, bulgarsk splittbøy, beinpress, hack squat og beinspark. Manualøvelser regnes per manual. Alt annet logges som vanlig, men teller ikke. Maskinløft (beinpress, hack squat, beinspark, nedtrekk) gir høyst Sterk og vises i egen seksjon. Et løft teller bare hvis det er trent de siste 30 dagene (ellers vises det grått); brukeren varsles en uke før, og kan markere løft de ikke trener lenger. Alle grafer og tall kan vises for 7 dager, 30 dager, 12 måneder eller et bestemt år.
 - Testet mot realistiske løftere (`src/lib/strength.personas.test.ts`), mann 80 kg / kvinne 62 kg:
 
   | Løfter | Eksempel (1RM benk / knebøy / markløft + trekk) | Nivå |
@@ -239,6 +239,8 @@ Oppsett (én gang, ca. 10 minutter):
    ```
 6. Kjør så `supabase/migrations/010_push.sql` i SQL Editor (lager tabellene og jobben som sjekker hvert 5. sekund).
 7. Publiser appen på nytt (merge til main), så bygget får den offentlige nøkkelen.
+
+**Oppdatering i 1.2 (én gang):** kjør `supabase/migrations/011_push_device.sql` i SQL Editor og lim inn den nye koden fra `supabase/functions/rest-alarms/index.ts` i funksjonen din (heter den noe annet, f.eks. `quick-worker`, bruk den). Da går varselet bare til telefonen som startet pausen. Appen virker også før dette (varselet går da til alle enhetene dine).
 
 Sjekk: slå på varselet i Profil, start en økt, fullfør et set og lås telefonen. Når pausen er over, kommer «Pausen er over – Benkpress – neste set». Funksjonens logg i Supabase viser `{"alarms":1,"sent":1}`.
 

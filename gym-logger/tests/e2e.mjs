@@ -416,13 +416,27 @@ try {
   await page.getByRole('navigation').getByRole('link', { name: 'Historikk' }).click();
   await btn(/1 øvelse/).first().waitFor();
   assert.equal(await btn(/1 øvelse/).count(), 2, 'to økter i historikken');
+  // Søk i historikken: på øvelse (også engelsk/norsk navn) og uten treff
+  await page.getByLabel('Søk i historikken').fill('kneboy');
+  await btn(/1 øvelse/).first().waitFor();
+  await page.getByLabel('Søk i historikken').fill('finnes-ikke-xyz');
+  await page.getByText('Ingen økter passer søket.').waitFor();
+  await page.getByLabel('Søk i historikken').fill('');
   await btn('Kalender').click();
   await shot('kalender');
 
   // 6b. Etter en oppdatering fra 1.0 (uten nyhetsskjerm): «Nytt i denne versjonen» vises én gang
+  // Ny telefon (ingen kjent versjon): ingen nyheter
   await page.evaluate(() => localStorage.removeItem('repgrade-seen-version'));
   await page.reload();
+  await page.getByRole('navigation').first().waitFor();
+  await page.waitForTimeout(800);
+  assert.equal(await page.getByRole('heading', { name: 'Nytt i denne versjonen' }).count(), 0, 'ingen nyheter på ny telefon');
+  // Oppdatert fra 1.1.0: nyhetene for alle versjoner siden vises, gruppert per versjon
+  await page.evaluate(() => localStorage.setItem('repgrade-seen-version', '1.1.0'));
+  await page.reload();
   await page.getByRole('heading', { name: 'Nytt i denne versjonen' }).waitFor();
+  await page.getByText('Versjon 1.1.1').waitFor();
   await shot('nytt-etter-oppdatering');
   await page.getByRole('dialog').getByRole('button', { name: 'Fortsett' }).click();
   await page.reload();
@@ -511,7 +525,7 @@ try {
 
   // 9. Profil → logg ut
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
-  await page.getByText('Økter totalt').waitFor();
+  await page.getByText('Medlem siden').waitFor();
   await shot('profil');
 
   // 9-0. Treningen din: endre mål og dager direkte, og bytt program fra Profil
@@ -545,7 +559,7 @@ try {
   await page.getByRole('heading', { name: 'Nyheter og eventer' }).waitFor();
   await shot('hjem-rutiner');
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
-  await page.getByText('Økter totalt').waitFor();
+  await page.getByText('Medlem siden').waitFor();
   // Tilbake til 3 økter i uka, som resten av testen forventer.
   await btn(/^Økter per uke: 5/).click();
   await dialog().getByRole('button', { name: '3', exact: true }).click();
@@ -566,7 +580,7 @@ try {
   assert.equal(await accentNow(), '#4d9bf0', 'fargen huskes etter omlasting');
   await shot('hjem-blaa');
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
-  await page.getByText('Økter totalt').waitFor();
+  await page.getByText('Medlem siden').waitFor();
 
   // 9a. Data og backup: JSON og CSV lastes ned, og backupen kan leses inn igjen
   const { readFile } = await import('node:fs/promises');

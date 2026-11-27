@@ -4,11 +4,12 @@ import { shouldAskForPush } from './PushPrompt';
 
 describe('nyheter etter oppdatering', () => {
   it('vises for brukere med økter som ikke har sett denne versjonen', () => {
-    expect(shouldShowAfterUpdate('1.1.0', null, true)).toBe(true); // oppdaterte fra 1.0 via det gamle varselet
-    expect(shouldShowAfterUpdate('1.1.0', '1.0.0', true)).toBe(true);
+    expect(shouldShowAfterUpdate('1.2.0', '1.1.1', true)).toBe(true);
+    expect(shouldShowAfterUpdate('1.10.0', '1.9.0', true)).toBe(true);
   });
   it('vises ikke for nye brukere eller når de allerede er sett', () => {
     expect(shouldShowAfterUpdate('1.1.0', null, false)).toBe(false);
+    expect(shouldShowAfterUpdate('1.2.0', null, true)).toBe(false); // ny telefon: ingen nyheter
     expect(shouldShowAfterUpdate('1.1.0', '1.1.0', true)).toBe(false);
   });
 });

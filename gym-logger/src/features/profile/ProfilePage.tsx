@@ -16,6 +16,8 @@ import { useAuth, useUser } from '../../auth/AuthProvider';
 import { AuthError } from '../../auth/types';
 import { setSetting, useSetting } from '../../lib/settings';
 import { lifetime, longestStreak } from '../../lib/stats';
+import { RangePicker, useRange } from '../../components/RangePicker';
+import { inRange, rangeBounds, rangeLabel, yearsWithData } from '../../lib/range';
 import { usePRMap } from '../../lib/prs';
 import { dateShort, duration, num, toDisplay } from '../../lib/format';
 import { Button, Card, Chip, NumberStepper, Page, SectionTitle, Sheet, inputClass } from '../../components/ui';
@@ -36,10 +38,17 @@ export function ProfilePage() {
   const profile = useLiveQuery(() => getProfile(user.id), [user.id]);
   const prMap = usePRMap();
   const data = useLiveQuery(async () => ({ workouts: await db.workouts.toArray(), sets: await db.sets.toArray() }), []);
+  const [range, setRange] = useRange();
   const stats = useMemo(() => {
     if (!data) return null;
-    return { ...lifetime(data.workouts, data.sets), longest: longestStreak(data.workouts, profile?.weekly_target ?? 3) };
-  }, [data, profile?.weekly_target]);
+    // Tallene gjelder valgt tidsrom (samme valg som grafene ellers i appen).
+    const b = rangeBounds(range);
+    const workouts = data.workouts.filter((w) => inRange(w.started_at, b));
+    const ids = new Set(workouts.map((w) => w.id));
+    const sets = data.sets.filter((s) => ids.has(s.workout_id));
+    const records = sets.filter((s) => prMap.has(s.id)).length;
+    return { ...lifetime(workouts, sets), records, longest: longestStreak(workouts, profile?.weekly_target ?? 3), years: yearsWithData(data.workouts.map((w) => w.started_at)) };
+  }, [data, profile?.weekly_target, range, prMap]);
 
   const since = new Date(profile?.created_at ?? user.created_at).toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
   const tonnes = stats ? toDisplay(stats.volume, unit) / 1000 : 0;
@@ -58,10 +67,13 @@ export function ProfilePage() {
         </Button>
       </section>
 
-      <div className="grid grid-cols-2 gap-2">
-        <BigStat icon="dumbbell" label={t('Økter totalt', 'Total workouts')} value={num(stats?.workouts ?? 0, 0)} />
+      <div className="mb-2">
+        <RangePicker value={range} onChange={setRange} years={stats?.years ?? [new Date().getFullYear()]} />
+      </div>
+      <div className="grid grid-cols-2 gap-2" aria-label={rangeLabel(range)}>
+        <BigStat icon="dumbbell" label={t('Økter', 'Workouts')} value={num(stats?.workouts ?? 0, 0)} />
         <BigStat icon="scale" label={`${t('Tonn løftet', 'Tonnes lifted')}${unit === 'lbs' ? ' (1000 lbs)' : ''}`} value={num(tonnes, tonnes < 10 ? 1 : 0)} />
-        <BigStat icon="trophy" label={t('Rekorder', 'Records')} value={num(prMap.size, 0)} />
+        <BigStat icon="trophy" label={t('Rekorder', 'Records')} value={num(stats?.records ?? 0, 0)} />
         <BigStat icon="flame" label={t('Lengste streak (uker)', 'Longest streak (weeks)')} value={num(stats?.longest ?? 0, 0)} />
       </div>
 

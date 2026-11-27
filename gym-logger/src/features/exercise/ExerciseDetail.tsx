@@ -189,9 +189,11 @@ export function ExerciseDetail() {
               </span>
             </div>
           )}
+          <div className="mb-1.5 text-xs font-semibold text-faint">{t('Rekorder · alle tider', 'Records · all time')}</div>
           <Records kind={kind} sessions={sessions} unit={unit} />
 
-          <div className="mt-4">
+          <div className="mt-5 mb-1.5 text-xs font-semibold text-faint">{t('Graf og økter · velg tidsrom', 'Chart and workouts · choose a range')}</div>
+          <div>
             <RangePicker value={range} onChange={setRange} years={years} />
           </div>
           <div className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4">

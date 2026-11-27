@@ -28,7 +28,7 @@ if (!__ARTIFACT__) {
       const toast = () =>
         showToast(t('En ny versjon av RepGrade er klar.', 'A new version of RepGrade is ready.'), { label: t('Oppdater', 'Update'), onClick: update }, 60_000);
       // Vis hva som er nytt før oppdatering. Uten nyhetsfil (eller uten nett): bare varselet som før.
-      void fetchWhatsNew().then((news) => (news ? showWhatsNew(news, update, toast) : toast()));
+      void fetchWhatsNew().then((news) => (news ? showWhatsNew(news, update, toast, 'update', __APP_VERSION__) : toast()));
     },
   });
 }

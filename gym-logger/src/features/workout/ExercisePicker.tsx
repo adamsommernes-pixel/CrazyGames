@@ -26,6 +26,7 @@ import { formatSetShort, registerKinds } from '../../lib/kinds';
 import { exerciseName, searchNames } from '../../lib/exerciseName';
 import { Demo3DBadge, hasDemo } from '../exercise/demo3d';
 import { RankedBadge } from '../level/RankedBadge';
+import { isRanked } from '../../lib/strength';
 import { t } from '../../i18n';
 
 export function useExercises(): Exercise[] {
@@ -145,6 +146,7 @@ export function ExercisePicker({
             <span className="block truncate text-sm text-muted">
               {MUSCLE_LABEL[e.muscle_group]} · {EQUIPMENT_LABEL[e.equipment]}
               {e.custom ? ` · ${t('Egen', 'Custom')}` : ''}
+              {isRanked(e.id) && <span className="sr-only"> · {t('teller i styrkenivået', 'counts towards your strength level')}</span>}
               {last ? <span className="font-num text-faint"> · {t('sist', 'last')} {formatSetShort(last, e.kind ?? 'weight', unit)}</span> : null}
             </span>
           </span>
