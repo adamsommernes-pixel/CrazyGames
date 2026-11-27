@@ -5,6 +5,7 @@ import { MuscleTag } from '../../components/MuscleTag';
 import { Icon, type IconName } from '../../components/Icon';
 import { t } from '../../i18n';
 import { ExerciseDemo } from './demo3d';
+import { perHand, perHandHint } from '../../lib/perHand';
 
 /** Muskelgrupper, utstyr, nivå og type for en øvelse. */
 export function ExerciseMeta({ exercise }: { exercise: Exercise }) {
@@ -59,9 +60,31 @@ export function ExerciseGuide({ exercise, autoStartDemo = false }: { exercise: E
   return (
     <div className="flex flex-col gap-5">
       <ExerciseDemo exercise={exercise} autoStart={autoStartDemo} />
+      <PerHandNote exercise={exercise} />
       <Block icon="book" title={t('Slik gjør du', 'How to')} tone="text-accent" items={guide.steps} ordered />
       <Block icon="sparkle" title={t('Tips', 'Tips')} tone="text-sky-300" items={guide.tips} />
       <Block icon="x" title={t('Vanlige feil', 'Common mistakes')} tone="text-warn" items={guide.mistakes} />
+    </div>
+  );
+}
+
+/** «Slik logger du vekten» for manual- og kettlebelløvelser. */
+export function PerHandNote({ exercise }: { exercise: Exercise }) {
+  const hand = perHand(exercise);
+  if (!hand) return null;
+  return (
+    <div className="flex gap-3 rounded-xl border border-accent/30 bg-accent-soft/40 px-3.5 py-3 text-sm" data-per-hand-note>
+      <Icon name="info" size={18} className="mt-0.5 shrink-0 text-accent" />
+      <div>
+        <div className="font-semibold">{t('Slik logger du vekten', 'How to log the weight')}</div>
+        <p className="mt-0.5 text-muted">
+          {perHandHint(hand)}{' '}
+          {t(
+            'Bruker du to manualer på 20 kg, skriver du 20. Styrkenivået regnes ut fra dette, så det blir feil hvis du skriver 40.',
+            'If you use two 20 kg dumbbells, enter 20. Your strength level is calculated from this, so entering 40 makes it wrong.',
+          )}
+        </p>
+      </div>
     </div>
   );
 }

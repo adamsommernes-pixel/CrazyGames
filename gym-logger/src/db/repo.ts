@@ -243,6 +243,34 @@ export async function addWarmupSets(we: WorkoutExercise, warmups: { weight: numb
 }
 
 /** Hvilke rader en sletting markerte som slettet, så den kan angres nøyaktig. */
+/**
+ * Deler vekten på to for de gitte setene (for manualøvelser logget med begge manualene samlet).
+ * Gir de gamle vektene tilbake, så det kan angres med restoreSetWeights.
+ */
+export async function halveSetWeights(ids: string[]): Promise<{ id: string; weight: number }[]> {
+  const before: { id: string; weight: number }[] = [];
+  await db.transaction('rw', db.sets, async () => {
+    const rows = (await db.sets.bulkGet(ids)).filter((s): s is WorkoutSet => !!s && !s.deleted && s.weight > 0);
+    for (const s of rows) before.push({ id: s.id, weight: s.weight });
+    await db.sets.bulkPut(rows.map((s) => touched({ ...s, weight: Math.round((s.weight / 2) * 100) / 100 })));
+  });
+  return before;
+}
+
+export async function restoreSetWeights(prev: { id: string; weight: number }[]) {
+  await db.transaction('rw', db.sets, async () => {
+    for (const p of prev) {
+      const s = await db.sets.get(p.id);
+      if (s) await db.sets.put(touched({ ...s, weight: p.weight }));
+    }
+  });
+}
+
+/** Alle set (ikke slettede) for en øvelse, på tvers av økter. */
+export async function setIdsForExercise(exerciseId: string): Promise<string[]> {
+  return (await db.sets.where('exercise_id').equals(exerciseId).toArray()).filter((s) => !s.deleted && s.weight > 0).map((s) => s.id);
+}
+
 export type Removed = Partial<
   Record<'workouts' | 'workout_exercises' | 'sets' | 'routines' | 'routine_exercises' | 'bodyweights' | 'exercises', string[]>
 >;

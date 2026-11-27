@@ -1,5 +1,9 @@
 import { Icon } from '../../components/Icon';
 import { Demo3DBadge, hasDemo } from './demo3d';
+import { perHand, perHandHint } from '../../lib/perHand';
+import { halveSetWeights, restoreSetWeights, setIdsForExercise } from '../../db/repo';
+import { askConfirm } from '../../components/confirm';
+import { undoToast } from '../../components/toast';
 import { currentAccent } from '../../lib/theme';
 import { LiftLevel } from '../level/LiftLevel';
 import { useMemo, useState } from 'react';
@@ -149,6 +153,32 @@ export function ExerciseDetail() {
         <EmptyState icon="chart" title={t('Ingen fullførte sets', 'No completed sets')} text={t('Logg øvelsen i en økt for å se rekorder og grafer.', 'Log the exercise in a workout to see records and charts.')} />
       ) : (
         <>
+          {perHand(exercise) && (
+            <div className="mb-3 flex items-start gap-2.5 rounded-xl border border-line bg-raised px-3 py-2.5 text-xs text-muted" data-per-hand-history>
+              <Icon name="info" size={15} className="mt-0.5 shrink-0 text-faint" />
+              <span className="flex-1">
+                {perHandHint(perHand(exercise)!)}{' '}
+                <button
+                  type="button"
+                  className="font-semibold text-accent"
+                  onClick={async () => {
+                    const ok = await askConfirm(
+                      t(
+                        'Alle vektene du har logget på denne øvelsen deles på to. Bruk dette hvis du har skrevet inn begge manualene til sammen. Styrkenivå og rekorder regnes ut på nytt.',
+                        'All weights you have logged for this exercise are halved. Use this if you entered both dumbbells together. Strength level and records are recalculated.',
+                      ),
+                      { confirmLabel: t('Del på to', 'Halve'), title: t('Logget feil?', 'Logged wrong?'), danger: false },
+                    );
+                    if (!ok) return;
+                    const prev = await halveSetWeights(await setIdsForExercise(exercise.id));
+                    undoToast(t(`Vektene er delt på to (${prev.length} set)`, `Weights halved (${prev.length} sets)`), () => restoreSetWeights(prev));
+                  }}
+                >
+                  {t('Logget feil? Del alle på to', 'Logged wrong? Halve all')}
+                </button>
+              </span>
+            </div>
+          )}
           <Records kind={kind} sessions={sessions} unit={unit} />
 
           <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4">
