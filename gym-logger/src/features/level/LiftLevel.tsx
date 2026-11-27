@@ -27,8 +27,8 @@ export function LiftLevel({ exerciseId }: { exerciseId: string }) {
         <div className="text-xs text-muted">
           {lift
             ? next && lift.nextTierKg
-              ? t(`1RM ≈ ${kg(lift.e1rm)} · ${kg(lift.nextTierKg)} til ${next.name}`, `1RM ≈ ${kg(lift.e1rm)} · ${kg(lift.nextTierKg)} for ${next.name}`)
-              : `1RM ≈ ${kg(lift.e1rm)}`
+              ? t(`1RM nå ${kg(lift.e1rm)}. Klarer du ${kg(lift.nextTierKg)}, blir du ${next.name}.`, `1RM now ${kg(lift.e1rm)}. Lift ${kg(lift.nextTierKg)} to reach ${next.name}.`)
+              : t(`1RM ${kg(lift.e1rm)} · toppnivået`, `1RM ${kg(lift.e1rm)} · top level`)
             : t('Logg et set for å få nivå på dette løftet.', 'Log a set to get a level on this lift.')}
         </div>
       </div>

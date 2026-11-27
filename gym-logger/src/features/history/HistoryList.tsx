@@ -82,7 +82,7 @@ export function HistoryList() {
                 return (
                   <li key={w.id}>
                     <button type="button" className="w-full text-left" onClick={() => navigate(`/history/${w.id}`)}>
-                      <Card className="flex items-center gap-3 p-4">
+                      <Card className="flex items-center gap-3 p-3.5">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <span className="truncate font-semibold">{w.name}</span>

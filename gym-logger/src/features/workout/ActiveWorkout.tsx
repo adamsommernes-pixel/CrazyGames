@@ -19,6 +19,7 @@ import {
 } from '../../db/repo';
 import { Button, EmptyState, NumberStepper, Page, Sheet, Stat, inputClass } from '../../components/ui';
 import { ExerciseCard } from './ExerciseCard';
+import { ReorderSheet } from './ReorderSheet';
 import { ExercisePicker, useExerciseMap } from './ExercisePicker';
 import { stopRest, useNow } from './restTimer';
 import { useWakeLock } from './useWakeLock';
@@ -43,6 +44,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
   const sets = useLiveQuery(() => setsForWorkout(workout.id), [workout.id], []);
   const location = useLocation();
   const [picker, setPicker] = useState(false);
+  const [reordering, setReordering] = useState(false);
   // Hjem kan sende hit med «avslutt nå» for en glemt økt.
   const [finishing, setFinishing] = useState(() => !!(location.state as { finish?: boolean } | null)?.finish);
   const [name, setName] = useState(workout.name);
@@ -110,6 +112,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
 
   return (
     <Page
+      brand
       title={
         <label className="flex min-w-0 items-center gap-1.5">
           <input
@@ -142,6 +145,12 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
         <EmptyState icon="dumbbell" title={t('Tom økt', 'Empty workout')} text={t('Legg til den første øvelsen for å begynne å logge.', 'Add your first exercise to start logging.')} />
       ) : (
         <div className="flex flex-col gap-3">
+          {wes.length > 1 && (
+            <button type="button" onClick={() => setReordering(true)} className="-mb-1 ml-auto flex min-h-9 items-center gap-1.5 px-1 text-sm font-medium text-muted">
+              <span aria-hidden="true">≡</span>
+              {t('Endre rekkefølge', 'Reorder')}
+            </button>
+          )}
           {wes.map((we, i) => (
             <ExerciseCard
               key={we.id}
@@ -161,6 +170,8 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
       <Button full icon="plus" variant="secondary" className="mt-4 min-h-14 border-accent/50 text-accent" onClick={() => setPicker(true)}>
         {t('Legg til øvelse', 'Add exercise')}
       </Button>
+
+      <ReorderSheet open={reordering} onClose={() => setReordering(false)} workoutId={workout.id} wes={wes} exMap={exMap} />
 
       <ExercisePicker
         open={picker}

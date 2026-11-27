@@ -1,0 +1,12 @@
+{
+  "version": "1.1.0",
+  "items": [
+    { "icon": "sparkle", "nb": "Nytt, mer luftig design med jevnere overganger mellom sidene", "en": "A cleaner design with smoother transitions between pages" },
+    { "icon": "timer", "nb": "Varsel med lyd og vibrasjon når pausen er over, også når telefonen er låst", "en": "Sound and vibration when rest is over, even with the phone locked" },
+    { "icon": "play", "nb": "Musikken stopper ikke lenger på iPhone når du bruker appen", "en": "Music no longer stops on iPhone while you use the app" },
+    { "icon": "dumbbell", "nb": "Over 70 nye øvelser og en penere 3D-figur, nå med egen 3D-knapp i økta", "en": "Over 70 new exercises and a nicer 3D figure, now with a 3D button in your workout" },
+    { "icon": "trophy", "nb": "Styrkenivå: løftene dine øverst, med hva som skal til for neste nivå", "en": "Strength level: your lifts first, with what it takes to reach the next level" },
+    { "icon": "repeat", "nb": "Dra for å endre rekkefølge på øvelser, og sveip et set til venstre for å slette", "en": "Drag to reorder exercises, and swipe a set left to delete it" },
+    { "icon": "chart", "nb": "Trykk på øvelsesnavnet i økta for rekorder og grafer", "en": "Tap the exercise name in a workout for records and charts" }
+  ]
+}

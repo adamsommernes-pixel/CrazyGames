@@ -8,11 +8,29 @@ import { formatSet } from '../../lib/kinds';
 import { exerciseName } from '../../lib/exerciseName';
 import { buzz } from '../../lib/haptics';
 import { t } from '../../i18n';
+import { cancelRestAlarm, scheduleRestAlarm } from '../../lib/push';
 
 // Timeren lagrer sluttidspunktet, så den teller riktig selv om skjermen låses
 // eller appen lukkes og åpnes igjen.
 
 let audio: AudioContext | null = null;
+
+type AudioSessionType = 'auto' | 'playback' | 'transient' | 'transient-solo' | 'ambient' | 'play-and-record';
+const audioSession = () => (typeof navigator !== 'undefined' ? (navigator as unknown as { audioSession?: { type: AudioSessionType } }).audioSession : undefined);
+
+/**
+ * Lydmodus på iPhone (Safari 16.4+): «ambient» blander seg med musikk, så Spotify o.l. fortsetter.
+ * («playback» tok over lyden og stoppet musikken ved hvert trykk.) Bare mens pipet spilles brukes
+ * «transient», som demper musikken et øyeblikk og slipper den fri igjen.
+ */
+export function setAudioMode(type: AudioSessionType) {
+  try {
+    const s = audioSession();
+    if (s && s.type !== type) s.type = type;
+  } catch {
+    /* ikke støttet */
+  }
+}
 
 /**
  * Må kalles fra et trykk (iOS krever det). Kalles ved hvert trykk, fordi iPhone setter lyden
@@ -20,9 +38,7 @@ let audio: AudioContext | null = null;
  */
 export function unlockAudio() {
   try {
-    // Spill lyd selv når iPhone står på lydløs (Safari 16.4+). Ellers dempes Web Audio av lydløs-bryteren.
-    const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
-    if (session && session.type !== 'playback') session.type = 'playback';
+    setAudioMode('ambient');
     const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     audio ??= new Ctx();
     if (audio.state !== 'running') void audio.resume();
@@ -34,6 +50,8 @@ export function unlockAudio() {
 function beep() {
   if (!audio) return;
   try {
+    setAudioMode('transient');
+    setTimeout(() => setAudioMode('ambient'), 1200);
     if (audio.state !== 'running') void audio.resume();
     const t = audio.currentTime;
     for (const [i, freq] of [880, 880, 1320].entries()) {
@@ -53,20 +71,44 @@ function beep() {
   }
 }
 
+/** «Benkpress – neste set» til varselet. */
+async function nextSetText(): Promise<string> {
+  try {
+    const w = await getActiveWorkout();
+    if (!w) return '';
+    const wes = await workoutExercises(w.id);
+    const s = nextPendingSet(wes, await setsForWorkout(w.id));
+    if (!s) return t('Økta er ferdig. Bra jobba!', 'Workout done. Nice work!');
+    const ex = await db.exercises.get(s.exercise_id);
+    return `${exerciseName(ex)} – ${t('neste set', 'next set')}`;
+  } catch {
+    return '';
+  }
+}
+
 export async function startRest(seconds: number) {
   if (seconds <= 0) return;
-  await setSetting('restTimer', { endAt: Date.now() + seconds * 1000, total: seconds });
+  const endAt = Date.now() + seconds * 1000;
+  await setSetting('restTimer', { endAt, total: seconds });
+  void nextSetText().then((body) => scheduleRestAlarm(endAt, body));
 }
 
 export async function adjustRest(delta: number) {
   const t = await getSetting('restTimer');
   if (!t) return;
   const endAt = t.endAt + delta * 1000;
-  if (endAt <= Date.now()) return setSetting('restTimer', null);
+  if (endAt <= Date.now()) {
+    void cancelRestAlarm();
+    return setSetting('restTimer', null);
+  }
   await setSetting('restTimer', { endAt, total: Math.max(1, t.total + delta) });
+  void nextSetText().then((body) => scheduleRestAlarm(endAt, body));
 }
 
-export const stopRest = () => setSetting('restTimer', null);
+export const stopRest = () => {
+  void cancelRestAlarm();
+  return setSetting('restTimer', null);
+};
 
 export function useNow(intervalMs = 1000, active = true) {
   const [now, setNow] = useState(Date.now());

@@ -1,4 +1,4 @@
-name: Repgrade → GitHub Pages
+name: RepGrade → GitHub Pages
 
 on:
   push:
@@ -41,6 +41,8 @@ jobs:
           # Valgfritt: legg inn som repository secrets for å slå på sky-synk.
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # Offentlig nøkkel for varsler når pausen er over (repository-variabel). Tom = funksjonen er skjult.
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VITE_VAPID_PUBLIC_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: gym-logger/dist-site

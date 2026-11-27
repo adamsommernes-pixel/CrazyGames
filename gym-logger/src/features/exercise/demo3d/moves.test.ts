@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { MOVES, moveFor, sample } from './moves';
-import { RADII, jointAngle, len, sub, type V3 } from './rig';
+import { RADII, jointAngle, len, limbRadius, sub, type LimbName, type V3 } from './rig';
 import { NB_NAMED } from '../../../db/library';
 
 const PHASES = Array.from({ length: 101 }, (_, i) => i / 100);
 
 /** Avstand fra punktet `p` til en stang langs x-aksen gjennom `bar` (sett fra siden). */
 const barDist = (p: V3, bar: V3) => Math.hypot(p[1] - bar[1], p[2] - bar[2]);
-/** Klaring (sett fra siden) mellom stanga og overflaten på et avsmalnende lem fra `a` (radius r[0]) til `b` (r[1]). */
-function clearance(a: V3, b: V3, r: readonly [number, number], bar: V3) {
+/** Klaring (sett fra siden) mellom stanga og overflaten på et lem fra `a` til `b`, med samme muskelform som tegningen. */
+function clearance(a: V3, b: V3, limb: LimbName, bar: V3) {
   let best = Infinity;
   for (let i = 0; i <= 40; i++) {
     const t = i / 40;
     const p: V3 = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-    best = Math.min(best, barDist(p, bar) - (r[0] + (r[1] - r[0]) * t) - RADII.bar);
+    best = Math.min(best, barDist(p, bar) - limbRadius(limb, t, false) - RADII.bar);
   }
   return best;
 }
@@ -62,8 +62,8 @@ describe('3D-demoer', () => {
             expect(len(sub(bar, j.head)), `hode ved ${p}`).toBeGreaterThanOrEqual(0.12);
             for (const s of [0, 1]) {
               // Stanga kan streife beina (inntil 5 mm), men ikke gå gjennom dem.
-              expect(clearance(j.knees[s], j.ankles[s], RADII.shin, bar), `legg ${s} ved ${p}`).toBeGreaterThanOrEqual(-0.005);
-              expect(clearance(j.hips[s], j.knees[s], RADII.thigh, bar), `lår ${s} ved ${p}`).toBeGreaterThanOrEqual(-0.005);
+              expect(clearance(j.knees[s], j.ankles[s], 'shin', bar), `legg ${s} ved ${p}`).toBeGreaterThanOrEqual(-0.005);
+              expect(clearance(j.hips[s], j.knees[s], 'thigh', bar), `lår ${s} ved ${p}`).toBeGreaterThanOrEqual(-0.005);
             }
           }
         });

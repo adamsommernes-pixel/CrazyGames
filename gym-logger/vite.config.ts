@@ -37,8 +37,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Repgrade',
-        short_name: 'Repgrade',
+        name: 'RepGrade',
+        short_name: 'RepGrade',
         description: 'Logg treningen din og klatre fra Nybegynner til Olympia. Log your training and climb from Newbie to Olympia.',
         lang: 'nb',
         theme_color: '#0A0A0A',
@@ -65,6 +65,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png}', '**/*latin*.woff2', 'demos/*.jpg'],
         globIgnores: ['screenshots/**'],
         navigateFallback: 'index.html',
+        // Varsler når pausen er over (web push), se public/push-sw.js.
+        importScripts: ['push-sw.js'],
       },
     }),
   ],

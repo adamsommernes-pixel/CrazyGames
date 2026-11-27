@@ -180,7 +180,7 @@ function header(ctx: Ctx, w: number, date: string): number {
   // Logoen (samme som app-ikonet) og navnet.
   if (logo) ctx.drawImage(logo, PAD, y - 38, 48, 48);
   font(ctx, 700, 32);
-  draw(ctx, 'Repgrade', PAD + 64, y, C.ink);
+  draw(ctx, 'RepGrade', PAD + 64, y, C.ink);
   font(ctx, 500, 28, SANS);
   draw(ctx, ellipsize(ctx, date, w / 2 - PAD), w - PAD, y, C.muted, 'right');
   return y + 40;
@@ -197,7 +197,7 @@ function footer(ctx: Ctx, w: number, h: number, data: ShareData, emblem: HTMLIma
     draw(ctx, data.tier.name, PAD + size + 24, y - 12, tierAccent(data.tier.index, A.strong));
   } else {
     font(ctx, 500, 26, SANS);
-    draw(ctx, t('Logget med Repgrade', 'Logged with Repgrade'), PAD, y - 12, C.faint);
+    draw(ctx, t('Logget med RepGrade', 'Logged with RepGrade'), PAD, y - 12, C.faint);
   }
   font(ctx, 600, 26, SANS);
   draw(ctx, 'repgrade', w - PAD, y - 12, A.accent, 'right');

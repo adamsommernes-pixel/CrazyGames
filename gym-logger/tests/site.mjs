@@ -59,7 +59,7 @@ try {
 
   // Manifest og ikoner
   const manifest = await (await page.request.get(BASE + 'app/manifest.webmanifest')).json();
-  assert.equal(manifest.name, 'Repgrade');
+  assert.equal(manifest.name, 'RepGrade');
   assert.equal(manifest.start_url, '/app/');
   for (const src of [...manifest.icons, ...manifest.screenshots].map((i) => i.src)) {
     assert.equal((await page.request.get(BASE + 'app/' + src)).status(), 200, src);

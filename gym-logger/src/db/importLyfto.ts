@@ -1,5 +1,5 @@
 // Import fra Lyfto (JSON-eksporten, schema «lyfto-export»). Filen gjøres om til en vanlig
-// Repgrade-backup og leses inn med importBackup, så forhåndsvisning, sammenslåing og synk er de
+// RepGrade-backup og leses inn med importBackup, så forhåndsvisning, sammenslåing og synk er de
 // samme som for egne backuper. Id-ene er faste («lyfto-…»), så samme fil kan leses inn flere ganger
 // uten duplikater.
 import type { Backup } from './backup';
@@ -7,7 +7,7 @@ import { BUILTIN_EXERCISES } from './library';
 import type { Equipment, ExerciseKind, MuscleGroup, Row } from './types';
 import { MUSCLE_LABEL } from './types';
 
-/** Lyfto-øvelse → Repgrade-slug. Øvelser som mangler her blir egne øvelser. */
+/** Lyfto-øvelse → RepGrade-slug. Øvelser som mangler her blir egne øvelser. */
 export const LYFTO_MAP: Record<string, string> = {
   'bench-press': 'benkpress',
   'incline-bench-press': 'skrabenk',
@@ -106,6 +106,28 @@ export const LYFTO_MAP: Record<string, string> = {
   treadmill: 'tredemolle',
   'rowing-machine': 'romaskin',
   running: 'loping',
+  // Nye øvelser i v1.1
+  'bayesian-cable-curl': 'bayesian-curl',
+  'cable-wrist-curl': 'kabel-handleddscurl',
+  'assisted-pull-up-machine': 'assistert-pull-up',
+  'reverse-wrist-curl-dumbbell': 'omvendt-handleddscurl',
+  'smith-machine-row': 'smith-roing',
+  'machine-preacher-curl': 'maskin-preacher',
+  'smith-machine-calf-raise': 'smith-tahev',
+  'landmine-180': 'landmine-180',
+  'reverse-grip-pushdown': 'omvendt-pushdown',
+  'band-pull-apart': 'band-pull-apart',
+  'rear-delt-machine': 'bakre-skulder-maskin',
+  'smith-machine-squat': 'smith-kneboy',
+  'belt-squat': 'beltekneboy',
+  'pendulum-squat': 'pendel-kneboy',
+  'reverse-lunge': 'omvendt-utfall',
+  'cable-woodchop': 'kabel-woodchop',
+  'push-press': 'push-press',
+  'floor-press': 'gulvpress',
+  'dumbbell-pullover': 'pullover-manual',
+  'seal-row': 'seal-row',
+  'meadows-row': 'meadows-roing',
 };
 
 const MUSCLE: Record<string, MuscleGroup> = {
@@ -142,7 +164,7 @@ export const isLyfto = (json: unknown): json is LyftoExport => (json as { schema
 
 const BUILTIN = new Map(BUILTIN_EXERCISES.map((e) => [e.id, e]));
 
-/** Gjør en Lyfto-eksport om til en Repgrade-backup. Bare fullførte sets tas med. */
+/** Gjør en Lyfto-eksport om til en RepGrade-backup. Bare fullførte sets tas med. */
 export function lyftoToBackup(data: LyftoExport): Backup {
   const stamp = data.exportedAt ?? new Date().toISOString();
   const row = (id: string): Row => ({ id, updated_at: stamp, deleted: 0, dirty: 1 });
@@ -150,7 +172,7 @@ export function lyftoToBackup(data: LyftoExport): Backup {
   const exercises: Row[] = [];
   const made = new Map<string, { id: string; group: MuscleGroup; kind: ExerciseKind }>();
 
-  /** Repgrade-øvelsen for en Lyfto-id (lager en egen øvelse første gang den trengs). */
+  /** RepGrade-øvelsen for en Lyfto-id (lager en egen øvelse første gang den trengs). */
   const exerciseFor = (lid: string) => {
     const hit = made.get(lid);
     if (hit) return hit;

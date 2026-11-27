@@ -378,6 +378,16 @@ export async function moveWorkoutExercise(workoutId: string, weId: string, dir: 
   await db.workout_exercises.bulkPut([touched({ ...a, position: b.position }), touched({ ...b, position: a.position })]);
 }
 
+/** Setter ny rekkefølge på øvelsene i en økt (id-er i ønsket rekkefølge). */
+export async function setWorkoutExerciseOrder(workoutId: string, ids: string[]) {
+  const list = await workoutExercises(workoutId);
+  const changed = list
+    .map((we) => ({ we, pos: ids.indexOf(we.id) }))
+    .filter(({ we, pos }) => pos >= 0 && we.position !== pos)
+    .map(({ we, pos }) => touched({ ...we, position: pos }));
+  if (changed.length) await db.workout_exercises.bulkPut(changed);
+}
+
 export async function renameWorkout(id: string, name: string) {
   const w = await db.workouts.get(id);
   if (w) await db.workouts.put(touched({ ...w, name }));

@@ -1,5 +1,6 @@
 import { useAutosave } from '../../lib/autosave';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { Exercise, ExerciseKind, WorkoutExercise, WorkoutSet } from '../../db/types';
 import { KIND_LABEL, SET_TYPES, SET_TYPE_LABEL } from '../../db/types';
@@ -21,14 +22,17 @@ import {
 import type { PRKind } from '../../lib/calc';
 import { stepFor, suggestNext, warmupSets } from '../../lib/progression';
 import { kindColumns } from '../../lib/kinds';
-import { ActionList, Button, Card, Chip, IconButton, NumberStepper, Sheet } from '../../components/ui';
+import { ActionList, Button, Card, IconButton, NumberStepper, Sheet } from '../../components/ui';
 import { PlateCalculator } from '../../components/PlateCalculator';
 import { MuscleDot } from '../../components/MuscleTag';
+import { SwipeToDelete } from '../../components/SwipeToDelete';
+import { SET_TYPE_COLOR, setTypeSoft } from '../../lib/setTypes';
 import { undoToast } from '../../components/toast';
 import { Icon } from '../../components/Icon';
 import { SET_GRID, SetRow } from './SetRow';
 import { ExercisePicker } from './ExercisePicker';
 import { ExerciseInfoSheet } from '../exercise/ExerciseInfoSheet';
+import { Demo3DBadge, hasDemo } from '../exercise/demo3d';
 import { startRest } from './restTimer';
 import { duration, fromDisplay, num, toDisplay } from '../../lib/format';
 import { useSetting } from '../../lib/settings';
@@ -74,6 +78,8 @@ export function ExerciseCard({
   const [notes, setNotes] = useState(we.notes);
   const notesSave = useAutosave(600);
   const [info, setInfo] = useState(false);
+  const [demo, setDemo] = useState(false);
+  const navigate = useNavigate();
   const [swapping, setSwapping] = useState(false);
 
   // Etter et bytte av øvelse hører notatet til den nye øvelsen.
@@ -114,10 +120,10 @@ export function ExerciseCard({
   let warmIndex = 0;
 
   return (
-    <Card className={`p-3 transition-shadow ${sorted.some((s) => s.id === currentSetId) ? 'border-accent/30' : ''}`}>
+    <Card className={`p-2.5 transition-shadow ${sorted.some((s) => s.id === currentSetId) ? 'border-accent/30' : ''}`}>
       <div className="mb-1 flex items-center gap-1 pl-1">
-        <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setInfo(true)} aria-label={`${exerciseName(exercise)}: ${t('slik gjør du og historikk', 'how to and history')}`}>
-          <h2 className="flex items-center gap-2 truncate text-lg font-bold text-accent">
+        <button type="button" className="min-w-0 flex-1 text-left" onClick={() => navigate(`/exercise/${we.exercise_id}`)} aria-label={`${exerciseName(exercise)}: ${t('rekorder, grafer og historikk', 'records, charts and history')}`}>
+          <h2 className="flex items-center gap-2 truncate text-base font-bold text-accent">
             {exercise && <MuscleDot group={exercise.muscle_group} size={9} />}
             <span className="truncate">{exerciseName(exercise)}</span>
           </h2>
@@ -127,7 +133,20 @@ export function ExerciseCard({
             {!isWeight ? ` · ${KIND_LABEL[kind]}` : ''} · {t('hvile', 'rest')} {duration(we.rest_seconds * 1000)}
           </p>
         </button>
-        <IconButton icon="info" label={t('Slik gjør du', 'How to')} onClick={() => setInfo(true)} />
+        {exercise && hasDemo(exercise) && (
+          <button
+            type="button"
+            aria-label={t(`3D-demo av ${exerciseName(exercise)}`, `3D demo of ${exerciseName(exercise)}`)}
+            onClick={() => {
+              setDemo(true);
+              setInfo(true);
+            }}
+            className="grid size-10 shrink-0 place-items-center rounded-lg active:bg-raised"
+          >
+            <Demo3DBadge className="px-2 py-0.5 text-[11px]" />
+          </button>
+        )}
+        <IconButton icon="info" label={t('Slik gjør du', 'How to')} onClick={() => { setDemo(false); setInfo(true); }} />
         {barbell && <IconButton icon="plates" label={t('Platekalkulator', 'Plate calculator')} onClick={openPlates} />}
         <IconButton icon="more" label={t('Valg for øvelse', 'Exercise options')} onClick={() => setMenu(true)} />
       </div>
@@ -197,19 +216,26 @@ export function ExerciseCard({
           if (s.set_type !== 'warmup') workIndex++;
           if (s.set_type === 'normal') label++;
           return (
-            <SetRow
+            <SwipeToDelete
               key={s.id}
-              set={s}
-              kind={kind}
-              current={s.id === currentSetId}
-              label={s.set_type === 'normal' ? label : s.set_type === 'warmup' ? `${t('oppvarming', 'warm-up')} ${++warmIndex}` : `${label + 1} (${SET_TYPE_LABEL[s.set_type].toLowerCase()})`}
-              previous={prev}
-              unit={unit}
-              prs={prMap.get(s.id)}
-              targetReps={s.set_type === 'warmup' ? null : we.target_reps}
-              onCompleted={() => void startRest(we.rest_seconds)}
-              onMenu={() => setEditing(s)}
-            />
+              onDelete={async () => {
+                const removed = await deleteSet(s.id);
+                undoToast(t('Settet er slettet', 'Set deleted'), () => restore(removed));
+              }}
+            >
+              <SetRow
+                set={s}
+                kind={kind}
+                current={s.id === currentSetId}
+                label={s.set_type === 'normal' ? label : s.set_type === 'warmup' ? `${t('oppvarming', 'warm-up')} ${++warmIndex}` : `${label + 1} (${SET_TYPE_LABEL[s.set_type].toLowerCase()})`}
+                previous={prev}
+                unit={unit}
+                prs={prMap.get(s.id)}
+                targetReps={s.set_type === 'warmup' ? null : we.target_reps}
+                onCompleted={() => void startRest(we.rest_seconds)}
+                onMenu={() => setEditing(s)}
+              />
+            </SwipeToDelete>
           );
         })}
       </div>
@@ -276,7 +302,7 @@ export function ExerciseCard({
       </Sheet>
 
       <SetEditor set={editing} unit={unit} kind={kind} onClose={() => setEditing(null)} />
-      {info && exercise && <ExerciseInfoSheet exercise={exercise} onClose={() => setInfo(false)} />}
+      {info && exercise && <ExerciseInfoSheet exercise={exercise} demo={demo} onClose={() => setInfo(false)} />}
       <ExercisePicker
         open={swapping}
         single
@@ -310,6 +336,17 @@ function SetEditor({ set, unit, kind, onClose }: { set: WorkoutSet | null; unit:
   const secondLabel = kind === 'time' ? t('Sekunder', 'Seconds') : cardio ? t('Minutter', 'Minutes') : 'Reps';
   return (
     <Sheet open onClose={() => void save()} title={t('Rediger set', 'Edit set')}>
+      <div
+        className="mb-4 flex items-center gap-2.5 rounded-xl border-l-4 px-3 py-2"
+        style={{ borderColor: SET_TYPE_COLOR[set.set_type], background: setTypeSoft(set.set_type, 12) }}
+        data-set-type={set.set_type}
+      >
+        <span className="size-2.5 rounded-full" style={{ background: SET_TYPE_COLOR[set.set_type] }} />
+        <span className="text-sm font-semibold" style={{ color: SET_TYPE_COLOR[set.set_type] }}>
+          {SET_TYPE_LABEL[set.set_type]}
+        </span>
+        <span className="text-sm text-muted">{set.completed_at ? t('· fullført', '· done') : t('· ikke fullført', '· not done')}</span>
+      </div>
       <div className="grid grid-cols-1 gap-3">
         <div>
           <div className="mb-1.5 text-sm text-muted">{firstLabel}</div>
@@ -338,11 +375,26 @@ function SetEditor({ set, unit, kind, onClose }: { set: WorkoutSet | null; unit:
       </div>
       <div className="mt-5 mb-2 text-sm text-muted">{t('Type set', 'Set type')}</div>
       <div className="flex flex-wrap gap-2">
-        {SET_TYPES.map((t) => (
-          <Chip key={t} active={set.set_type === t} onClick={() => void updateSet(set.id, { set_type: t, ...values() }).then(onClose)}>
-            {SET_TYPE_LABEL[t]}
-          </Chip>
-        ))}
+        {SET_TYPES.map((type) => {
+          const active = set.set_type === type;
+          return (
+            <button
+              key={type}
+              type="button"
+              aria-pressed={active}
+              onClick={() => void updateSet(set.id, { set_type: type, ...values() }).then(onClose)}
+              className="flex min-h-9 items-center gap-2 rounded-full border px-3 text-sm font-medium transition-colors"
+              style={{
+                borderColor: active ? SET_TYPE_COLOR[type] : 'var(--color-line)',
+                background: active ? setTypeSoft(type, 22) : 'var(--color-raised)',
+                color: active ? SET_TYPE_COLOR[type] : 'var(--color-muted)',
+              }}
+            >
+              <span className="size-2 rounded-full" style={{ background: SET_TYPE_COLOR[type] }} />
+              {SET_TYPE_LABEL[type]}
+            </button>
+          );
+        })}
       </div>
       <div className="mt-6 flex gap-2">
         <Button

@@ -90,7 +90,7 @@ export function ProgressList() {
         <EmptyState icon="chart" title={t('Ingen data ennå', 'No data yet')} text={t('Når du har logget noen økter ser du grafer, rekorder og fordeling på muskelgrupper her.', 'Once you have logged a few workouts you will see charts, records and muscle group split here.')} />
       ) : (
         <>
-          <Card className="p-4">
+          <Card className="p-3.5">
             <div className="mb-2 flex items-center justify-between gap-2">
               <h2 className="font-semibold">{t('Siste 12 uker', 'Last 12 weeks')}</h2>
               <div className="flex gap-1.5">
@@ -112,7 +112,7 @@ export function ProgressList() {
           {split.length > 0 && (
             <>
               <SectionTitle>{t('Muskelgrupper siste 30 dager', 'Muscle groups, last 30 days')}</SectionTitle>
-              <Card className="flex flex-col gap-2.5 p-4">
+              <Card className="flex flex-col gap-2.5 p-3.5">
                 {split.map(([g, n]) => (
                   <div key={g} className="grid grid-cols-[6rem_1fr_2.5rem] items-center gap-3 text-sm">
                     <span className="flex items-center gap-2 text-muted">
@@ -147,7 +147,7 @@ export function ProgressList() {
             {rows.map((r) => (
               <li key={r.id}>
                 <button type="button" className="w-full text-left" onClick={() => navigate(`/exercise/${r.id}`)}>
-                  <Card className="flex items-center gap-3 p-4">
+                  <Card className="flex items-center gap-3 p-3.5">
                     <MuscleDot group={r.exercise!.muscle_group} size={10} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-semibold">{exerciseName(r.exercise)}</div>

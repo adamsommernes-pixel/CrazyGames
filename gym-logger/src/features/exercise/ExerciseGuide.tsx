@@ -47,7 +47,7 @@ function Block({ icon, title, tone, items, ordered }: { icon: IconName; title: s
 }
 
 /** «Slik gjør du»: steg for steg, tips og vanlige feil. Egne øvelser har ingen fremgangsmåte. */
-export function ExerciseGuide({ exercise }: { exercise: Exercise }) {
+export function ExerciseGuide({ exercise, autoStartDemo = false }: { exercise: Exercise; autoStartDemo?: boolean }) {
   const guide = guideFor(exercise.id);
   if (!guide) {
     return (
@@ -58,7 +58,7 @@ export function ExerciseGuide({ exercise }: { exercise: Exercise }) {
   }
   return (
     <div className="flex flex-col gap-5">
-      <ExerciseDemo exercise={exercise} />
+      <ExerciseDemo exercise={exercise} autoStart={autoStartDemo} />
       <Block icon="book" title={t('Slik gjør du', 'How to')} tone="text-accent" items={guide.steps} ordered />
       <Block icon="sparkle" title={t('Tips', 'Tips')} tone="text-sky-300" items={guide.tips} />
       <Block icon="x" title={t('Vanlige feil', 'Common mistakes')} tone="text-warn" items={guide.mistakes} />

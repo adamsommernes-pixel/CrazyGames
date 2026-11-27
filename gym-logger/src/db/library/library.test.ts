@@ -14,8 +14,8 @@ const OLD_IDS = `benkpress skrabenk benkpress-med-manualer skrabenk-med-manualer
 describe('øvelsesbiblioteket', () => {
   const ids = BUILTIN_EXERCISES.map((e) => e.id);
 
-  it('har rundt 130 øvelser med unike id-er og navn', () => {
-    expect(ids.length).toBeGreaterThanOrEqual(120);
+  it('har over 200 øvelser med unike id-er og navn', () => {
+    expect(ids.length).toBeGreaterThanOrEqual(200);
     expect(new Set(ids).size).toBe(ids.length);
     expect(new Set(BUILTIN_EXERCISES.map((e) => e.name)).size).toBe(ids.length);
   });

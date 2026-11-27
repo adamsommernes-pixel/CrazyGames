@@ -4,7 +4,7 @@
 @import '@fontsource/space-grotesk/latin-700.css';
 
 /*
- * Repgrade — nøytralt mørkt, med én aksentfarge som brukeren velger selv (src/lib/theme.ts).
+ * RepGrade — nøytralt mørkt, med én aksentfarge som brukeren velger selv (src/lib/theme.ts).
  * Aksenten brukes sparsomt: hovedhandlinger, valgt tilstand og data. Space Grotesk bare til tall.
  */
 @theme {
@@ -53,6 +53,11 @@
   body,
   #root {
     height: 100%;
+  }
+
+  /* Litt mindre grunnstørrelse gir mer plass: alt som måles i rem krymper likt (ca. 6 %). */
+  html {
+    font-size: 15px;
   }
 
   :root {
@@ -175,4 +180,29 @@
 .intro-bar { animation: intro-bar 1500ms linear both; }
 @media (prefers-reduced-motion: reduce) {
   .intro-logo, .intro-name, .intro-bar { animation: none; }
+}
+
+/* Skrivefelt under 16 px får iPhone til å zoome inn. Holdes på minst 16 px (utenfor lagene, så det vinner). */
+input:not([data-field]),
+textarea,
+select {
+  font-size: max(16px, 1em);
+}
+
+/* Sideoverganger (PageTransition). «backwards»: ingen transform igjen etterpå, så sticky og fixed virker som før. */
+@keyframes page-forward { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes page-back { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+@keyframes page-fade { from { opacity: 0; } to { opacity: 1; } }
+.page-forward { animation: page-forward 220ms cubic-bezier(0.2, 0.9, 0.3, 1) backwards; }
+.page-back { animation: page-back 220ms cubic-bezier(0.2, 0.9, 0.3, 1) backwards; }
+.page-fade { animation: page-fade 160ms ease-out backwards; }
+
+/* Ark som lukkes: glir ned og tones ut før de fjernes. */
+@keyframes sheet-out { from { transform: none; } to { transform: translateY(100%); } }
+@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+.sheet-out { animation: sheet-out 180ms cubic-bezier(0.4, 0, 1, 1) forwards; }
+.fade-out { animation: fade-out 180ms ease-in forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-forward, .page-back, .page-fade, .sheet-out, .fade-out { animation: none; }
 }

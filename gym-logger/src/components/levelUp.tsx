@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Icon } from './Icon';
 import { TierEmblem, tierAccent } from './TierBadge';
 import { TIER_COUNT, tierAt, type LevelEvent } from '../lib/strength';
 import { buzz } from '../lib/haptics';
@@ -73,8 +75,9 @@ const setText = (ev: ShownLevelEvent) => {
   return `${w} × ${ev.reps}`;
 };
 
-/** Ny rekord uten nytt totalnivå: kort øverst som lukker seg selv. */
+/** Ny rekord uten nytt totalnivå: kort øverst som lukker seg selv. Trykk åpner øvelsen. */
 function RecordCard({ ev }: { ev: ShownLevelEvent }) {
+  const navigate = useNavigate();
   const [leaving, setLeaving] = useState(false);
   const before = ev.before;
   const liftUp = !before || ev.after.tier.index > before.tier.index;
@@ -98,13 +101,15 @@ function RecordCard({ ev }: { ev: ShownLevelEvent }) {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[70] flex justify-center px-3 pt-safe">
+      <div role="status" aria-live="polite" className={`level-card pointer-events-auto relative mt-3 w-full max-w-md overflow-hidden rounded-xl border border-line bg-surface shadow-2xl ${leaving ? 'leaving' : ''}`}>
       <button
         type="button"
-        role="status"
-        aria-live="polite"
-        onClick={() => close(ev.id)}
-        className={`level-card pointer-events-auto relative mt-3 w-full max-w-md overflow-hidden rounded-xl border bg-surface p-4 text-left shadow-2xl ${leaving ? 'leaving' : ''}`}
-        
+        onClick={() => {
+          close(ev.id);
+          navigate(`/exercise/${ev.exerciseId}`);
+        }}
+        aria-label={t(`${ev.exerciseLabel}: se rekorder og nivå`, `${ev.exerciseLabel}: see records and level`)}
+        className="block w-full p-4 pr-10 text-left"
       >
                 <div className="flex items-center gap-3">
           <span className="level-emblem-in shrink-0">
@@ -114,7 +119,7 @@ function RecordCard({ ev }: { ev: ShownLevelEvent }) {
             <div className="text-[11px] font-semibold" style={{ color: accent }}>
               {liftUp && before ? t('Nytt nivå på løftet', 'Lift level up') : before ? t('Ny rekord', 'New record') : t('Nytt rangert løft', 'New ranked lift')}
             </div>
-            <div className="truncate font-semibold">
+            <div className="line-clamp-2 font-semibold">
               {ev.exerciseLabel} · <span className="font-num">{setText(ev)}</span>
             </div>
             <div className="mt-0.5 text-xs text-muted">
@@ -144,12 +149,17 @@ function RecordCard({ ev }: { ev: ShownLevelEvent }) {
           )}
         </div>
       </button>
+      <button type="button" aria-label={t('Lukk', 'Close')} onClick={() => close(ev.id)} className="absolute top-1 right-1 grid size-9 place-items-center text-faint">
+        <Icon name="x" size={16} />
+      </button>
+      </div>
     </div>
   );
 }
 
-/** Nytt totalnivå: fullskjerm med lysstråler, emblem som spretter inn og konfetti. */
+/** Nytt totalnivå: fullskjerm med emblem. «Se styrkenivå» åpner nivåsiden. */
 function LevelUpOverlay({ ev }: { ev: ShownLevelEvent }) {
+  const navigate = useNavigate();
   const tier = ev.overallAfter.tier;
   const score = useTween(ev.overallBefore.score, ev.overallAfter.score, 900, 300);
   const btn = useRef<HTMLButtonElement>(null);
@@ -187,6 +197,17 @@ function LevelUpOverlay({ ev }: { ev: ShownLevelEvent }) {
         style={{ animationDelay: '600ms' }}
       >
         {t('Fortsett', 'Continue')}
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          close(ev.id);
+          navigate('/level');
+        }}
+        className="level-text-in mt-2 min-h-12 w-full max-w-xs rounded-xl font-semibold text-muted"
+        style={{ animationDelay: '650ms' }}
+      >
+        {t('Se styrkenivå', 'See strength level')}
       </button>
     </div>
   );

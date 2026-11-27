@@ -184,8 +184,19 @@ try {
   await levelUp().getByRole('heading', { name: 'Rookie' }).waitFor();
   await page.waitForTimeout(2200);
   await shot('niva-opp');
+  await levelUp().getByRole('button', { name: 'Se styrkenivå' }).waitFor();
   await levelUp().getByRole('button', { name: 'Fortsett' }).click();
   await levelUp().waitFor({ state: 'detached' });
+  // 3D-knappen på Knebøy-kortet åpner demoen direkte
+  await btn('3D-demo av Knebøy').click();
+  await dialog().locator('[data-demo3d="kneboy"] canvas').waitFor();
+  await dialog().getByRole('button', { name: 'Lukk' }).last().click();
+  await dialog().waitFor({ state: 'detached' });
+  // Trykk på øvelsesnavnet åpner øvelsessiden; tilbake går til økta som fortsatt pågår
+  await btn(/^Knebøy: rekorder, grafer og historikk/).first().click();
+  await page.getByRole('tab', { name: 'Oversikt' }).waitFor();
+  await page.goBack();
+  await page.getByRole('timer').waitFor();
 
   // 4b. Hvilelinja: +15 og −15 virker
   const timerText = async () => (await page.getByRole('timer').innerText()).match(/\d+:\d\d/)?.[0];
@@ -251,9 +262,25 @@ try {
 
   // 5d. Slett et set og angre
   await btn('Set 2, rediger').first().click();
+  assert.equal(await dialog().locator('[data-set-type]').getAttribute('data-set-type'), 'normal', 'set-menyen viser typen i farge');
+  await dialog().getByRole('button', { name: 'Oppvarming' }).waitFor();
+  await page.waitForTimeout(300);
+  await shot('set-meny');
+  assert.ok(await page.locator('header').getByText('RepGrade').count(), 'logo og RepGrade øverst i økta');
   await dialog().getByRole('button', { name: 'Slett' }).click();
   await page.getByText('Settet er slettet').waitFor();
   assert.equal(await btn('Set 2, rediger').count(), 0);
+  await btn('Angre', { exact: true }).click();
+  await btn('Set 2, rediger').first().waitFor();
+  // Dra settet til venstre for å slette (og angre)
+  const row = page.locator('[data-swipe-row]').filter({ has: btn('Set 2, rediger') }).first();
+  const rb = await row.boundingBox();
+  await page.mouse.move(rb.x + rb.width * 0.3, rb.y + rb.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(rb.x + rb.width * 0.3 - rb.width * 0.6, rb.y + rb.height / 2, { steps: 10 });
+  await page.mouse.up();
+  await page.getByText('Settet er slettet').waitFor();
+  assert.equal(await btn('Set 2, rediger').count(), 0, 'settet ble slettet med sveip');
   await btn('Angre', { exact: true }).click();
   await btn('Set 2, rediger').first().waitFor();
 
@@ -271,6 +298,24 @@ try {
   await btn('Legg til (2)').click();
   await page.getByRole('heading', { name: 'Lateral raise' }).waitFor();
   await page.getByRole('heading', { name: 'Benkpress' }).waitFor();
+  // 5e2. Endre rekkefølge: dra første øvelse ned én plass og flytt siste opp med pil
+  const cardTitles = () => page.locator('main h2').allInnerTexts();
+  await btn('Endre rekkefølge').click();
+  await page.waitForTimeout(500); // arket glir opp
+  const items = () => dialog().locator('[data-reorder-item]').allInnerTexts();
+  const before = (await items()).map((x) => x.replace(/[≡\s]+$/g, '').replace(/^≡\s*/, '').trim());
+  const handle = dialog().locator('[data-reorder-item] [role=button]').first();
+  const hb = await handle.boundingBox();
+  await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2 + hb.height + 14, { steps: 8 });
+  await page.mouse.up();
+  const after = (await items()).map((x) => x.replace(/^≡\s*/, '').trim());
+  assert.equal(after[1], before[0], `dra flyttet ${before[0]} ned (${after.join(' | ')})`);
+  await shot('endre-rekkefolge');
+  await dialog().getByRole('button', { name: 'Ferdig' }).click();
+  await dialog().waitFor({ state: 'detached' });
+  assert.equal((await cardTitles())[1], before[0], 'rekkefølgen er lagret i økta');
 
   // 5f. Økta avviker fra rutinen → spørsmål om å lagre endringene i rutinen (bare denne gangen)
   await btn('Avslutt', { exact: true }).click();
@@ -319,6 +364,9 @@ try {
   await page.getByRole('heading', { name: 'Styrkenivå' }).waitFor();
   await page.getByText('Olympia', { exact: true }).waitFor();
   await page.getByText(/Logg (press|trekk).*-øvelser/).waitFor();
+  const levelHeads = await page.locator('main h2').allInnerTexts();
+  assert.ok(levelHeads.indexOf('Dine løft') >= 0 && levelHeads.indexOf('Dine løft') < levelHeads.indexOf('Kategorier'), `løftene står over kategoriene (${levelHeads.join(' | ')})`);
+  await page.getByText(/Klarer du .* blir du/).first().waitFor();
   await shot('styrkeniva');
   await btn('Tilbake').click();
   await page.getByText('Siste rekorder').waitFor();
@@ -354,6 +402,10 @@ try {
 
   // 7b. 3D-demo for et stort løft: lerretet tegnes, pause og sakte film virker, og figuren kan snus
   await page.getByRole('tab', { name: 'Slik gjør du' }).click();
+  // Demoen viser først et stillbilde; 3D lastes først ved trykk.
+  await page.locator('[data-demo-poster="kneboy"]').waitFor();
+  assert.equal(await page.locator('[data-demo3d]').count(), 0, '3D lastes ikke før man trykker');
+  await btn('Vis 3D-demo av Knebøy').click();
   const demo = page.locator('[data-demo3d="kneboy"]');
   await demo.locator('canvas').waitFor();
   await demo.getByText(/Ned: hofta bak|Opp: press gjennom/).waitFor();

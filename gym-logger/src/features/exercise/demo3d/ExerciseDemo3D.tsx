@@ -8,8 +8,6 @@ import { t, useLang } from '../../../i18n';
 import { moveFor, type Move } from './moves';
 import { DemoScene, hasWebGL } from './scene';
 
-const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
 /** Bilde som vises når nettleseren ikke kan tegne 3D. */
 function Still({ move, name }: { move: Move; name: string }) {
   return (
@@ -30,7 +28,7 @@ export default function ExerciseDemo3D({ exercise }: { exercise: Exercise }) {
   const wrap = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<DemoScene | null>(null);
   const [webgl] = useState(hasWebGL);
-  const [playing, setPlaying] = useState(() => !reducedMotion());
+  const [playing, setPlaying] = useState(true);
   const [slow, setSlow] = useState(false);
   const [view, setView] = useState<Move['view']>(move.view);
   const [cue, setCue] = useState<[string, string] | undefined>(move.keys[0].cue);
@@ -46,10 +44,7 @@ export default function ExerciseDemo3D({ exercise }: { exercise: Exercise }) {
     }
     sceneRef.current = scene;
     scene.onCue = setCue;
-    if (reducedMotion()) {
-      scene.pause();
-      scene.setPhase(move.still);
-    }
+    scene.onAutoPause = () => setPlaying(false);
     const el = wrap.current;
     const ro = new ResizeObserver(([e]) => scene.resize(e.contentRect.width, e.contentRect.height));
     ro.observe(el);

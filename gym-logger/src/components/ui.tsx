@@ -1,7 +1,8 @@
 import { lockScroll, unlockScroll } from '../lib/scrollLock';
-import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon, type IconName } from './Icon';
+import { Logo } from './Logo';
 import { t } from '../i18n';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -24,7 +25,7 @@ export function Button({
   return (
     <button
       type="button"
-      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-base transition disabled:opacity-40 disabled:shadow-none ${
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-base transition active:scale-[0.98] disabled:opacity-40 disabled:shadow-none ${
         VARIANTS[variant]
       } ${full ? 'w-full' : ''} ${className}`}
       {...rest}
@@ -64,28 +65,38 @@ export function Page({
   title,
   back,
   actions,
+  brand,
   children,
 }: {
   title: ReactNode;
   back?: boolean;
   actions?: ReactNode;
+  /** Liten logo og «RepGrade» over tittelen (økt og øvelsesside, synlig i skjermbilder som deles). */
+  brand?: boolean;
   children: ReactNode;
 }) {
   const navigate = useNavigate();
   return (
     <div className="mx-auto w-full max-w-xl">
       <header className="pt-safe sticky top-0 z-20 border-b border-line bg-bg">
-        <div className="flex min-h-14 items-center gap-1 px-2">
+        <div className="flex min-h-12 items-center gap-1 px-2">
           {back ? (
             <IconButton icon="back" label={t('Tilbake', 'Back')} onClick={() => navigate(-1)} />
           ) : (
             <span className="w-2" />
           )}
-          <h1 className="min-w-0 flex-1 truncate text-xl font-bold">{title}</h1>
+          {brand ? (
+            <div className="min-w-0 flex-1">
+              <Logo size={11} className="text-[10px] leading-none text-faint" />
+              <h1 className="truncate text-lg font-bold">{title}</h1>
+            </div>
+          ) : (
+            <h1 className="min-w-0 flex-1 truncate text-lg font-bold">{title}</h1>
+          )}
           {actions}
         </div>
       </header>
-      <main className="px-4 pt-4 pb-40">{children}</main>
+      <main className="px-3.5 pt-3 pb-36">{children}</main>
     </div>
   );
 }
@@ -137,12 +148,28 @@ export function Sheet({
       unlockScroll();
     };
   }, [open]);
-  if (!open) return null;
+  // Når arket lukkes, vises det i 180 ms til mens det glir ned (uten rolle og klikk, så det ikke er i veien).
+  const [shown, setShown] = useState(open);
+  const last = useRef<ReactNode>(null);
+  useEffect(() => {
+    if (open) return setShown(true);
+    const id = setTimeout(() => setShown(false), 180);
+    return () => clearTimeout(id);
+  }, [open]);
+  if (open) last.current = children;
+  if (!open && !shown) return null;
+  const closing = !open;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
-      <button type="button" aria-label={t('Lukk', 'Close')} className="absolute inset-0 animate-fade bg-black/70]" onClick={onClose} />
+    <div
+      className={`fixed inset-0 z-50 flex items-end justify-center ${closing ? 'pointer-events-none' : ''}`}
+      role={closing ? undefined : 'dialog'}
+      aria-modal={closing ? undefined : true}
+      aria-hidden={closing || undefined}
+      aria-label={closing ? undefined : title}
+    >
+      <button type="button" aria-label={t('Lukk', 'Close')} tabIndex={closing ? -1 : undefined} className={`absolute inset-0 bg-black/70 ${closing ? 'fade-out' : 'animate-fade'}`} onClick={onClose} />
       <div
-        className={`pb-safe relative flex w-full max-w-xl animate-sheet flex-col rounded-t-2xl border-t border-line bg-surface shadow-[0_-12px_40px_rgb(0_0_0/0.6)] ${
+        className={`pb-safe relative flex w-full max-w-xl ${closing ? 'sheet-out' : 'animate-sheet'} flex-col rounded-t-2xl border-t border-line bg-surface shadow-[0_-12px_40px_rgb(0_0_0/0.6)] ${
           tall ? 'h-[88vh]' : 'max-h-[88vh]'
         }`}
       >
@@ -151,7 +178,7 @@ export function Sheet({
           <h2 className="flex-1 text-lg font-bold">{title}</h2>
           <IconButton icon="x" label={t('Lukk', 'Close')} onClick={onClose} />
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">{closing ? last.current : children}</div>
       </div>
     </div>
   );
@@ -282,18 +309,18 @@ export function PRBadge({ label }: { label?: string }) {
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mt-7 mb-2 text-[15px] font-semibold text-ink">{children}</h2>;
+  return <h2 className="mt-6 mb-2 text-sm font-semibold text-ink">{children}</h2>;
 }
 
 /** Liten nøkkeltall-boks. */
 export function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card rounded-xl py-2.5 text-center">
-      <div className="font-num text-xl font-bold">{value}</div>
+    <div className="card rounded-xl py-2 text-center">
+      <div className="font-num text-lg font-bold">{value}</div>
       <div className="text-xs text-muted">{label}</div>
     </div>
   );
 }
 
 export const inputClass =
-  'min-h-12 w-full rounded-xl border border-line bg-raised px-3 text-base outline-none placeholder:text-faint focus:border-accent';
+  'min-h-11 w-full rounded-xl border border-line bg-raised px-3 text-base outline-none placeholder:text-faint focus:border-accent';

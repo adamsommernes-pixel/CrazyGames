@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { db } from '../../db/dexie';
 import { getProfile, saveProfile } from '../../db/repo';
 import { ImportButton, ImportHelp } from '../import/ImportButton';
+import { disableRestPush, enableRestPush, pushStatus, pushStatusText } from '../../lib/push';
 import { backupFileName, downloadBlob, downloadJSON, exportBackup, exportCSV, lastBackupAt, markBackedUp } from '../../db/backup';
 import { requestPersist, useStorageStatus } from '../../lib/storage';
 import { syncNow, useSyncStatus } from '../../db/sync';
@@ -257,6 +258,46 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
   );
 }
 
+/** Varsel fra serveren når pausen er over, så det piper og vibrerer også med låst skjerm. */
+function RestPushSetting() {
+  const user = useUser();
+  const on = useSetting('restPush');
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const status = pushStatus();
+  if (status === 'unconfigured') return null;
+  const toggle = async (v: boolean) => {
+    setMsg(null);
+    setBusy(true);
+    try {
+      if (v) await enableRestPush();
+      else await disableRestPush();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div>
+      {user.kind === 'cloud' ? (
+        <Toggle label={t('Varsel når pausen er over (også med låst skjerm)', 'Notify when rest is over (even when locked)')} checked={on && !busy} onChange={(v) => void toggle(v)} />
+      ) : (
+        <div className="min-h-12 py-2">
+          <div>{t('Varsel når pausen er over (også med låst skjerm)', 'Notify when rest is over (even when locked)')}</div>
+          <div className="text-xs text-muted">{t('Krever konto på nett.', 'Requires an online account.')}</div>
+        </div>
+      )}
+      <p className="text-xs text-muted">
+        {msg ??
+          (status === 'ready'
+            ? t('Telefonen spiller av lyd og vibrerer etter innstillingene for varsler.', 'Your phone plays sound and vibrates according to its notification settings.')
+            : pushStatusText(status))}
+      </p>
+    </div>
+  );
+}
+
 function SettingsSection() {
   const unit = useSetting('unit');
   const defaultRest = useSetting('defaultRest');
@@ -266,7 +307,7 @@ function SettingsSection() {
   const haptics = useSetting('haptics');
   const keepAwake = useSetting('keepAwake');
   return (
-    <Card className="flex flex-col gap-4 p-4">
+    <Card className="flex flex-col gap-4 p-3.5">
       <div className="flex items-center justify-between gap-3">
         <span>Språk / Language</span>
         <LanguageToggle size="md" />
@@ -302,6 +343,7 @@ function SettingsSection() {
         </div>
       </div>
       <Toggle label={t('Lyd når hvilen er over', 'Sound when rest is over')} checked={sound} onChange={(v) => void setSetting('sound', v)} />
+      <RestPushSetting />
       <Toggle label={t('Vibrasjon (Android)', 'Vibration (Android)')} checked={haptics} onChange={(v) => void setSetting('haptics', v)} />
       <Toggle label={t('Hold skjermen på under økt', 'Keep screen on during workouts')} checked={keepAwake} onChange={(v) => void setSetting('keepAwake', v)} />
     </Card>
@@ -325,7 +367,7 @@ function DataSection() {
   };
 
   return (
-    <Card className="flex flex-col gap-3 p-4">
+    <Card className="flex flex-col gap-3 p-3.5">
       {cloud ? (
         <div className="flex items-start gap-3 rounded-xl bg-raised px-3 py-2.5 text-sm" role="status">
           <Icon name="check" size={18} className="mt-0.5 shrink-0 text-accent" />
@@ -369,7 +411,7 @@ function DataSection() {
         {t('Eksporter sets til regneark (CSV)', 'Export sets to spreadsheet (CSV)')}
       </Button>
       <ImportButton label={t('Gjenopprett eller importer', 'Restore or import')} />
-      <p className="text-xs text-faint">{t('Godtar backup fra Repgrade og eksport fra Lyfto, Hevy og Strong.', 'Accepts Repgrade backups and exports from Lyfto, Hevy and Strong.')}</p>
+      <p className="text-xs text-faint">{t('Godtar backup fra RepGrade og eksport fra Lyfto, Hevy og Strong.', 'Accepts RepGrade backups and exports from Lyfto, Hevy and Strong.')}</p>
       <ImportHelp />
       {msg && (
         <p className="text-sm text-accent-strong" role="status">

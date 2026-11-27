@@ -27,7 +27,7 @@ export function BodyweightPage() {
 
   return (
     <Page title={t('Kroppsvekt', 'Bodyweight')} back>
-      <Card className="p-4">
+      <Card className="p-3.5">
         <form
           className="flex gap-2"
           onSubmit={(e) => {

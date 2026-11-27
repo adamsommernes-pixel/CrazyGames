@@ -20,7 +20,7 @@ const SAMPLE: LyftoExport = {
           { weight: 80, reps: 5, completed: true, completedAt: '2026-11-20T10:10:00.000Z' },
           { weight: 80, reps: 5, completed: false },
         ] },
-        { id: 'e2', exerciseId: 'landmine-180', sets: [{ weight: 20, reps: 12, completed: true }] },
+        { id: 'e2', exerciseId: 'mystery-machine', sets: [{ weight: 20, reps: 12, completed: true }] },
         { id: 'e3', exerciseId: 'custom_abc', sets: [{ weight: 50, reps: 8, completed: true }] },
         { id: 'e4', exerciseId: 'squat', sets: [{ weight: 100, reps: 5, completed: false }] },
       ],
@@ -49,7 +49,7 @@ describe('Lyfto-import', () => {
     expect(sets.filter((s) => s.exercise_id === 'ex-benkpress').map((s) => s.set_type)).toEqual(['warmup', 'normal']);
     const ex = b.tables.exercises as unknown as { id: string; name: string; muscle_group: string; equipment: string }[];
     expect(ex.find((e) => e.id === 'lyfto-ex-custom_abc')).toMatchObject({ name: 'Min press', muscle_group: 'Bryst', equipment: 'Stang' });
-    expect(ex.find((e) => e.id === 'lyfto-ex-landmine-180')?.name).toBe('Landmine 180');
+    expect(ex.find((e) => e.id === 'lyfto-ex-mystery-machine')?.name).toBe('Mystery machine');
     const w = b.tables.workouts[0] as unknown as { started_at: string; ended_at: string; name: string };
     expect(w.started_at).toBe('2026-11-20T10:00:00.000Z');
     expect(w.ended_at).toBe('2026-11-20T11:00:00.000Z');

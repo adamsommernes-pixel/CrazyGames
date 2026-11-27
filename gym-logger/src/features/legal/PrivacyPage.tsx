@@ -26,7 +26,7 @@ const NB: Section[] = [
     h: 'Kort fortalt',
     body: (
       <ul>
-        <li>Repgrade lagrer treningen din for at appen skal virke. Vi selger ikke data, viser ikke reklame og bruker ingen sporing eller analyseverktøy.</li>
+        <li>RepGrade lagrer treningen din for at appen skal virke. Vi selger ikke data, viser ikke reklame og bruker ingen sporing eller analyseverktøy.</li>
         <li>Med en <b>lokal konto</b> ligger alt bare på telefonen din.</li>
         <li>Med en <b>sky-konto</b> lagres dataene også hos Supabase i EU, så de kan synkes mellom enheter. Kroppsvekt, høyde, fødselsår og kjønn sendes bare til skyen hvis du samtykker.</li>
         <li>Du kan når som helst laste ned alt (JSON eller CSV) og slette kontoen.</li>
@@ -37,7 +37,7 @@ const NB: Section[] = [
     h: 'Behandlingsansvarlig',
     body: (
       <p>
-        {CONTROLLER} er behandlingsansvarlig for personopplysningene i Repgrade. Kontakt: {mail}.
+        {CONTROLLER} er behandlingsansvarlig for personopplysningene i RepGrade. Kontakt: {mail}.
       </p>
     ),
   },
@@ -113,7 +113,7 @@ const EN: Section[] = [
     h: 'In short',
     body: (
       <ul>
-        <li>Repgrade stores your training so the app can work. We do not sell data, show ads or use any tracking or analytics.</li>
+        <li>RepGrade stores your training so the app can work. We do not sell data, show ads or use any tracking or analytics.</li>
         <li>With a <b>local account</b> everything stays on your phone.</li>
         <li>With a <b>cloud account</b> the data is also stored with Supabase in the EU so it can sync between devices. Bodyweight, height, year of birth and sex only go to the cloud if you consent.</li>
         <li>You can download everything (JSON or CSV) and delete your account at any time.</li>
@@ -124,7 +124,7 @@ const EN: Section[] = [
     h: 'Data controller',
     body: (
       <p>
-        {CONTROLLER} is the data controller for personal data in Repgrade. Contact: {mail}.
+        {CONTROLLER} is the data controller for personal data in RepGrade. Contact: {mail}.
       </p>
     ),
   },
@@ -200,7 +200,7 @@ export function PrivacyContent() {
   const sections = getLang() === 'en' ? EN : NB;
   return (
     <article className="privacy flex flex-col gap-5 pb-8 text-[15px] leading-relaxed text-muted">
-      <p className="text-sm text-faint">{t('Personvernerklæring for Repgrade', 'Privacy policy for Repgrade')}</p>
+      <p className="text-sm text-faint">{t('Personvernerklæring for RepGrade', 'Privacy policy for RepGrade')}</p>
       {sections.map((s) => (
         <section key={s.h}>
           <h2 className="mb-1.5 text-lg font-bold text-ink">{s.h}</h2>

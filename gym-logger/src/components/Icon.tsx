@@ -45,6 +45,8 @@ const PATHS = {
 } as const;
 
 export type IconName = keyof typeof PATHS;
+/** Alle ikonnavn (for å sjekke navn som kommer utenfra, f.eks. whats-new.json). */
+export const isIconName = (n: string): n is IconName => n in PATHS;
 
 export function Icon({ name, size = 22, className = '', strokeWidth = 2, filled = false }: {
   name: IconName;
