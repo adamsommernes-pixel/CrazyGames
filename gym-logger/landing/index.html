@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>RepGrade – treningsdagbok for styrketrening</title>
-  <meta name="description" content="RepGrade er en treningsdagbok for styrketrening. Logg sets mens du trener, se forrige økt og følg hvordan styrken utvikler seg over tid." />
+  <title>RepGrade – gratis treningsdagbok som måler styrken din</title>
+  <meta name="description" content="RepGrade er en gratis treningsdagbok for styrketrening. Logg sets, få et styrkenivå basert på ekte løft, og behold kontrollen over dine egne data. Ingen reklame, data lagret i EU." />
   <meta name="theme-color" content="#0a0a0a" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230a0a0a'/%3E%3Cg fill='%23f5f5f5'%3E%3Crect x='96' y='176' width='56' height='160' rx='16'/%3E%3Crect x='360' y='176' width='56' height='160' rx='16'/%3E%3Crect x='56' y='216' width='40' height='80' rx='12'/%3E%3Crect x='416' y='216' width='40' height='80' rx='12'/%3E%3Crect x='152' y='234' width='208' height='44' rx='10'/%3E%3C/g%3E%3C/svg%3E" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="app/apple-touch-icon.png" />
-  <meta property="og:title" content="RepGrade – treningsdagbok for styrketrening" />
-  <meta property="og:description" content="Logg sets mens du trener, se forrige økt og følg styrken over tid." />
+  <meta property="og:title" content="RepGrade – gratis treningsdagbok som måler styrken din" />
+  <meta property="og:description" content="Logg sets, se hvor sterk du er i ekte løft, og behold kontrollen over dataene dine. Gratis og uten reklame." />
   <meta property="og:type" content="website" />
   <link rel="canonical" href="%SITE_URL%" />
   <meta property="og:url" content="%SITE_URL%" />
@@ -91,6 +91,18 @@
     summary::after { content: "+"; color: var(--faint); font-weight: 400; }
     details[open] summary::after { content: "–"; }
     details p { color: var(--muted); padding: 0 0 20px; max-width: 38em; }
+    .trust { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 28px 0 0; padding: 0; list-style: none; color: var(--faint); font-size: 14px; }
+    .trust li { display: inline-flex; align-items: center; gap: 7px; }
+    .trust svg { width: 15px; height: 15px; flex: none; stroke: var(--muted); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .measure { display: grid; gap: 1px; margin-top: 24px; max-width: 30em; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--line); }
+    .measure div { background: var(--bg); padding: 12px 14px; }
+    .measure dt { font-size: 13px; color: var(--faint); }
+    .measure dd { margin: 2px 0 0; font-size: 15px; color: var(--ink); }
+    .points { display: grid; gap: 28px; margin-top: 36px; }
+    @media (min-width: 720px) { .points { grid-template-columns: repeat(3, 1fr); } }
+    .points h3 { font-size: 18px; }
+    .points p { color: var(--muted); font-size: 15px; margin-top: 6px; }
+    .eyebrow { color: var(--faint); font-size: 14px; margin-bottom: 10px; }
 
     footer { border-top: 1px solid var(--line); padding: 28px 0 44px; color: var(--faint); font-size: 14px; }
     footer .wrap { display: flex; flex-wrap: wrap; gap: 6px 18px; }
@@ -122,17 +134,22 @@
     <div class="wrap intro">
       <div>
         <h1>
-          <span data-nb>Treningsdagboka som holder følge med deg</span>
-          <span data-en>A training log that keeps up with you</span>
+          <span data-nb>Se hvor sterk du faktisk er</span>
+          <span data-en>See how strong you really are</span>
         </h1>
         <p class="lead">
-          <span data-nb>Logg et set på et par sekunder mellom øvelsene, med forrige økt rett ved siden av. Over tid ser du hvordan styrken din faktisk utvikler seg.</span>
-          <span data-en>Log a set in a couple of seconds between exercises, with your last session right next to it. Over time you see how your strength actually develops.</span>
+          <span data-nb>En rolig treningsdagbok som logger settene dine og måler styrken i de store løftene opp mot kroppsvekten. Gratis, uten reklame, og dataene dine er dine.</span>
+          <span data-en>A calm training log that records your sets and measures your strength in the big lifts against your bodyweight. Free, no ads, and your data stays yours.</span>
         </p>
         <div class="actions">
           <a class="button" href="app/"><span data-nb>Åpne appen</span><span data-en>Open the app</span></a>
           <a class="link" href="#installer"><span data-nb>Slik installerer du →</span><span data-en>How to install →</span></a>
         </div>
+        <ul class="trust">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span data-nb>Gratis, uten abonnement</span><span data-en>Free, no subscription</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span data-nb>Ingen reklame eller sporing</span><span data-en>No ads or tracking</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span data-nb>Data lagret i EU</span><span data-en>Data stored in the EU</span></li>
+        </ul>
       </div>
       <img data-nb class="phone" src="app/screenshots/home-nb.webp" width="540" height="919" alt="Hjem-skjermen i RepGrade med ukemål og styrkenivå" />
       <img data-en class="phone" src="app/screenshots/home-en.webp" width="540" height="919" alt="The RepGrade home screen with weekly goal and strength level" />
@@ -140,24 +157,22 @@
 
     <section id="funksjoner">
       <div class="wrap">
-        <div class="feature">
-          <div class="copy">
-            <h3><span data-nb>Laget for å brukes mellom settene</span><span data-en>Made to be used between sets</span></h3>
-            <p class="text">
-              <span data-nb>Vekt og reps fra forrige gang står ved hvert set, og hviletimeren starter når du huker av. Alle 131 øvelsene har en kort forklaring på hvordan de gjøres.</span>
-              <span data-en>Weight and reps from last time are shown on every set, and the rest timer starts when you tick one off. All 131 exercises come with a short explanation of how to do them.</span>
-            </p>
-          </div>
-          <img data-nb class="phone" src="app/screenshots/workout-nb.webp" width="540" height="919" loading="lazy" alt="En økt i gang, med forrige økt ved hvert set" />
-          <img data-en class="phone" src="app/screenshots/workout-en.webp" width="540" height="919" loading="lazy" alt="A workout in progress, with last session next to each set" />
-        </div>
-
         <div class="feature flip">
           <div class="copy">
+            <p class="eyebrow"><span data-nb>Styrkemåling</span><span data-en>Strength measurement</span></p>
             <h3><span data-nb>Et styrkenivå som betyr noe</span><span data-en>A strength level that means something</span></h3>
             <p class="text">
-              <span data-nb>Nivået regnes ut fra ditt beste beregnede 1RM i benk, knebøy, markløft, roing og pull-ups, sett opp mot kroppsvekten. Du må være sterk i både press, trekk og bein for å klatre, og toppnivået krever styrke på verdensklassenivå.</span>
-              <span data-en>Your level comes from your best estimated 1RM in bench, squat, deadlift, rows and pull-ups, measured against your bodyweight. You have to be strong in push, pull and legs to climb, and the top level takes world-class strength.</span>
+              <span data-nb>RepGrade beregner ditt beste 1RM fra vanlige sets og måler det mot kroppsvekten din, med standarder for menn og kvinner. Nivået er snittet av press, trekk og bein, så du må være sterk i alt for å klatre.</span>
+              <span data-en>RepGrade estimates your best 1RM from regular sets and measures it against your bodyweight, with standards for men and women. Your level is the average of push, pull and legs, so you have to be strong all round to climb.</span>
+            </p>
+            <dl class="measure">
+              <div><dt><span data-nb>Press</span><span data-en>Push</span></dt><dd><span data-nb>Benkpress, skråbenk, smal benk, militærpress</span><span data-en>Bench, incline bench, close-grip bench, overhead press</span></dd></div>
+              <div><dt><span data-nb>Trekk</span><span data-en>Pull</span></dt><dd><span data-nb>Pull-ups, stangroing, nedtrekk</span><span data-en>Pull-ups, barbell row, lat pulldown</span></dd></div>
+              <div><dt><span data-nb>Bein</span><span data-en>Legs</span></dt><dd><span data-nb>Knebøy, markløft, rumensk markløft, beinspark</span><span data-en>Squat, deadlift, Romanian deadlift, leg extension</span></dd></div>
+            </dl>
+            <p class="note" style="margin-top:14px">
+              <span data-nb>Bare løft fra de siste 30 dagene teller, så nivået viser hvor sterk du er nå.</span>
+              <span data-en>Only lifts from the last 30 days count, so your level shows how strong you are now.</span>
             </p>
             <ol class="ladder" aria-label="Nivåene / The levels">
               <li><span data-nb>Nybegynner</span><span data-en>Newbie</span></li>
@@ -176,6 +191,19 @@
           <img data-en class="phone" src="app/screenshots/level-en.webp" width="540" height="919" loading="lazy" alt="The strength level page" />
         </div>
 
+
+        <div class="feature">
+          <div class="copy">
+            <h3><span data-nb>Laget for å brukes mellom settene</span><span data-en>Made to be used between sets</span></h3>
+            <p class="text">
+              <span data-nb>Vekt og reps fra forrige gang står ved hvert set, og hviletimeren starter når du huker av. Over 200 øvelser har en kort forklaring, og de store løftene kan ses i 3D.</span>
+              <span data-en>Weight and reps from last time are shown on every set, and the rest timer starts when you tick one off. Over 200 exercises come with a short explanation, and the big lifts can be viewed in 3D.</span>
+            </p>
+          </div>
+          <img data-nb class="phone" src="app/screenshots/workout-nb.webp" width="540" height="919" loading="lazy" alt="En økt i gang, med forrige økt ved hvert set" />
+          <img data-en class="phone" src="app/screenshots/workout-en.webp" width="540" height="919" loading="lazy" alt="A workout in progress, with last session next to each set" />
+        </div>
+
         <div class="feature">
           <div class="copy">
             <h3><span data-nb>Se hva du har trent, og del det</span><span data-en>See what you trained, and share it</span></h3>
@@ -187,6 +215,28 @@
           <img data-nb class="phone" src="app/screenshots/share-nb.webp" width="540" height="960" loading="lazy" alt="Et delekort med musklene som ble trent" />
           <img data-en class="phone" src="app/screenshots/share-en.webp" width="540" height="960" loading="lazy" alt="A share card showing the muscles trained" />
         </div>
+      </div>
+    </section>
+
+    <section id="personvern">
+      <div class="wrap">
+        <p class="eyebrow"><span data-nb>Gratis og privat</span><span data-en>Free and private</span></p>
+        <h2><span data-nb>Treningen din er din</span><span data-en>Your training is yours</span></h2>
+        <div class="points">
+          <div>
+            <h3><span data-nb>Gratis</span><span data-en>Free</span></h3>
+            <p><span data-nb>Ingen abonnement, ingen prøveperiode og ingen funksjoner bak betalingsmur.</span><span data-en>No subscription, no trial and no features behind a paywall.</span></p>
+          </div>
+          <div>
+            <h3><span data-nb>Ingen reklame eller sporing</span><span data-en>No ads or tracking</span></h3>
+            <p><span data-nb>Ingen annonser, analyseverktøy eller sporingscookies. Dataene dine selges aldri.</span><span data-en>No ads, analytics or tracking cookies. Your data is never sold.</span></p>
+          </div>
+          <div>
+            <h3><span data-nb>Du har kontrollen</span><span data-en>You are in control</span></h3>
+            <p><span data-nb>Lagret i EU, med en kopi på telefonen. Kroppsvekt bare med samtykke. Last ned eller slett alt når du vil.</span><span data-en>Stored in the EU, with a copy on your phone. Bodyweight only with consent. Download or delete everything whenever you like.</span></p>
+          </div>
+        </div>
+        <p class="note"><a class="link" href="app/#/privacy"><span data-nb>Hele personvernerklæringen →</span><span data-en>The full privacy policy →</span></a></p>
       </div>
     </section>
 
@@ -227,7 +277,7 @@
         <div class="faq">
           <details>
             <summary><span data-nb>Koster det noe?</span><span data-en>Does it cost anything?</span></summary>
-            <p><span data-nb>Nei. RepGrade er gratis å bruke, og det er ingen reklame i appen.</span><span data-en>No. RepGrade is free to use, and there are no ads in the app.</span></p>
+            <p><span data-nb>Nei. RepGrade er gratis, uten abonnement og uten reklame.</span><span data-en>No. RepGrade is free, with no subscription and no ads.</span></p>
           </details>
           <details>
             <summary><span data-nb>Hvor lagres dataene mine?</span><span data-en>Where is my data stored?</span></summary>
