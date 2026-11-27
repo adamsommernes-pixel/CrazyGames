@@ -32,18 +32,18 @@ export function ProgressRing({
   return (
     <div className="relative grid place-items-center" style={{ width: size, height: size }} role="img" aria-label={label}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-line)" strokeWidth={stroke} />
+        <circle style={{ stroke: 'var(--color-line)' }} cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="var(--color-accent)"
+         
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - shown)}
-          style={{ transition: 'stroke-dashoffset 900ms cubic-bezier(0.2,0.9,0.3,1)', filter: pct >= 1 ? 'drop-shadow(0 0 8px rgb(43 214 107 / 0.6))' : undefined }}
+          style={{ stroke: 'var(--color-accent)',  transition: 'stroke-dashoffset 900ms cubic-bezier(0.2,0.9,0.3,1)' }}
         />
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">{children}</div>
@@ -161,7 +161,8 @@ export function Confetti({ fire }: { fire: number }) {
     canvas.width = innerWidth * dpr;
     canvas.height = innerHeight * dpr;
     ctx.scale(dpr, dpr);
-    const colors = ['#2bd66b', '#7dffaa', '#f2f5f3', '#0f3b22'];
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim() || '#34c56a';
+    const colors = [accent, '#f2f2f3', '#a1a1a6'];
     const parts = Array.from({ length: 90 }, () => ({
       x: innerWidth / 2,
       y: innerHeight * 0.35,

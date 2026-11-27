@@ -418,6 +418,23 @@ try {
   await dialog().getByRole('button', { name: '3', exact: true }).click();
   await btn(/^Økter per uke: 3/).waitFor();
 
+  // 9-1. Appfarge: velg blå, se at knapper og grafer følger, og at valget huskes
+  await page.getByRole('radiogroup', { name: 'Appfarge' }).getByRole('radio', { name: 'Blå' }).click();
+  const accentNow = () => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim());
+  assert.equal(await accentNow(), '#4d9bf0');
+  await page.getByRole('navigation').getByRole('link', { name: 'Hjem' }).click();
+  await page.getByRole('heading', { name: 'Dine rutiner' }).waitFor();
+  const primary = page.locator('main button.bg-accent').first();
+  await primary.waitFor();
+  const startBg = await primary.evaluate((el) => getComputedStyle(el).backgroundColor);
+  assert.equal(startBg, 'rgb(77, 155, 240)', 'hovedknappen er blå');
+  await page.reload();
+  await page.getByText('Dine rutiner').first().waitFor();
+  assert.equal(await accentNow(), '#4d9bf0', 'fargen huskes etter omlasting');
+  await shot('hjem-blaa');
+  await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
+  await page.getByText('Økter totalt').waitFor();
+
   // 9a. Data og backup: JSON og CSV lastes ned, og backupen kan leses inn igjen
   const { readFile } = await import('node:fs/promises');
   const [jsonDl] = await Promise.all([page.waitForEvent('download'), btn('Last ned backup (JSON)').click()]);

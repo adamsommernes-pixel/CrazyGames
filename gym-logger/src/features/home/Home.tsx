@@ -104,7 +104,7 @@ export function Home() {
             {strength && <LevelBadge strength={strength.profile} />}
           </div>
           <Link to="/profile" aria-label={t('Profil', 'Profile')}>
-            <Avatar name={profile?.name || user.name} color={profile?.color ?? '#2bd66b'} size={44} />
+            <Avatar name={profile?.name || user.name} color={profile?.color ?? '#34c56a'} size={44} />
           </Link>
         </div>
       </header>

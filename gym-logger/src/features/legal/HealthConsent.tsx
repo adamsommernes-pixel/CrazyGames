@@ -9,7 +9,7 @@ export function HealthConsent({ checked, onChange }: { checked: boolean; onChang
   return (
     <div className="mt-4 rounded-xl border border-line bg-raised p-3">
       <label className="flex cursor-pointer items-start gap-3">
-        <input type="checkbox" className="mt-1 size-5 shrink-0 accent-[#2bd66b]" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+        <input type="checkbox" className="mt-1 size-5 shrink-0 accent-[var(--color-accent)]" checked={checked} onChange={(e) => onChange(e.target.checked)} />
         <span className="text-sm">
           {t(
             'Jeg samtykker til at kroppsvekt, høyde, fødselsår og kjønn lagres i skyen for å beregne styrkenivået og synke mellom enheter.',

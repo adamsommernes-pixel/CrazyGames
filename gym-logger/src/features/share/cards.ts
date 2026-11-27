@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { StaticBody } from '../../components/BodyMap';
 import { TierEmblem, tierAccent } from '../../components/TierBadge';
+import { currentAccent } from '../../lib/theme';
 import type { MuscleGroup } from '../../db/types';
 import { num } from '../../lib/format';
 import { t } from '../../i18n';
@@ -30,12 +31,13 @@ const C = {
   ink: '#f2f5f3',
   muted: '#9aa59f',
   faint: '#5f6964',
-  green: '#2bd66b',
-  greenLight: '#7dffaa',
   raised: '#111513',
   line: '#232a26',
 };
 const PAD = 84;
+
+/** Brukerens appfarge, satt ved hver tegning (renderCard). */
+let A = currentAccent();
 const DISPLAY = '"Space Grotesk", "Inter Variable", system-ui, sans-serif';
 const SANS = '"Inter Variable", system-ui, sans-serif';
 
@@ -44,10 +46,6 @@ type Ctx = CanvasRenderingContext2D;
 const font = (ctx: Ctx, weight: number, size: number, family = DISPLAY) => {
   ctx.font = `${weight} ${size}px ${family}`;
 };
-
-function spacing(ctx: Ctx, px: number) {
-  if ('letterSpacing' in ctx) (ctx as Ctx & { letterSpacing: string }).letterSpacing = `${px}px`;
-}
 
 function draw(ctx: Ctx, s: string, x: number, y: number, color: string, align: CanvasTextAlign = 'left') {
   ctx.fillStyle = color;
@@ -126,7 +124,6 @@ const VARS: Record<string, string> = {
   'var(--color-raised)': '#1b211e',
   'var(--color-surface)': '#121614',
   'var(--color-line)': '#2a322e',
-  'var(--color-accent)': C.green,
   'var(--color-ink)': C.ink,
 };
 
@@ -157,56 +154,33 @@ function loadFonts() {
 function background(ctx: Ctx, w: number, h: number) {
   ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, w, h);
-  let g = ctx.createRadialGradient(w * 0.85, -60, 0, w * 0.85, -60, w * 0.95);
-  g.addColorStop(0, 'rgba(43, 214, 107, 0.32)');
-  g.addColorStop(1, 'rgba(43, 214, 107, 0)');
+  // Bare et svakt skjær av brukerens farge øverst.
+  const g = ctx.createLinearGradient(0, 0, 0, h * 0.45);
+  g.addColorStop(0, A.soft);
+  g.addColorStop(1, C.bg);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
-  g = ctx.createRadialGradient(0, h + 80, 0, 0, h + 80, w * 0.9);
-  g.addColorStop(0, 'rgba(43, 214, 107, 0.14)');
-  g.addColorStop(1, 'rgba(43, 214, 107, 0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, w, h);
-  // Fine diagonale linjer for tekstur.
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.018)';
-  ctx.lineWidth = 2;
-  for (let x = -h; x < w; x += 46) {
-    ctx.beginPath();
-    ctx.moveTo(x, h);
-    ctx.lineTo(x + h, 0);
-    ctx.stroke();
+}
+
+let logo: HTMLImageElement | null = null;
+async function loadLogo() {
+  if (logo) return;
+  try {
+    const img = new Image();
+    img.src = `${import.meta.env.BASE_URL}favicon.svg`;
+    await img.decode();
+    logo = img;
+  } catch {
+    logo = null;
   }
-  ctx.restore();
 }
 
 function header(ctx: Ctx, w: number, date: string): number {
   const y = PAD + 34;
-  // Logo: grønn sekskant med hake.
-  ctx.save();
-  ctx.translate(PAD + 22, y - 12);
-  ctx.beginPath();
-  for (let i = 0; i < 6; i++) {
-    const a = Math.PI / 6 + (i * Math.PI) / 3;
-    ctx.lineTo(Math.cos(a) * 24, Math.sin(a) * 24);
-  }
-  ctx.closePath();
-  ctx.fillStyle = C.green;
-  ctx.fill();
-  ctx.strokeStyle = C.bg;
-  ctx.lineWidth = 5;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(-10, 0);
-  ctx.lineTo(-3, 7);
-  ctx.lineTo(11, -8);
-  ctx.stroke();
-  ctx.restore();
-  font(ctx, 700, 30);
-  spacing(ctx, 6);
-  draw(ctx, 'REPGRADE', PAD + 62, y, C.ink);
-  spacing(ctx, 0);
+  // Logoen (samme som app-ikonet) og navnet.
+  if (logo) ctx.drawImage(logo, PAD, y - 38, 48, 48);
+  font(ctx, 700, 32);
+  draw(ctx, 'Repgrade', PAD + 64, y, C.ink);
   font(ctx, 500, 28, SANS);
   draw(ctx, ellipsize(ctx, date, w / 2 - PAD), w - PAD, y, C.muted, 'right');
   return y + 40;
@@ -216,32 +190,24 @@ function footer(ctx: Ctx, w: number, h: number, data: ShareData, emblem: HTMLIma
   const y = h - PAD;
   if (withTier && data.tier && emblem) {
     const size = 96;
-    ctx.save();
-    ctx.shadowColor = tierAccent(data.tier.index);
-    ctx.shadowBlur = 24;
     ctx.drawImage(emblem, PAD, y - size, size, size);
-    ctx.restore();
-    font(ctx, 600, 24, SANS);
-    spacing(ctx, 3);
-    draw(ctx, t('STYRKENIVÅ', 'STRENGTH LEVEL'), PAD + size + 24, y - 58, C.faint);
-    spacing(ctx, 0);
+    font(ctx, 500, 26, SANS);
+    draw(ctx, t('Styrkenivå', 'Strength level'), PAD + size + 24, y - 58, C.faint);
     font(ctx, 700, 44);
-    draw(ctx, data.tier.name, PAD + size + 24, y - 12, tierAccent(data.tier.index));
+    draw(ctx, data.tier.name, PAD + size + 24, y - 12, tierAccent(data.tier.index, A.strong));
   } else {
     font(ctx, 500, 26, SANS);
     draw(ctx, t('Logget med Repgrade', 'Logged with Repgrade'), PAD, y - 12, C.faint);
   }
   font(ctx, 600, 26, SANS);
-  draw(ctx, 'repgrade', w - PAD, y - 12, C.green, 'right');
+  draw(ctx, 'repgrade', w - PAD, y - 12, A.accent, 'right');
   return 120;
 }
 
 /** Overskrift: «ØKT FULLFØRT» og navnet på økta. Returnerer y under blokken. */
 function title(ctx: Ctx, w: number, y: number, name: string, size: number, maxLines: number): number {
-  font(ctx, 700, 28, SANS);
-  spacing(ctx, 6);
-  draw(ctx, t('ØKT FULLFØRT', 'WORKOUT COMPLETE'), PAD, y + 28, C.green);
-  spacing(ctx, 0);
+  font(ctx, 600, 30, SANS);
+  draw(ctx, t('Økt fullført', 'Workout complete'), PAD, y + 28, C.muted);
   font(ctx, 700, size);
   const lines = wrap(ctx, name, w - PAD * 2, maxLines);
   let ty = y + 28 + size * 1.15;
@@ -268,9 +234,7 @@ function statTile(ctx: Ctx, x: number, y: number, w: number, h: number, value: s
   }
   draw(ctx, value, x + 32, y + h / 2 + size * 0.28, C.ink);
   font(ctx, 600, Math.round(valueSize * 0.27), SANS);
-  spacing(ctx, 3);
-  draw(ctx, label.toUpperCase(), x + 32, y + h - 30, C.muted);
-  spacing(ctx, 0);
+  draw(ctx, label, x + 32, y + h - 30, C.muted);
 }
 
 // ---------- De fire kortene ----------
@@ -309,8 +273,8 @@ function stats(ctx: Ctx, w: number, h: number, data: ShareData, top: number, bot
     ['Reps', String(data.reps)],
   ];
   if (data.heaviest) rows.push([t('Tyngste løft', 'Heaviest lift'), `${data.heaviest.exercise} · ${data.heaviest.text}`]);
-  rows.push([t('Rekorder', 'Records'), data.prs.length ? `★ ${data.prs.length}` : '0', data.prs.length ? C.greenLight : undefined]);
-  if (data.volumeDiff !== null) rows.push([t('Volum mot forrige', 'Volume vs last time'), `${data.volumeDiff >= 0 ? '▲' : '▼'} ${num(Math.abs(data.volumeDiff), 0)} %`, data.volumeDiff >= 0 ? C.greenLight : C.muted]);
+  rows.push([t('Rekorder', 'Records'), data.prs.length ? `★ ${data.prs.length}` : '0', data.prs.length ? A.strong : undefined]);
+  if (data.volumeDiff !== null) rows.push([t('Volum mot forrige', 'Volume vs last time'), `${data.volumeDiff >= 0 ? '▲' : '▼'} ${num(Math.abs(data.volumeDiff), 0)} %`, data.volumeDiff >= 0 ? A.strong : C.muted]);
 
   const blockH = titleHeight(ctx, w, data.name, tSize, 2) + 56 + tileH + 50 + rows.length * rowH;
   let y = top + Math.max(0, (bottom - top - blockH) / 2);
@@ -329,7 +293,7 @@ function stats(ctx: Ctx, w: number, h: number, data: ShareData, top: number, bot
     ctx.fillRect(PAD, y, w - PAD * 2, 2);
   }
   if (data.tier) {
-    const accent = tierAccent(data.tier.index);
+    const accent = tierAccent(data.tier.index, A.strong);
     y += story ? 60 : 36;
     font(ctx, 500, 30, SANS);
     draw(ctx, `${num(data.tier.score, 1)} ${t('poeng', 'points')}`, PAD, y + 4, C.muted);
@@ -346,11 +310,6 @@ function bodyBlock(ctx: Ctx, body: HTMLImageElement, x: number, y: number, maxW:
     bw = bh / ratio;
   }
   const bx = x + (maxW - bw) / 2;
-  const g = ctx.createRadialGradient(x + maxW / 2, y + bh / 2, 0, x + maxW / 2, y + bh / 2, bw * 0.6);
-  g.addColorStop(0, 'rgba(43, 214, 107, 0.12)');
-  g.addColorStop(1, 'rgba(43, 214, 107, 0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(x, y, maxW, bh);
   ctx.drawImage(body, bx, y, bw, bh);
   return bh;
 }
@@ -391,18 +350,16 @@ function highlights(ctx: Ctx, w: number, h: number, data: ShareData, top: number
     const rightW = ctx.measureText(right).width;
     draw(ctx, right, listX + listW, y, color, 'right');
     font(ctx, 600, fs, SANS);
-    draw(ctx, ellipsize(ctx, (star ? '★ ' : '') + left, listW - rightW - 24), listX, y, star ? C.greenLight : C.ink);
+    draw(ctx, ellipsize(ctx, (star ? '★ ' : '') + left, listW - rightW - 24), listX, y, star ? A.strong : C.ink);
   };
   const heading = (s: string) => {
-    font(ctx, 700, 26, SANS);
-    spacing(ctx, 5);
-    draw(ctx, s.toUpperCase(), listX, y + 10, C.green);
-    spacing(ctx, 0);
+    font(ctx, 600, 28, SANS);
+    draw(ctx, s, listX, y + 10, C.muted);
   };
   if (prs.length) {
     y += 20;
     heading(t('Rekorder', 'Records'));
-    for (const p of prs) line(p.exercise, p.text, C.greenLight, true);
+    for (const p of prs) line(p.exercise, p.text, A.strong, true);
     y += 30;
   }
   if (tops.length) {
@@ -496,7 +453,7 @@ function full(ctx: Ctx, w: number, h: number, data: ShareData, top: number, bott
     for (const row of p.rows) {
       cy += f * 1.5;
       font(ctx, 500, f);
-      for (const tok of row) draw(ctx, tok.text, x + tok.x, cy - f * 0.35, tok.pr ? C.greenLight : C.muted);
+      for (const tok of row) draw(ctx, tok.text, x + tok.x, cy - f * 0.35, tok.pr ? A.strong : C.muted);
     }
     cy += f * 0.8;
   }
@@ -519,9 +476,11 @@ export async function renderCard(data: ShareData, level: CardLevel, format: Card
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d')!;
-  const emblem = data.tier ? await svgImage(createElement(TierEmblem, { index: data.tier.index, size: 200, idPrefix: 'card' })) : null;
+  A = currentAccent();
+  await loadLogo();
+  const emblem = data.tier ? await svgImage(createElement(TierEmblem, { index: data.tier.index, size: 200, palette: { accent: A.accent, on: A.on } })) : null;
   const body =
-    level === 3 ? await svgImage(createElement(StaticBody, { levelOf: (g: MuscleGroup) => data.muscles[g] ?? 0 })) : null;
+    level === 3 ? await svgImage(createElement(StaticBody, { levelOf: (g: MuscleGroup) => data.muscles[g] ?? 0, accent: A.accent })) : null;
 
   background(ctx, w, h);
   const top = header(ctx, w, data.date) + 60;

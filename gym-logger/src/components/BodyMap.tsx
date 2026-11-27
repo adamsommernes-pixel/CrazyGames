@@ -12,9 +12,9 @@ type Region = { group: MuscleGroup; shape: ReactNode };
 
 const FILL = [
   'var(--color-raised)',
-  'rgb(43 214 107 / 0.32)',
-  'rgb(43 214 107 / 0.5)',
-  'rgb(43 214 107 / 0.75)',
+  'color-mix(in srgb, var(--color-accent) 32%, transparent)',
+  'color-mix(in srgb, var(--color-accent) 52%, transparent)',
+  'color-mix(in srgb, var(--color-accent) 76%, transparent)',
   'var(--color-accent)',
 ];
 
@@ -37,7 +37,7 @@ const FRONT: Region[] = [
     shape: (
       <>
         <rect x={49} y={68} width={22} height={40} rx={7} />
-        <path d="M51 80h18M51 91h18M60 70v36" stroke="var(--color-bg)" strokeOpacity={0.55} strokeWidth={1} fill="none" />
+        <path style={{ stroke: 'var(--color-bg)' }} d="M51 80h18M51 91h18M60 70v36" strokeOpacity={0.55} strokeWidth={1} fill="none" />
       </>
     ),
   },
@@ -60,7 +60,7 @@ const BACK: Region[] = [
 /** Hode, nakke, hender, hofte, knær og føtter: deler uten egen muskelgruppe. */
 function Base({ back }: { back?: boolean }) {
   return (
-    <g fill="var(--color-surface)" stroke="var(--color-line)" strokeWidth={1}>
+    <g style={{ stroke: 'var(--color-line)', fill: 'var(--color-surface)' }} strokeWidth={1}>
       <circle cx={60} cy={20} r={13} />
       <rect x={55} y={31} width={10} height={8} rx={3} />
       {!back && <path d="M47 108 H73 L71 122 H49 Z" strokeLinejoin="round" />}
@@ -98,14 +98,13 @@ function Figure({
           return (
             <g
               key={i}
-              fill={FILL[level]}
-              stroke={isSel ? 'var(--color-ink)' : level ? 'rgb(43 214 107 / 0.55)' : 'var(--color-line)'}
-              strokeWidth={isSel ? 2 : 1}
               style={{
+                fill: FILL[level],
+                stroke: isSel ? 'var(--color-ink)' : level ? 'color-mix(in srgb, var(--color-accent) 60%, transparent)' : 'var(--color-line)',
                 cursor: 'pointer',
-                filter: level === 4 ? 'drop-shadow(0 0 4px rgb(43 214 107 / 0.6))' : undefined,
                 transition: 'fill 400ms ease',
               }}
+              strokeWidth={isSel ? 2 : 1}
               onClick={() => onSelect(r.group)}
             >
               {r.shape}
@@ -207,15 +206,16 @@ const STATIC = {
   raised: '#1b211e',
   surface: '#121614',
   line: '#2a322e',
-  green: '#2bd66b',
+
 };
-const STATIC_FILL = [STATIC.raised, 'rgb(43 214 107 / 0.32)', 'rgb(43 214 107 / 0.5)', 'rgb(43 214 107 / 0.75)', STATIC.green];
+const hexA = (hex: string, a: number) => hex + Math.round(a * 255).toString(16).padStart(2, '0');
 
 /**
  * Begge figurene i én SVG med faste farger, for delekort (tegnes på canvas via et bilde).
  * `levelOf` gir 0–4 per muskelgruppe.
  */
-export function StaticBody({ levelOf }: { levelOf: (g: MuscleGroup) => number }) {
+export function StaticBody({ levelOf, accent }: { levelOf: (g: MuscleGroup) => number; accent: string }) {
+  const STATIC_FILL = [STATIC.raised, hexA(accent, 0.32), hexA(accent, 0.52), hexA(accent, 0.76), accent];
   const figure = (regions: Region[], back: boolean, x: number) => (
     <g transform={`translate(${x} 0)`}>
       <g fill={STATIC.surface} stroke={STATIC.line} strokeWidth={1}>
@@ -229,7 +229,7 @@ export function StaticBody({ levelOf }: { levelOf: (g: MuscleGroup) => number })
       {regions.map((r, i) => {
         const level = Math.max(0, Math.min(4, levelOf(r.group)));
         return (
-          <g key={i} fill={STATIC_FILL[level]} stroke={level ? 'rgb(43 214 107 / 0.7)' : STATIC.line} strokeWidth={1}>
+          <g key={i} fill={STATIC_FILL[level]} stroke={level ? hexA(accent, 0.7) : STATIC.line} strokeWidth={1}>
             {r.shape}
           </g>
         );

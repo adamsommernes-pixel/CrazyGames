@@ -45,7 +45,7 @@ export function ProfilePage() {
   return (
     <Page title={t('Profil', 'Profile')}>
       <section className="flex flex-col items-center pt-2 pb-6 text-center">
-        <Avatar name={profile?.name || user.name} color={profile?.color ?? '#2bd66b'} size={88} />
+        <Avatar name={profile?.name || user.name} color={profile?.color ?? '#34c66b'} size={88} />
         <h2 className="mt-4 text-2xl font-bold">{profile?.name || user.name}</h2>
         <p className="mt-1 text-muted">
           {profile ? GOAL_LABEL[profile.goal] : ''} · {profile?.weekly_target ?? 3} {t('økter i uka', 'workouts a week')}
