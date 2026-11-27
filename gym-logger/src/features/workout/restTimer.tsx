@@ -14,15 +14,30 @@ import { t } from '../../i18n';
 
 let audio: AudioContext | null = null;
 
+type AudioSessionType = 'auto' | 'playback' | 'transient' | 'transient-solo' | 'ambient' | 'play-and-record';
+const audioSession = () => (typeof navigator !== 'undefined' ? (navigator as unknown as { audioSession?: { type: AudioSessionType } }).audioSession : undefined);
+
+/**
+ * Lydmodus på iPhone (Safari 16.4+): «ambient» blander seg med musikk, så Spotify o.l. fortsetter.
+ * («playback» tok over lyden og stoppet musikken ved hvert trykk.) Bare mens pipet spilles brukes
+ * «transient», som demper musikken et øyeblikk og slipper den fri igjen.
+ */
+export function setAudioMode(type: AudioSessionType) {
+  try {
+    const s = audioSession();
+    if (s && s.type !== type) s.type = type;
+  } catch {
+    /* ikke støttet */
+  }
+}
+
 /**
  * Må kalles fra et trykk (iOS krever det). Kalles ved hvert trykk, fordi iPhone setter lyden
  * på pause hver gang appen går i bakgrunnen.
  */
 export function unlockAudio() {
   try {
-    // Spill lyd selv når iPhone står på lydløs (Safari 16.4+). Ellers dempes Web Audio av lydløs-bryteren.
-    const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
-    if (session && session.type !== 'playback') session.type = 'playback';
+    setAudioMode('ambient');
     const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     audio ??= new Ctx();
     if (audio.state !== 'running') void audio.resume();
@@ -34,6 +49,8 @@ export function unlockAudio() {
 function beep() {
   if (!audio) return;
   try {
+    setAudioMode('transient');
+    setTimeout(() => setAudioMode('ambient'), 1200);
     if (audio.state !== 'running') void audio.resume();
     const t = audio.currentTime;
     for (const [i, freq] of [880, 880, 1320].entries()) {
