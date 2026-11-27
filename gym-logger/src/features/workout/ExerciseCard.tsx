@@ -9,6 +9,8 @@ import {
   addWarmupSets,
   applyWeightToPending,
   deleteSet,
+  halveSetWeights,
+  restoreSetWeights,
   lastNotes,
   lastPerformance,
   moveWorkoutExercise,
@@ -27,6 +29,7 @@ import { PlateCalculator } from '../../components/PlateCalculator';
 import { MuscleDot } from '../../components/MuscleTag';
 import { SwipeToDelete } from '../../components/SwipeToDelete';
 import { SET_TYPE_COLOR, setTypeSoft } from '../../lib/setTypes';
+import { SUSPICIOUS_KG, perHand, perHandColumn, perHandHint, type PerHand } from '../../lib/perHand';
 import { undoToast } from '../../components/toast';
 import { Icon } from '../../components/Icon';
 import { SET_GRID, SetRow } from './SetRow';
@@ -105,6 +108,14 @@ export function ExerciseCard({
   const pendingWork = sorted.filter((s) => !s.completed_at && s.set_type !== 'warmup');
   const workSetCount = sorted.filter((s) => s.set_type !== 'warmup').length;
   const cols = kindColumns(kind, unit);
+  // Manualer/kettlebells: vekten på én, ikke begge. Mistenkelig tunge vekter får en tydelig advarsel.
+  const hand = perHand(exercise);
+  const weighted = sorted.filter((s) => s.weight > 0);
+  const suspicious = !!hand && weighted.some((s) => s.weight >= SUSPICIOUS_KG);
+  const halve = async () => {
+    const prev = await halveSetWeights(weighted.map((s) => s.id));
+    undoToast(t(`Vektene er delt på to (${prev.length} set)`, `Weights halved (${prev.length} sets)`), () => restoreSetWeights(prev));
+  };
 
   // Progresjon: nådde du målet på alle sett sist, foreslås ett steg tyngre (bare vekt × reps).
   const suggestion = isWeight ? suggestNext(previous, we.target_reps, stepFor(exercise?.equipment, unit)) : null;
@@ -203,10 +214,27 @@ export function ExerciseCard({
         </button>
       )}
 
+      {hand && (
+        <div
+          className={`mb-1.5 flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs ${suspicious ? 'border border-warn/50 bg-warn/10 text-ink' : 'text-muted'}`}
+          data-per-hand={suspicious ? 'warn' : 'hint'}
+        >
+          <Icon name="info" size={14} className={`shrink-0 ${suspicious ? 'text-warn' : 'text-faint'}`} />
+          <span className="flex-1">
+            {suspicious ? t(`Over ${num(toDisplay(SUSPICIOUS_KG, unit), 0)} ${unit} per stk? `, `Over ${num(toDisplay(SUSPICIOUS_KG, unit), 0)} ${unit} each? `) : ''}
+            {perHandHint(hand)}
+          </span>
+          {weighted.length > 0 && (
+            <button type="button" onClick={() => void halve()} className="shrink-0 font-semibold text-accent">
+              {t('Logget feil? Del på to', 'Logged wrong? Halve it')}
+            </button>
+          )}
+        </div>
+      )}
       <div className={`${SET_GRID} px-1 pb-1 text-[11px] font-semibold text-faint`}>
         <span className="text-center">Set</span>
         <span>{t('Forrige', 'Previous')}</span>
-        <span className="text-center">{cols.first}</span>
+        <span className="text-center">{hand && kind === 'weight' ? perHandColumn(unit) : cols.first}</span>
         <span className="text-center">{cols.second}</span>
         <span />
       </div>
@@ -301,7 +329,7 @@ export function ExerciseCard({
         <p className="mt-3 text-xs text-faint">{t('Stangvekt og skiver endres under Profil → Innstillinger.', 'Bar weight and plates are changed under Profile → Settings.')}</p>
       </Sheet>
 
-      <SetEditor set={editing} unit={unit} kind={kind} onClose={() => setEditing(null)} />
+      <SetEditor set={editing} unit={unit} kind={kind} hand={hand} onClose={() => setEditing(null)} />
       {info && exercise && <ExerciseInfoSheet exercise={exercise} demo={demo} onClose={() => setInfo(false)} />}
       <ExercisePicker
         open={swapping}
@@ -315,7 +343,7 @@ export function ExerciseCard({
 }
 
 /** Ark for ett set: verdier med hold-inne-knapper, set-type og sletting. Feltene følger øvelsestypen. */
-function SetEditor({ set, unit, kind, onClose }: { set: WorkoutSet | null; unit: 'kg' | 'lbs'; kind: ExerciseKind; onClose: () => void }) {
+function SetEditor({ set, unit, kind, hand, onClose }: { set: WorkoutSet | null; unit: 'kg' | 'lbs'; kind: ExerciseKind; hand: PerHand | null; onClose: () => void }) {
   const [first, setFirst] = useState(0);
   const [second, setSecond] = useState(0);
   const cardio = kind === 'cardio';
@@ -332,7 +360,7 @@ function SetEditor({ set, unit, kind, onClose }: { set: WorkoutSet | null; unit:
     onClose();
   };
   const cols = kindColumns(kind, unit);
-  const firstLabel = cardio ? t('Distanse (km)', 'Distance (km)') : kind === 'weight' ? `${t('Vekt', 'Weight')} (${unit})` : `${t('Ekstra vekt', 'Extra weight')} (${unit})`;
+  const firstLabel = cardio ? t('Distanse (km)', 'Distance (km)') : kind === 'weight' ? (hand ? `${t('Vekt per stk', 'Weight each')} (${unit})` : `${t('Vekt', 'Weight')} (${unit})`) : `${t('Ekstra vekt', 'Extra weight')} (${unit})`;
   const secondLabel = kind === 'time' ? t('Sekunder', 'Seconds') : cardio ? t('Minutter', 'Minutes') : 'Reps';
   return (
     <Sheet open onClose={() => void save()} title={t('Rediger set', 'Edit set')}>

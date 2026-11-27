@@ -241,3 +241,11 @@ Oppsett (én gang, ca. 10 minutter):
 7. Publiser appen på nytt (merge til main), så bygget får den offentlige nøkkelen.
 
 Sjekk: slå på varselet i Profil, start en økt, fullfør et set og lås telefonen. Når pausen er over, kommer «Pausen er over – Benkpress – neste set». Funksjonens logg i Supabase viser `{"alarms":1,"sent":1}`.
+
+## Ny versjon med «Nytt i denne versjonen»
+
+1. Øk `version` i `package.json` (f.eks. 1.1.0 → 1.2.0, eller 1.1.1 for småfikser).
+2. Sett samme versjon i `public/whats-new.json` og skriv 3–7 punkter (`nb`, `en`, valgfritt `icon` fra `src/components/Icon.tsx`).
+3. Merge til main.
+
+Har brukeren appen åpen, vises nyhetene i fullskjerm med «Oppdater nå» / «Senere». Oppdaterte appen seg uten at de så skjermen, vises listen én gang med «Fortsett» neste gang de åpner appen. Nye brukere får den ikke. En test stopper bygget hvis versjonene i de to filene ikke er like.

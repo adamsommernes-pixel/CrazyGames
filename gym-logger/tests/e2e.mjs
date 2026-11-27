@@ -298,6 +298,24 @@ try {
   await btn('Legg til (2)').click();
   await page.getByRole('heading', { name: 'Lateral raise' }).waitFor();
   await page.getByRole('heading', { name: 'Benkpress' }).waitFor();
+  // 5e1. Manualøvelse: vekten per manual står tydelig, og «Del på to» retter opp om begge ble logget samlet
+  const lr = page.locator('.card').filter({ has: page.getByRole('heading', { name: 'Lateral raise' }) }).first();
+  await lr.getByText('kg/stk').waitFor();
+  await lr.locator('[data-per-hand="hint"]').waitFor();
+  await lr.getByLabel('Vekt set 1 (kg)').fill('60');
+  await lr.getByLabel('Vekt set 1 (kg)').blur();
+  await lr.locator('[data-per-hand="warn"]').waitFor();
+  await lr.scrollIntoViewIfNeeded();
+  await shot('manual-del-pa-to');
+  await lr.getByRole('button', { name: 'Logget feil? Del på to' }).click();
+  await page.getByText(/Vektene er delt på to/).waitFor();
+  assert.equal(await lr.getByLabel('Vekt set 1 (kg)').inputValue(), '30', 'vekten ble delt på to');
+  await btn('Angre', { exact: true }).click();
+  await page.waitForTimeout(300);
+  assert.equal(await lr.getByLabel('Vekt set 1 (kg)').inputValue(), '60', 'angre gir tilbake vekten');
+  await lr.getByLabel('Vekt set 1 (kg)').fill('0');
+  await lr.getByLabel('Vekt set 1 (kg)').blur();
+
   // 5e2. Endre rekkefølge: dra første øvelse ned én plass og flytt siste opp med pil
   const cardTitles = () => page.locator('main h2').allInnerTexts();
   await btn('Endre rekkefølge').click();
