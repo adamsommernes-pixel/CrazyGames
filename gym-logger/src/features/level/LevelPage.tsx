@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card, Page, SectionTitle } from '../../components/ui';
 import { TierEmblem, tierAccent } from '../../components/TierBadge';
 import { useStrength } from '../../lib/strengthLive';
-import { CATEGORIES, CATEGORY_LABEL, TIER_COUNT, tierAt, tierFor, type Category } from '../../lib/strength';
+import { ACTIVE_DAYS, CATEGORIES, CATEGORY_LABEL, TIER_COUNT, tierAt, tierFor, type Category } from '../../lib/strength';
 import { useExerciseMap } from '../workout/ExercisePicker';
 import { exerciseName } from '../../lib/exerciseName';
 import { useSetting } from '../../lib/settings';
@@ -62,7 +62,12 @@ export function LevelPage() {
             const color = tierAccent(l.tier.index);
             const progress = nextT ? Math.max(0, Math.min(1, (l.score - l.tier.min) / 10)) : 1;
             return (
-              <Link key={l.exerciseId} to={`/exercise/${l.exerciseId}`} className="flex items-center gap-3 px-3.5 py-3 active:bg-raised">
+              <Link
+                key={l.exerciseId}
+                to={`/exercise/${l.exerciseId}`}
+                className={`flex items-center gap-3 px-3.5 py-3 active:bg-raised ${l.active ? '' : 'opacity-45 grayscale'}`}
+                data-lift-active={l.active ? '1' : '0'}
+              >
                 <TierEmblem index={l.tier.index} size={40} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
@@ -75,7 +80,9 @@ export function LevelPage() {
                     <div className="h-full rounded-full" style={{ width: `${progress * 100}%`, background: color }} />
                   </div>
                   <div className="mt-1 text-xs text-muted">
-                    {nextT && l.nextTierKg
+                    {!l.active
+                      ? t(`Ikke trent siste ${ACTIVE_DAYS} dager, teller ikke nå. Tren det igjen, så teller det med en gang.`, `Not trained in the last ${ACTIVE_DAYS} days, so it does not count now. Train it again and it counts right away.`)
+                      : nextT && l.nextTierKg
                         ? t(`1RM nå ${shown(l.e1rm)}. Klarer du ${shown(l.nextTierKg)}, blir du ${nextT.name}.`, `1RM now ${shown(l.e1rm)}. Lift ${shown(l.nextTierKg)} to reach ${nextT.name}.`)
                         : t(`1RM ${shown(l.e1rm)} · toppnivået`, `1RM ${shown(l.e1rm)} · top level`)}
                   </div>
@@ -114,8 +121,8 @@ export function LevelPage() {
         {s.missing.length > 0 && (
           <Note>
             {t(
-              `Logg ${s.missing.map((c) => CATEGORY_LABEL[c].toLowerCase()).join(' og ')}-øvelser for å låse opp full rangering. Hver kategori som mangler teller som 0.`,
-              `Log ${s.missing.map((c) => CATEGORY_LABEL[c].toLowerCase()).join(' and ')} exercises to unlock your full rank. Each missing category counts as 0.`,
+              `Tren ${s.missing.map((c) => CATEGORY_LABEL[c].toLowerCase()).join(' og ')}-løft (se listen under) for å låse opp full rangering. En kategori uten løft de siste ${ACTIVE_DAYS} dagene teller som 0.`,
+              `Train ${s.missing.map((c) => CATEGORY_LABEL[c].toLowerCase()).join(' and ')} lifts (see the list below) to unlock your full rank. A category with no lift in the last ${ACTIVE_DAYS} days counts as 0.`,
             )}
           </Note>
         )}
@@ -171,14 +178,14 @@ export function LevelPage() {
         </p>
         <p>
           {t(
-            'Nivået er snittet av det beste løftet i press, trekk og bein, så en balansert kropp kommer høyest. For pull-ups og dips teller kroppsvekten med.',
-            'Your level is the average of your best lift in push, pull and legs, so a balanced body ranks highest. For pull-ups and dips your bodyweight counts too.',
+            'Nivået er snittet av det beste løftet i press, trekk og bein, så en balansert kropp kommer høyest. For pull-ups teller kroppsvekten med.',
+            'Your level is the average of your best lift in push, pull and legs, so a balanced body ranks highest. For pull-ups your bodyweight counts too.',
           )}
         </p>
         <p>
           {t(
-            'Bare hovedløftene teller: benk, skulderpress, dips, roing, pull-ups, knebøy og markløft (med nære varianter som skråbenk, frontbøy og sumo-markløft). Maskiner og manualer er med i loggen, men gir ikke nivå. Olympia krever nær verdensklasse i alle tre kategoriene.',
-            'Only the main lifts count: bench, overhead press, dips, rows, pull-ups, squat and deadlift (with close variants such as incline bench, front squat and sumo deadlift). Machines and dumbbells are logged but do not give a level. Olympia needs close to world-class strength in all three categories.',
+            `Elleve løft teller: benkpress, skråbenk, smal benkpress og militærpress (press), pull-ups, stangroing og nedtrekk (trekk), knebøy, markløft, rumensk markløft og beinspark (bein). Alt annet logges som vanlig, men gir ikke nivå. Et løft må være trent de siste ${ACTIVE_DAYS} dagene for å telle; ellers vises det grått. Olympia krever nær verdensklasse i alle tre kategoriene.`,
+            `Eleven lifts count: bench press, incline bench, close-grip bench and overhead press (push), pull-ups, barbell row and lat pulldown (pull), squat, deadlift, Romanian deadlift and leg extension (legs). Everything else is logged as usual but gives no level. A lift must be trained in the last ${ACTIVE_DAYS} days to count; otherwise it is shown in grey. Olympia needs close to world-class strength in all three categories.`,
           )}
         </p>
       </Card>
@@ -188,9 +195,9 @@ export function LevelPage() {
 
 /** Hvilke løft som teller i hver kategori. */
 const CATEGORY_LIFTS: Record<Category, () => string> = {
-  push: () => t('benk, skulderpress, dips', 'bench, overhead press, dips'),
-  pull: () => t('roing, pull-ups', 'rows, pull-ups'),
-  legs: () => t('knebøy, markløft', 'squat, deadlift'),
+  push: () => t('benk, skråbenk, smal benk, militærpress', 'bench, incline bench, close-grip bench, overhead press'),
+  pull: () => t('pull-ups, stangroing, nedtrekk', 'pull-ups, barbell row, lat pulldown'),
+  legs: () => t('knebøy, markløft, rumensk markløft, beinspark', 'squat, deadlift, Romanian deadlift, leg extension'),
 };
 
 function Note({ children }: { children: React.ReactNode }) {

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { TierEmblem, tierAccent } from '../../components/TierBadge';
 import { useStrength } from '../../lib/strengthLive';
-import { TIER_COUNT, isRanked, tierAt } from '../../lib/strength';
+import { ACTIVE_DAYS, TIER_COUNT, isRanked, tierAt } from '../../lib/strength';
 import { useSetting } from '../../lib/settings';
 import { num, toDisplay } from '../../lib/format';
 import { t } from '../../i18n';
@@ -18,14 +18,16 @@ export function LiftLevel({ exerciseId }: { exerciseId: string }) {
   };
   const next = lift && lift.tier.index < TIER_COUNT - 1 ? tierAt(lift.tier.index + 1) : null;
   return (
-    <Link to="/level" className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-raised px-3 py-2.5">
+    <Link to="/level" className={`mt-3 flex items-center gap-3 rounded-xl border border-line bg-raised px-3 py-2.5 ${lift && !lift.active ? 'opacity-60 grayscale' : ''}`}>
       <TierEmblem index={lift?.tier.index ?? 0} size={36} />
       <div className="min-w-0 flex-1 text-sm">
         <div className="font-semibold" style={lift ? { color: tierAccent(lift.tier.index) } : undefined}>
           {lift ? lift.tier.name : t('Rangert løft', 'Ranked lift')}
         </div>
         <div className="text-xs text-muted">
-          {lift
+          {lift && !lift.active
+            ? t(`Ikke trent siste ${ACTIVE_DAYS} dager, teller ikke i nivået nå.`, `Not trained in the last ${ACTIVE_DAYS} days, so it does not count in your level now.`)
+            : lift
             ? next && lift.nextTierKg
               ? t(`1RM nå ${kg(lift.e1rm)}. Klarer du ${kg(lift.nextTierKg)}, blir du ${next.name}.`, `1RM now ${kg(lift.e1rm)}. Lift ${kg(lift.nextTierKg)} to reach ${next.name}.`)
               : t(`1RM ${kg(lift.e1rm)} · toppnivået`, `1RM ${kg(lift.e1rm)} · top level`)

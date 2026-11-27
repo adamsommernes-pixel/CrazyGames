@@ -19,7 +19,7 @@ const set = (exercise: string, weight: number, reps: number, set_type = 'normal'
   weight,
   reps,
   set_type,
-  completed_at: '2026-11-20T10:00:00Z',
+  completed_at: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
 });
 
 describe('strength scoring', () => {
@@ -69,7 +69,7 @@ describe('strength scoring', () => {
   });
 
   it('only main lifts are ranked: machines and dumbbells give no level', () => {
-    for (const slug of ['beinpress', 'hack-squat', 'nedtrekk', 'sittende-roing', 'smith-benkpress', 'benkpress-med-manualer', 'skulderpress-med-manualer', 'hip-thrust', 'bulgarsk-splittboy', 't-bar-roing'])
+    for (const slug of ['beinpress', 'hack-squat', 'sittende-roing', 'smith-benkpress', 'benkpress-med-manualer', 'skulderpress-med-manualer', 'hip-thrust', 'bulgarsk-splittboy', 't-bar-roing'])
       expect(liftScore(`ex-${slug}`, 100, 80, 'male'), slug).toBeNull();
     expect(liftScore('ex-benkpress', 100, 80, 'male')).not.toBeNull();
   });
@@ -108,5 +108,30 @@ describe('strength scoring', () => {
     expect(ev.overallAfter.score).toBeGreaterThan(ev.overallBefore.score);
     const first = set('kneboy', 60, 5);
     expect(levelEventFor(first, [first], 80, 'male')!.before).toBeNull();
+  });
+
+  it('only the 12 chosen lifts count; machines, dumbbells and other variants give no level', () => {
+    for (const slug of ['benkpress', 'skrabenk', 'smal-benkpress', 'militaerpress', 'pull-ups', 'stangroing', 'nedtrekk', 'kneboy', 'markloft', 'rumensk-markloft', 'beinspark'])
+      expect(liftScore(`ex-${slug}`, 100, 80, 'male'), slug).not.toBeNull();
+    for (const slug of ['dips', 'chin-ups', 'frontboy', 'sumo-markloft', 'trap-bar-markloft', 'pendlay-roing', 'sittende-militaerpress', 'box-squat', 'beinpress', 'benkpress-med-manualer', 'hip-thrust'])
+      expect(liftScore(`ex-${slug}`, 100, 80, 'male'), slug).toBeNull();
+  });
+
+  it('lifts not trained in the last 30 days are greyed out and do not count', () => {
+    const now = Date.parse('2026-12-31T12:00:00Z');
+    const at = (days: number) => new Date(now - days * 24 * 3600 * 1000).toISOString();
+    const sets = [
+      { ...set('benkpress', 100, 1), completed_at: at(45) },
+      { ...set('kneboy', 140, 1), completed_at: at(3) },
+    ];
+    const p = strengthProfile(sets, 80, 'male', undefined, now);
+    expect(p.lifts.find((l) => l.exerciseId === 'ex-benkpress')?.active).toBe(false);
+    expect(p.lifts.find((l) => l.exerciseId === 'ex-kneboy')?.active).toBe(true);
+    expect(p.categories.push).toBe(0);
+    expect(p.missing).toContain('push');
+    expect(p.lifts[0].exerciseId).toBe('ex-kneboy'); // aktive først
+    // Trener du benk igjen, teller den med en gang
+    const again = strengthProfile([...sets, { ...set('benkpress', 60, 5), completed_at: at(1) }], 80, 'male', undefined, now);
+    expect(again.categories.push).toBeGreaterThan(0);
   });
 });

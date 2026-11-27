@@ -79,27 +79,25 @@ export const MAX_REPS = 10;
  * `load: 'bw'` betyr at kroppsvekten legges til ekstravekten (pull-ups, dips).
  */
 /**
- * Bare hovedløftene (stang og kroppsvekt) og deres nære slektninger teller. Maskiner, manualer, Smith
- * og hip thrust er bevisst utelatt: de er vanskelige å sammenligne rettferdig og gir for høye nivåer.
+ * Løftene som teller i styrkenivået (11 stk). Alt annet logges som vanlig, men gir ikke nivå.
  */
 export const RANKED: Record<string, { anchor: AnchorId; factor: number; load?: 'bw' }> = {
+  // Press
   benkpress: { anchor: 'bench', factor: 1 },
   skrabenk: { anchor: 'bench', factor: 0.85 },
   'smal-benkpress': { anchor: 'bench', factor: 0.9 },
   militaerpress: { anchor: 'ohp', factor: 1 },
-  'sittende-militaerpress': { anchor: 'ohp', factor: 1 },
-  dips: { anchor: 'dip', factor: 1, load: 'bw' },
-  stangroing: { anchor: 'row', factor: 1 },
-  'pendlay-roing': { anchor: 'row', factor: 1 },
+  // Trekk
   'pull-ups': { anchor: 'pullup', factor: 1, load: 'bw' },
-  'chin-ups': { anchor: 'pullup', factor: 1.05, load: 'bw' },
+  stangroing: { anchor: 'row', factor: 1 },
+  // Nedtrekk: vekta på stabelen tilsvarer omtrent kroppsvekt + ekstravekt i pull-ups.
+  nedtrekk: { anchor: 'pullup', factor: 0.95 },
+  // Bein
   kneboy: { anchor: 'squat', factor: 1 },
-  'box-squat': { anchor: 'squat', factor: 1 },
-  frontboy: { anchor: 'squat', factor: 0.8 },
   markloft: { anchor: 'deadlift', factor: 1 },
-  'sumo-markloft': { anchor: 'deadlift', factor: 1 },
-  'trap-bar-markloft': { anchor: 'deadlift', factor: 1.05 },
   'rumensk-markloft': { anchor: 'deadlift', factor: 0.75 },
+  // Beinspark: maskinstabler varierer, men et typisk 1RM er rundt 70 % av knebøy.
+  beinspark: { anchor: 'squat', factor: 0.7 },
 };
 
 const slugOf = (exerciseId: string) => exerciseId.replace(/^ex-/, '');
@@ -148,6 +146,10 @@ export interface LiftScore {
   tier: Tier;
   /** Beregnet 1RM (samme måling som e1rm) som trengs for neste nivå, eller null på toppen. */
   nextTierKg: number | null;
+  /** Trent de siste ACTIVE_DAYS dagene. Løft som ikke er det, vises grått og teller ikke. */
+  active: boolean;
+  /** Siste gang løftet ble trent (ISO), eller null. */
+  lastAt: string | null;
   /** True når kroppsvekten er med i tallet (vis «+ x kg ekstra»). */
   bodyweightLoad: boolean;
 }
@@ -205,7 +207,22 @@ export function liftScore(exerciseId: string, e1rm: number, bw: number, sex: Sex
     tier,
     nextTierKg: next,
     bodyweightLoad: rank.load === 'bw',
+    active: true,
+    lastAt: null,
   };
+}
+
+/** Et løft må være trent de siste så mange dagene for å telle i nivået. */
+export const ACTIVE_DAYS = 30;
+
+/** Siste fullførte arbeidssett per rangert øvelse. */
+function lastTrained(sets: RankSet[]): Map<string, string> {
+  const last = new Map<string, string>();
+  for (const s of sets) {
+    if (!isRanked(s.exercise_id) || !countsAsWork(s) || !s.completed_at) continue;
+    if (s.completed_at > (last.get(s.exercise_id) ?? '')) last.set(s.exercise_id, s.completed_at);
+  }
+  return last;
 }
 
 export function strengthProfile(
@@ -213,17 +230,24 @@ export function strengthProfile(
   bw: number,
   sex: Sex | null,
   exercises?: Map<string, Exercise>,
+  now: number = Date.now(),
 ): StrengthProfile {
+  const last = lastTrained(sets);
+  const cutoff = now - ACTIVE_DAYS * 24 * 3600 * 1000;
   const lifts: LiftScore[] = [];
   for (const [id, e1rm] of bestLifts(sets, bw, sex)) {
     if (exercises && !exercises.has(id)) continue;
     const ls = liftScore(id, e1rm, bw, sex);
-    if (ls) lifts.push(ls);
+    if (!ls) continue;
+    const lastAt = last.get(id) ?? null;
+    lifts.push({ ...ls, lastAt, active: !!lastAt && Date.parse(lastAt) >= cutoff });
   }
-  lifts.sort((a, b) => b.score - a.score);
+  // Aktive løft først (sterkest øverst), så de som ikke teller lenger.
+  lifts.sort((a, b) => Number(b.active) - Number(a.active) || b.score - a.score);
+  const active = lifts.filter((l) => l.active);
   const categories = { push: 0, pull: 0, legs: 0 } as Record<Category, number>;
-  for (const l of lifts) categories[l.category] = Math.max(categories[l.category], l.score);
-  const missing = CATEGORIES.filter((c) => !lifts.some((l) => l.category === c));
+  for (const l of active) categories[l.category] = Math.max(categories[l.category], l.score);
+  const missing = CATEGORIES.filter((c) => !active.some((l) => l.category === c));
   const score = CATEGORIES.reduce((s, c) => s + categories[c], 0) / CATEGORIES.length;
   return { score, tier: tierFor(score), progress: progressInTier(score), categories, lifts, missing };
 }

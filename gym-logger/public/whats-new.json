@@ -1,7 +1,8 @@
 {
   "version": "1.2.0",
   "items": [
-    { "icon": "trophy", "nb": "Styrkenivået bygger nå bare på hovedløftene: benk, skulderpress, dips, roing, pull-ups, knebøy og markløft. Maskiner og manualer logges som før, men gir ikke nivå. Nivået ditt kan derfor endre seg.", "en": "Your strength level now only uses the main lifts: bench, overhead press, dips, rows, pull-ups, squat and deadlift. Machines and dumbbells are logged as before but no longer give a level, so your level may change." },
+    { "icon": "trophy", "nb": "Nytt styrkenivå: 11 løft teller. Benkpress, skråbenk, smal benk og militærpress; pull-ups, stangroing og nedtrekk; knebøy, markløft, rumensk markløft og beinspark. Nivået ditt kan derfor endre seg.", "en": "New strength level: 11 lifts count. Bench, incline bench, close-grip bench and overhead press; pull-ups, barbell row and lat pulldown; squat, deadlift, Romanian deadlift and leg extension. Your level may change." },
+    { "icon": "calendar", "nb": "Løft du ikke har trent på 30 dager, vises grått og teller ikke. Tren dem igjen, så teller de med en gang.", "en": "Lifts you have not trained in 30 days are shown in grey and do not count. Train them again and they count right away." },
     { "icon": "dumbbell", "nb": "Manualer og kettlebells: logg vekten på én. «Del på to» retter opp om du har logget begge til sammen.", "en": "Dumbbells and kettlebells: log the weight of one. “Halve it” fixes it if you logged both together." }
   ]
 }

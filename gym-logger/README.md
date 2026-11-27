@@ -76,7 +76,7 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
 **Styrkenivå**
 - Ti nivåer: Nybegynner, Rookie, Stamgjest, Gymrotte, Løfter, Sterk, Beist, Titan, Elite og Olympia.
 - Regnes ut fra beste beregnede 1RM i nøkkelløft (benk, knebøy, markløft, skulderpress, roing, pull-ups, dips og varianter) delt på kroppsvekt, med egne standarder for menn og kvinner (snitt hvis kjønn ikke er valgt). Snittet av press, trekk og bein gir nivået.
-- Bare hovedløftene (stang og kroppsvekt: benk, skulderpress, dips, roing, pull-ups, knebøy, markløft og nære varianter som skråbenk, frontbøy og sumo-markløft) gir nivå. Maskiner, manualer, Smith og hip thrust logges som vanlig, men teller ikke i rangeringen. Estimert 1RM bruker sets med 1–10 reps, og urealistiske sets (over 1,5 × verdensklasse, som regel tastefeil) teller ikke.
+- Elleve løft gir nivå: benkpress, skråbenk, smal benkpress, militærpress, pull-ups (også med vekt), stangroing, nedtrekk, knebøy, markløft, rumensk markløft og beinspark. Alt annet logges som vanlig, men teller ikke. Et løft teller bare hvis det er trent de siste 30 dagene (ellers vises det grått). Estimert 1RM bruker sets med 1–10 reps, og urealistiske sets (over 1,5 × verdensklasse, som regel tastefeil) teller ikke.
 - Testet mot realistiske løftere (`src/lib/strength.personas.test.ts`), mann 80 kg / kvinne 62 kg:
 
   | Løfter | Eksempel (1RM benk / knebøy / markløft + trekk) | Nivå |

@@ -381,7 +381,7 @@ try {
   await page.getByRole('link', { name: /^Styrkenivå: / }).click();
   await page.getByRole('heading', { name: 'Styrkenivå' }).waitFor();
   await page.getByText('Olympia', { exact: true }).waitFor();
-  await page.getByText(/Logg (press|trekk).*-øvelser/).waitFor();
+  await page.getByText(/Tren (press|trekk).*-løft/).waitFor();
   const levelHeads = await page.locator('main h2').allInnerTexts();
   assert.ok(levelHeads.indexOf('Dine løft') >= 0 && levelHeads.indexOf('Dine løft') < levelHeads.indexOf('Kategorier'), `løftene står over kategoriene (${levelHeads.join(' | ')})`);
   await page.getByText(/Klarer du .* blir du/).first().waitFor();
