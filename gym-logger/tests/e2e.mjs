@@ -184,8 +184,14 @@ try {
   await levelUp().getByRole('heading', { name: 'Rookie' }).waitFor();
   await page.waitForTimeout(2200);
   await shot('niva-opp');
+  await levelUp().getByRole('button', { name: 'Se styrkenivå' }).waitFor();
   await levelUp().getByRole('button', { name: 'Fortsett' }).click();
   await levelUp().waitFor({ state: 'detached' });
+  // Trykk på øvelsesnavnet åpner øvelsessiden; tilbake går til økta som fortsatt pågår
+  await btn(/^Knebøy: rekorder, grafer og historikk/).first().click();
+  await page.getByRole('tab', { name: 'Oversikt' }).waitFor();
+  await page.goBack();
+  await page.getByRole('timer').waitFor();
 
   // 4b. Hvilelinja: +15 og −15 virker
   const timerText = async () => (await page.getByRole('timer').innerText()).match(/\d+:\d\d/)?.[0];
@@ -254,6 +260,17 @@ try {
   await dialog().getByRole('button', { name: 'Slett' }).click();
   await page.getByText('Settet er slettet').waitFor();
   assert.equal(await btn('Set 2, rediger').count(), 0);
+  await btn('Angre', { exact: true }).click();
+  await btn('Set 2, rediger').first().waitFor();
+  // Dra settet til venstre for å slette (og angre)
+  const row = page.locator('[data-swipe-row]').filter({ has: btn('Set 2, rediger') }).first();
+  const rb = await row.boundingBox();
+  await page.mouse.move(rb.x + rb.width * 0.3, rb.y + rb.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(rb.x + rb.width * 0.3 - rb.width * 0.6, rb.y + rb.height / 2, { steps: 10 });
+  await page.mouse.up();
+  await page.getByText('Settet er slettet').waitFor();
+  assert.equal(await btn('Set 2, rediger').count(), 0, 'settet ble slettet med sveip');
   await btn('Angre', { exact: true }).click();
   await btn('Set 2, rediger').first().waitFor();
 

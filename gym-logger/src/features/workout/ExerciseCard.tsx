@@ -1,5 +1,6 @@
 import { useAutosave } from '../../lib/autosave';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { Exercise, ExerciseKind, WorkoutExercise, WorkoutSet } from '../../db/types';
 import { KIND_LABEL, SET_TYPES, SET_TYPE_LABEL } from '../../db/types';
@@ -24,6 +25,7 @@ import { kindColumns } from '../../lib/kinds';
 import { ActionList, Button, Card, Chip, IconButton, NumberStepper, Sheet } from '../../components/ui';
 import { PlateCalculator } from '../../components/PlateCalculator';
 import { MuscleDot } from '../../components/MuscleTag';
+import { SwipeToDelete } from '../../components/SwipeToDelete';
 import { undoToast } from '../../components/toast';
 import { Icon } from '../../components/Icon';
 import { SET_GRID, SetRow } from './SetRow';
@@ -74,6 +76,7 @@ export function ExerciseCard({
   const [notes, setNotes] = useState(we.notes);
   const notesSave = useAutosave(600);
   const [info, setInfo] = useState(false);
+  const navigate = useNavigate();
   const [swapping, setSwapping] = useState(false);
 
   // Etter et bytte av øvelse hører notatet til den nye øvelsen.
@@ -116,7 +119,7 @@ export function ExerciseCard({
   return (
     <Card className={`p-3 transition-shadow ${sorted.some((s) => s.id === currentSetId) ? 'border-accent/30' : ''}`}>
       <div className="mb-1 flex items-center gap-1 pl-1">
-        <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setInfo(true)} aria-label={`${exerciseName(exercise)}: ${t('slik gjør du og historikk', 'how to and history')}`}>
+        <button type="button" className="min-w-0 flex-1 text-left" onClick={() => navigate(`/exercise/${we.exercise_id}`)} aria-label={`${exerciseName(exercise)}: ${t('rekorder, grafer og historikk', 'records, charts and history')}`}>
           <h2 className="flex items-center gap-2 truncate text-lg font-bold text-accent">
             {exercise && <MuscleDot group={exercise.muscle_group} size={9} />}
             <span className="truncate">{exerciseName(exercise)}</span>
@@ -197,19 +200,26 @@ export function ExerciseCard({
           if (s.set_type !== 'warmup') workIndex++;
           if (s.set_type === 'normal') label++;
           return (
-            <SetRow
+            <SwipeToDelete
               key={s.id}
-              set={s}
-              kind={kind}
-              current={s.id === currentSetId}
-              label={s.set_type === 'normal' ? label : s.set_type === 'warmup' ? `${t('oppvarming', 'warm-up')} ${++warmIndex}` : `${label + 1} (${SET_TYPE_LABEL[s.set_type].toLowerCase()})`}
-              previous={prev}
-              unit={unit}
-              prs={prMap.get(s.id)}
-              targetReps={s.set_type === 'warmup' ? null : we.target_reps}
-              onCompleted={() => void startRest(we.rest_seconds)}
-              onMenu={() => setEditing(s)}
-            />
+              onDelete={async () => {
+                const removed = await deleteSet(s.id);
+                undoToast(t('Settet er slettet', 'Set deleted'), () => restore(removed));
+              }}
+            >
+              <SetRow
+                set={s}
+                kind={kind}
+                current={s.id === currentSetId}
+                label={s.set_type === 'normal' ? label : s.set_type === 'warmup' ? `${t('oppvarming', 'warm-up')} ${++warmIndex}` : `${label + 1} (${SET_TYPE_LABEL[s.set_type].toLowerCase()})`}
+                previous={prev}
+                unit={unit}
+                prs={prMap.get(s.id)}
+                targetReps={s.set_type === 'warmup' ? null : we.target_reps}
+                onCompleted={() => void startRest(we.rest_seconds)}
+                onMenu={() => setEditing(s)}
+              />
+            </SwipeToDelete>
           );
         })}
       </div>
