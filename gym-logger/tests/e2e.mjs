@@ -288,6 +288,24 @@ try {
   await btn('Legg til (2)').click();
   await page.getByRole('heading', { name: 'Lateral raise' }).waitFor();
   await page.getByRole('heading', { name: 'Benkpress' }).waitFor();
+  // 5e2. Endre rekkefølge: dra første øvelse ned én plass og flytt siste opp med pil
+  const cardTitles = () => page.locator('main h2').allInnerTexts();
+  await btn('Endre rekkefølge').click();
+  await page.waitForTimeout(500); // arket glir opp
+  const items = () => dialog().locator('[data-reorder-item]').allInnerTexts();
+  const before = (await items()).map((x) => x.replace(/[≡\s]+$/g, '').replace(/^≡\s*/, '').trim());
+  const handle = dialog().locator('[data-reorder-item] [role=button]').first();
+  const hb = await handle.boundingBox();
+  await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2 + hb.height + 14, { steps: 8 });
+  await page.mouse.up();
+  const after = (await items()).map((x) => x.replace(/^≡\s*/, '').trim());
+  assert.equal(after[1], before[0], `dra flyttet ${before[0]} ned (${after.join(' | ')})`);
+  await shot('endre-rekkefolge');
+  await dialog().getByRole('button', { name: 'Ferdig' }).click();
+  await dialog().waitFor({ state: 'detached' });
+  assert.equal((await cardTitles())[1], before[0], 'rekkefølgen er lagret i økta');
 
   // 5f. Økta avviker fra rutinen → spørsmål om å lagre endringene i rutinen (bare denne gangen)
   await btn('Avslutt', { exact: true }).click();
