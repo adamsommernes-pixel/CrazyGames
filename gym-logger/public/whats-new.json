@@ -1,8 +1,7 @@
 {
-  "version": "1.1.1",
+  "version": "1.2.0",
   "items": [
-    { "icon": "dumbbell", "nb": "Manualer og kettlebells: appen sier nå tydelig at du skal logge vekten på én, ikke begge til sammen. Det gjør styrkenivået riktig.", "en": "Dumbbells and kettlebells: the app now clearly says to log the weight of one, not both together. This keeps your strength level correct." },
-    { "icon": "repeat", "nb": "Logget begge til sammen? Trykk «Del på to» i økta eller på øvelsessiden, så rettes vektene (og kan angres).", "en": "Logged both together? Tap “Halve it” in the workout or on the exercise page to fix the weights (and undo if needed)." },
-    { "icon": "timer", "nb": "Slå på varsel når pausen er over, rett fra økta", "en": "Turn on rest notifications right from your workout" }
+    { "icon": "trophy", "nb": "Styrkenivået bygger nå bare på hovedløftene: benk, skulderpress, dips, roing, pull-ups, knebøy og markløft. Maskiner og manualer logges som før, men gir ikke nivå. Nivået ditt kan derfor endre seg.", "en": "Your strength level now only uses the main lifts: bench, overhead press, dips, rows, pull-ups, squat and deadlift. Machines and dumbbells are logged as before but no longer give a level, so your level may change." },
+    { "icon": "dumbbell", "nb": "Manualer og kettlebells: logg vekten på én. «Del på to» retter opp om du har logget begge til sammen.", "en": "Dumbbells and kettlebells: log the weight of one. “Halve it” fixes it if you logged both together." }
   ]
 }

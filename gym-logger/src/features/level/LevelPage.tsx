@@ -75,9 +75,7 @@ export function LevelPage() {
                     <div className="h-full rounded-full" style={{ width: `${progress * 100}%`, background: color }} />
                   </div>
                   <div className="mt-1 text-xs text-muted">
-                    {l.capped
-                      ? t('Høyeste nivå for denne varianten. Hovedløftet gir høyere nivå.', 'Highest level for this variant. The main lift can go higher.')
-                      : nextT && l.nextTierKg
+                    {nextT && l.nextTierKg
                         ? t(`1RM nå ${shown(l.e1rm)}. Klarer du ${shown(l.nextTierKg)}, blir du ${nextT.name}.`, `1RM now ${shown(l.e1rm)}. Lift ${shown(l.nextTierKg)} to reach ${nextT.name}.`)
                         : t(`1RM ${shown(l.e1rm)} · toppnivået`, `1RM ${shown(l.e1rm)} · top level`)}
                   </div>
@@ -179,8 +177,8 @@ export function LevelPage() {
         </p>
         <p>
           {t(
-            'Maskiner, manualer og hip thrust teller opp til Beist. Titan og over krever hovedløftene: benk, skulderpress, knebøy, markløft, roing, pull-ups eller dips. Olympia krever nær verdensklasse i alle tre kategoriene.',
-            'Machines, dumbbells and hip thrusts count up to Beast. Titan and above need the main lifts: bench, overhead press, squat, deadlift, rows, pull-ups or dips. Olympia needs close to world-class strength in all three categories.',
+            'Bare hovedløftene teller: benk, skulderpress, dips, roing, pull-ups, knebøy og markløft (med nære varianter som skråbenk, frontbøy og sumo-markløft). Maskiner og manualer er med i loggen, men gir ikke nivå. Olympia krever nær verdensklasse i alle tre kategoriene.',
+            'Only the main lifts count: bench, overhead press, dips, rows, pull-ups, squat and deadlift (with close variants such as incline bench, front squat and sumo deadlift). Machines and dumbbells are logged but do not give a level. Olympia needs close to world-class strength in all three categories.',
           )}
         </p>
       </Card>

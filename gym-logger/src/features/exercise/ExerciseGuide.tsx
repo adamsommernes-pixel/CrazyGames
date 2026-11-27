@@ -80,8 +80,8 @@ export function PerHandNote({ exercise }: { exercise: Exercise }) {
         <p className="mt-0.5 text-muted">
           {perHandHint(hand)}{' '}
           {t(
-            'Bruker du to manualer på 20 kg, skriver du 20. Styrkenivået regnes ut fra dette, så det blir feil hvis du skriver 40.',
-            'If you use two 20 kg dumbbells, enter 20. Your strength level is calculated from this, so entering 40 makes it wrong.',
+            'Bruker du to manualer på 20 kg, skriver du 20. Rekordene og fremgangen din regnes ut fra dette, så de blir feil hvis du skriver 40.',
+            'If you use two 20 kg dumbbells, enter 20. Your records and progress are calculated from this, so entering 40 makes them wrong.',
           )}
         </p>
       </div>

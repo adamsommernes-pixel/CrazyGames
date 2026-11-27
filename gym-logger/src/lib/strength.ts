@@ -68,8 +68,6 @@ const STANDARDS: Record<AnchorId, { male: Anchors; female: Anchors; category: Ca
   deadlift: { male: [1.0, 1.4, 1.85, 2.5, 3.0, 3.6], female: [0.65, 1.0, 1.45, 2.0, 2.6, 3.2], category: 'legs' },
 };
 
-/** Varianter (maskiner, manualer, hip thrust) kan gi høyst dette: Beist. Titan og over krever hovedløft. */
-export const VARIANT_CAP = 69;
 /** Sets som er mer enn så mye over verdensklasse regnes som tastefeil og teller ikke. */
 const IMPLAUSIBLE = 1.5;
 /** Høyeste antall reps som brukes til å beregne 1RM. */
@@ -79,37 +77,29 @@ export const MAX_REPS = 10;
  * Rangerte øvelser (slug → ankerløft og faktor). Faktoren sier hvor tungt løftet er
  * sammenlignet med ankeret: 0,4 på manualbenk betyr at 40 kg per manual tilsvarer 100 kg benk.
  * `load: 'bw'` betyr at kroppsvekten legges til ekstravekten (pull-ups, dips).
- * `variant: true` gir maks VARIANT_CAP poeng.
  */
-export const RANKED: Record<string, { anchor: AnchorId; factor: number; load?: 'bw'; variant?: true }> = {
+/**
+ * Bare hovedløftene (stang og kroppsvekt) og deres nære slektninger teller. Maskiner, manualer, Smith
+ * og hip thrust er bevisst utelatt: de er vanskelige å sammenligne rettferdig og gir for høye nivåer.
+ */
+export const RANKED: Record<string, { anchor: AnchorId; factor: number; load?: 'bw' }> = {
   benkpress: { anchor: 'bench', factor: 1 },
   skrabenk: { anchor: 'bench', factor: 0.85 },
   'smal-benkpress': { anchor: 'bench', factor: 0.9 },
-  'smith-benkpress': { anchor: 'bench', factor: 1.08, variant: true },
-  'benkpress-med-manualer': { anchor: 'bench', factor: 0.4, variant: true },
-  'skrabenk-med-manualer': { anchor: 'bench', factor: 0.35, variant: true },
   militaerpress: { anchor: 'ohp', factor: 1 },
   'sittende-militaerpress': { anchor: 'ohp', factor: 1 },
-  'skulderpress-med-manualer': { anchor: 'ohp', factor: 0.38, variant: true },
   dips: { anchor: 'dip', factor: 1, load: 'bw' },
   stangroing: { anchor: 'row', factor: 1 },
   'pendlay-roing': { anchor: 'row', factor: 1 },
-  't-bar-roing': { anchor: 'row', factor: 1.1, variant: true },
-  'sittende-roing': { anchor: 'row', factor: 0.9, variant: true },
   'pull-ups': { anchor: 'pullup', factor: 1, load: 'bw' },
   'chin-ups': { anchor: 'pullup', factor: 1.05, load: 'bw' },
-  nedtrekk: { anchor: 'pullup', factor: 0.95, variant: true },
   kneboy: { anchor: 'squat', factor: 1 },
   'box-squat': { anchor: 'squat', factor: 1 },
   frontboy: { anchor: 'squat', factor: 0.8 },
-  'hack-squat': { anchor: 'squat', factor: 1.2, variant: true },
-  beinpress: { anchor: 'squat', factor: 2.6, variant: true },
-  'bulgarsk-splittboy': { anchor: 'squat', factor: 0.35, variant: true },
   markloft: { anchor: 'deadlift', factor: 1 },
   'sumo-markloft': { anchor: 'deadlift', factor: 1 },
   'trap-bar-markloft': { anchor: 'deadlift', factor: 1.05 },
   'rumensk-markloft': { anchor: 'deadlift', factor: 0.75 },
-  'hip-thrust': { anchor: 'deadlift', factor: 1.5, variant: true },
 };
 
 const slugOf = (exerciseId: string) => exerciseId.replace(/^ex-/, '');
@@ -158,8 +148,6 @@ export interface LiftScore {
   tier: Tier;
   /** Beregnet 1RM (samme måling som e1rm) som trengs for neste nivå, eller null på toppen. */
   nextTierKg: number | null;
-  /** True når løftet er en variant som har nådd taket (Beist). */
-  capped: boolean;
   /** True når kroppsvekten er med i tallet (vis «+ x kg ekstra»). */
   bodyweightLoad: boolean;
 }
@@ -206,13 +194,11 @@ export function liftScore(exerciseId: string, e1rm: number, bw: number, sex: Sex
   if (!rank || bw <= 0) return null;
   const anchors = anchorsFor(rank.anchor, sex);
   const raw = scoreFromRatio(e1rm / bw / rank.factor, anchors);
-  const score = rank.variant ? Math.min(VARIANT_CAP, raw) : raw;
+  const score = raw;
   const tier = tierFor(score);
-  const capped = rank.variant && tier.index >= tierFor(VARIANT_CAP).index;
-  const next = tier.index < TIER_COUNT - 1 && !capped ? ratioForScore(tier.min + 10, anchors) * rank.factor * bw : null;
+  const next = tier.index < TIER_COUNT - 1 ? ratioForScore(tier.min + 10, anchors) * rank.factor * bw : null;
   return {
     exerciseId,
-    capped: !!capped,
     category: STANDARDS[rank.anchor].category,
     e1rm,
     score,

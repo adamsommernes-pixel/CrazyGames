@@ -62,10 +62,16 @@ describe('strength scoring', () => {
     expect(liftScore('ex-pull-ups', 105, 80, 'male')!.bodyweightLoad).toBe(true);
   });
 
-  it('scales derived lifts by their factor (dumbbell bench per dumbbell)', () => {
-    const db = liftScore('ex-benkpress-med-manualer', 32, 80, 'male')!; // 32 / 0.4 = 80 kg benk
-    expect(db.score).toBeCloseTo(liftScore('ex-benkpress', 80, 80, 'male')!.score);
-    expect(db.nextTierKg).toBeCloseTo(liftScore('ex-benkpress', 80, 80, 'male')!.nextTierKg! * 0.4);
+  it('scales close variants by their factor (incline bench)', () => {
+    const inc = liftScore('ex-skrabenk', 68, 80, 'male')!; // 68 / 0.85 = 80 kg benk
+    expect(inc.score).toBeCloseTo(liftScore('ex-benkpress', 80, 80, 'male')!.score);
+    expect(inc.nextTierKg).toBeCloseTo(liftScore('ex-benkpress', 80, 80, 'male')!.nextTierKg! * 0.85);
+  });
+
+  it('only main lifts are ranked: machines and dumbbells give no level', () => {
+    for (const slug of ['beinpress', 'hack-squat', 'nedtrekk', 'sittende-roing', 'smith-benkpress', 'benkpress-med-manualer', 'skulderpress-med-manualer', 'hip-thrust', 'bulgarsk-splittboy', 't-bar-roing'])
+      expect(liftScore(`ex-${slug}`, 100, 80, 'male'), slug).toBeNull();
+    expect(liftScore('ex-benkpress', 100, 80, 'male')).not.toBeNull();
   });
 
   it('ignores warm-ups, high-rep sets and unranked exercises', () => {
