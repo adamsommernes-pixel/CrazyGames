@@ -21,8 +21,8 @@ export function InstallHint() {
   if (hidden) return null;
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
   return (
-    <div className="mb-4 flex items-start gap-3 rounded-2xl border border-green/40 bg-green-dim/30 p-3">
-      <Icon name="share" className="mt-0.5 shrink-0 text-green" />
+    <div className="mb-4 flex items-start gap-3 rounded-2xl border border-accent/40 bg-accent-soft/30 p-3">
+      <Icon name="share" className="mt-0.5 shrink-0 text-accent" />
       <p className="flex-1 text-sm">
         <span className="font-semibold">{t('Installer appen', 'Install the app')}: </span>
         {ios
@@ -32,7 +32,7 @@ export function InstallHint() {
         {canInstall && (
           <button
             type="button"
-            className="mt-2 flex min-h-10 items-center gap-2 rounded-xl bg-green px-4 font-semibold text-black"
+            className="mt-2 flex min-h-10 items-center gap-2 rounded-xl bg-accent px-4 font-semibold text-on-accent"
             onClick={async () => {
               if (await promptInstall()) setHidden(true);
             }}

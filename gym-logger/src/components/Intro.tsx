@@ -75,7 +75,7 @@ export function Intro() {
             <span className="intro-name font-num block text-3xl font-bold tracking-tight">Repgrade</span>
           </span>
           <span className="mt-6 h-0.5 w-28 overflow-hidden rounded-full bg-line" style={{ opacity: flying ? 0 : 1, transition: 'opacity 200ms' }}>
-            <span className="intro-bar block h-full rounded-full bg-green" />
+            <span className="intro-bar block h-full rounded-full bg-accent" />
           </span>
         </div>
       </div>

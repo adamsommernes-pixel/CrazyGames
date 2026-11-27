@@ -19,7 +19,7 @@ export function LanguageToggle({ size = 'sm' }: { size?: 'sm' | 'md' }) {
           aria-label={o.label}
           onClick={() => setLang(o.lang)}
           className={`rounded-[10px] font-semibold transition ${size === 'md' ? 'min-h-10 px-4' : 'min-h-8 px-2.5 text-xs'} ${
-            lang === o.lang ? 'bg-green text-black' : 'text-muted'
+            lang === o.lang ? 'bg-accent text-on-accent' : 'text-muted'
           }`}
         >
           {size === 'md' ? o.label : o.short}

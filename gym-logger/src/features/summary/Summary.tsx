@@ -83,18 +83,18 @@ export function Summary() {
       <Confetti fire={fire} />
       <section className="flex flex-col items-center pt-10 pb-6 text-center">
         <div className="relative mb-5 grid size-24 place-items-center">
-          <div className="absolute inset-0 rounded-full bg-green/25 blur-2xl" />
-          <div className="relative grid size-24 animate-pop place-items-center rounded-full bg-green text-black shadow-glow">
+          <div className="absolute inset-0 rounded-full bg-accent/25 blur-2xl" />
+          <div className="relative grid size-24 animate-pop place-items-center rounded-full bg-accent text-on-accent">
             <Icon name={prSets.length ? 'trophy' : 'check'} size={44} strokeWidth={2.4} />
           </div>
         </div>
-        <p className="text-sm font-semibold tracking-wide text-green uppercase">{t('Økt fullført', 'Workout complete')}</p>
+        <p className="text-sm font-semibold tracking-wide text-accent uppercase">{t('Økt fullført', 'Workout complete')}</p>
         <button type="button" onClick={() => { setTitle(workout.name); setRenaming(true); }} className="mt-1 flex items-center gap-2" aria-label={`${t('Endre tittel', 'Change title')}: ${workout.name}`}>
           <h1 className="font-num text-4xl font-bold tracking-tight">{workout.name}</h1>
           <Icon name="edit" size={18} className="text-faint" />
         </button>
         {prSets.length > 0 && (
-          <p className="mt-2 text-lg text-green-light">
+          <p className="mt-2 text-lg text-accent-strong">
             {prText(prSets.length)}!
           </p>
         )}
@@ -106,7 +106,7 @@ export function Summary() {
         <Stat label={`${t('Volum', 'Volume')} (${unit})`} value={num(toDisplay(vol, unit), 0)} />
       </div>
       {diff !== null && (
-        <p className={`mt-3 rounded-2xl px-4 py-3 text-center font-medium ${diff >= 0 ? 'bg-green-dim/40 text-green-light' : 'bg-raised text-muted'}`}>
+        <p className={`mt-3 rounded-2xl px-4 py-3 text-center font-medium ${diff >= 0 ? 'bg-accent-soft/40 text-accent-strong' : 'bg-raised text-muted'}`}>
           {diff >= 0 ? '▲' : '▼'} {num(Math.abs(diff), 0)} % {t('volum mot forrige gang', 'volume vs. last time')}
         </p>
       )}

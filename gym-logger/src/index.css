@@ -4,25 +4,26 @@
 @import '@fontsource/space-grotesk/latin-700.css';
 
 /*
- * Repgrade — grafittsvart med grønt skjær, ett kraftig grønt aksentlys.
- * Space Grotesk til tall og titler, Inter til tekst. Tall er helten.
+ * Repgrade — nøytralt mørkt, med én aksentfarge som brukeren velger selv (src/lib/theme.ts).
+ * Aksenten brukes sparsomt: hovedhandlinger, valgt tilstand og data. Space Grotesk bare til tall.
  */
 @theme {
-  --color-bg: #07090a;
-  --color-surface: #0f1311;
-  --color-raised: #161b18;
-  --color-line: #232a26;
-  --color-green: #2bd66b;
-  --color-green-light: #7dffaa;
-  --color-green-dim: #0f3b22;
-  --color-ink: #f2f5f3;
-  --color-muted: #9ba59f;
-  --color-faint: #66706a;
+  --color-bg: #0b0b0c;
+  --color-surface: #141415;
+  --color-raised: #1c1c1e;
+  --color-line: #2a2a2d;
+  /* Standard aksent; byttes ved innlogging til brukerens farge (applyAccent). */
+  --color-accent: #34c56a;
+  --color-accent-strong: #7dd89e;
+  --color-accent-soft: #123a22;
+  --color-on-accent: #0b0b0c;
+  --color-ink: #f2f2f3;
+  --color-muted: #a1a1a6;
+  --color-faint: #6c6c72;
   --color-warn: #f5b942;
   --color-danger: #ff6b6b;
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Space Grotesk', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
-  --shadow-glow: 0 0 24px rgb(43 214 107 / 0.35);
   --shadow-card: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.4);
   --animate-pop: pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
   --animate-sheet: sheet 240ms cubic-bezier(0.2, 0.9, 0.3, 1);
@@ -63,7 +64,7 @@
   body {
     margin: 0;
     background:
-      radial-gradient(120% 60% at 50% -10%, rgb(43 214 107 / 0.07), transparent 60%),
+      radial-gradient(120% 60% at 50% -10%, rgb(52 197 106 / 0.07), transparent 60%),
       var(--color-bg);
     background-attachment: fixed;
     color: var(--color-ink);
@@ -90,7 +91,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-green);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
 

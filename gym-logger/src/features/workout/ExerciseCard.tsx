@@ -114,10 +114,10 @@ export function ExerciseCard({
   let warmIndex = 0;
 
   return (
-    <Card className={`p-3 transition-shadow ${sorted.some((s) => s.id === currentSetId) ? 'border-green/30' : ''}`}>
+    <Card className={`p-3 transition-shadow ${sorted.some((s) => s.id === currentSetId) ? 'border-accent/30' : ''}`}>
       <div className="mb-1 flex items-center gap-1 pl-1">
         <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setInfo(true)} aria-label={`${exerciseName(exercise)}: ${t('slik gjør du og historikk', 'how to and history')}`}>
-          <h2 className="flex items-center gap-2 truncate text-lg font-bold text-green">
+          <h2 className="flex items-center gap-2 truncate text-lg font-bold text-accent">
             {exercise && <MuscleDot group={exercise.muscle_group} size={9} />}
             <span className="truncate">{exerciseName(exercise)}</span>
           </h2>
@@ -154,7 +154,7 @@ export function ExerciseCard({
       {showNotes && (
         <textarea
           aria-label={t('Notat for øvelsen', 'Exercise note')}
-          className="mb-2 min-h-11 w-full resize-none rounded-xl border border-line bg-raised px-3 py-2 text-sm outline-none placeholder:text-faint focus:border-green"
+          className="mb-2 min-h-11 w-full resize-none rounded-xl border border-line bg-raised px-3 py-2 text-sm outline-none placeholder:text-faint focus:border-accent"
           placeholder={t('Notat, f.eks. setehøyde 4', 'Note, e.g. seat height 4')}
           rows={1}
           value={notes}
@@ -171,16 +171,16 @@ export function ExerciseCard({
         <button
           type="button"
           onClick={() => void applyWeightToPending(we.id, suggestion)}
-          className="mb-2 flex w-full items-center gap-2 rounded-xl border border-green/40 bg-green-dim/30 px-3 py-2 text-left text-sm active:bg-green-dim/50"
+          className="mb-2 flex w-full items-center gap-2 rounded-xl border border-accent/40 bg-accent-soft/30 px-3 py-2 text-left text-sm active:bg-accent-soft/50"
         >
-          <Icon name="sparkle" size={16} className="shrink-0 text-green" />
+          <Icon name="sparkle" size={16} className="shrink-0 text-accent" />
           <span className="flex-1">
             {t('Du klarte målet sist. Forslag:', 'You hit the goal last time. Suggestion:')}{' '}
-            <span className="font-num font-bold text-green-light">
+            <span className="font-num font-bold text-accent-strong">
               {num(toDisplay(suggestion, unit))} {unit}
             </span>
           </span>
-          <span className="font-semibold text-green">{t('Bruk', 'Use')}</span>
+          <span className="font-semibold text-accent">{t('Bruk', 'Use')}</span>
         </button>
       )}
 

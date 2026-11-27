@@ -56,18 +56,18 @@ export function NewsCard() {
           {t('Nyheter og eventer', 'News and events')}
         </h2>
         <div className="card flex items-start gap-3 rounded-3xl p-4">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-green-dim/50 text-green">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent-soft/50 text-accent">
             <Icon name="sparkle" size={20} />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="font-semibold">{t('Vi har nyheter!', 'We have news!')}</span>
-              <span className="rounded-full bg-raised px-2 py-0.5 text-[10px] font-semibold tracking-wide text-green uppercase">{t('Kommer snart', 'Coming soon')}</span>
+              <span className="rounded-full bg-raised px-2 py-0.5 text-[10px] font-semibold tracking-wide text-accent uppercase">{t('Kommer snart', 'Coming soon')}</span>
             </div>
             <p className="mt-0.5 text-sm text-muted">
               {t('Venner, utfordringer og åpne eventer er på vei til Repgrade.', 'Friends, challenges and public events are coming to Repgrade.')}
             </p>
-            <button type="button" className="mt-2 text-sm font-semibold text-green" onClick={() => setOpen(true)}>
+            <button type="button" className="mt-2 text-sm font-semibold text-accent" onClick={() => setOpen(true)}>
               {t('Les mer', 'Read more')}
             </button>
           </div>
@@ -82,7 +82,7 @@ export function NewsCard() {
           {features().map((f) => (
             <div key={f.title} className="rounded-2xl border border-line bg-raised p-4">
               <div className="flex items-center gap-3">
-                <span className="grid size-10 place-items-center rounded-xl bg-green text-black">
+                <span className="grid size-10 place-items-center rounded-xl bg-accent text-on-accent">
                   <Icon name={f.icon} size={20} />
                 </span>
                 <h3 className="font-semibold">{f.title}</h3>
@@ -91,7 +91,7 @@ export function NewsCard() {
               <ul className="mt-2 flex flex-col gap-1 text-sm">
                 {f.points.map((p) => (
                   <li key={p} className="flex gap-2">
-                    <Icon name="check" size={16} className="mt-0.5 shrink-0 text-green" />
+                    <Icon name="check" size={16} className="mt-0.5 shrink-0 text-accent" />
                     {p}
                   </li>
                 ))}

@@ -126,7 +126,7 @@ const VARS: Record<string, string> = {
   'var(--color-raised)': '#1b211e',
   'var(--color-surface)': '#121614',
   'var(--color-line)': '#2a322e',
-  'var(--color-green)': C.green,
+  'var(--color-accent)': C.green,
   'var(--color-ink)': C.ink,
 };
 

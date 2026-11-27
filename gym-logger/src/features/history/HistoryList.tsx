@@ -63,7 +63,7 @@ export function HistoryList() {
       {view === 'calendar' && workouts.length > 0 && (
         <div className="mb-4">
           <Calendar marked={new Set(workouts.map((w) => dayKey(w.started_at)))} selected={day} onSelect={setDay} />
-          {!day && <p className="mt-3 text-center text-sm text-muted">{t('Trykk på en grønn dag for å se økta.', 'Tap a green day to see the workout.')}</p>}
+          {!day && <p className="mt-3 text-center text-sm text-muted">{t('Trykk på en markert dag for å se økta.', 'Tap a highlighted day to see the workout.')}</p>}
         </div>
       )}
       {workouts.length === 0 ? (

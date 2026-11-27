@@ -1,3 +1,5 @@
+import { ColorPicker } from '../../components/ColorPicker';
+import { applyAccent } from '../../lib/theme';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AuthUser } from '../../auth/types';
@@ -88,20 +90,9 @@ export function Onboarding({ user }: { user: AuthUser }) {
               <Avatar name={name || '?'} color={color} size={64} />
               <input id="ob-name" aria-label={t('Navn', 'Name')} className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
             </div>
-            <div className="mt-5 flex gap-3" role="radiogroup" aria-label={t('Profilfarge', 'Profile colour')}>
-              {PROFILE_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  role="radio"
-                  aria-checked={c === color}
-                  aria-label={`${t('Farge', 'Colour')} ${c}`}
-                  className={`size-10 rounded-full transition ${c === color ? 'ring-2 ring-ink ring-offset-2 ring-offset-bg' : ''}`}
-                  style={{ background: c }}
-                  onClick={() => setColor(c)}
-                />
-              ))}
-            </div>
+            <h3 className="mt-8 mb-1 text-[15px] font-semibold">{t('Appfarge', 'App colour')}</h3>
+            <p className="mb-3 text-sm text-muted">{t('Brukes på knapper og grafer. Du kan bytte når som helst under Profil.', 'Used for buttons and charts. You can change it any time under Profile.')}</p>
+            <ColorPicker value={color} label={t('Appfarge', 'App colour')} onChange={(c) => { setColor(c); applyAccent(c); }} />
           </Step>
           </>
         )}
@@ -127,11 +118,11 @@ export function Onboarding({ user }: { user: AuthUser }) {
                   aria-checked={perWeek === n}
                   onClick={() => setPerWeek(n)}
                   className={`font-num flex aspect-square flex-col items-center justify-center rounded-2xl border text-2xl font-bold transition ${
-                    perWeek === n ? 'border-green bg-green text-black shadow-glow' : 'border-line bg-raised'
+                    perWeek === n ? 'border-accent bg-accent text-on-accent' : 'border-line bg-raised'
                   }`}
                 >
                   {n}
-                  <span className={`text-[10px] font-medium ${perWeek === n ? 'text-black/70' : 'text-faint'}`}>{t('/uke', '/week')}</span>
+                  <span className={`text-[10px] font-medium ${perWeek === n ? 'text-on-accent/70' : 'text-faint'}`}>{t('/uke', '/week')}</span>
                 </button>
               ))}
             </div>
@@ -213,16 +204,16 @@ function Choice({ selected, onClick, icon, title, text }: { selected: boolean; o
       role="radio"
       aria-checked={selected}
       onClick={onClick}
-      className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition ${selected ? 'border-green bg-green-dim/40' : 'border-line bg-surface'}`}
+      className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition ${selected ? 'border-accent bg-accent-soft/40' : 'border-line bg-surface'}`}
     >
-      <span className={`grid size-11 shrink-0 place-items-center rounded-xl ${selected ? 'bg-green text-black' : 'bg-raised text-green'}`}>
+      <span className={`grid size-11 shrink-0 place-items-center rounded-xl ${selected ? 'bg-accent text-on-accent' : 'bg-raised text-accent'}`}>
         <Icon name={icon} />
       </span>
       <span className="flex-1">
         <span className="block font-semibold">{title}</span>
         <span className="block text-sm text-muted">{text}</span>
       </span>
-      <span className={`grid size-6 place-items-center rounded-full border-2 ${selected ? 'border-green bg-green text-black' : 'border-line'}`}>
+      <span className={`grid size-6 place-items-center rounded-full border-2 ${selected ? 'border-accent bg-accent text-on-accent' : 'border-line'}`}>
         {selected && <Icon name="check" size={14} strokeWidth={3.5} />}
       </span>
     </button>
@@ -236,9 +227,9 @@ function Toggle({ checked, onChange, title, text }: { checked: boolean; onChange
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${checked ? 'border-green/60 bg-green-dim/30' : 'border-line bg-surface'}`}
+      className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${checked ? 'border-accent/60 bg-accent-soft/30' : 'border-line bg-surface'}`}
     >
-      <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-lg border-2 ${checked ? 'border-green bg-green text-black' : 'border-line'}`}>
+      <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-lg border-2 ${checked ? 'border-accent bg-accent text-on-accent' : 'border-line'}`}>
         {checked && <Icon name="check" size={14} strokeWidth={3.5} />}
       </span>
       <span>

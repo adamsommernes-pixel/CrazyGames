@@ -138,7 +138,7 @@ export function Home() {
         )}
 
         {active && (
-          <button type="button" onClick={() => navigate('/workout')} className="flex items-center gap-3 rounded-3xl bg-green p-4 text-left text-black shadow-glow">
+          <button type="button" onClick={() => navigate('/workout')} className="flex items-center gap-3 rounded-3xl bg-accent p-4 text-left text-on-accent">
             <span className="grid size-11 place-items-center rounded-2xl bg-black/15">
               <Icon name="play" />
             </span>
@@ -181,13 +181,13 @@ export function Home() {
             <WeekStrip trained={stats?.days ?? Array(7).fill(false)} today={stats?.today ?? 0} />
           </div>
           {stats && stats.count >= target && (
-            <p className="mt-4 rounded-2xl bg-green-dim/40 px-3 py-2 text-center text-sm font-medium text-green-light">{t('Ukemålet er nådd. Sterkt jobba!', 'Weekly goal reached. Great work!')}</p>
+            <p className="mt-4 rounded-2xl bg-accent-soft/40 px-3 py-2 text-center text-sm font-medium text-accent-strong">{t('Ukemålet er nådd. Sterkt jobba!', 'Weekly goal reached. Great work!')}</p>
           )}
         </Card>
 
         {!active && data?.next && (
           <Card className="p-5">
-            <div className="text-xs font-semibold tracking-wide text-green uppercase">{t('Neste økt', 'Next workout')}</div>
+            <div className="text-xs font-semibold tracking-wide text-accent uppercase">{t('Neste økt', 'Next workout')}</div>
             <h2 className="font-num mt-1 text-2xl font-bold">{data.next.name}</h2>
             <p className="mt-1 line-clamp-2 text-sm text-muted">{data.nextItems.map((i) => exerciseName(exMap.get(i.exercise_id))).join(' · ')}</p>
             <Button
@@ -217,7 +217,7 @@ export function Home() {
           <section aria-labelledby="body-map-title">
             <Card className="p-5">
               <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 id="body-map-title" className="text-xs font-semibold tracking-wide text-green uppercase">
+                <h2 id="body-map-title" className="text-xs font-semibold tracking-wide text-accent uppercase">
                   {t('Trent kropp', 'Muscles trained')}
                 </h2>
                 <div className="flex gap-1.5" role="group" aria-label={t('Periode', 'Period')}>
@@ -242,7 +242,7 @@ export function Home() {
             <Card className="divide-y divide-line">
               {stats.recentPRs.map((s) => (
                 <Link key={s.id} to={`/exercise/${s.exercise_id}`} className="flex items-center gap-3 p-4">
-                  <span className="grid size-10 place-items-center rounded-xl bg-green-dim/50 text-green">
+                  <span className="grid size-10 place-items-center rounded-xl bg-accent-soft/50 text-accent">
                     <Icon name="trophy" size={20} />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -268,7 +268,7 @@ export function Home() {
 function QuickLink({ to, icon, title }: { to: string; icon: 'scale'; title: string }) {
   return (
     <Link to={to} className="card flex items-center gap-3 rounded-3xl p-4 active:bg-raised">
-      <Icon name={icon} className="text-green" />
+      <Icon name={icon} className="text-accent" />
       <span className="flex-1 font-semibold">{title}</span>
       <Icon name="chevron" size={18} className="text-faint" />
     </Link>

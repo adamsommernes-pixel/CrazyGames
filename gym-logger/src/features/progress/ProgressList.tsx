@@ -76,7 +76,7 @@ export function ProgressList() {
   return (
     <Page title={t('Fremgang', 'Progress')}>
       <Link to="/bodyweight" className="card mb-4 flex items-center gap-3 rounded-3xl p-4 active:bg-raised">
-        <span className="grid size-10 place-items-center rounded-xl bg-raised text-green">
+        <span className="grid size-10 place-items-center rounded-xl bg-raised text-accent">
           <Icon name="scale" size={20} />
         </span>
         <span className="flex-1">
@@ -156,7 +156,7 @@ export function ProgressList() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-num text-xl font-bold text-green">{r.best.value}</div>
+                      <div className="font-num text-xl font-bold text-accent">{r.best.value}</div>
                       <div className="text-[11px] text-faint">{r.best.label}</div>
                     </div>
                     <Icon name="chevron" size={18} className="text-faint" />

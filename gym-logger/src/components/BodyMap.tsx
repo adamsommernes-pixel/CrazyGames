@@ -15,7 +15,7 @@ const FILL = [
   'rgb(43 214 107 / 0.32)',
   'rgb(43 214 107 / 0.5)',
   'rgb(43 214 107 / 0.75)',
-  'var(--color-green)',
+  'var(--color-accent)',
 ];
 
 /** Speilet par: venstre og høyre side av kroppen. */
@@ -154,7 +154,7 @@ export function BodyMap({ load, days, cardioSessions }: { load: Map<MuscleGroup,
               aria-pressed={selected === g}
               onClick={() => toggle(g)}
               className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition ${
-                selected === g ? 'border-ink text-ink' : level ? 'border-green/40 text-green-light' : 'border-line text-faint'
+                selected === g ? 'border-ink text-ink' : level ? 'border-accent/40 text-accent-strong' : 'border-line text-faint'
               }`}
             >
               <span className="size-2 rounded-full" style={{ background: level ? FILL[level] : 'var(--color-line)' }} />

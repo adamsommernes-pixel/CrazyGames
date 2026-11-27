@@ -14,9 +14,9 @@ interface Section {
   body: ReactNode;
 }
 
-const mail = <a className="font-semibold text-green underline" href={`mailto:${CONTACT}`}>{CONTACT}</a>;
+const mail = <a className="font-semibold text-accent underline" href={`mailto:${CONTACT}`}>{CONTACT}</a>;
 const dt = (
-  <a className="font-semibold text-green underline" href="https://www.datatilsynet.no" target="_blank" rel="noreferrer">
+  <a className="font-semibold text-accent underline" href="https://www.datatilsynet.no" target="_blank" rel="noreferrer">
     Datatilsynet
   </a>
 );

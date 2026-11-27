@@ -2,6 +2,7 @@ import { db, now, uuid } from './dexie';
 import type { Bodyweight, Exercise, Profile, Routine, RoutineExercise, SetType, Workout, WorkoutExercise, WorkoutSet } from './types';
 import { TEMPLATES } from './templates';
 import { programById, recommendedProgramId, schemeFor } from './programs';
+import { SWATCHES } from '../lib/theme';
 import type { Goal } from './types';
 import { getSetting } from '../lib/settings';
 import { defaultWorkoutName } from '../lib/format';
@@ -626,7 +627,8 @@ export async function duplicateRoutine(id: string): Promise<string> {
 
 // ---------- Profil ----------
 
-export const PROFILE_COLORS = ['#2bd66b', '#38bdf8', '#a78bfa', '#f472b6', '#fb923c', '#facc15'];
+/** Appfargene brukeren kan velge (samme som avatarfargen). Se src/lib/theme.ts. */
+export const PROFILE_COLORS = SWATCHES.map((s) => s.hex);
 
 export async function getProfile(userId: string): Promise<Profile | undefined> {
   const p = await db.profiles.get(userId);

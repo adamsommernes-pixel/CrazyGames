@@ -1,9 +1,11 @@
+import { ColorPicker } from '../../components/ColorPicker';
+import { applyAccent } from '../../lib/theme';
 import { Logo } from '../../components/Logo';
 import { useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link, useNavigate } from 'react-router-dom';
 import { db } from '../../db/dexie';
-import { getProfile } from '../../db/repo';
+import { getProfile, saveProfile } from '../../db/repo';
 import { backupFileName, downloadBlob, downloadJSON, exportBackup, exportCSV, importBackup, lastBackupAt, markBackedUp, parseBackup, summarizeBackup } from '../../db/backup';
 import { requestPersist, useStorageStatus } from '../../lib/storage';
 import { syncNow, useSyncStatus } from '../../db/sync';
@@ -91,7 +93,7 @@ export function ProfilePage() {
 function BigStat({ icon, label, value }: { icon: IconName; label: string; value: string }) {
   return (
     <div className="card rounded-3xl p-4">
-      <Icon name={icon} size={20} className="text-green" />
+      <Icon name={icon} size={20} className="text-accent" />
       <div className="font-num mt-2 text-3xl font-bold">{value}</div>
       <div className="text-xs text-muted">{label}</div>
     </div>
@@ -126,7 +128,7 @@ function AccountSection() {
             <span className="block truncate font-medium">{user.email}</span>
             <span className="block text-sm text-muted">{user.kind === 'cloud' ? t('Lagret trygt på nett og synket mellom enhetene dine', 'Stored safely online and synced across your devices') : t('Lagret på denne enheten', 'Stored on this device')}</span>
           </span>
-          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${user.kind === 'cloud' ? 'bg-green-dim text-green-light' : 'bg-raised text-muted'}`}>
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${user.kind === 'cloud' ? 'bg-accent-soft text-accent-strong' : 'bg-raised text-muted'}`}>
             {user.kind === 'cloud' ? t('På nett', 'Online') : t('Lokal', 'Local')}
           </span>
         </div>
@@ -190,11 +192,11 @@ function PasswordSheet({ open, onClose, onSubmit }: { open: boolean; onClose: ()
         <PasswordField id="pw-old" label={t('Nåværende passord', 'Current password')} value={oldPw} onChange={setOld} autoComplete="current-password" />
         <PasswordField id="pw-new" label={t('Nytt passord', 'New password')} value={newPw} onChange={setNew} autoComplete="new-password" showStrength />
         {msg && (
-          <p role={msg.ok ? 'status' : 'alert'} className={`rounded-xl px-3 py-2.5 text-sm ${msg.ok ? 'bg-green-dim/40 text-green-light' : 'bg-danger/10 text-danger'}`}>
+          <p role={msg.ok ? 'status' : 'alert'} className={`rounded-xl px-3 py-2.5 text-sm ${msg.ok ? 'bg-accent-soft/40 text-accent-strong' : 'bg-danger/10 text-danger'}`}>
             {msg.text}
           </p>
         )}
-        <button type="submit" disabled={busy || !oldPw || !newPw} className="min-h-12 rounded-2xl bg-green font-semibold text-black disabled:opacity-40">
+        <button type="submit" disabled={busy || !oldPw || !newPw} className="min-h-12 rounded-2xl bg-accent font-semibold text-on-accent disabled:opacity-40">
           {busy ? t('Bytter …', 'Changing …') : t('Bytt passord', 'Change password')}
         </button>
       </form>
@@ -248,7 +250,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
   return (
     <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)} className="flex min-h-12 w-full items-center justify-between gap-3">
       <span>{label}</span>
-      <span className={`relative h-7 w-12 rounded-full transition-colors ${checked ? 'bg-green' : 'bg-line'}`}>
+      <span className={`relative h-7 w-12 rounded-full transition-colors ${checked ? 'bg-accent' : 'bg-line'}`}>
         <span className={`absolute top-0.5 size-6 rounded-full bg-ink shadow transition-all ${checked ? 'left-[22px]' : 'left-0.5'}`} />
       </span>
     </button>
@@ -269,6 +271,7 @@ function SettingsSection() {
         <span>Språk / Language</span>
         <LanguageToggle size="md" />
       </div>
+      <AccentSetting />
       <div className="flex items-center justify-between gap-3">
         <span>{t('Vektenhet', 'Weight unit')}</span>
         <div className="flex gap-2">
@@ -326,7 +329,7 @@ function DataSection() {
     <Card className="flex flex-col gap-3 p-4">
       {cloud ? (
         <div className="flex items-start gap-3 rounded-2xl bg-raised px-3 py-2.5 text-sm" role="status">
-          <Icon name="check" size={18} className="mt-0.5 shrink-0 text-green" />
+          <Icon name="check" size={18} className="mt-0.5 shrink-0 text-accent" />
           <div className="min-w-0 flex-1">
             <div className="font-semibold">{t('Dataene dine ligger trygt på nett', 'Your data is stored safely online')}</div>
             <div className="text-xs text-muted">
@@ -339,7 +342,7 @@ function DataSection() {
         </div>
       ) : (
         <div className="flex items-start gap-3 rounded-2xl bg-raised px-3 py-2.5 text-sm" role="status">
-        <Icon name={storage?.persisted ? 'check' : 'info'} size={18} className={`mt-0.5 shrink-0 ${storage?.persisted ? 'text-green' : 'text-warn'}`} />
+        <Icon name={storage?.persisted ? 'check' : 'info'} size={18} className={`mt-0.5 shrink-0 ${storage?.persisted ? 'text-accent' : 'text-warn'}`} />
         <div className="min-w-0 flex-1">
           <div className="font-semibold">
             {storage?.persisted ? t('Lagringen er beskyttet', 'Storage is protected') : t('Lagringen kan slettes av nettleseren', 'Storage can be cleared by the browser')}
@@ -354,7 +357,7 @@ function DataSection() {
           </div>
         </div>
         {storage && !storage.persisted && storage.supported && (
-          <button type="button" className="shrink-0 text-xs font-semibold text-green" onClick={async () => { await requestPersist(); await refreshStorage(); }}>
+          <button type="button" className="shrink-0 text-xs font-semibold text-accent" onClick={async () => { await requestPersist(); await refreshStorage(); }}>
             {t('Beskytt', 'Protect')}
           </button>
         )}
@@ -398,10 +401,30 @@ function DataSection() {
         }}
       />
       {msg && (
-        <p className="text-sm text-green-light" role="status">
+        <p className="text-sm text-accent-strong" role="status">
           {msg}
         </p>
       )}
     </Card>
+  );
+}
+
+/** Appfarge: endres med en gang og lagres i profilen (synkes mellom enheter). */
+function AccentSetting() {
+  const user = useUser();
+  const profile = useLiveQuery(() => getProfile(user.id), [user.id]);
+  if (!profile) return null;
+  return (
+    <div>
+      <div className="mb-2">{t('Appfarge', 'App colour')}</div>
+      <ColorPicker
+        value={profile.color}
+        label={t('Appfarge', 'App colour')}
+        onChange={(c) => {
+          applyAccent(c);
+          void saveProfile(user.id, { color: c });
+        }}
+      />
+    </div>
   );
 }

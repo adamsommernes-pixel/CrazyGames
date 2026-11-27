@@ -59,7 +59,7 @@ export function LevelPage() {
         {!bwKnown && (
           <Note>
             {t('Legg inn kroppsvekt for presis rangering. Nå brukes', 'Add your bodyweight for an accurate rank. Using')} {kg(bw)}.{' '}
-            <Link to="/bodyweight" className="font-semibold text-green underline">
+            <Link to="/bodyweight" className="font-semibold text-accent underline">
               {t('Logg kroppsvekt', 'Log bodyweight')}
             </Link>
           </Note>
@@ -67,7 +67,7 @@ export function LevelPage() {
         {sex === null && (
           <Note>
             {t('Standardene er et snitt av menn og kvinner fordi kjønn ikke er valgt.', 'The standards are an average of men and women because no sex is set.')}{' '}
-            <Link to="/profile/edit" className="font-semibold text-green underline">
+            <Link to="/profile/edit" className="font-semibold text-accent underline">
               {t('Rediger profil', 'Edit profile')}
             </Link>
           </Note>
@@ -137,14 +137,14 @@ export function LevelPage() {
             <div
               key={i}
               aria-current={current ? 'true' : undefined}
-              className={`flex items-center gap-3 px-4 py-2.5 ${current ? 'bg-green-dim/30' : ''} ${reached ? '' : 'opacity-45'}`}
+              className={`flex items-center gap-3 px-4 py-2.5 ${current ? 'bg-accent-soft/30' : ''} ${reached ? '' : 'opacity-45'}`}
             >
               <TierEmblem index={i} size={32} />
               <span className="flex-1 font-semibold" style={current ? { color: tierAccent(i) } : undefined}>
                 {tier.name}
               </span>
               <span className="font-num text-xs text-faint">{i === TIER_COUNT - 1 ? `${tier.min}+` : `${tier.min}–${tier.min + 9}`}</span>
-              {current && <span className="text-xs font-semibold text-green">{t('Du', 'You')}</span>}
+              {current && <span className="text-xs font-semibold text-accent">{t('Du', 'You')}</span>}
             </div>
           );
         })}

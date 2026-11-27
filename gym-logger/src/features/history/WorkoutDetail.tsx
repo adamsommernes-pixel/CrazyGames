@@ -69,7 +69,7 @@ export function WorkoutDetail() {
           let n = 0;
           return (
             <Card key={we.id} className="p-4">
-              <button type="button" className="flex items-center gap-2 text-lg font-bold text-green" onClick={() => navigate(`/exercise/${we.exercise_id}`)}>
+              <button type="button" className="flex items-center gap-2 text-lg font-bold text-accent" onClick={() => navigate(`/exercise/${we.exercise_id}`)}>
                 {exMap.get(we.exercise_id) && <MuscleDot group={exMap.get(we.exercise_id)!.muscle_group} size={9} />}
                 {exerciseName(exMap.get(we.exercise_id))}
               </button>

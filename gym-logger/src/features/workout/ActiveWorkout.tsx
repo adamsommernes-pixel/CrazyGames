@@ -115,7 +115,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
           <input
             aria-label={t('Navn på økt', 'Workout name')}
             title={t('Trykk for å gi økta et navn', 'Tap to name the workout')}
-            className="min-w-0 flex-1 truncate bg-transparent outline-none focus:text-green"
+            className="min-w-0 flex-1 truncate bg-transparent outline-none focus:text-accent"
             value={name}
             onChange={(e) => setName(e.target.value)}
             onBlur={() => name.trim() && name !== workout.name && void renameWorkout(workout.id, name.trim())}
@@ -135,7 +135,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
         <Stat label={`${t('Volum', 'Volume')} (${unit})`} value={num(toDisplay(vol, unit), 0)} />
       </div>
       <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-line" role="progressbar" aria-label={t('Fremdrift i økta', 'Workout progress')} aria-valuenow={doneSets.length} aria-valuemax={sets.length}>
-        <div className="h-full rounded-full bg-green shadow-glow transition-[width] duration-500" style={{ width: `${sets.length ? (doneSets.length / sets.length) * 100 : 0}%` }} />
+        <div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${sets.length ? (doneSets.length / sets.length) * 100 : 0}%` }} />
       </div>
 
       {wes.length === 0 ? (
@@ -158,7 +158,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
         </div>
       )}
 
-      <Button full icon="plus" variant="secondary" className="mt-4 min-h-14 border-green/50 text-green" onClick={() => setPicker(true)}>
+      <Button full icon="plus" variant="secondary" className="mt-4 min-h-14 border-accent/50 text-accent" onClick={() => setPicker(true)}>
         {t('Legg til øvelse', 'Add exercise')}
       </Button>
 

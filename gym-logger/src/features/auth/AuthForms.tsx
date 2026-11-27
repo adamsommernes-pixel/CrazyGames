@@ -30,7 +30,7 @@ function LocalNote() {
   if (backend.kind !== 'local') return null;
   return (
     <p className="mt-6 flex gap-2 rounded-2xl border border-line bg-surface p-3 text-sm text-muted">
-      <Icon name="lock" size={18} className="mt-0.5 shrink-0 text-green" />
+      <Icon name="lock" size={18} className="mt-0.5 shrink-0 text-accent" />
       {t('Kontoen og øktene lagres på denne enheten, med kryptert passord. Sky-synk mellom enheter kan slås på senere.', 'Your account and workouts are stored on this device, with an encrypted password. Cloud sync between devices can be turned on later.')}
     </p>
   );
@@ -74,7 +74,7 @@ export function SignUp() {
   if (confirm) {
     return (
       <Shell title={t('Sjekk e-posten', 'Check your email')} subtitle={t(`Vi har sendt en lenke til ${email}. Trykk på den for å bekrefte kontoen, og logg så inn.`, `We sent a link to ${email}. Tap it to confirm your account, then log in.`)}>
-        <Link to="/login" className="font-semibold text-green">
+        <Link to="/login" className="font-semibold text-accent">
           {t('Gå til innlogging', 'Go to login')}
         </Link>
       </Shell>
@@ -94,7 +94,7 @@ export function SignUp() {
         </label>
         <PasswordField id="signup-password" label={t('Passord (minst 8 tegn)', 'Password (at least 8 characters)')} value={password} onChange={setPassword} autoComplete="new-password" showStrength />
         <ErrorText error={error} />
-        <button type="submit" disabled={busy} className="mt-2 min-h-14 rounded-2xl bg-green text-lg font-semibold text-black shadow-glow disabled:opacity-50">
+        <button type="submit" disabled={busy} className="mt-2 min-h-14 rounded-2xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-50">
           {busy ? t('Lager konto …', 'Creating account …') : t('Lag konto', 'Create account')}
         </button>
         <p className="text-center text-xs text-faint">
@@ -107,7 +107,7 @@ export function SignUp() {
       </form>
       <p className="mt-6 text-center text-muted">
         {t('Har du konto?', 'Already have an account?')}{' '}
-        <Link to="/login" className="font-semibold text-green">
+        <Link to="/login" className="font-semibold text-accent">
           {t('Logg inn', 'Log in')}
         </Link>
       </p>
@@ -143,16 +143,16 @@ export function Login() {
         <PasswordField id="login-password" label={t('Passord', 'Password')} value={password} onChange={setPassword} autoComplete="current-password" />
         <ErrorText error={error ?? forgot.error} />
         {confirmed && (
-          <p role="status" className="rounded-xl bg-green-dim/40 px-3 py-2.5 text-sm text-green-light">
+          <p role="status" className="rounded-xl bg-accent-soft/40 px-3 py-2.5 text-sm text-accent-strong">
             {t('E-posten er bekreftet. Logg inn for å starte.', 'Your email is confirmed. Log in to get started.')}
           </p>
         )}
         {reset === 'sent' && (
-          <p role="status" className="rounded-xl bg-green-dim/40 px-3 py-2.5 text-sm text-green-light">
+          <p role="status" className="rounded-xl bg-accent-soft/40 px-3 py-2.5 text-sm text-accent-strong">
             {t('Sjekk e-posten for en lenke til å lage nytt passord.', 'Check your email for a link to set a new password.')}
           </p>
         )}
-        <button type="submit" disabled={busy} className="mt-2 min-h-14 rounded-2xl bg-green text-lg font-semibold text-black shadow-glow disabled:opacity-50">
+        <button type="submit" disabled={busy} className="mt-2 min-h-14 rounded-2xl bg-accent text-lg font-semibold text-on-accent disabled:opacity-50">
           {busy ? t('Logger inn …', 'Logging in …') : t('Logg inn', 'Log in')}
         </button>
         {backend.resetPassword && (
@@ -163,7 +163,7 @@ export function Login() {
       </form>
       <p className="mt-6 text-center text-muted">
         {t('Ny her?', 'New here?')}{' '}
-        <Link to="/signup" className="font-semibold text-green">
+        <Link to="/signup" className="font-semibold text-accent">
           {t('Lag konto', 'Create account')}
         </Link>
       </p>

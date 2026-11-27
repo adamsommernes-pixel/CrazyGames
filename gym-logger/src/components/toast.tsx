@@ -55,7 +55,7 @@ export function ToastHost() {
         {toast.action && (
           <button
             type="button"
-            className="min-h-10 rounded-xl px-3 font-semibold text-green active:bg-line"
+            className="min-h-10 rounded-xl px-3 font-semibold text-accent active:bg-line"
             onClick={async () => {
               dismiss(toast.id);
               await toast.action!.onClick();

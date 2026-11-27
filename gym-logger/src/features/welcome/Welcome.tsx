@@ -27,7 +27,7 @@ export function Welcome() {
         <h1 className="font-num text-[44px] leading-[1.02] font-bold tracking-tight">
           {t('Logg hvert løft.', 'Log every lift.')}
           <br />
-          <span className="text-green">{t('Se hver fremgang.', 'See every gain.')}</span>
+          <span className="text-accent">{t('Se hver fremgang.', 'See every gain.')}</span>
         </h1>
         <p className="mt-4 max-w-sm text-lg text-muted">{t('Treningsdagboka for gymmen. Rask nok til å bruke mellom settene, og virker uten dekning.', 'The training log for the gym. Fast enough to use between sets, and it works without signal.')}</p>
       </section>
@@ -37,7 +37,7 @@ export function Welcome() {
       <ul className="mt-6 flex flex-col gap-4">
         {features().map((f, i) => (
           <li key={f.title} className="flex animate-rise gap-3" style={{ animationDelay: `${200 + i * 90}ms` }}>
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-line bg-raised text-green">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-line bg-raised text-accent">
               <Icon name={f.icon} size={20} />
             </span>
             <span>
@@ -77,19 +77,19 @@ function DemoCard() {
   return (
     <div className="card mt-8 rounded-3xl p-4" aria-hidden="true">
       <div className="mb-3 flex items-center justify-between">
-        <span className="font-num text-lg font-bold text-green">{t('Benkpress', 'Bench press')}</span>
+        <span className="font-num text-lg font-bold text-accent">{t('Benkpress', 'Bench press')}</span>
         <span className="text-sm text-faint">{t('Forrige', 'Last')}: 80 × 8</span>
       </div>
       <div className="grid grid-cols-[2rem_1fr_1fr_3rem] items-center gap-2">
         <span className="font-num text-center font-bold text-muted">3</span>
-        <span className={`font-num rounded-xl py-2.5 text-center text-xl font-bold transition-colors ${done ? 'bg-green-dim/60 text-green-light' : 'bg-raised'}`}>85 kg</span>
-        <span className={`font-num rounded-xl py-2.5 text-center text-xl font-bold transition-colors ${done ? 'bg-green-dim/60 text-green-light' : 'bg-raised'}`}>8</span>
-        <span className={`grid h-11 place-items-center rounded-xl transition-colors ${done ? 'animate-pop bg-green text-black shadow-glow' : 'bg-raised text-faint'}`}>
+        <span className={`font-num rounded-xl py-2.5 text-center text-xl font-bold transition-colors ${done ? 'bg-accent-soft/60 text-accent-strong' : 'bg-raised'}`}>85 kg</span>
+        <span className={`font-num rounded-xl py-2.5 text-center text-xl font-bold transition-colors ${done ? 'bg-accent-soft/60 text-accent-strong' : 'bg-raised'}`}>8</span>
+        <span className={`grid h-11 place-items-center rounded-xl transition-colors ${done ? 'animate-pop bg-accent text-on-accent' : 'bg-raised text-faint'}`}>
           <Icon name="check" strokeWidth={3} />
         </span>
       </div>
       <div className={`mt-3 flex h-6 items-center gap-1.5 transition-opacity ${done ? 'opacity-100' : 'opacity-0'}`}>
-        <span className="inline-flex items-center gap-1 rounded-full bg-green-dim px-2.5 py-0.5 text-xs font-semibold text-green-light">
+        <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent-strong">
           <Icon name="trophy" size={13} /> {t('Ny rekord', 'New record')}: 85 kg
         </span>
       </div>

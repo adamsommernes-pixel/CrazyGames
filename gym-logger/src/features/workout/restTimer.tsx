@@ -117,7 +117,7 @@ export function RestTimerBar() {
 
   return (
     <div className="mx-auto w-full max-w-xl px-3 pb-2" role="timer" aria-live="off">
-      <div className="relative overflow-hidden rounded-2xl border border-green/40 bg-surface/95 shadow-lg shadow-black backdrop-blur">
+      <div className="relative overflow-hidden rounded-2xl border border-accent/40 bg-surface/95 shadow-lg shadow-black backdrop-blur">
         <div className="relative flex items-center gap-2 px-2.5 py-2">
           <svg width="42" height="42" viewBox="0 0 42 42" className="shrink-0 -rotate-90" aria-hidden="true">
             <circle cx="21" cy="21" r={R} fill="none" stroke="var(--color-line)" strokeWidth="4" />
@@ -126,7 +126,7 @@ export function RestTimerBar() {
               cy="21"
               r={R}
               fill="none"
-              stroke="var(--color-green)"
+              stroke="var(--color-accent)"
               strokeWidth="4"
               strokeLinecap="round"
               strokeDasharray={C}
@@ -134,7 +134,7 @@ export function RestTimerBar() {
               style={{ transition: 'stroke-dashoffset 250ms linear' }}
             />
           </svg>
-          <span className={`font-num min-w-0 flex-1 text-xl leading-tight font-bold ${done ? 'text-green-light' : ''}`}>
+          <span className={`font-num min-w-0 flex-1 text-xl leading-tight font-bold ${done ? 'text-accent-strong' : ''}`}>
             {done ? t('Klar for neste set!', 'Ready for the next set!') : duration(remaining)}
           </span>
           {!done && (
@@ -147,7 +147,7 @@ export function RestTimerBar() {
               </button>
             </>
           )}
-          <button type="button" className="min-h-10 rounded-lg px-3 text-sm font-semibold text-green" onClick={() => void stopRest()}>
+          <button type="button" className="min-h-10 rounded-lg px-3 text-sm font-semibold text-accent" onClick={() => void stopRest()}>
             {done ? 'OK' : t('Hopp over', 'Skip')}
           </button>
         </div>

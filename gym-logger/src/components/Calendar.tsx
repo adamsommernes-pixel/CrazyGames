@@ -56,8 +56,8 @@ export function Calendar({
               aria-label={`${d.getDate()}. ${has ? t('trent', 'trained') : ''}`}
               aria-pressed={sel}
               className={`font-num relative grid aspect-square place-items-center rounded-xl text-sm transition ${
-                sel ? 'bg-green font-bold text-black' : has ? 'bg-green-dim/60 font-bold text-green-light' : 'text-faint'
-              } ${k === today && !sel ? 'ring-1 ring-green/60' : ''}`}
+                sel ? 'bg-accent font-bold text-on-accent' : has ? 'bg-accent-soft/60 font-bold text-accent-strong' : 'text-faint'
+              } ${k === today && !sel ? 'ring-1 ring-accent/60' : ''}`}
             >
               {d.getDate()}
             </button>

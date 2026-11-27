@@ -7,9 +7,9 @@ import { t } from '../i18n';
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-green text-black font-semibold shadow-glow active:bg-green-light active:scale-[0.98]',
+  primary: 'bg-accent text-on-accent font-semibold active:bg-accent-strong active:scale-[0.98]',
   secondary: 'bg-raised text-ink border border-line font-medium active:bg-line active:scale-[0.98]',
-  ghost: 'text-green font-medium active:bg-raised',
+  ghost: 'text-accent font-medium active:bg-raised',
   danger: 'bg-raised text-danger border border-line font-medium active:bg-line',
 };
 
@@ -99,8 +99,8 @@ export function EmptyState({ icon, title, text, children }: {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
       <div className="relative mb-5 grid size-20 place-items-center">
-        <div className="absolute inset-0 rounded-full bg-green/10 blur-xl" />
-        <div className="relative grid size-20 place-items-center rounded-full border border-green/30 bg-green-dim/40 text-green">
+        <div className="absolute inset-0 rounded-full bg-accent/10 blur-xl" />
+        <div className="relative grid size-20 place-items-center rounded-full border border-accent/30 bg-accent-soft/40 text-accent">
           <Icon name={icon} size={34} strokeWidth={1.6} />
         </div>
       </div>
@@ -242,7 +242,7 @@ export function NumberStepper({
   };
   const minus = useRepeat(() => change(-step));
   const plus = useRepeat(() => change(step));
-  const btn = `grid place-items-center text-green active:bg-line select-none touch-none ${size === 'lg' ? 'size-14 text-2xl' : 'size-11 text-xl'}`;
+  const btn = `grid place-items-center text-accent active:bg-line select-none touch-none ${size === 'lg' ? 'size-14 text-2xl' : 'size-11 text-xl'}`;
   return (
     <div className="flex items-center rounded-2xl border border-line bg-raised" role="group" aria-label={label}>
       <button type="button" aria-label={`${label} minus`} className={`${btn} rounded-l-2xl`} {...minus}>
@@ -265,7 +265,7 @@ export function Chip({ active, children, onClick }: { active?: boolean; children
       onClick={onClick}
       aria-pressed={active}
       className={`min-h-9 shrink-0 rounded-full border px-3 text-sm ${
-        active ? 'border-green bg-green-dim text-green-light' : 'border-line bg-raised text-muted'
+        active ? 'border-accent bg-accent-soft text-accent-strong' : 'border-line bg-raised text-muted'
       }`}
     >
       {children}
@@ -275,7 +275,7 @@ export function Chip({ active, children, onClick }: { active?: boolean; children
 
 export function PRBadge({ label }: { label?: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-green-dim px-2 py-0.5 text-xs font-semibold text-green-light">
+    <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent-strong">
       <Icon name="trophy" size={13} />
       {label ?? 'PR'}
     </span>
@@ -297,4 +297,4 @@ export function Stat({ label, value }: { label: string; value: string }) {
 }
 
 export const inputClass =
-  'min-h-12 w-full rounded-xl border border-line bg-raised px-3 text-base outline-none placeholder:text-faint focus:border-green';
+  'min-h-12 w-full rounded-xl border border-line bg-raised px-3 text-base outline-none placeholder:text-faint focus:border-accent';

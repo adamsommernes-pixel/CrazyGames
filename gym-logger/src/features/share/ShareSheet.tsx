@@ -109,7 +109,7 @@ export default function ShareSheet({ workoutId, onClose }: { workoutId: string; 
                 aria-selected={level === c.level}
                 onClick={() => setLevel(c.level)}
                 className={`flex flex-col items-center gap-0.5 rounded-2xl border px-1 py-2 text-xs font-semibold transition ${
-                  level === c.level ? 'border-green bg-green-dim/40 text-green-light' : 'border-line bg-raised text-muted'
+                  level === c.level ? 'border-accent bg-accent-soft/40 text-accent-strong' : 'border-line bg-raised text-muted'
                 }`}
               >
                 <span className="font-num text-base">{c.level}</span>

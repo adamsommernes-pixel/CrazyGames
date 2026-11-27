@@ -33,7 +33,7 @@ function Block({ icon, title, tone, items, ordered }: { icon: IconName; title: s
         {items.map((t, i) => (
           <li key={i} className="flex gap-3">
             {ordered ? (
-              <span className="font-num grid size-6 shrink-0 place-items-center rounded-full bg-green-dim text-xs font-bold text-green-light">{i + 1}</span>
+              <span className="font-num grid size-6 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-bold text-accent-strong">{i + 1}</span>
             ) : (
               <span className="mt-2 size-1.5 shrink-0 rounded-full bg-current opacity-60" aria-hidden="true" />
             )}
@@ -57,7 +57,7 @@ export function ExerciseGuide({ exercise }: { exercise: Exercise }) {
   }
   return (
     <div className="flex flex-col gap-5">
-      <Block icon="book" title={t('Slik gjør du', 'How to')} tone="text-green" items={guide.steps} ordered />
+      <Block icon="book" title={t('Slik gjør du', 'How to')} tone="text-accent" items={guide.steps} ordered />
       <Block icon="sparkle" title={t('Tips', 'Tips')} tone="text-sky-300" items={guide.tips} />
       <Block icon="x" title={t('Vanlige feil', 'Common mistakes')} tone="text-warn" items={guide.mistakes} />
     </div>
