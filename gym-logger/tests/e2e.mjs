@@ -255,11 +255,11 @@ try {
   await page.getByRole('checkbox', { name: /^Knebøy/ }).first().waitFor();
   await page.getByPlaceholder('Søk blant øvelser').fill('');
   await page.getByRole('checkbox', { name: /^Benkpress Bryst/ }).click();
-  await page.getByPlaceholder('Søk blant øvelser').fill('sidehev');
-  await page.getByRole('checkbox', { name: /^Sidehev Skuldre/ }).click();
+  await page.getByPlaceholder('Søk blant øvelser').fill('sidehev') // norsk søk finner det engelske navnet;
+  await page.getByRole('checkbox', { name: /^Lateral raise Skuldre/ }).click();
   await shot('flervalg');
   await btn('Legg til (2)').click();
-  await page.getByRole('heading', { name: 'Sidehev' }).waitFor();
+  await page.getByRole('heading', { name: 'Lateral raise' }).waitFor();
   await page.getByRole('heading', { name: 'Benkpress' }).waitFor();
 
   // 5f. Økta avviker fra rutinen → spørsmål om å lagre endringene i rutinen (bare denne gangen)
@@ -471,13 +471,13 @@ try {
   await btn(/^Tom økt/).click();
   await btn('Legg til øvelse').click();
   await page.getByPlaceholder('Søk blant øvelser').fill('planke');
-  await btn('Slik gjør du: Planke').click();
+  await btn('Slik gjør du: Plank').click();
   await page.getByText('Støtt deg på underarmene og tærne.').waitFor();
   await btn('Legg til i favoritter').click();
   await btn('Fjern fra favoritter').waitFor();
   await shot('fremgangsmate');
   await dialog().last().getByRole('button', { name: 'Lukk' }).last().click();
-  await page.getByRole('checkbox', { name: /^Planke Mage/ }).click();
+  await page.getByRole('checkbox', { name: /^Plank Mage/ }).click();
   await page.getByPlaceholder('Søk blant øvelser').fill('tredem');
   await page.getByRole('checkbox', { name: /^Tredemølle Kondisjon/ }).click();
   await btn('Legg til (2)').click();

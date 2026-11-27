@@ -50,3 +50,29 @@ export function guideFor(exerciseId: string): Guide | undefined {
 export function englishName(exerciseId: string): string | undefined {
   return EN[slugOf(exerciseId)]?.name;
 }
+
+/**
+ * De store basisløftene som har innarbeidede norske navn. Alle andre innebygde øvelser vises med
+ * engelsk navn også på norsk (men kan fortsatt søkes opp på norsk). Kondisjon beholder norsk navn.
+ */
+export const NB_NAMED = new Set([
+  'kneboy',
+  'frontboy',
+  'utfall',
+  'markloft',
+  'rumensk-markloft',
+  'benkpress',
+  'skrabenk',
+  'militaerpress',
+  'dips',
+  'stangroing',
+  'nedtrekk',
+  'pull-ups',
+]);
+
+const GROUPS = new Map(LIBRARY.map((e) => [`ex-${e.slug}`, e.group]));
+
+/** Om en innebygd øvelse beholder det norske navnet i norsk språkdrakt. */
+export function keepsNorwegianName(exerciseId: string): boolean {
+  return NB_NAMED.has(slugOf(exerciseId)) || GROUPS.get(exerciseId) === 'Kondisjon';
+}

@@ -23,8 +23,7 @@ import { EditExerciseSheet } from '../exercise/EditExerciseSheet';
 import { matchesSearch } from '../../lib/search';
 import { useSetting } from '../../lib/settings';
 import { formatSetShort, registerKinds } from '../../lib/kinds';
-import { exerciseName } from '../../lib/exerciseName';
-import { englishName } from '../../db/exercises';
+import { exerciseName, searchNames } from '../../lib/exerciseName';
 import { t } from '../../i18n';
 
 export function useExercises(): Exercise[] {
@@ -84,8 +83,8 @@ export function ExercisePicker({
   const filtered = useMemo(
     () =>
       exercises
-        .filter((e) => (!group || e.muscle_group === group) && (!equipment || e.equipment === equipment) && (matchesSearch(e.name, query) || matchesSearch(englishName(e.id) ?? '', query)))
-        .sort((a, b) => a.name.localeCompare(b.name, 'nb')),
+        .filter((e) => (!group || e.muscle_group === group) && (!equipment || e.equipment === equipment) && searchNames(e).some((n) => matchesSearch(n, query)))
+        .sort((a, b) => exerciseName(a).localeCompare(exerciseName(b), 'nb')),
     [exercises, query, group, equipment],
   );
   const browsing = !query.trim() && !group && !equipment;
