@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { MuscleGroup } from '../../../db/types';
-import { BODY, FOOT_R, RADII, trunkPoint, type Joints, type V3 } from './rig';
+import { BODY, FOOT_R, RADII, limbRadius, trunkPoint, type Joints, type LimbName, type V3 } from './rig';
 import { sample, type Move } from './moves';
 
 const FRAME_MS = 1000 / 30;
@@ -24,11 +24,21 @@ export interface SceneOptions {
 const Y = new THREE.Vector3(0, 1, 0);
 const v = (p: V3) => new THREE.Vector3(p[0], p[1], p[2]);
 
-/** Avsmalnende lem fra roten til enden. Geometrien lages med riktig lengde, så den bare flyttes og roteres. */
+/**
+ * Lem med muskelform (LatheGeometry etter limbRadius i rig.ts) fra roten til enden. Geometrien lages
+ * med riktig lengde, så den bare flyttes og roteres.
+ */
 class Limb {
   mesh: THREE.Mesh;
-  constructor(length: number, r: readonly [number, number], mat: THREE.Material, parent: THREE.Object3D) {
-    const geo = new THREE.CylinderGeometry(r[1], r[0], length, 12, 1);
+  constructor(length: number, limb: LimbName, mat: THREE.Material, parent: THREE.Object3D) {
+    const pts: THREE.Vector2[] = [];
+    const N = 22;
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      pts.push(new THREE.Vector2(Math.max(0.0005, limbRadius(limb, t)), -length / 2 + t * length));
+    }
+    const geo = new THREE.LatheGeometry(pts, 20);
+    geo.computeVertexNormals();
     this.mesh = new THREE.Mesh(geo, mat);
     parent.add(this.mesh);
   }
@@ -39,6 +49,32 @@ class Limb {
     this.mesh.position.copy(va.addScaledVector(dir, 0.5));
     if (l > 1e-6) this.mesh.quaternion.setFromUnitVectors(Y, dir.normalize());
   }
+}
+
+/** Overkroppen som én glatt form: bekken, midje, brystkasse, skuldre og nakke (flatere forfra-bakfra). */
+function torsoShape(mat: THREE.Material, parent: THREE.Object3D) {
+  // [høyde langs ryggen, bredde (radius)]
+  const profile: [number, number][] = [
+    [-0.075, 0.0],
+    [-0.06, 0.1],
+    [-0.02, 0.15],
+    [0.05, 0.155],
+    [0.15, 0.13],
+    [0.24, 0.135],
+    [0.34, 0.16],
+    [0.43, 0.17],
+    [0.5, 0.15],
+    [0.53, 0.09],
+    [0.55, 0.05],
+    [0.62, 0.045],
+  ];
+  const pts = profile.map(([y, r]) => new THREE.Vector2(r, y));
+  const geo = new THREE.LatheGeometry(pts, 28);
+  geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, mat);
+  m.scale.set(1, 1, 0.68);
+  parent.add(m);
+  return m;
 }
 
 function blob(mat: THREE.Material, parent: THREE.Object3D, r: number, s: V3 = [1, 1, 1], at: V3 = [0, 0, 0]) {
@@ -176,15 +212,15 @@ export class DemoScene {
     const s = this.scene;
     const legs = m.muscle('Bein');
     const arms = m.muscle('Biceps', 'Triceps');
-    this.limbs.thigh = [0, 1].map(() => new Limb(BODY.thigh, RADII.thigh, legs, s));
-    this.limbs.shin = [0, 1].map(() => new Limb(BODY.shin, RADII.shin, legs, s));
-    this.limbs.upperArm = [0, 1].map(() => new Limb(BODY.upperArm, RADII.upperArm, arms, s));
-    this.limbs.forearm = [0, 1].map(() => new Limb(BODY.forearm, RADII.forearm, m.muscle('Underarmer'), s));
-    this.joints.knee = [0, 1].map(() => blob(m.skin, s, RADII.thigh[1]));
+    this.limbs.thigh = [0, 1].map(() => new Limb(BODY.thigh, 'thigh', legs, s));
+    this.limbs.shin = [0, 1].map(() => new Limb(BODY.shin, 'shin', legs, s));
+    this.limbs.upperArm = [0, 1].map(() => new Limb(BODY.upperArm, 'upperArm', arms, s));
+    this.limbs.forearm = [0, 1].map(() => new Limb(BODY.forearm, 'forearm', m.muscle('Underarmer'), s));
+    this.joints.knee = [0, 1].map(() => blob(m.skin, s, RADII.thigh[1] * 0.95));
     this.joints.ankle = [0, 1].map(() => blob(m.skin, s, RADII.shin[1]));
-    this.joints.elbow = [0, 1].map(() => blob(m.skin, s, RADII.upperArm[1]));
+    this.joints.elbow = [0, 1].map(() => blob(m.skin, s, RADII.upperArm[1] * 0.95));
     this.joints.hand = [0, 1].map(() => blob(m.skin, s, 0.04, [1, 1.15, 0.8]));
-    this.joints.delt = [0, 1].map(() => blob(m.muscle('Skuldre'), s, 0.064));
+    this.joints.delt = [0, 1].map(() => blob(m.muscle('Skuldre'), s, 0.052, [1, 1.1, 1.1]));
     this.feet = [0, 1].map(() => {
       const f = new THREE.Mesh(new THREE.CapsuleGeometry(FOOT_R, 0.17, 4, 10), m.skin);
       s.add(f);
@@ -194,17 +230,16 @@ export class DemoScene {
     // Overkroppen: barnas koordinater er (sidelengs, langs ryggen, fram).
     const t = this.torso;
     s.add(t);
-    blob(m.skin, t, 1, [0.155, 0.1, 0.11], [0, 0.03, 0]);
-    blob(m.muscle('Rumpe'), t, 0.085, [1, 1.05, 0.85], [-0.065, -0.005, -0.06]);
-    blob(m.muscle('Rumpe'), t, 0.085, [1, 1.05, 0.85], [0.065, -0.005, -0.06]);
-    blob(m.muscle('Mage'), t, 1, [0.125, 0.14, 0.1], [0, 0.2, 0.005]);
-    blob(m.skin, t, 1, [0.16, 0.17, 0.115], [0, 0.375, 0]);
-    blob(m.muscle('Bryst'), t, 1, [0.08, 0.06, 0.04], [-0.068, 0.405, 0.082]);
-    blob(m.muscle('Bryst'), t, 1, [0.08, 0.06, 0.04], [0.068, 0.405, 0.082]);
-    blob(m.muscle('Rygg'), t, 1, [0.07, 0.14, 0.05], [-0.085, 0.33, -0.07]);
-    blob(m.muscle('Rygg'), t, 1, [0.07, 0.14, 0.05], [0.085, 0.33, -0.07]);
-    blob(m.muscle('Rygg'), t, 1, [0.13, 0.06, 0.06], [0, 0.49, -0.035]);
-    blob(m.muscle('Rygg'), t, 1, [0.06, 0.12, 0.04], [0, 0.17, -0.08]);
+    torsoShape(m.skin, t);
+    // Musklene ligger som tynne, flate former nedsenket i overkroppen, så de ser ut som muskler og ikke klosser.
+    for (const x of [-1, 1]) {
+      blob(m.muscle('Rumpe'), t, 1, [0.075, 0.085, 0.06], [x * 0.062, 0.0, -0.058]);
+      blob(m.muscle('Bryst'), t, 1, [0.078, 0.055, 0.03], [x * 0.064, 0.4, 0.084]);
+      blob(m.muscle('Rygg'), t, 1, [0.06, 0.15, 0.03], [x * 0.09, 0.32, -0.075]);
+      blob(m.muscle('Mage'), t, 1, [0.035, 0.12, 0.022], [x * 0.032, 0.18, 0.083]);
+    }
+    blob(m.muscle('Rygg'), t, 1, [0.12, 0.05, 0.04], [0, 0.49, -0.05]);
+    blob(m.muscle('Rygg'), t, 1, [0.05, 0.12, 0.025], [0, 0.16, -0.085]);
     cyl(m.skin, t, 0.045, 0.12, 'y', [0, 0.56, 0]);
     blob(m.skin, t, 1, [0.09, 0.11, 0.1], [0, BODY.head, 0.01]);
   }

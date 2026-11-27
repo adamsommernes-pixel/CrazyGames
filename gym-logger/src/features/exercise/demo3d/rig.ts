@@ -41,6 +41,32 @@ export const RADII = {
   bar: 0.014,
 } as const;
 
+export type LimbName = 'thigh' | 'shin' | 'upperArm' | 'forearm';
+
+/** Muskelbuen på hvert lem: hvor mye tykkere (andel) og hvor langs lemmet (0 = rot, 1 = ende). */
+const BULGE: Record<LimbName, { amount: number; from: number; to: number }> = {
+  thigh: { amount: 0.12, from: 0.0, to: 0.75 }, // forside lår
+  shin: { amount: 0.24, from: 0.05, to: 0.6 }, // legg
+  upperArm: { amount: 0.2, from: 0.15, to: 0.9 }, // biceps/triceps
+  forearm: { amount: 0.18, from: 0.0, to: 0.5 }, // underarm ved albuen
+};
+
+/**
+ * Radius på et lem ved t (0 = rot, 1 = ende): avsmalnende med en myk muskelbue, og runde ender.
+ * Brukes av tegningen (LatheGeometry) og av testene, så de sjekker samme form som vises.
+ */
+export function limbRadius(limb: LimbName, t: number, rounded = true): number {
+  const [r0, r1] = RADII[limb];
+  const b = BULGE[limb];
+  const u = (t - b.from) / (b.to - b.from);
+  const bulge = u > 0 && u < 1 ? Math.sin(Math.PI * u) ** 1.5 * b.amount : 0;
+  const base = (r0 + (r1 - r0) * t) * (1 + bulge);
+  if (!rounded) return base;
+  const e = 0.07;
+  const edge = t < e ? t / e : t > 1 - e ? (1 - t) / e : 1;
+  return base * Math.sqrt(Math.max(0, 1 - (1 - edge) ** 2));
+}
+
 /** Overkroppens akser for en helning: `up` langs ryggraden, `fwd` ut av brystet, `right` sidelengs. */
 export function trunkAxes(pitchDeg: number) {
   const p = rad(pitchDeg);
