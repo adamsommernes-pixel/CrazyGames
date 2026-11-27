@@ -161,6 +161,10 @@ try {
   await page.getByRole('img', { name: '0 av 3 økter denne uka' }).waitFor();
   await page.getByText('Fullkropp A').first().waitFor();
   await shot('hjem-ny');
+  // Del-knappen øverst: delemeny der den finnes, ellers kopieres lenken (vises som melding)
+  await page.evaluate(() => { Object.defineProperty(navigator, 'share', { value: undefined, configurable: true }); });
+  await btn('Del RepGrade med en venn').click();
+  await page.getByText(/Lenken er kopiert|http/).first().waitFor();
   assert.equal(await page.getByText('Vil du importere data?').count(), 0, 'nye brukere fikk tilbudet i oppstarten, ikke banner');
 
   // 4. Første økt fra rutine, med platekalkulator
@@ -527,6 +531,9 @@ try {
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
   await page.getByText('Medlem siden').waitFor();
   await shot('profil');
+  await page.getByRole('heading', { name: 'Innstillinger' }).scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollBy(0, -60));
+  await shot('innstillinger');
 
   // 9-0. Treningen din: endre mål og dager direkte, og bytt program fra Profil
   await btn(/^Mål: Bli sterkere/).click();
@@ -566,6 +573,7 @@ try {
   await btn(/^Økter per uke: 3/).waitFor();
 
   // 9-1. Appfarge: velg blå, se at knapper og grafer følger, og at valget huskes
+  await btn(/^Design/).click(); // innstillingene er gruppert og foldet sammen
   await page.getByRole('radiogroup', { name: 'Appfarge' }).getByRole('radio', { name: 'Blå' }).click();
   const accentNow = () => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim());
   assert.equal(await accentNow(), '#4d9bf0');
@@ -584,6 +592,10 @@ try {
 
   // 9a. Data og backup: JSON og CSV lastes ned, og backupen kan leses inn igjen
   const { readFile } = await import('node:fs/promises');
+  await btn(/^Data og backup/).click();
+  await page.waitForTimeout(250);
+  await btn('Last ned backup (JSON)').scrollIntoViewIfNeeded();
+  await shot('innstillinger-data');
   const [jsonDl] = await Promise.all([page.waitForEvent('download'), btn('Last ned backup (JSON)').click()]);
   const backup = JSON.parse(await readFile(await jsonDl.path(), 'utf8'));
   assert.equal(backup.version, 2);
@@ -755,6 +767,7 @@ try {
   await ep.waitForTimeout(350);
   await ep.getByRole('region', { name: 'Muscles trained' }).screenshot({ path: `tests/screens/${String(++n).padStart(2, '0')}-body-map-en.png` });
   await ep.getByRole('navigation').getByRole('link', { name: 'Profile' }).click();
+  await ep.getByRole('button', { name: /^Design/ }).click();
   await ep.getByRole('radio', { name: 'Norsk' }).click();
   await ep.getByRole('navigation').getByRole('link', { name: 'Hjem' }).click();
   await ep.getByText('Trent kropp').waitFor();

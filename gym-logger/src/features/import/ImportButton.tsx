@@ -26,7 +26,7 @@ export function ImportHelp() {
  * Knapp som leser inn en backup fra RepGrade eller en eksport fra Lyfto, Hevy eller Strong.
  * Viser et sammendrag og spør før noe legges inn.
  */
-export function ImportButton({ label, variant = 'secondary', onDone }: { label?: string; variant?: 'primary' | 'secondary'; onDone?: (rows: number) => void }) {
+export function ImportButton({ label, variant = 'secondary', onDone, compact }: { label?: string; variant?: 'primary' | 'secondary'; onDone?: (rows: number) => void; compact?: boolean }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -62,7 +62,7 @@ export function ImportButton({ label, variant = 'secondary', onDone }: { label?:
 
   return (
     <div className="flex flex-col gap-2">
-      <Button variant={variant} icon="upload" full disabled={busy} onClick={() => fileRef.current?.click()}>
+      <Button variant={variant} icon="upload" full disabled={busy} className={compact ? 'min-h-10 text-sm' : ''} onClick={() => fileRef.current?.click()}>
         {busy ? t('Importerer …', 'Importing …') : (label ?? t('Importer data', 'Import data'))}
       </Button>
       <input

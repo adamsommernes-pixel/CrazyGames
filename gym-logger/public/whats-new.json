@@ -25,6 +25,11 @@
       "icon": "history",
       "nb": "Søk i historikken, og pausevarselet kommer nå bare på telefonen du trener med",
       "en": "Search your history, and the rest notification now only arrives on the phone you train with"
+    },
+    {
+      "icon": "share",
+      "nb": "Del RepGrade med venner fra toppen av Hjem, og ryddigere innstillinger samlet i grupper",
+      "en": "Share RepGrade with friends from the top of Home, and tidier settings grouped together"
     }
   ],
   "history": [

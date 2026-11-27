@@ -5,8 +5,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../../auth/AuthProvider';
 import { db } from '../../db/dexie';
 import { getActiveWorkout, getProfile, nextRoutine, routineItems, startWorkout } from '../../db/repo';
-import { Button, Card, PRBadge, SectionTitle } from '../../components/ui';
+import { Button, Card, IconButton, PRBadge, SectionTitle } from '../../components/ui';
 import { BodyMap } from '../../components/BodyMap';
+import { shareApp } from '../../lib/shareApp';
 import { RangePicker, useRange } from '../../components/RangePicker';
 import { inRange, rangeBounds, rangeLabel, yearsWithData } from '../../lib/range';
 import { guideFor } from '../../db/library';
@@ -106,6 +107,7 @@ export function Home() {
             {strength && <LevelBadge strength={strength.profile} />}
             {strength && <LevelNudge profile={strength.profile} />}
           </div>
+          <IconButton icon="share" label={t('Del RepGrade med en venn', 'Share RepGrade with a friend')} className="-mr-1 text-muted" onClick={() => void shareApp()} />
           <Link to="/profile" aria-label={t('Profil', 'Profile')}>
             <Avatar name={profile?.name || user.name} color={profile?.color ?? '#34c56a'} size={44} />
           </Link>
