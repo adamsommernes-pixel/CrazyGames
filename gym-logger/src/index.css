@@ -55,6 +55,11 @@
     height: 100%;
   }
 
+  /* Litt mindre grunnstørrelse gir mer plass: alt som måles i rem krymper likt (ca. 6 %). */
+  html {
+    font-size: 15px;
+  }
+
   :root {
     color-scheme: dark;
     background: var(--color-bg);
@@ -175,4 +180,11 @@
 .intro-bar { animation: intro-bar 1500ms linear both; }
 @media (prefers-reduced-motion: reduce) {
   .intro-logo, .intro-name, .intro-bar { animation: none; }
+}
+
+/* Skrivefelt under 16 px får iPhone til å zoome inn. Holdes på minst 16 px (utenfor lagene, så det vinner). */
+input:not([data-field]),
+textarea,
+select {
+  font-size: max(16px, 1em);
 }

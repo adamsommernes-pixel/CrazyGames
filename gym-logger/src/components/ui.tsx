@@ -25,7 +25,7 @@ export function Button({
   return (
     <button
       type="button"
-      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-base transition disabled:opacity-40 disabled:shadow-none ${
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-base transition disabled:opacity-40 disabled:shadow-none ${
         VARIANTS[variant]
       } ${full ? 'w-full' : ''} ${className}`}
       {...rest}
@@ -79,7 +79,7 @@ export function Page({
   return (
     <div className="mx-auto w-full max-w-xl">
       <header className="pt-safe sticky top-0 z-20 border-b border-line bg-bg">
-        <div className="flex min-h-14 items-center gap-1 px-2">
+        <div className="flex min-h-12 items-center gap-1 px-2">
           {back ? (
             <IconButton icon="back" label={t('Tilbake', 'Back')} onClick={() => navigate(-1)} />
           ) : (
@@ -88,15 +88,15 @@ export function Page({
           {brand ? (
             <div className="min-w-0 flex-1">
               <Logo size={11} className="text-[10px] leading-none text-faint" />
-              <h1 className="truncate text-xl font-bold">{title}</h1>
+              <h1 className="truncate text-lg font-bold">{title}</h1>
             </div>
           ) : (
-            <h1 className="min-w-0 flex-1 truncate text-xl font-bold">{title}</h1>
+            <h1 className="min-w-0 flex-1 truncate text-lg font-bold">{title}</h1>
           )}
           {actions}
         </div>
       </header>
-      <main className="px-4 pt-4 pb-40">{children}</main>
+      <main className="px-3.5 pt-3 pb-36">{children}</main>
     </div>
   );
 }
@@ -293,18 +293,18 @@ export function PRBadge({ label }: { label?: string }) {
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mt-7 mb-2 text-[15px] font-semibold text-ink">{children}</h2>;
+  return <h2 className="mt-6 mb-2 text-sm font-semibold text-ink">{children}</h2>;
 }
 
 /** Liten nøkkeltall-boks. */
 export function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card rounded-xl py-2.5 text-center">
-      <div className="font-num text-xl font-bold">{value}</div>
+    <div className="card rounded-xl py-2 text-center">
+      <div className="font-num text-lg font-bold">{value}</div>
       <div className="text-xs text-muted">{label}</div>
     </div>
   );
 }
 
 export const inputClass =
-  'min-h-12 w-full rounded-xl border border-line bg-raised px-3 text-base outline-none placeholder:text-faint focus:border-accent';
+  'min-h-11 w-full rounded-xl border border-line bg-raised px-3 text-base outline-none placeholder:text-faint focus:border-accent';

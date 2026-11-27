@@ -74,7 +74,7 @@ export function LevelPage() {
       </div>
 
       <SectionTitle>{t('Kategorier', 'Categories')}</SectionTitle>
-      <Card className="flex flex-col gap-3 p-4">
+      <Card className="flex flex-col gap-3 p-3.5">
         {CATEGORIES.map((c) => {
           const score = s.categories[c];
           const tier = tierFor(score);
@@ -96,7 +96,7 @@ export function LevelPage() {
 
       <SectionTitle>{t('Dine løft', 'Your lifts')}</SectionTitle>
       {s.lifts.length === 0 ? (
-        <Card className="p-4 text-sm text-muted">
+        <Card className="p-3.5 text-sm text-muted">
           {t('Logg benkpress, knebøy, markløft, roing eller pull-ups for å få et nivå.', 'Log bench press, squat, deadlift, rows or pull-ups to get a level.')}
         </Card>
       ) : (
@@ -150,7 +150,7 @@ export function LevelPage() {
       </Card>
 
       <SectionTitle>{t('Slik regnes det', 'How it works')}</SectionTitle>
-      <Card className="flex flex-col gap-2 p-4 text-sm text-muted">
+      <Card className="flex flex-col gap-2 p-3.5 text-sm text-muted">
         <p>
           {t(
             'Vi tar ditt beste beregnede 1RM (fra sets med 1–10 reps) i nøkkelløft og deler på kroppsvekten. Det sammenlignes med vanlige styrkestandarder og gir 0–100 poeng per løft.',

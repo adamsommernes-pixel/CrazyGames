@@ -117,7 +117,7 @@ export function Home() {
         <BackupReminder />
 
         {active && isLongAgo(active.started_at, now) && !keepGoing && (
-          <Card className="border-warn/40 p-4">
+          <Card className="border-warn/40 p-3.5">
             <div className="flex items-start gap-3">
               <Icon name="timer" className="mt-0.5 shrink-0 text-warn" />
               <div className="flex-1">

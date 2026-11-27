@@ -50,8 +50,8 @@ export function BottomNav() {
             aria-label={active ? t('Fortsett økt', 'Continue workout') : t('Start økt', 'Start workout')}
             className="-mt-5 mb-1 flex flex-col items-center gap-0.5"
           >
-            <span className={`grid size-14 place-items-center rounded-full bg-accent text-on-accent ring-4 ring-bg transition active:scale-95 ${active ? 'animate-pulse' : ''}`}>
-              <Icon name={active ? 'play' : 'plus'} size={26} strokeWidth={2.6} />
+            <span className={`grid size-13 place-items-center rounded-full bg-accent text-on-accent ring-4 ring-bg transition active:scale-95 ${active ? 'animate-pulse' : ''}`}>
+              <Icon name={active ? 'play' : 'plus'} size={24} strokeWidth={2.6} />
             </span>
             <span className="font-num text-[11px] font-semibold text-accent">
               {active ? (isLongAgo(active.started_at, now) ? t('Økt', 'Workout') : duration(now - new Date(active.started_at).getTime())) : 'Start'}

@@ -118,10 +118,10 @@ export function ExerciseCard({
   let warmIndex = 0;
 
   return (
-    <Card className={`p-3 transition-shadow ${sorted.some((s) => s.id === currentSetId) ? 'border-accent/30' : ''}`}>
+    <Card className={`p-2.5 transition-shadow ${sorted.some((s) => s.id === currentSetId) ? 'border-accent/30' : ''}`}>
       <div className="mb-1 flex items-center gap-1 pl-1">
         <button type="button" className="min-w-0 flex-1 text-left" onClick={() => navigate(`/exercise/${we.exercise_id}`)} aria-label={`${exerciseName(exercise)}: ${t('rekorder, grafer og historikk', 'records, charts and history')}`}>
-          <h2 className="flex items-center gap-2 truncate text-lg font-bold text-accent">
+          <h2 className="flex items-center gap-2 truncate text-base font-bold text-accent">
             {exercise && <MuscleDot group={exercise.muscle_group} size={9} />}
             <span className="truncate">{exerciseName(exercise)}</span>
           </h2>

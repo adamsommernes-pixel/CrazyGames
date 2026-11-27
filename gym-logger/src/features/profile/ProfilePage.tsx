@@ -307,7 +307,7 @@ function SettingsSection() {
   const haptics = useSetting('haptics');
   const keepAwake = useSetting('keepAwake');
   return (
-    <Card className="flex flex-col gap-4 p-4">
+    <Card className="flex flex-col gap-4 p-3.5">
       <div className="flex items-center justify-between gap-3">
         <span>Språk / Language</span>
         <LanguageToggle size="md" />
@@ -367,7 +367,7 @@ function DataSection() {
   };
 
   return (
-    <Card className="flex flex-col gap-3 p-4">
+    <Card className="flex flex-col gap-3 p-3.5">
       {cloud ? (
         <div className="flex items-start gap-3 rounded-xl bg-raised px-3 py-2.5 text-sm" role="status">
           <Icon name="check" size={18} className="mt-0.5 shrink-0 text-accent" />

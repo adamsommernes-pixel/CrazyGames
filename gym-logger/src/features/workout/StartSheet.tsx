@@ -120,7 +120,7 @@ function PastWorkout({ onStart }: { onStart: (startedAt: string) => void }) {
     );
   }
   return (
-    <Card className="mt-4 flex flex-col gap-3 p-4">
+    <Card className="mt-4 flex flex-col gap-3 p-3.5">
       <h3 className="font-semibold">{t('Logg tidligere økt', 'Log a past workout')}</h3>
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1.5">

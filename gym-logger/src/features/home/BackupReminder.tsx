@@ -23,7 +23,7 @@ export function BackupReminder() {
   }, [user.kind], false);
   if (!show) return null;
   return (
-    <Card className="border-warn/30 p-4">
+    <Card className="border-warn/30 p-3.5">
       <div className="flex gap-3">
         <Icon name="download" size={20} className="mt-0.5 shrink-0 text-warn" />
         <div className="min-w-0 flex-1">

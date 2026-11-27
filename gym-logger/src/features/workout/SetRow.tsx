@@ -58,7 +58,7 @@ function NumField({
       data-field={field}
       inputMode={decimal ? 'decimal' : 'numeric'}
       enterKeyHint={field === 'weight' ? 'next' : 'done'}
-      className={`font-num h-12 w-full min-w-0 rounded-xl border text-center text-xl font-bold outline-none transition-colors placeholder:text-sm placeholder:font-medium placeholder:text-faint focus:border-accent focus:bg-bg ${
+      className={`font-num h-10 w-full min-w-0 rounded-xl border text-center text-lg font-bold outline-none transition-colors placeholder:text-sm placeholder:font-medium placeholder:text-faint focus:border-accent focus:bg-bg ${
         done ? 'border-transparent bg-accent-soft/50 text-accent-strong' : 'border-line bg-raised'
       }`}
       value={text}
@@ -177,12 +177,12 @@ export function SetRow({
       data-done={done ? '1' : '0'}
       aria-current={current ? 'step' : undefined}
     >
-      <div className={`${SET_GRID} px-1 py-1`}>
+      <div className={`${SET_GRID} px-1 py-0.5`}>
         <button
           type="button"
           onClick={onMenu}
           aria-label={`Set ${label}, ${t('rediger', 'edit')}`}
-          className="font-num h-11 rounded-xl text-center text-lg font-bold active:bg-raised"
+          className="font-num h-10 rounded-xl text-center text-base font-bold active:bg-raised"
           style={{ color: set.set_type === 'normal' ? 'var(--color-muted)' : SET_TYPE_COLOR[set.set_type] }}
         >
           {short || label}
@@ -236,7 +236,7 @@ export function SetRow({
                 : `${t('Fullfør set', 'Complete set')} ${label}`
           }
           aria-pressed={done}
-          className={`grid h-12 w-[3.25rem] place-items-center rounded-xl transition ${
+          className={`grid h-10 w-[3.25rem] place-items-center rounded-xl transition ${
             done
               ? 'animate-pop bg-accent text-on-accent'
               : timingFrom !== null
