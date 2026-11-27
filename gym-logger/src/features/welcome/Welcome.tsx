@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui';
 import { Icon, type IconName } from '../../components/Icon';
 import { LanguageToggle } from '../../components/LanguageToggle';
+import { Logo } from '../../components/Logo';
 import { t } from '../../i18n';
 
 const features = (): { icon: IconName; title: string; text: string }[] => [
@@ -17,9 +18,7 @@ export function Welcome() {
   return (
     <div className="pt-safe pb-safe mx-auto flex min-h-full max-w-xl flex-col px-5">
       <header className="flex items-center gap-2 pt-6">
-        <span className="grid size-9 place-items-center rounded-xl bg-green text-black shadow-glow">
-          <Icon name="dumbbell" size={20} strokeWidth={2.4} />
-        </span>
+        <Logo size={36} anchor name={false} />
         <span className="font-num flex-1 text-lg font-bold tracking-tight">Repgrade</span>
         <LanguageToggle />
       </header>

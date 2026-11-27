@@ -65,6 +65,7 @@ for (const lang of ['nb', 'en']) {
   await ctx.addInitScript((l) => {
     localStorage.setItem('gym-lang', l);
     localStorage.setItem('gym-install-hint-dismissed', '1');
+    localStorage.setItem('repgrade-skip-intro', '1');
   }, lang);
   const page = await ctx.newPage();
   const btn = (n, o = {}) => page.getByRole('button', { name: n, ...o });

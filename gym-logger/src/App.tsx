@@ -72,7 +72,7 @@ export default function App() {
 
 function Splash() {
   return (
-    <div className="grid h-full place-items-center" aria-label={t('Laster', 'Loading')}>
+    <div data-splash className="grid h-full place-items-center" aria-label={t('Laster', 'Loading')}>
       <span className="flex animate-pulse flex-col items-center gap-3">
         <Logo size={64} name={false} />
         <span className="font-num text-lg font-bold tracking-tight text-muted">Repgrade</span>

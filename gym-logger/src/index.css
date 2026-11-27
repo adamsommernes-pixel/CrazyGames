@@ -192,3 +192,14 @@
 /* Personvernsiden: vanlige lister. */
 .privacy ul { list-style: disc; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
 .privacy b { color: var(--color-ink); font-weight: 600; }
+
+/* ---------- Intro ved oppstart ---------- */
+@keyframes intro-logo-in { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+@keyframes intro-name-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes intro-bar { from { width: 0; } to { width: 100%; } }
+.intro-logo { animation: intro-logo-in 320ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.intro-name { animation: intro-name-in 360ms ease-out 180ms both; }
+.intro-bar { animation: intro-bar 1500ms linear both; }
+@media (prefers-reduced-motion: reduce) {
+  .intro-logo, .intro-name, .intro-bar { animation: none; }
+}

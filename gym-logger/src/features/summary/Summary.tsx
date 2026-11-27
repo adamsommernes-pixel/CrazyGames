@@ -3,8 +3,8 @@ import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { db } from '../../db/dexie';
-import { setsForWorkout, workoutExercises } from '../../db/repo';
-import { Button, Card, PRBadge, SectionTitle, Stat } from '../../components/ui';
+import { renameWorkout, setsForWorkout, workoutExercises } from '../../db/repo';
+import { Button, Card, PRBadge, SectionTitle, Sheet, Stat, inputClass } from '../../components/ui';
 import { Confetti } from '../../components/widgets';
 import { Icon } from '../../components/Icon';
 import { useExerciseMap } from '../workout/ExercisePicker';
@@ -31,6 +31,8 @@ export function Summary() {
   const [copied, setCopied] = useState(false);
   const [fire, setFire] = useState(0);
   const [sharing, setSharing] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [title, setTitle] = useState('');
 
   const data = useLiveQuery(async () => {
     const workout = await db.workouts.get(id);
@@ -87,7 +89,10 @@ export function Summary() {
           </div>
         </div>
         <p className="text-sm font-semibold tracking-wide text-green uppercase">{t('Økt fullført', 'Workout complete')}</p>
-        <h1 className="font-num mt-1 text-4xl font-bold tracking-tight">{workout.name}</h1>
+        <button type="button" onClick={() => { setTitle(workout.name); setRenaming(true); }} className="mt-1 flex items-center gap-2" aria-label={`${t('Endre tittel', 'Change title')}: ${workout.name}`}>
+          <h1 className="font-num text-4xl font-bold tracking-tight">{workout.name}</h1>
+          <Icon name="edit" size={18} className="text-faint" />
+        </button>
         {prSets.length > 0 && (
           <p className="mt-2 text-lg text-green-light">
             {prText(prSets.length)}!
@@ -157,6 +162,20 @@ export function Summary() {
       <div className="mt-10 flex justify-center">
         <Logo size={18} className="text-sm text-faint" />
       </div>
+      <Sheet open={renaming} onClose={() => setRenaming(false)} title={t('Tittel på økta', 'Workout title')}>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (title.trim()) await renameWorkout(id, title.trim());
+            setRenaming(false);
+          }}
+        >
+          <input id="summary-title" className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} autoFocus />
+          <Button full type="submit" className="mt-4">
+            {t('Lagre', 'Save')}
+          </Button>
+        </form>
+      </Sheet>
       {sharing && (
         <Suspense fallback={null}>
           <ShareSheet workoutId={id} onClose={() => setSharing(false)} />

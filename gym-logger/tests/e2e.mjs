@@ -23,9 +23,23 @@ await new Promise((res, rej) => {
 await rm('tests/screens', { recursive: true, force: true });
 await mkdir('tests/screens', { recursive: true });
 const browser = await chromium.launch();
+// 0. Intro ved oppstart: logo og navn i ca. 1,5 s, så flyr logoen til hjørnet og forsvinner
+{
+  const ic = await browser.newContext({ ...devices['iPhone 13'], locale: 'nb-NO' });
+  const ip = await ic.newPage();
+  await ip.goto(URL);
+  await ip.locator('[data-intro="show"]').waitFor({ timeout: 3000 });
+  await ip.waitForTimeout(1000);
+  assert.equal(await ip.locator('[data-intro="show"]').count(), 1, 'logoen vises fortsatt etter 1 s');
+  await ip.locator('[data-intro]').waitFor({ state: 'detached', timeout: 3500 });
+  await ip.locator('[data-logo-anchor]').waitFor();
+  await ic.close();
+}
+
 const ctx = await browser.newContext({ ...devices['iPhone 13'], locale: 'nb-NO' });
 // Headless Chromium har ingen skjermlås: tell kallene i stedet, så vi ser at appen ber om den.
 await ctx.addInitScript(() => {
+  localStorage.setItem('repgrade-skip-intro', '1');
   // Hovedflyten kjøres på norsk; den engelske har egen kontekst lenger ned.
   if (!sessionStorage.getItem('lang-set')) {
     localStorage.setItem('gym-lang', 'nb');
@@ -250,13 +264,22 @@ try {
 
   // 5f. Økta avviker fra rutinen → spørsmål om å lagre endringene i rutinen (bare denne gangen)
   await btn('Avslutt', { exact: true }).click();
+  // 5e. Egen tittel på økta når den avsluttes
+  assert.equal(await page.locator('#finish-title').inputValue(), 'Fullkropp A');
+  await page.locator('#finish-title').fill('Tunge bein');
   await btn('Lagre økt').click();
   await dialog().getByText(/Du endret økta i forhold til rutinen «Fullkropp A»/).waitFor();
   await shot('lagre-i-rutinen');
   await btn('Bare denne gangen').click();
   await page.getByText('Økt fullført').waitFor();
   await page.getByText(/ny rekord|nye rekorder/).first().waitFor();
+  await page.getByRole('heading', { name: 'Tunge bein' }).waitFor();
   await shot('oppsummering-pr');
+  // …og kan endres fra oppsummeringen
+  await btn(/^Endre tittel: Tunge bein/).click();
+  await page.locator('#summary-title').fill('Tunge bein – ny PR');
+  await dialog().getByRole('button', { name: 'Lagre' }).click();
+  await page.getByRole('heading', { name: 'Tunge bein – ny PR' }).waitFor();
 
   // 5d. Delekort: fire nivåer i to formater, og nedlasting gir en PNG
   await btn('Del økta').click();

@@ -94,7 +94,7 @@ export function Home() {
       <header className="pt-safe px-5">
         <div className="flex items-center gap-3 pt-5">
           <div className="min-w-0 flex-1">
-            <Logo size={16} className="mb-1 text-xs text-faint" />
+            <Logo size={16} anchor className="mb-1 text-xs text-faint" />
             <p className="text-sm text-muted first-letter:uppercase">
               {new Date().toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>

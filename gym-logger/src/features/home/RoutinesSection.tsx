@@ -31,8 +31,8 @@ export function RoutinesSection() {
 
   return (
     <section aria-labelledby="routines-title">
-      <div className="mb-2 flex items-baseline justify-between px-1">
-        <h2 id="routines-title" className="text-sm font-semibold tracking-wide text-muted uppercase">
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <h2 id="routines-title" className="px-1 text-sm font-semibold tracking-wide text-muted uppercase">
           {t('Dine rutiner', 'Your routines')}
         </h2>
         <div className="flex gap-4 text-sm font-medium text-green">
@@ -53,7 +53,7 @@ export function RoutinesSection() {
           <Icon name="chevron" size={18} className="text-faint" />
         </Link>
       ) : (
-        <ul className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1" aria-label={t('Rutiner', 'Routines')}>
+        <ul className="-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1" aria-label={t('Rutiner', 'Routines')}>
           {data.routines.map(({ r, count }) => (
             <li key={r.id} className="w-44 shrink-0 snap-start">
               <div className={`card flex h-full flex-col rounded-3xl p-4 ${r.id === data.nextId ? 'border-green/60' : ''}`}>
