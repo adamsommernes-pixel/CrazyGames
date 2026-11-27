@@ -2,7 +2,7 @@ import type { Exercise } from '../../db/types';
 import { EQUIPMENT_LABEL, KIND_LABEL, LEVEL_LABEL } from '../../db/types';
 import { guideFor } from '../../db/exercises';
 import { Link } from 'react-router-dom';
-import { isRanked } from '../../lib/strength';
+import { isMachineRanked, isRanked } from '../../lib/strength';
 import { MuscleTag } from '../../components/MuscleTag';
 import { Icon, type IconName } from '../../components/Icon';
 import { t } from '../../i18n';
@@ -19,7 +19,7 @@ export function ExerciseMeta({ exercise }: { exercise: Exercise }) {
       {isRanked(exercise.id) && (
         <Link to="/level" className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent-strong">
           <Icon name="trophy" size={12} />
-          {t('Teller i styrkenivået', 'Counts towards your strength level')}
+          {isMachineRanked(exercise.id) ? t('Teller i styrkenivået (maks Sterk)', 'Counts towards your strength level (max Strong)') : t('Teller i styrkenivået', 'Counts towards your strength level')}
         </Link>
       )}
       <span className="rounded-full border border-line px-2.5 py-1 text-xs text-muted">{EQUIPMENT_LABEL[exercise.equipment]}</span>

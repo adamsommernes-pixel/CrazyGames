@@ -25,7 +25,9 @@ export function LiftLevel({ exerciseId }: { exerciseId: string }) {
           {lift ? lift.tier.name : t('Rangert løft', 'Ranked lift')}
         </div>
         <div className="text-xs text-muted">
-          {lift && !lift.active
+          {lift && lift.capped && lift.active
+            ? t(`Maskinløft: taket er nådd (maks Sterk). Hovedløftet kan gi høyere nivå.`, `Machine lift: cap reached (max Strong). The main lift can go higher.`)
+            : lift && !lift.active
             ? t(`Ikke trent siste ${ACTIVE_DAYS} dager, teller ikke i nivået nå.`, `Not trained in the last ${ACTIVE_DAYS} days, so it does not count in your level now.`)
             : lift
             ? next && lift.nextTierKg

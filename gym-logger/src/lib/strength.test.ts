@@ -137,4 +137,15 @@ describe('strength scoring', () => {
     const again = strengthProfile([...sets, { ...set('benkpress', 60, 5), completed_at: at(1) }], 80, 'male', undefined, now);
     expect(again.categories.push).toBeGreaterThan(0);
   });
+
+  it('machine lifts are capped at Strong and say so', () => {
+    const lp = liftScore('ex-beinpress', 600, 80, 'male')!;
+    expect(lp.machine).toBe(true);
+    expect(lp.capped).toBe(true);
+    expect(lp.tier.name).toMatch(/Sterk|Strong/);
+    expect(lp.nextTierKg).toBeNull();
+    const low = liftScore('ex-beinpress', 100, 80, 'male')!;
+    expect(low.capped).toBe(false);
+    expect(liftScore('ex-kneboy', 250, 80, 'male')!.capped).toBe(false);
+  });
 });

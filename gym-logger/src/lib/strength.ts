@@ -83,7 +83,10 @@ export const MAX_REPS = 10;
 /**
  * Løftene som teller i styrkenivået (19 stk). Alt annet logges som vanlig, men gir ikke nivå.
  */
-export const RANKED: Record<string, { anchor: AnchorId; factor: number; load?: 'bw' }> = {
+/** Maskinløft gir høyst dette (toppen av Sterk): stablene varierer for mye fra gym til gym. */
+export const MACHINE_CAP = 59.9;
+
+export const RANKED: Record<string, { anchor: AnchorId; factor: number; load?: 'bw'; machine?: true }> = {
   // Press
   benkpress: { anchor: 'bench', factor: 1 },
   skrabenk: { anchor: 'bench', factor: 0.85 },
@@ -96,7 +99,7 @@ export const RANKED: Record<string, { anchor: AnchorId; factor: number; load?: '
   'pull-ups': { anchor: 'pullup', factor: 1, load: 'bw' },
   stangroing: { anchor: 'row', factor: 1 },
   // Nedtrekk: vekta på stabelen tilsvarer omtrent kroppsvekt + ekstravekt i pull-ups.
-  nedtrekk: { anchor: 'pullup', factor: 0.95 },
+  nedtrekk: { anchor: 'pullup', factor: 0.95, machine: true },
   'bicepscurl-med-manualer': { anchor: 'curl', factor: 1 },
   // Bein
   kneboy: { anchor: 'squat', factor: 1 },
@@ -107,15 +110,17 @@ export const RANKED: Record<string, { anchor: AnchorId; factor: number; load?: '
   // Bulgarsk splittbøy: vekten på én manual (ca. 30 % av knebøy per manual).
   'bulgarsk-splittboy': { anchor: 'squat', factor: 0.3 },
   // Maskiner: stablene varierer, så faktorene er grove snitt.
-  beinpress: { anchor: 'squat', factor: 2.4 },
-  'hack-squat': { anchor: 'squat', factor: 1.15 },
+  beinpress: { anchor: 'squat', factor: 2.4, machine: true },
+  'hack-squat': { anchor: 'squat', factor: 1.15, machine: true },
   // Beinspark: maskinstabler varierer, men et typisk 1RM er rundt 70 % av knebøy.
-  beinspark: { anchor: 'squat', factor: 0.7 },
+  beinspark: { anchor: 'squat', factor: 0.7, machine: true },
 };
 
 const slugOf = (exerciseId: string) => exerciseId.replace(/^ex-/, '');
 export const rankOf = (exerciseId: string) => RANKED[slugOf(exerciseId)];
 export const isRanked = (exerciseId: string) => !!rankOf(exerciseId);
+/** Maskinløft som teller, men høyst til Sterk. */
+export const isMachineRanked = (exerciseId: string) => !!rankOf(exerciseId)?.machine;
 
 function anchorsFor(anchor: AnchorId, sex: Sex | null): Anchors {
   const s = STANDARDS[anchor];
@@ -159,6 +164,10 @@ export interface LiftScore {
   tier: Tier;
   /** Beregnet 1RM (samme måling som e1rm) som trengs for neste nivå, eller null på toppen. */
   nextTierKg: number | null;
+  /** Maskinløft (beinpress, hack squat, beinspark, nedtrekk): gir høyst Sterk. */
+  machine: boolean;
+  /** Maskinløftet har nådd taket (Sterk). */
+  capped: boolean;
   /** Trent de siste ACTIVE_DAYS dagene. Løft som ikke er det, vises grått og teller ikke. */
   active: boolean;
   /** Siste gang løftet ble trent (ISO), eller null. */
@@ -209,11 +218,15 @@ export function liftScore(exerciseId: string, e1rm: number, bw: number, sex: Sex
   if (!rank || bw <= 0) return null;
   const anchors = anchorsFor(rank.anchor, sex);
   const raw = scoreFromRatio(e1rm / bw / rank.factor, anchors);
-  const score = raw;
+  const machine = !!rank.machine;
+  const score = machine ? Math.min(raw, MACHINE_CAP) : raw;
   const tier = tierFor(score);
-  const next = tier.index < TIER_COUNT - 1 ? ratioForScore(tier.min + 10, anchors) * rank.factor * bw : null;
+  const capped = machine && tier.index >= tierFor(MACHINE_CAP).index;
+  const next = tier.index < TIER_COUNT - 1 && !capped ? ratioForScore(tier.min + 10, anchors) * rank.factor * bw : null;
   return {
     exerciseId,
+    machine,
+    capped,
     category: STANDARDS[rank.anchor].category,
     e1rm,
     score,

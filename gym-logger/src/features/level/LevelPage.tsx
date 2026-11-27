@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 import { Card, Page, SectionTitle } from '../../components/ui';
 import { TierEmblem, tierAccent } from '../../components/TierBadge';
 import { useStrength } from '../../lib/strengthLive';
-import { ACTIVE_DAYS, CATEGORIES, CATEGORY_LABEL, TIER_COUNT, tierAt, tierFor, type Category } from '../../lib/strength';
+import { ACTIVE_DAYS, CATEGORIES, type StrengthProfile, CATEGORY_LABEL, TIER_COUNT, tierAt, tierFor, type Category } from '../../lib/strength';
 import { useExerciseMap } from '../workout/ExercisePicker';
 import { exerciseName } from '../../lib/exerciseName';
-import { useSetting } from '../../lib/settings';
+import { setSetting, useSetting } from '../../lib/settings';
 import { num, toDisplay } from '../../lib/format';
 import { t } from '../../i18n';
 
@@ -49,49 +49,7 @@ export function LevelPage() {
         </a>
       </div>
 
-      <SectionTitle>{t('Dine løft', 'Your lifts')}</SectionTitle>
-      {s.lifts.length === 0 ? (
-        <Card className="p-3.5 text-sm text-muted">
-          {t('Logg en av øvelsene merket «Nivå», f.eks. benkpress, knebøy, markløft, roing eller pull-ups, for å få et nivå.', 'Log one of the exercises marked “Level”, e.g. bench press, squat, deadlift, rows or pull-ups, to get a level.')}
-        </Card>
-      ) : (
-        <Card className="divide-y divide-line" data-lift-levels>
-          {s.lifts.map((l) => {
-            const nextT = l.tier.index < TIER_COUNT - 1 ? tierAt(l.tier.index + 1) : null;
-            const shown = (v: number) => (l.bodyweightLoad ? `+${kg(Math.max(0, v - bw))}` : kg(v));
-            const color = tierAccent(l.tier.index);
-            const progress = nextT ? Math.max(0, Math.min(1, (l.score - l.tier.min) / 10)) : 1;
-            return (
-              <Link
-                key={l.exerciseId}
-                to={`/exercise/${l.exerciseId}`}
-                className={`flex items-center gap-3 px-3.5 py-3 active:bg-raised ${l.active ? '' : 'opacity-45 grayscale'}`}
-                data-lift-active={l.active ? '1' : '0'}
-              >
-                <TierEmblem index={l.tier.index} size={40} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate font-semibold">{exerciseName(exMap.get(l.exerciseId))}</span>
-                    <span className="shrink-0 text-sm font-semibold" style={{ color }}>
-                      {l.tier.name}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-raised">
-                    <div className="h-full rounded-full" style={{ width: `${progress * 100}%`, background: color }} />
-                  </div>
-                  <div className="mt-1 text-xs text-muted">
-                    {!l.active
-                      ? t(`Ikke trent siste ${ACTIVE_DAYS} dager, teller ikke nå. Tren det igjen, så teller det med en gang.`, `Not trained in the last ${ACTIVE_DAYS} days, so it does not count now. Train it again and it counts right away.`)
-                      : nextT && l.nextTierKg
-                        ? t(`1RM nå ${shown(l.e1rm)}. Klarer du ${shown(l.nextTierKg)}, blir du ${nextT.name}.`, `1RM now ${shown(l.e1rm)}. Lift ${shown(l.nextTierKg)} to reach ${nextT.name}.`)
-                        : t(`1RM ${shown(l.e1rm)} · toppnivået`, `1RM ${shown(l.e1rm)} · top level`)}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </Card>
-      )}
+      <LiftSections lifts={s.lifts} bw={bw} unit={unit} names={(id) => exerciseName(exMap.get(id))} />
 
       <SectionTitle>{t('Kategorier', 'Categories')}</SectionTitle>
       <Card className="flex flex-col gap-3 p-3.5">
@@ -202,4 +160,139 @@ const CATEGORY_LIFTS: Record<Category, () => string> = {
 
 function Note({ children }: { children: React.ReactNode }) {
   return <p className="rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">{children}</p>;
+}
+
+type Lift = StrengthProfile['lifts'][number];
+
+/** Et løft er «lagt bort» hvis brukeren har sagt det, og ikke har trent det etterpå. */
+export const isRetired = (l: Lift, retired: Record<string, string>) => !!retired[l.exerciseId] && (!l.lastAt || l.lastAt <= retired[l.exerciseId]);
+
+/** Løftene delt i seksjoner: hovedløft, maskinløft (maks Sterk), teller ikke nå, og trener ikke lenger. */
+function LiftSections({ lifts, bw, unit, names }: { lifts: Lift[]; bw: number; unit: 'kg' | 'lbs'; names: (id: string) => string }) {
+  const retired = useSetting('retiredLifts');
+  const setRetired = (id: string, on: boolean) => {
+    const next = { ...retired };
+    if (on) next[id] = new Date().toISOString();
+    else delete next[id];
+    void setSetting('retiredLifts', next);
+  };
+  const live = lifts.filter((l) => !isRetired(l, retired));
+  const main = live.filter((l) => !l.machine && l.active);
+  const machines = live.filter((l) => l.machine);
+  const inactive = live.filter((l) => !l.machine && !l.active);
+  const gone = lifts.filter((l) => isRetired(l, retired));
+  const row = (l: Lift, extra?: React.ReactNode) => <LiftRow key={l.exerciseId} l={l} bw={bw} unit={unit} name={names(l.exerciseId)} extra={extra} />;
+
+  if (lifts.length === 0) {
+    return (
+      <>
+        <SectionTitle>{t('Dine løft', 'Your lifts')}</SectionTitle>
+        <Card className="p-3.5 text-sm text-muted">
+          {t('Logg en av øvelsene merket «Nivå», f.eks. benkpress, knebøy, markløft, roing eller pull-ups, for å få et nivå.', 'Log one of the exercises marked “Level”, e.g. bench press, squat, deadlift, rows or pull-ups, to get a level.')}
+        </Card>
+      </>
+    );
+  }
+  return (
+    <>
+      {main.length > 0 && (
+        <>
+          <SectionTitle>{t('Dine løft', 'Your lifts')}</SectionTitle>
+          <Card className="divide-y divide-line" data-lift-levels>
+            {main.map((l) => row(l))}
+          </Card>
+        </>
+      )}
+
+      {machines.length > 0 && (
+        <>
+          <SectionTitle>{t('Maskinløft · maks Sterk', 'Machine lifts · max Strong')}</SectionTitle>
+          <p className="mb-2 text-xs text-muted" data-machine-note>
+            {t(
+              'Maskiner gir høyst nivået Sterk, fordi vekten på stabelen varierer mye fra gym til gym. Vil du høyere, teller hovedløftet fullt ut: knebøy for beinpress, hack squat og beinspark, og pull-ups for nedtrekk.',
+              'Machines give at most the Strong level, because stack weights vary a lot between gyms. To go higher, the main lift counts in full: squat for leg press, hack squat and leg extension, and pull-ups for lat pulldown.',
+            )}
+          </p>
+          <Card className="divide-y divide-line" data-machine-lifts>
+            {machines.map((l) => row(l))}
+          </Card>
+        </>
+      )}
+
+      {inactive.length > 0 && (
+        <>
+          <SectionTitle>{t(`Teller ikke nå · ikke trent på ${ACTIVE_DAYS} dager`, `Not counting now · not trained in ${ACTIVE_DAYS} days`)}</SectionTitle>
+          <Card className="divide-y divide-line" data-inactive-lifts>
+            {inactive.map((l) =>
+              row(
+                l,
+                <button type="button" className="mt-1.5 text-xs font-semibold text-accent" onClick={(e) => { e.preventDefault(); setRetired(l.exerciseId, true); }}>
+                  {t('Jeg trener ikke dette lenger', 'I don’t train this anymore')}
+                </button>,
+              ),
+            )}
+          </Card>
+        </>
+      )}
+
+      {gone.length > 0 && (
+        <>
+          <SectionTitle>{t('Trener ikke lenger', 'No longer training')}</SectionTitle>
+          <p className="mb-2 rounded-xl border border-warn/40 bg-warn/10 px-3 py-2 text-xs text-ink" data-retired-note>
+            {t(
+              'Du får ikke påminnelser om disse, men nivået ditt påvirkes fortsatt: de teller ikke, så har du ingen andre løft i samme kategori, teller den kategorien som 0 og trekker nivået ned. Trener du løftet igjen, teller det med en gang.',
+              'You will not get reminders about these, but your level is still affected: they do not count, so if you have no other lift in the same category, that category counts as 0 and pulls your level down. Train the lift again and it counts right away.',
+            )}
+          </p>
+          <Card className="divide-y divide-line" data-retired-lifts>
+            {gone.map((l) =>
+              row(
+                l,
+                <button type="button" className="mt-1.5 text-xs font-semibold text-accent" onClick={(e) => { e.preventDefault(); setRetired(l.exerciseId, false); }}>
+                  {t('Angre: jeg trener dette', 'Undo: I train this')}
+                </button>,
+              ),
+            )}
+          </Card>
+        </>
+      )}
+    </>
+  );
+}
+
+function LiftRow({ l, bw, unit, name, extra }: { l: Lift; bw: number; unit: 'kg' | 'lbs'; name: string; extra?: React.ReactNode }) {
+  const kg = (v: number) => `${num(toDisplay(v, unit), 1)} ${unit}`;
+  const nextT = l.tier.index < TIER_COUNT - 1 ? tierAt(l.tier.index + 1) : null;
+  const shown = (v: number) => (l.bodyweightLoad ? `+${kg(Math.max(0, v - bw))}` : kg(v));
+  const color = tierAccent(l.tier.index);
+  const progress = l.capped ? 1 : nextT ? Math.max(0, Math.min(1, (l.score - l.tier.min) / 10)) : 1;
+  return (
+    <div className={l.active ? '' : 'opacity-50 grayscale'} data-lift-active={l.active ? '1' : '0'}>
+      <Link to={`/exercise/${l.exerciseId}`} className="flex items-center gap-3 px-3.5 py-3 active:bg-raised">
+        <TierEmblem index={l.tier.index} size={40} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="truncate font-semibold">{name}</span>
+            <span className="shrink-0 text-sm font-semibold" style={{ color }}>
+              {l.tier.name}
+              {l.capped && <span className="ml-1 text-[10px] font-semibold text-faint">· {t('tak', 'cap')}</span>}
+            </span>
+          </div>
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-raised">
+            <div className="h-full rounded-full" style={{ width: `${progress * 100}%`, background: color }} />
+          </div>
+          <div className="mt-1 text-xs text-muted">
+            {!l.active
+              ? t(`Sist trent for over ${ACTIVE_DAYS} dager siden, teller ikke nå. Tren det igjen, så teller det med en gang.`, `Last trained more than ${ACTIVE_DAYS} days ago, so it does not count now. Train it again and it counts right away.`)
+              : l.capped
+                ? t(`1RM ${shown(l.e1rm)}. Taket er nådd: maskiner gir høyst Sterk.`, `1RM ${shown(l.e1rm)}. Cap reached: machines give at most Strong.`)
+                : nextT && l.nextTierKg
+                  ? t(`1RM nå ${shown(l.e1rm)}. Klarer du ${shown(l.nextTierKg)}, blir du ${nextT.name}.`, `1RM now ${shown(l.e1rm)}. Lift ${shown(l.nextTierKg)} to reach ${nextT.name}.`)
+                  : t(`1RM ${shown(l.e1rm)} · toppnivået`, `1RM ${shown(l.e1rm)} · top level`)}
+          </div>
+        </div>
+      </Link>
+      {extra && <div className="-mt-2 pb-2.5 pl-[4.25rem]">{extra}</div>}
+    </div>
+  );
 }

@@ -17,6 +17,8 @@ export interface Settings {
   restPush: boolean;
   /** Valgt tidsrom for data og grafer (felles for alle sider). */
   statsRange: import('./range').Range;
+  /** Løft brukeren har sagt at de ikke trener lenger (øvelses-id → tidspunkt). Varsles ikke om. */
+  retiredLifts: Record<string, string>;
   /** Hold skjermen på mens en økt pågår. */
   keepAwake: boolean;
   /** Øvelser merket med stjerne, vises først i øvelsesvelgeren. */
@@ -33,6 +35,7 @@ export const DEFAULTS: Settings = {
   haptics: true,
   restPush: false,
   statsRange: { kind: '30d' },
+  retiredLifts: {},
   keepAwake: true,
   favorites: [],
 };
