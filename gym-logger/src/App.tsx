@@ -16,6 +16,8 @@ import { supabaseConfigError } from './lib/supabase';
 import { ToastHost } from './components/toast';
 import { LevelHost } from './components/levelUp';
 import { PageTransition } from './components/PageTransition';
+import { AfterUpdateNews } from './components/AfterUpdate';
+import { PushPrompt } from './components/PushPrompt';
 import { BottomNav } from './components/BottomNav';
 import { RestTimerBar, unlockAudio } from './features/workout/restTimer';
 import { StartSheet } from './features/workout/StartSheet';
@@ -122,6 +124,8 @@ function SignedIn({ user }: { user: AuthUser }) {
 
   return (
     <>
+      <AfterUpdateNews />
+      <PushPrompt />
       <PageTransition>
       <Routes>
         <Route path="/" element={<Home />} />
