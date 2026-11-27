@@ -3,6 +3,7 @@ import { SYNCED_TABLES, type Exercise, type KV, type Row, type Workout, type Wor
 import { exerciseName } from '../lib/exerciseName';
 import { computePRMap } from '../lib/prs';
 import { t } from '../i18n';
+import { isLyfto, lyftoToBackup } from './importLyfto';
 
 // Backup: JSON (alt, kan leses inn igjen) og CSV (alle sets, for regneark).
 
@@ -116,9 +117,11 @@ export interface BackupSummary {
 }
 
 export function parseBackup(json: unknown): Backup {
+  // Eksport fra Lyfto gjøres om til en vanlig backup.
+  if (isLyfto(json)) return lyftoToBackup(json);
   const b = json as Partial<Backup>;
   if (!b || !KNOWN_APPS.has(b.app ?? '') || !b.tables || typeof b.tables !== 'object') {
-    throw new Error(t('Filen er ikke en backup fra denne appen.', 'The file is not a backup from this app.'));
+    throw new Error(t('Filen er ikke en backup fra Repgrade eller en eksport fra Lyfto.', 'The file is not a Repgrade backup or a Lyfto export.'));
   }
   return b as Backup;
 }
