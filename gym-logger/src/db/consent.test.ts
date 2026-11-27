@@ -22,3 +22,11 @@ describe('health data consent', () => {
     expect(keepLocalSensitive(remote, { ...profile }, true)).toMatchObject({ bodyweight_kg: null });
   });
 });
+
+describe('heltall til skyen', () => {
+  it('runder reps og andre heltallskolonner, lar vekt være', async () => {
+    const { fitIntegers } = await import('./consent');
+    expect(fitIntegers('sets', { reps: 98.7, weight: 82.5, position: 1 })).toEqual({ reps: 99, weight: 82.5, position: 1 });
+    expect(fitIntegers('workouts', { name: 'x' })).toEqual({ name: 'x' });
+  });
+});

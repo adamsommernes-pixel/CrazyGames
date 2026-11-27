@@ -35,3 +35,21 @@ export function keepLocalSensitive<T extends Record<string, unknown>>(remote: T,
   for (const f of SENSITIVE_PROFILE_FIELDS) if (copy[f] === null || copy[f] === undefined) copy[f] = local[f] ?? null;
   return copy as T;
 }
+
+/** Kolonner som er heltall i Supabase. Desimaler (f.eks. 53,8 minutter kondisjon) avvises der. */
+const INTEGER_COLUMNS: Partial<Record<SyncedTable, string[]>> = {
+  sets: ['position', 'reps'],
+  routine_exercises: ['position', 'target_sets', 'target_reps', 'rest_seconds'],
+  workout_exercises: ['position', 'rest_seconds', 'target_reps'],
+  routines: ['position'],
+  profiles: ['weekly_target', 'birth_year'],
+};
+
+/** Runder heltallskolonnene, så én rad med desimal ikke stopper hele synken. */
+export function fitIntegers<T extends Record<string, unknown>>(table: SyncedTable, row: T): T {
+  const cols = INTEGER_COLUMNS[table];
+  if (!cols) return row;
+  const copy: Record<string, unknown> = { ...row };
+  for (const c of cols) if (typeof copy[c] === 'number') copy[c] = Math.round(copy[c] as number);
+  return copy as T;
+}
