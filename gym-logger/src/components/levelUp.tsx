@@ -119,7 +119,7 @@ function RecordCard({ ev }: { ev: ShownLevelEvent }) {
             <div className="text-[11px] font-semibold" style={{ color: accent }}>
               {liftUp && before ? t('Nytt nivå på løftet', 'Lift level up') : before ? t('Ny rekord', 'New record') : t('Nytt rangert løft', 'New ranked lift')}
             </div>
-            <div className="truncate font-semibold">
+            <div className="line-clamp-2 font-semibold">
               {ev.exerciseLabel} · <span className="font-num">{setText(ev)}</span>
             </div>
             <div className="mt-0.5 text-xs text-muted">

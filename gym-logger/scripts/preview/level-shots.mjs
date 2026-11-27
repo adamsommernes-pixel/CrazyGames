@@ -23,6 +23,7 @@ const cases = [
   ['7-nytt-niva-olympia', 'case=levelup&tier=9'],
   ['8-ny-rekord-bla', 'case=record&tier=6&accent=%234d9bf0'],
   ['9-new-level-en', 'case=levelup&tier=5&lang=en'],
+  ['10-hva-er-nytt', 'case=whatsnew'],
 ];
 for (const [name, qs] of cases) {
   await page.goto(`http://localhost:5198/scripts/preview/levels.html?${qs}`);

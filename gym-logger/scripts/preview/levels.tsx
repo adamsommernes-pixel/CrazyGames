@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import '../../src/index.css';
 import { openUserDb } from '../../src/db/dexie';
 import { LevelHost, showLevelEvent } from '../../src/components/levelUp';
+import { WhatsNewHost, fetchWhatsNew, showWhatsNew } from '../../src/components/whatsNew';
+import { MemoryRouter } from 'react-router-dom';
 import { tierAt, type LevelEvent, type LiftScore, type StrengthProfile } from '../../src/lib/strength';
 import { applyAccent } from '../../src/lib/theme';
 import { setLang } from '../../src/i18n';
@@ -28,5 +30,11 @@ const ev: LevelEvent =
         : { exerciseId: 'ex-benkpress', before: lift(base + 3), after: lift(base + 5.5), overallBefore: profile(base + 4), overallAfter: profile(base + 4.5), weight: 102.5, reps: 4 };
 const label = { levelup: 'Knebøy', liftup: 'Benkpress', ranked: 'Markløft', record: 'Benkpress' }[kase] ?? 'Benkpress';
 
-createRoot(document.getElementById('root')!).render(<LevelHost />);
-setTimeout(() => showLevelEvent(ev, label, 82), 100);
+createRoot(document.getElementById('root')!).render(
+  <MemoryRouter>
+    <LevelHost />
+    <WhatsNewHost />
+  </MemoryRouter>,
+);
+if (kase === 'whatsnew') void fetchWhatsNew().then((n) => n && showWhatsNew(n, () => {}, () => {}));
+else setTimeout(() => showLevelEvent(ev, label, 82), 100);

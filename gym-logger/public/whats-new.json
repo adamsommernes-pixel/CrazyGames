@@ -1,0 +1,11 @@
+{
+  "version": "1.1.0",
+  "items": [
+    { "nb": "Musikken stopper ikke lenger på iPhone når du bruker appen", "en": "Music no longer stops on iPhone while you use the app" },
+    { "nb": "Varsel med lyd og vibrasjon når pausen er over, også når telefonen er låst", "en": "Sound and vibration when rest is over, even with the phone locked" },
+    { "nb": "Endre rekkefølge på øvelsene i økta ved å dra", "en": "Reorder exercises in a workout by dragging" },
+    { "nb": "Dra et set til venstre for å slette det", "en": "Swipe a set left to delete it" },
+    { "nb": "Trykk på øvelsesnavnet for rekorder og grafer", "en": "Tap the exercise name for records and charts" },
+    { "nb": "Over 60 nye øvelser og raskere 3D-demoer", "en": "Over 60 new exercises and faster 3D demos" }
+  ]
+}

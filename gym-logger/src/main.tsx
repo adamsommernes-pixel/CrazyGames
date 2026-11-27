@@ -5,6 +5,7 @@ import App from './App';
 import { ErrorBoundary } from './components/ErrorScreen';
 import { Intro } from './components/Intro';
 import { showToast } from './components/toast';
+import { WhatsNewHost, fetchWhatsNew, showWhatsNew } from './components/whatsNew';
 import { listenForInstall } from './lib/pwa';
 import { flushPendingSaves } from './lib/autosave';
 import { watchResume } from './lib/resume';
@@ -20,17 +21,14 @@ if (!__ARTIFACT__) {
     immediate: true,
     // Ny versjon: spør i stedet for å laste på nytt midt i en økt. Alt er lagret før oppdatering.
     onNeedRefresh() {
-      showToast(
-        t('En ny versjon av Repgrade er klar.', 'A new version of Repgrade is ready.'),
-        {
-          label: t('Oppdater', 'Update'),
-          onClick: () => {
-            flushPendingSaves();
-            void updateSW(true);
-          },
-        },
-        60_000,
-      );
+      const update = () => {
+        flushPendingSaves();
+        void updateSW(true);
+      };
+      const toast = () =>
+        showToast(t('En ny versjon av Repgrade er klar.', 'A new version of Repgrade is ready.'), { label: t('Oppdater', 'Update'), onClick: update }, 60_000);
+      // Vis hva som er nytt før oppdatering. Uten nyhetsfil (eller uten nett): bare varselet som før.
+      void fetchWhatsNew().then((news) => (news ? showWhatsNew(news, update, toast) : toast()));
     },
   });
 }
@@ -40,6 +38,7 @@ createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <App />
       <Intro />
+      <WhatsNewHost />
     </ErrorBoundary>
   </StrictMode>,
 );
