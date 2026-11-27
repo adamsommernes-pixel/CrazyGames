@@ -18,6 +18,8 @@ const PATHS = {
   up: 'M18 15l-6-6-6 6',
   down: 'M6 9l6 6 6-6',
   play: 'M7 4l13 8-13 8V4',
+  pause: 'M8 5v14M16 5v14',
+  rotate: 'M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5',
   cloud: 'M7 18a5 5 0 1 1 .9-9.9A6 6 0 0 1 19 10a4 4 0 0 1-1 8H7',
   download: 'M12 3v12M7 10l5 5 5-5M4 21h16',
   upload: 'M12 21V9M7 14l5-5 5 5M4 3h16',

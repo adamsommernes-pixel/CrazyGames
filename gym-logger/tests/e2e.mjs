@@ -22,7 +22,8 @@ await new Promise((res, rej) => {
 
 await rm('tests/screens', { recursive: true, force: true });
 await mkdir('tests/screens', { recursive: true });
-const browser = await chromium.launch();
+// SwiftShader gir WebGL uten skjermkort, så 3D-demoene kan testes.
+const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 // 0. Intro ved oppstart: logo og navn i ca. 1,5 s, så flyr logoen til hjørnet og forsvinner
 {
   const ic = await browser.newContext({ ...devices['iPhone 13'], locale: 'nb-NO' });
@@ -255,6 +256,8 @@ try {
   await page.getByRole('checkbox', { name: /^Knebøy/ }).first().waitFor();
   await page.getByPlaceholder('Søk blant øvelser').fill('');
   await page.getByRole('checkbox', { name: /^Benkpress Bryst/ }).click();
+  await page.getByPlaceholder('Søk blant øvelser').fill('tåhev');
+  await page.getByRole('checkbox', { name: /^Standing calf raise/ }).waitFor();
   await page.getByPlaceholder('Søk blant øvelser').fill('sidehev') // norsk søk finner det engelske navnet;
   await page.getByRole('checkbox', { name: /^Lateral raise Skuldre/ }).click();
   await shot('flervalg');
@@ -341,6 +344,35 @@ try {
   await page.getByRole('img', { name: /Graf/ }).waitFor();
   await page.getByText('Prosent av 1RM').waitFor();
   await shot('ovelse');
+
+  // 7b. 3D-demo for et stort løft: lerretet tegnes, pause og sakte film virker, og figuren kan snus
+  await page.getByRole('tab', { name: 'Slik gjør du' }).click();
+  const demo = page.locator('[data-demo3d="kneboy"]');
+  await demo.locator('canvas').waitFor();
+  await demo.getByText(/Ned: hofta bak|Opp: press gjennom/).waitFor();
+  await page.waitForTimeout(600);
+  const pixels = async () => (await demo.locator('canvas').screenshot({ animations: 'allow' })).toString('base64');
+  const a = await pixels();
+  await page.waitForTimeout(500);
+  assert.notEqual(await pixels(), a, '3D-figuren beveger seg');
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await shot('3d-demo');
+  await demo.getByRole('button', { name: 'Pause' }).click();
+  await demo.getByRole('button', { name: 'Spill av' }).waitFor();
+  await page.waitForTimeout(200);
+  const still = await pixels();
+  await page.waitForTimeout(400);
+  assert.equal(await pixels(), still, 'står stille på pause');
+  const box = await demo.locator('canvas').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 2, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(500);
+  assert.notEqual(await pixels(), still, 'figuren snus når man drar');
+  await demo.getByRole('button', { name: '0,5×' }).click();
+  assert.equal(await demo.getByRole('button', { name: '0,5×' }).getAttribute('aria-pressed'), 'true');
+  await demo.getByRole('button', { name: 'Spill av' }).click();
 
   // 8. Kroppsvekt
   await page.goBack();
@@ -476,6 +508,7 @@ try {
   await btn('Legg til i favoritter').click();
   await btn('Fjern fra favoritter').waitFor();
   await shot('fremgangsmate');
+  assert.equal(await page.locator('[data-demo3d]').count(), 0, 'ingen 3D-demo for andre øvelser');
   await dialog().last().getByRole('button', { name: 'Lukk' }).last().click();
   await page.getByRole('checkbox', { name: /^Plank Mage/ }).click();
   await page.getByPlaceholder('Søk blant øvelser').fill('tredem');

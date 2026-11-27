@@ -220,3 +220,4 @@ Appen viser «Versjon 1.0.0 (bygg 42 · a1b2c3d)» nederst i Profil:
 ## Tredjepartsinnhold
 
 - **Kroppskartet** bruker muskelpolygoner fra [react-body-highlighter](https://github.com/giavinh79/react-body-highlighter) (MIT-lisens, Copyright (c) 2020 GV79), glattet og omtegnet i `src/components/bodymap/anatomy.ts`.
+- **3D-demoene** (de 12 store løftene) er laget her: en mannekeng tegnet med [three.js](https://threejs.org) (MIT-lisens). Bevegelsene står i `src/features/exercise/demo3d/moves.ts`; knær og albuer regnes ut med invers kinematikk i `rig.ts`, og `moves.test.ts` sjekker at hendene holder stanga, føttene står i gulvet og leddvinklene er normale. Etter endringer: `npm run demo:stills` lager stillbildene som vises uten WebGL, og `node scripts/demo/shots.mjs <mappe>` tar bilder av alle demoene til visuell sjekk.

@@ -4,6 +4,7 @@ import { guideFor } from '../../db/exercises';
 import { MuscleTag } from '../../components/MuscleTag';
 import { Icon, type IconName } from '../../components/Icon';
 import { t } from '../../i18n';
+import { ExerciseDemo } from './demo3d';
 
 /** Muskelgrupper, utstyr, nivå og type for en øvelse. */
 export function ExerciseMeta({ exercise }: { exercise: Exercise }) {
@@ -57,6 +58,7 @@ export function ExerciseGuide({ exercise }: { exercise: Exercise }) {
   }
   return (
     <div className="flex flex-col gap-5">
+      <ExerciseDemo exercise={exercise} />
       <Block icon="book" title={t('Slik gjør du', 'How to')} tone="text-accent" items={guide.steps} ordered />
       <Block icon="sparkle" title={t('Tips', 'Tips')} tone="text-sky-300" items={guide.tips} />
       <Block icon="x" title={t('Vanlige feil', 'Common mistakes')} tone="text-warn" items={guide.mistakes} />
