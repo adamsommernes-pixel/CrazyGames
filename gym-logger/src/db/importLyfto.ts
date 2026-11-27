@@ -115,14 +115,14 @@ const MUSCLE: Record<string, MuscleGroup> = {
 const EQUIP: Record<string, Equipment> = { barbell: 'Stang', dumbbell: 'Manualer', machine: 'Maskin', cable: 'Kabel', bodyweight: 'Kroppsvekt', kettlebell: 'Kettlebell' };
 
 /** Gjetter muskelgruppe og utstyr for en ukjent Lyfto-øvelse ut fra id-en. */
-function guess(id: string): { group: MuscleGroup; equipment: Equipment } {
+export function guess(id: string): { group: MuscleGroup; equipment: Equipment } {
   const has = (...w: string[]) => w.some((x) => id.includes(x));
   const group: MuscleGroup = has('wrist') ? 'Underarmer' : has('curl') ? 'Biceps' : has('pushdown', 'tricep', 'kickback') ? 'Triceps' : has('calf', 'squat', 'leg') ? 'Bein'
     : has('delt', 'shoulder', 'raise', 'pull-apart') ? 'Skuldre' : has('row', 'pull') ? 'Rygg' : has('press', 'fly', 'chest') ? 'Bryst' : has('landmine', 'ab', 'crunch') ? 'Mage' : 'Annet';
   const equipment: Equipment = has('cable') ? 'Kabel' : has('machine', 'smith') ? 'Maskin' : has('dumbbell') ? 'Manualer' : has('barbell', 'landmine') ? 'Stang' : has('band') ? 'Annet' : 'Annet';
   return { group, equipment };
 }
-const prettify = (id: string) => id.replace(/[-_]+/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+export const prettify = (id: string) => id.replace(/[-_]+/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
 
 interface LSet { weight?: number; reps?: number; completed?: boolean; isWarmup?: boolean; completedAt?: string }
 interface LExercise { id: string; exerciseId: string; sets?: LSet[]; restSeconds?: number; notes?: string }

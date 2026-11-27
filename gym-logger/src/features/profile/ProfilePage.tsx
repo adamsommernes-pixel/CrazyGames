@@ -1,13 +1,13 @@
 import { ColorPicker } from '../../components/ColorPicker';
 import { applyAccent } from '../../lib/theme';
 import { Logo } from '../../components/Logo';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link, useNavigate } from 'react-router-dom';
 import { db } from '../../db/dexie';
 import { getProfile, saveProfile } from '../../db/repo';
-import { isLyfto } from '../../db/importLyfto';
-import { backupFileName, downloadBlob, downloadJSON, exportBackup, exportCSV, importBackup, lastBackupAt, markBackedUp, parseBackup, summarizeBackup } from '../../db/backup';
+import { ImportButton, ImportHelp } from '../import/ImportButton';
+import { backupFileName, downloadBlob, downloadJSON, exportBackup, exportCSV, lastBackupAt, markBackedUp } from '../../db/backup';
 import { requestPersist, useStorageStatus } from '../../lib/storage';
 import { syncNow, useSyncStatus } from '../../db/sync';
 import { GOAL_LABEL } from '../../db/types';
@@ -310,7 +310,6 @@ function SettingsSection() {
 
 function DataSection() {
   const cloud = useUser().kind === 'cloud';
-  const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [storage, refreshStorage] = useStorageStatus();
   const last = useLiveQuery(() => lastBackupAt(), [], null);
@@ -369,39 +368,9 @@ function DataSection() {
       <Button variant="secondary" icon="download" full onClick={() => void exportSheet()}>
         {t('Eksporter sets til regneark (CSV)', 'Export sets to spreadsheet (CSV)')}
       </Button>
-      <Button variant="secondary" icon="upload" full onClick={() => fileRef.current?.click()}>
-        {t('Gjenopprett fra backup', 'Restore from backup')}
-      </Button>
-      <p className="text-xs text-faint">{t('Bytter du fra Lyfto? Velg eksportfila derfra (JSON), så hentes øktene inn.', 'Switching from Lyfto? Choose its export file (JSON) to bring your workouts over.')}</p>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="application/json,.json"
-        className="hidden"
-        aria-label={t('Velg backupfil', 'Choose backup file')}
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-          e.target.value = '';
-          if (!file) return;
-          try {
-            const raw: unknown = JSON.parse(await file.text());
-            const backup = parseBackup(raw);
-            const sum = summarizeBackup(backup);
-            const ok = await askConfirm(
-              t(
-                `${isLyfto(raw) ? 'Lyfto-eksport' : 'Backup'} fra ${dateShort(sum.exportedAt)}: ${sum.workouts} økter, ${sum.sets} sets, ${sum.routines} rutiner og ${sum.bodyweights} kroppsvekter. Slå sammen med det du har? Nyeste versjon av hver rad beholdes, ingenting slettes.`,
-                `${isLyfto(raw) ? 'Lyfto export' : 'Backup'} from ${dateShort(sum.exportedAt)}: ${sum.workouts} workouts, ${sum.sets} sets, ${sum.routines} routines and ${sum.bodyweights} bodyweights. Merge with what you have? The newest version of each row is kept, nothing is deleted.`,
-              ),
-              { confirmLabel: t('Slå sammen', 'Merge'), danger: false },
-            );
-            if (!ok) return;
-            const n = await importBackup(backup);
-            setMsg(t(`Gjenopprettet. ${n} rader lagt inn eller oppdatert.`, `Restored. ${n} rows added or updated.`));
-          } catch (err) {
-            setMsg(err instanceof Error && !(err instanceof SyntaxError) ? err.message : t('Kunne ikke lese filen.', 'Could not read the file.'));
-          }
-        }}
-      />
+      <ImportButton label={t('Gjenopprett eller importer', 'Restore or import')} />
+      <p className="text-xs text-faint">{t('Godtar backup fra Repgrade og eksport fra Lyfto, Hevy og Strong.', 'Accepts Repgrade backups and exports from Lyfto, Hevy and Strong.')}</p>
+      <ImportHelp />
       {msg && (
         <p className="text-sm text-accent-strong" role="status">
           {msg}

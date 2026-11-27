@@ -91,6 +91,12 @@ async function onboard({ goal, perWeek, sex, program }, shots = false) {
   await page.getByRole('radio', { name: /Anbefalt/ }).first().waitFor();
   if (program) await page.getByRole('radio', { name: new RegExp(`^${program} `) }).click();
   if (shots) await shot('oppstart-program');
+  await page.getByText('Bytter du fra en annen app?').waitFor();
+  if (shots) {
+    await page.getByText('Bytter du fra en annen app?').scrollIntoViewIfNeeded();
+    await shot('oppstart-importer');
+    await page.evaluate(() => window.scrollTo(0, 0));
+  }
   await btn('Start å trene').click();
   await page.getByText(/God (morgen|kveld|natt)|Hei,/).first().waitFor();
 }
@@ -155,6 +161,7 @@ try {
   await page.getByRole('img', { name: '0 av 3 økter denne uka' }).waitFor();
   await page.getByText('Fullkropp A').first().waitFor();
   await shot('hjem-ny');
+  assert.equal(await page.getByText('Vil du importere data?').count(), 0, 'nye brukere fikk tilbudet i oppstarten, ikke banner');
 
   // 4. Første økt fra rutine, med platekalkulator
   await btn('Start Fullkropp A').click();
@@ -478,11 +485,16 @@ try {
   const csv = await readFile(await csvDl.path(), 'utf8');
   assert.match(csv, /date,workout,exercise,set,type,weight_kg,reps,distance_km,pr/);
   assert.match(csv, /Knebøy,1,normal,100,5/);
-  await page.getByLabel('Velg backupfil').setInputFiles(await jsonDl.path());
-  await page.getByText(/Backup fra .* økter, .* sets/).waitFor();
+  await page.getByLabel('Velg fil å importere').setInputFiles(await jsonDl.path());
+  await page.getByText(/Backup fra .* økter og .* sets/).waitFor();
   await shot('gjenopprett-backup');
-  await btn('Slå sammen').click();
-  await page.getByText(/Gjenopprettet\./).waitFor();
+  await btn('Importer', { exact: true }).click();
+  await page.getByText(/Ferdig!/).waitFor();
+  // Import fra Hevy (oppdiktet eksempelfil): to økter med sine egne navn havner i historikken
+  await page.getByLabel('Velg fil å importere').setInputFiles(new globalThis.URL('./fixtures/hevy-sample.csv', import.meta.url).pathname);
+  await page.getByText(/Eksport fra Hevy: 2 økter og 6 sets/).waitFor();
+  await btn('Importer', { exact: true }).click();
+  await page.getByText(/Ferdig! 2 økter/).waitFor();
   await btn('Logg ut').click();
   await dialog().getByRole('button', { name: 'Logg ut' }).click();
   await btn('Jeg har konto').waitFor();
