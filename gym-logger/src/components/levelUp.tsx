@@ -103,7 +103,7 @@ function RecordCard({ ev }: { ev: ShownLevelEvent }) {
         role="status"
         aria-live="polite"
         onClick={() => close(ev.id)}
-        className={`level-card pointer-events-auto relative mt-3 w-full max-w-md overflow-hidden rounded-xl border bg-surface p-4 text-left shadow-2xl ${leaving ? 'leaving' : ''}`}
+        className={`level-card pointer-events-auto relative mt-3 w-full max-w-md overflow-hidden rounded-xl border border-line bg-surface p-4 text-left shadow-2xl ${leaving ? 'leaving' : ''}`}
         
       >
                 <div className="flex items-center gap-3">
