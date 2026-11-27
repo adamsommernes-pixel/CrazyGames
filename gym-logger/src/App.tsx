@@ -15,6 +15,7 @@ import { ErrorScreen } from './components/ErrorScreen';
 import { supabaseConfigError } from './lib/supabase';
 import { ToastHost } from './components/toast';
 import { LevelHost } from './components/levelUp';
+import { PageTransition } from './components/PageTransition';
 import { BottomNav } from './components/BottomNav';
 import { RestTimerBar, unlockAudio } from './features/workout/restTimer';
 import { StartSheet } from './features/workout/StartSheet';
@@ -121,6 +122,7 @@ function SignedIn({ user }: { user: AuthUser }) {
 
   return (
     <>
+      <PageTransition>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/workout" element={<WorkoutTab />} />
@@ -154,6 +156,7 @@ function SignedIn({ user }: { user: AuthUser }) {
         <Route path="/profile/edit" element={<EditProfile />} />
         <Route path="*" element={<Home />} />
       </Routes>
+      </PageTransition>
       <div className="fixed inset-x-0 bottom-0 z-30">
         <ToastHost />
         <LevelHost />
