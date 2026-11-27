@@ -119,7 +119,8 @@ const MAPPED: MuscleGroup[] = ['Bryst', 'Rygg', 'Skuldre', 'Biceps', 'Triceps', 
  * Kroppskart: hvilke muskelgrupper som er trent i perioden. Trykk på en del (eller knappene
  * under) for antall sets og når den sist ble trent.
  */
-export function BodyMap({ load, days, cardioSessions }: { load: Map<MuscleGroup, MuscleLoad>; days: number; cardioSessions: number }) {
+export function BodyMap({ load, days, cardioSessions, period }: { load: Map<MuscleGroup, MuscleLoad>; days: number; cardioSessions: number; period?: string }) {
+  const when = (period ?? t(`siste ${days} dager`, `last ${days} days`)).toLowerCase();
   const [selected, setSelected] = useState<MuscleGroup | null>(null);
   const trained = MAPPED.filter((g) => (load.get(g)?.sets ?? 0) > 0);
   const untrained = MAPPED.filter((g) => !trained.includes(g));
@@ -165,11 +166,11 @@ export function BodyMap({ load, days, cardioSessions }: { load: Map<MuscleGroup,
           {' · '}
           {sel && sel.sets > 0 ? (
             <>
-              <span className="font-num">{num(sel.sets, 1)}</span> {t('sets', 'sets')} {t(`siste ${days} dager`, `last ${days} days`)}
+              <span className="font-num">{num(sel.sets, 1)}</span> {t('sets', 'sets')} {when}
               {sel.last ? ` · ${t('sist trent', 'last trained')} ${dateLong(sel.last)}` : ''}
             </>
           ) : (
-            t(`ikke trent siste ${days} dager`, `not trained in the last ${days} days`)
+            t(`ikke trent ${when}`, `not trained ${when}`)
           )}
         </p>
       )}

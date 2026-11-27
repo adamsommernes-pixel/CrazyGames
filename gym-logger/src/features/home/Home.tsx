@@ -5,8 +5,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../../auth/AuthProvider';
 import { db } from '../../db/dexie';
 import { getActiveWorkout, getProfile, nextRoutine, routineItems, startWorkout } from '../../db/repo';
-import { Button, Card, Chip, PRBadge, SectionTitle } from '../../components/ui';
+import { Button, Card, IconButton, PRBadge, SectionTitle } from '../../components/ui';
 import { BodyMap } from '../../components/BodyMap';
+import { shareApp } from '../../lib/shareApp';
+import { RangePicker, useRange } from '../../components/RangePicker';
+import { inRange, rangeBounds, rangeLabel, yearsWithData } from '../../lib/range';
 import { guideFor } from '../../db/library';
 import { Avatar, ProgressRing, WeekStrip } from '../../components/widgets';
 import { Icon } from '../../components/Icon';
@@ -29,6 +32,7 @@ import { formatSetShort, kindOf } from '../../lib/kinds';
 import { locale, t } from '../../i18n';
 import { useStrength } from '../../lib/strengthLive';
 import { LevelBadge } from '../level/LevelBadge';
+import { LevelNudge } from '../level/LevelNudge';
 
 function greeting(d = new Date()) {
   const h = d.getHours();
@@ -74,18 +78,16 @@ export function Home() {
     };
   }, [data, prMap, target]);
 
-  const [mapDays, setMapDays] = useState<7 | 30>(7);
+  const [range, setRange] = useRange();
   const body = useMemo(() => {
     if (!data) return null;
-    const load = muscleLoad(data.sets, exMap, (id) => guideFor(id)?.secondary ?? [], mapDays);
-    const since = Date.now() - mapDays * 86_400_000;
+    const b = rangeBounds(range);
+    const load = muscleLoad(data.sets, exMap, (id) => guideFor(id)?.secondary ?? [], b);
     const cardio = new Set(
-      data.sets
-        .filter((s) => new Date(s.completed_at!).getTime() >= since && exMap.get(s.exercise_id)?.muscle_group === 'Kondisjon')
-        .map((s) => s.workout_id),
+      data.sets.filter((s) => inRange(s.completed_at, b) && exMap.get(s.exercise_id)?.muscle_group === 'Kondisjon').map((s) => s.workout_id),
     ).size;
-    return { load, cardio };
-  }, [data, exMap, mapDays]);
+    return { load, cardio, days: b.days, years: yearsWithData(data.workouts.map((w) => w.started_at)) };
+  }, [data, exMap, range]);
 
   const strength = useStrength();
   const first = (profile?.name || user.name).split(' ')[0];
@@ -103,7 +105,9 @@ export function Home() {
               {greeting()}, {first}
             </h1>
             {strength && <LevelBadge strength={strength.profile} />}
+            {strength && <LevelNudge profile={strength.profile} />}
           </div>
+          <IconButton icon="share" label={t('Del RepGrade med en venn', 'Share RepGrade with a friend')} className="-mr-1 text-muted" onClick={() => void shareApp()} />
           <Link to="/profile" aria-label={t('Profil', 'Profile')}>
             <Avatar name={profile?.name || user.name} color={profile?.color ?? '#34c56a'} size={44} />
           </Link>
@@ -218,20 +222,13 @@ export function Home() {
         {body && (
           <section aria-labelledby="body-map-title">
             <Card className="p-5">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 id="body-map-title" className="text-[15px] font-semibold text-ink">
-                  {t('Trent kropp', 'Muscles trained')}
-                </h2>
-                <div className="flex gap-1.5" role="group" aria-label={t('Periode', 'Period')}>
-                  <Chip active={mapDays === 7} onClick={() => setMapDays(7)}>
-                    7 d
-                  </Chip>
-                  <Chip active={mapDays === 30} onClick={() => setMapDays(30)}>
-                    30 d
-                  </Chip>
-                </div>
+              <h2 id="body-map-title" className="mb-2 text-[15px] font-semibold text-ink">
+                {t('Trent kropp', 'Muscles trained')}
+              </h2>
+              <div className="mb-3">
+                <RangePicker value={range} onChange={setRange} years={body.years} />
               </div>
-              <BodyMap load={body.load} days={mapDays} cardioSessions={body.cardio} />
+              <BodyMap load={body.load} days={body.days} cardioSessions={body.cardio} period={rangeLabel(range)} />
             </Card>
           </section>
         )}

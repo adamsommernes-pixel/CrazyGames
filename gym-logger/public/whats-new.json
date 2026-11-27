@@ -1,8 +1,97 @@
 {
-  "version": "1.1.1",
+  "version": "1.2.0",
   "items": [
-    { "icon": "dumbbell", "nb": "Manualer og kettlebells: appen sier nå tydelig at du skal logge vekten på én, ikke begge til sammen. Det gjør styrkenivået riktig.", "en": "Dumbbells and kettlebells: the app now clearly says to log the weight of one, not both together. This keeps your strength level correct." },
-    { "icon": "repeat", "nb": "Logget begge til sammen? Trykk «Del på to» i økta eller på øvelsessiden, så rettes vektene (og kan angres).", "en": "Logged both together? Tap “Halve it” in the workout or on the exercise page to fix the weights (and undo if needed)." },
-    { "icon": "timer", "nb": "Slå på varsel når pausen er over, rett fra økta", "en": "Turn on rest notifications right from your workout" }
+    {
+      "icon": "calendar",
+      "nb": "Velg tidsrom for all data og alle grafer: 7 dager, 30 dager, 12 måneder eller et bestemt år",
+      "en": "Choose a time range for all data and charts: 7 days, 30 days, 12 months or a specific year"
+    },
+    {
+      "icon": "trophy",
+      "nb": "Nytt styrkenivå: øvelsene som teller er merket «Nivå». Maskiner gir høyst Sterk og har sin egen seksjon. Nivået ditt kan endre seg.",
+      "en": "New strength level: exercises that count are marked “Level”. Machines give at most Strong and have their own section. Your level may change."
+    },
+    {
+      "icon": "repeat",
+      "nb": "Løft du ikke har trent på 30 dager, teller ikke. Du får beskjed før det skjer, og kan si fra om løft du ikke trener lenger.",
+      "en": "Lifts not trained in 30 days do not count. You get a heads-up before it happens, and can mark lifts you no longer train."
+    },
+    {
+      "icon": "dumbbell",
+      "nb": "Manualer: logg vekten på én. Appen sier fra når vekten ser ut som begge til sammen, og «Del på to» retter det.",
+      "en": "Dumbbells: log the weight of one. The app tells you when it looks like both together, and “Halve it” fixes it."
+    },
+    {
+      "icon": "history",
+      "nb": "Søk i historikken, og pausevarselet kommer nå bare på telefonen du trener med",
+      "en": "Search your history, and the rest notification now only arrives on the phone you train with"
+    },
+    {
+      "icon": "share",
+      "nb": "Del RepGrade med venner fra toppen av Hjem, og ryddigere innstillinger samlet i grupper",
+      "en": "Share RepGrade with friends from the top of Home, and tidier settings grouped together"
+    }
+  ],
+  "history": [
+    {
+      "version": "1.1.1",
+      "items": [
+        {
+          "icon": "dumbbell",
+          "nb": "Manualer og kettlebells: appen sier nå tydelig at du skal logge vekten på én, ikke begge til sammen. Det gjør styrkenivået riktig.",
+          "en": "Dumbbells and kettlebells: the app now clearly says to log the weight of one, not both together. This keeps your strength level correct."
+        },
+        {
+          "icon": "repeat",
+          "nb": "Logget begge til sammen? Trykk «Del på to» i økta eller på øvelsessiden, så rettes vektene (og kan angres).",
+          "en": "Logged both together? Tap “Halve it” in the workout or on the exercise page to fix the weights (and undo if needed)."
+        },
+        {
+          "icon": "timer",
+          "nb": "Slå på varsel når pausen er over, rett fra økta",
+          "en": "Turn on rest notifications right from your workout"
+        }
+      ]
+    },
+    {
+      "version": "1.1.0",
+      "items": [
+        {
+          "icon": "sparkle",
+          "nb": "Nytt, mer luftig design med jevnere overganger mellom sidene",
+          "en": "A cleaner design with smoother transitions between pages"
+        },
+        {
+          "icon": "timer",
+          "nb": "Varsel med lyd og vibrasjon når pausen er over, også når telefonen er låst",
+          "en": "Sound and vibration when rest is over, even with the phone locked"
+        },
+        {
+          "icon": "play",
+          "nb": "Musikken stopper ikke lenger på iPhone når du bruker appen",
+          "en": "Music no longer stops on iPhone while you use the app"
+        },
+        {
+          "icon": "dumbbell",
+          "nb": "Over 70 nye øvelser og en penere 3D-figur, nå med egen 3D-knapp i økta",
+          "en": "Over 70 new exercises and a nicer 3D figure, now with a 3D button in your workout"
+        },
+        {
+          "icon": "trophy",
+          "nb": "Styrkenivå: løftene dine øverst, med hva som skal til for neste nivå",
+          "en": "Strength level: your lifts first, with what it takes to reach the next level"
+        },
+        {
+          "icon": "repeat",
+          "nb": "Dra for å endre rekkefølge på øvelser, og sveip et set til venstre for å slette",
+          "en": "Drag to reorder exercises, and swipe a set left to delete it"
+        },
+        {
+          "icon": "chart",
+          "nb": "Trykk på øvelsesnavnet i økta for rekorder og grafer",
+          "en": "Tap the exercise name in a workout for records and charts"
+        }
+      ]
+    }
   ]
 }

@@ -3,6 +3,14 @@ import { countsAsWork } from './calc';
 
 const DAY = 86_400_000;
 
+/** Et tidsrom (fra–til i ms), f.eks. fra rangeBounds i range.ts. */
+export interface Period {
+  from: number;
+  to: number;
+}
+const period = (p: number | Period, now: Date) =>
+  typeof p === 'number' ? { since: now.getTime() - p * DAY, until: Infinity } : { since: p.from, until: p.to };
+
 /** Mandagen i uka datoen hører til, som lokal dato «YYYY-MM-DD». */
 export function weekStart(d: Date): Date {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -100,11 +108,12 @@ export function weeklySeries(workouts: Workout[], sets: WorkoutSet[], weeks = 12
 }
 
 /** Antall arbeidssett per muskelgruppe de siste `days` dagene. */
-export function muscleSplit(sets: WorkoutSet[], exercises: Map<string, Exercise>, days = 30, now = new Date()) {
-  const since = now.getTime() - days * DAY;
+export function muscleSplit(sets: WorkoutSet[], exercises: Map<string, Exercise>, days: number | Period = 30, now = new Date()) {
+  const { since, until } = period(days, now);
   const m = new Map<MuscleGroup, number>();
   for (const s of sets) {
-    if (s.deleted || !countsAsWork(s) || new Date(s.completed_at!).getTime() < since) continue;
+    const at = new Date(s.completed_at ?? 0).getTime();
+    if (s.deleted || !countsAsWork(s) || at < since || at > until) continue;
     const g = exercises.get(s.exercise_id)?.muscle_group;
     if (g) m.set(g, (m.get(g) ?? 0) + 1);
   }
@@ -136,10 +145,10 @@ export function muscleLoad(
   sets: WorkoutSet[],
   exercises: Map<string, Exercise>,
   secondaryOf: (exerciseId: string) => MuscleGroup[],
-  days = 7,
+  days: number | Period = 7,
   now = new Date(),
 ): Map<MuscleGroup, MuscleLoad> {
-  const since = now.getTime() - days * DAY;
+  const { since, until } = period(days, now);
   const out = new Map<MuscleGroup, MuscleLoad>();
   const add = (g: MuscleGroup, amount: number, at: string) => {
     const cur = out.get(g) ?? { sets: 0, last: null };
@@ -147,7 +156,8 @@ export function muscleLoad(
   };
   for (const s of sets) {
     if (s.deleted || !countsAsWork(s)) continue;
-    if (new Date(s.completed_at!).getTime() < since) continue;
+    const at = new Date(s.completed_at!).getTime();
+    if (at < since || at > until) continue;
     const ex = exercises.get(s.exercise_id);
     if (!ex) continue;
     add(ex.muscle_group, 1, s.completed_at!);

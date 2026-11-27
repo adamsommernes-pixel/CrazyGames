@@ -161,6 +161,10 @@ try {
   await page.getByRole('img', { name: '0 av 3 økter denne uka' }).waitFor();
   await page.getByText('Fullkropp A').first().waitFor();
   await shot('hjem-ny');
+  // Del-knappen øverst: delemeny der den finnes, ellers kopieres lenken (vises som melding)
+  await page.evaluate(() => { Object.defineProperty(navigator, 'share', { value: undefined, configurable: true }); });
+  await btn('Del RepGrade med en venn').click();
+  await page.getByText(/Lenken er kopiert|http/).first().waitFor();
   assert.equal(await page.getByText('Vil du importere data?').count(), 0, 'nye brukere fikk tilbudet i oppstarten, ikke banner');
 
   // 4. Første økt fra rutine, med platekalkulator
@@ -305,6 +309,7 @@ try {
   await lr.getByLabel('Vekt set 1 (kg)').fill('60');
   await lr.getByLabel('Vekt set 1 (kg)').blur();
   await lr.locator('[data-per-hand="warn"]').waitFor();
+  await page.getByText(/60 kg per manual\?/).waitFor(); // varsel hver gang over 50 kg
   await lr.scrollIntoViewIfNeeded();
   await shot('manual-del-pa-to');
   await lr.getByRole('button', { name: 'Logget feil? Del på to' }).click();
@@ -315,9 +320,13 @@ try {
   assert.equal(await lr.getByLabel('Vekt set 1 (kg)').inputValue(), '60', 'angre gir tilbake vekten');
   await lr.getByLabel('Vekt set 1 (kg)').fill('0');
   await lr.getByLabel('Vekt set 1 (kg)').blur();
+  // «Skjul» fjerner merknaden (for denne og de neste 3 øktene)
+  await lr.locator('[data-per-hand="hint"]').getByRole('button', { name: 'Skjul' }).click();
+  await page.getByText(/Skjult for denne og de neste 3 øktene/).waitFor();
+  await lr.locator('[data-per-hand]').waitFor({ state: 'detached' });
 
   // 5e2. Endre rekkefølge: dra første øvelse ned én plass og flytt siste opp med pil
-  const cardTitles = () => page.locator('main h2').allInnerTexts();
+  const cardTitles = async () => (await page.locator('main h2').allInnerTexts()).map((x) => x.split('\n')[0].trim());
   await btn('Endre rekkefølge').click();
   await page.waitForTimeout(500); // arket glir opp
   const items = () => dialog().locator('[data-reorder-item]').allInnerTexts();
@@ -381,7 +390,7 @@ try {
   await page.getByRole('link', { name: /^Styrkenivå: / }).click();
   await page.getByRole('heading', { name: 'Styrkenivå' }).waitFor();
   await page.getByText('Olympia', { exact: true }).waitFor();
-  await page.getByText(/Logg (press|trekk).*-øvelser/).waitFor();
+  await page.getByText(/Tren (press|trekk).*-løft/).waitFor();
   const levelHeads = await page.locator('main h2').allInnerTexts();
   assert.ok(levelHeads.indexOf('Dine løft') >= 0 && levelHeads.indexOf('Dine løft') < levelHeads.indexOf('Kategorier'), `løftene står over kategoriene (${levelHeads.join(' | ')})`);
   await page.getByText(/Klarer du .* blir du/).first().waitFor();
@@ -394,25 +403,44 @@ try {
   await bodyMap.waitFor();
   assert.match(await bodyMap.getAttribute('aria-label'), /Ikke trent: .*bryst/);
   await btn('Bein', { exact: true }).click();
-  await page.getByRole('status').filter({ hasText: /Bein · .*sets siste 7 dager/ }).waitFor();
+  await page.getByRole('status').filter({ hasText: /Bein · .*sets siste 30 dager/ }).waitFor();
   await page.waitForTimeout(350);
   await page.getByRole('region', { name: 'Trent kropp' })
     .screenshot({ path: `tests/screens/${String(++n).padStart(2, '0')}-kroppskart.png` });
-  await btn('30 d').click();
-  await page.getByRole('status').filter({ hasText: /siste 30 dager/ }).waitFor();
+  // Tidsrom: 7 d, 12 mnd og år virker på kroppskartet
   await btn('7 d').click();
+  await page.getByRole('status').filter({ hasText: /siste 7 dager/ }).waitFor();
+  await btn('12 mnd').click();
+  await page.getByRole('status').filter({ hasText: /siste 12 måneder/ }).waitFor();
+  await page.getByLabel('Velg år').selectOption(String(new Date().getFullYear()));
+  await page.getByRole('status').filter({ hasText: new RegExp(`Bein · .* i ${new Date().getFullYear()}`) }).waitFor();
+  await btn('30 d').click();
 
   // 6. Historikk og kalender
   await page.getByRole('navigation').getByRole('link', { name: 'Historikk' }).click();
   await btn(/1 øvelse/).first().waitFor();
   assert.equal(await btn(/1 øvelse/).count(), 2, 'to økter i historikken');
+  // Søk i historikken: på øvelse (også engelsk/norsk navn) og uten treff
+  await page.getByLabel('Søk i historikken').fill('kneboy');
+  await btn(/1 øvelse/).first().waitFor();
+  await page.getByLabel('Søk i historikken').fill('finnes-ikke-xyz');
+  await page.getByText('Ingen økter passer søket.').waitFor();
+  await page.getByLabel('Søk i historikken').fill('');
   await btn('Kalender').click();
   await shot('kalender');
 
   // 6b. Etter en oppdatering fra 1.0 (uten nyhetsskjerm): «Nytt i denne versjonen» vises én gang
+  // Ny telefon (ingen kjent versjon): ingen nyheter
   await page.evaluate(() => localStorage.removeItem('repgrade-seen-version'));
   await page.reload();
+  await page.getByRole('navigation').first().waitFor();
+  await page.waitForTimeout(800);
+  assert.equal(await page.getByRole('heading', { name: 'Nytt i denne versjonen' }).count(), 0, 'ingen nyheter på ny telefon');
+  // Oppdatert fra 1.1.0: nyhetene for alle versjoner siden vises, gruppert per versjon
+  await page.evaluate(() => localStorage.setItem('repgrade-seen-version', '1.1.0'));
+  await page.reload();
   await page.getByRole('heading', { name: 'Nytt i denne versjonen' }).waitFor();
+  await page.getByText('Versjon 1.1.1').waitFor();
   await shot('nytt-etter-oppdatering');
   await page.getByRole('dialog').getByRole('button', { name: 'Fortsett' }).click();
   await page.reload();
@@ -422,8 +450,11 @@ try {
 
   // 7. Fremgang og øvelse
   await page.getByRole('navigation').getByRole('link', { name: 'Fremgang' }).click();
-  await page.getByText('Siste 12 uker').waitFor();
+  await page.getByRole('heading', { name: 'Siste 30 dager', exact: true }).waitFor();
+  await btn('12 mnd').click();
+  await page.getByRole('heading', { name: 'Siste 12 måneder', exact: true }).waitFor();
   await shot('fremgang');
+  await btn('30 d').click();
   await btn(/Knebøy/).click();
   await page.getByRole('img', { name: /Graf/ }).waitFor();
   await page.getByText('Prosent av 1RM').waitFor();
@@ -498,8 +529,11 @@ try {
 
   // 9. Profil → logg ut
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
-  await page.getByText('Økter totalt').waitFor();
+  await page.getByText('Medlem siden').waitFor();
   await shot('profil');
+  await page.getByRole('heading', { name: 'Innstillinger' }).scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollBy(0, -60));
+  await shot('innstillinger');
 
   // 9-0. Treningen din: endre mål og dager direkte, og bytt program fra Profil
   await btn(/^Mål: Bli sterkere/).click();
@@ -532,13 +566,14 @@ try {
   await page.getByRole('heading', { name: 'Nyheter og eventer' }).waitFor();
   await shot('hjem-rutiner');
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
-  await page.getByText('Økter totalt').waitFor();
+  await page.getByText('Medlem siden').waitFor();
   // Tilbake til 3 økter i uka, som resten av testen forventer.
   await btn(/^Økter per uke: 5/).click();
   await dialog().getByRole('button', { name: '3', exact: true }).click();
   await btn(/^Økter per uke: 3/).waitFor();
 
   // 9-1. Appfarge: velg blå, se at knapper og grafer følger, og at valget huskes
+  await btn(/^Design/).click(); // innstillingene er gruppert og foldet sammen
   await page.getByRole('radiogroup', { name: 'Appfarge' }).getByRole('radio', { name: 'Blå' }).click();
   const accentNow = () => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim());
   assert.equal(await accentNow(), '#4d9bf0');
@@ -553,10 +588,14 @@ try {
   assert.equal(await accentNow(), '#4d9bf0', 'fargen huskes etter omlasting');
   await shot('hjem-blaa');
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
-  await page.getByText('Økter totalt').waitFor();
+  await page.getByText('Medlem siden').waitFor();
 
   // 9a. Data og backup: JSON og CSV lastes ned, og backupen kan leses inn igjen
   const { readFile } = await import('node:fs/promises');
+  await btn(/^Data og backup/).click();
+  await page.waitForTimeout(250);
+  await btn('Last ned backup (JSON)').scrollIntoViewIfNeeded();
+  await shot('innstillinger-data');
   const [jsonDl] = await Promise.all([page.waitForEvent('download'), btn('Last ned backup (JSON)').click()]);
   const backup = JSON.parse(await readFile(await jsonDl.path(), 'utf8'));
   assert.equal(backup.version, 2);
@@ -728,6 +767,7 @@ try {
   await ep.waitForTimeout(350);
   await ep.getByRole('region', { name: 'Muscles trained' }).screenshot({ path: `tests/screens/${String(++n).padStart(2, '0')}-body-map-en.png` });
   await ep.getByRole('navigation').getByRole('link', { name: 'Profile' }).click();
+  await ep.getByRole('button', { name: /^Design/ }).click();
   await ep.getByRole('radio', { name: 'Norsk' }).click();
   await ep.getByRole('navigation').getByRole('link', { name: 'Hjem' }).click();
   await ep.getByText('Trent kropp').waitFor();

@@ -9,6 +9,7 @@ import {
   strengthProfile,
   tierFor,
   fallbackBodyweight,
+  RANKED,
 } from './strength';
 
 const ANCH = [0.5, 0.75, 1.0, 1.5, 1.9, 2.4];
@@ -19,7 +20,7 @@ const set = (exercise: string, weight: number, reps: number, set_type = 'normal'
   weight,
   reps,
   set_type,
-  completed_at: '2026-11-20T10:00:00Z',
+  completed_at: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
 });
 
 describe('strength scoring', () => {
@@ -62,11 +63,12 @@ describe('strength scoring', () => {
     expect(liftScore('ex-pull-ups', 105, 80, 'male')!.bodyweightLoad).toBe(true);
   });
 
-  it('scales derived lifts by their factor (dumbbell bench per dumbbell)', () => {
-    const db = liftScore('ex-benkpress-med-manualer', 32, 80, 'male')!; // 32 / 0.4 = 80 kg benk
-    expect(db.score).toBeCloseTo(liftScore('ex-benkpress', 80, 80, 'male')!.score);
-    expect(db.nextTierKg).toBeCloseTo(liftScore('ex-benkpress', 80, 80, 'male')!.nextTierKg! * 0.4);
+  it('scales close variants by their factor (incline bench)', () => {
+    const inc = liftScore('ex-skrabenk', 68, 80, 'male')!; // 68 / 0.85 = 80 kg benk
+    expect(inc.score).toBeCloseTo(liftScore('ex-benkpress', 80, 80, 'male')!.score);
+    expect(inc.nextTierKg).toBeCloseTo(liftScore('ex-benkpress', 80, 80, 'male')!.nextTierKg! * 0.85);
   });
+
 
   it('ignores warm-ups, high-rep sets and unranked exercises', () => {
     const best = bestLifts([set('benkpress', 200, 1, 'warmup'), set('benkpress', 60, 20), set('sidehev', 20, 10)], 80);
@@ -102,5 +104,48 @@ describe('strength scoring', () => {
     expect(ev.overallAfter.score).toBeGreaterThan(ev.overallBefore.score);
     const first = set('kneboy', 60, 5);
     expect(levelEventFor(first, [first], 80, 'male')!.before).toBeNull();
+  });
+
+  it('exactly the chosen lifts count; other machines, dumbbell work and variants give no level', () => {
+    const counted = ['benkpress', 'skrabenk', 'smal-benkpress', 'militaerpress', 'benkpress-med-manualer', 'skrabenk-med-manualer', 'pull-ups', 'stangroing', 'nedtrekk', 'bicepscurl-med-manualer', 'kneboy', 'markloft', 'rumensk-markloft', 'beinspark', 'sumo-markloft', 'trap-bar-markloft', 'bulgarsk-splittboy', 'beinpress', 'hack-squat'];
+    expect(Object.keys(RANKED).sort()).toEqual([...counted].sort());
+    for (const slug of ['dips', 'chin-ups', 'frontboy', 'pendlay-roing', 'sittende-militaerpress', 'box-squat', 'hip-thrust', 'sittende-roing', 'smith-benkpress', 'skulderpress-med-manualer', 'bicepscurl-med-stang'])
+      expect(liftScore(`ex-${slug}`, 100, 80, 'male'), slug).toBeNull();
+  });
+
+  it('dumbbell curl is scored per dumbbell against bodyweight and counts as pull', () => {
+    const c = liftScore('ex-bicepscurl-med-manualer', 18, 80, 'male')!; // 18/80 = 0,225 ≈ «middels»
+    expect(c.category).toBe('pull');
+    expect(c.score).toBeGreaterThan(45);
+    expect(c.score).toBeLessThan(55);
+  });
+
+  it('lifts not trained in the last 30 days are greyed out and do not count', () => {
+    const now = Date.parse('2026-12-31T12:00:00Z');
+    const at = (days: number) => new Date(now - days * 24 * 3600 * 1000).toISOString();
+    const sets = [
+      { ...set('benkpress', 100, 1), completed_at: at(45) },
+      { ...set('kneboy', 140, 1), completed_at: at(3) },
+    ];
+    const p = strengthProfile(sets, 80, 'male', undefined, now);
+    expect(p.lifts.find((l) => l.exerciseId === 'ex-benkpress')?.active).toBe(false);
+    expect(p.lifts.find((l) => l.exerciseId === 'ex-kneboy')?.active).toBe(true);
+    expect(p.categories.push).toBe(0);
+    expect(p.missing).toContain('push');
+    expect(p.lifts[0].exerciseId).toBe('ex-kneboy'); // aktive først
+    // Trener du benk igjen, teller den med en gang
+    const again = strengthProfile([...sets, { ...set('benkpress', 60, 5), completed_at: at(1) }], 80, 'male', undefined, now);
+    expect(again.categories.push).toBeGreaterThan(0);
+  });
+
+  it('machine lifts are capped at Strong and say so', () => {
+    const lp = liftScore('ex-beinpress', 600, 80, 'male')!;
+    expect(lp.machine).toBe(true);
+    expect(lp.capped).toBe(true);
+    expect(lp.tier.name).toMatch(/Sterk|Strong/);
+    expect(lp.nextTierKg).toBeNull();
+    const low = liftScore('ex-beinpress', 100, 80, 'male')!;
+    expect(low.capped).toBe(false);
+    expect(liftScore('ex-kneboy', 250, 80, 'male')!.capped).toBe(false);
   });
 });

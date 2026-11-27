@@ -8,7 +8,8 @@ import { Calendar, dayKey } from '../../components/Calendar';
 import { Icon } from '../../components/Icon';
 import { MuscleDot } from '../../components/MuscleTag';
 import { useExerciseMap } from '../workout/ExercisePicker';
-import { exerciseName } from '../../lib/exerciseName';
+import { exerciseName, searchNames } from '../../lib/exerciseName';
+import { matchesSearch } from '../../lib/search';
 import { useSetting } from '../../lib/settings';
 import { usePRMap } from '../../lib/prs';
 import { dateLong, durationShort, monthYear, num, plural, toDisplay } from '../../lib/format';
@@ -22,6 +23,7 @@ export function HistoryList() {
   const exMap = useExerciseMap();
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [day, setDay] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
   const data = useLiveQuery(async () => {
     const workouts = (await db.workouts.orderBy('started_at').reverse().toArray()).filter((w) => !w.deleted && w.ended_at);
     const sets = (await db.sets.toArray()).filter((s) => !s.deleted && s.completed_at);
@@ -38,7 +40,17 @@ export function HistoryList() {
   const { workouts, byWorkout } = data;
 
   // Grupper på måned (eller bare valgt dag i kalendervisning).
-  const shown = view === 'calendar' ? workouts.filter((w) => day && dayKey(w.started_at) === day) : workouts;
+  // Søk: på navnet på økta, notater og alle øvelsene i den (norsk og engelsk navn).
+  const matches = (w: Workout) => {
+    if (!query.trim()) return true;
+    if (matchesSearch(w.name, query) || matchesSearch(w.notes ?? '', query)) return true;
+    const ids = new Set((byWorkout.get(w.id) ?? []).map((s) => s.exercise_id));
+    return [...ids].some((id) => {
+      const ex = exMap.get(id);
+      return !!ex && searchNames(ex).some((n) => matchesSearch(n, query));
+    });
+  };
+  const shown = view === 'calendar' ? workouts.filter((w) => day && dayKey(w.started_at) === day) : workouts.filter(matches);
   const groups: { month: string; items: Workout[] }[] = [];
   for (const w of shown) {
     const m = monthYear(w.started_at);
@@ -66,6 +78,20 @@ export function HistoryList() {
           {!day && <p className="mt-3 text-center text-sm text-muted">{t('Trykk på en markert dag for å se økta.', 'Tap a highlighted day to see the workout.')}</p>}
         </div>
       )}
+      {view === 'list' && workouts.length > 0 && (
+        <label className="mb-3 flex items-center gap-2 rounded-xl border border-line bg-raised px-3">
+          <Icon name="search" size={18} className="shrink-0 text-faint" />
+          <input
+            type="search"
+            className="min-h-11 flex-1 bg-transparent outline-none placeholder:text-faint"
+            placeholder={t('Søk på økt eller øvelse', 'Search workout or exercise')}
+            aria-label={t('Søk i historikken', 'Search history')}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+      )}
+      {view === 'list' && query.trim() && shown.length === 0 && <p className="text-sm text-muted">{t('Ingen økter passer søket.', 'No workouts match your search.')}</p>}
       {workouts.length === 0 ? (
         <EmptyState icon="history" title={t('Ingen økter ennå', 'No workouts yet')} text={t('Ferdige økter dukker opp her.', 'Finished workouts show up here.')} />
       ) : (

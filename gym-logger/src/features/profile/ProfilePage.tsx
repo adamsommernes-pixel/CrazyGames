@@ -1,7 +1,7 @@
 import { ColorPicker } from '../../components/ColorPicker';
 import { applyAccent } from '../../lib/theme';
 import { Logo } from '../../components/Logo';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link, useNavigate } from 'react-router-dom';
 import { db } from '../../db/dexie';
@@ -16,6 +16,8 @@ import { useAuth, useUser } from '../../auth/AuthProvider';
 import { AuthError } from '../../auth/types';
 import { setSetting, useSetting } from '../../lib/settings';
 import { lifetime, longestStreak } from '../../lib/stats';
+import { RangePicker, useRange } from '../../components/RangePicker';
+import { inRange, rangeBounds, rangeLabel, yearsWithData } from '../../lib/range';
 import { usePRMap } from '../../lib/prs';
 import { dateShort, duration, num, toDisplay } from '../../lib/format';
 import { Button, Card, Chip, NumberStepper, Page, SectionTitle, Sheet, inputClass } from '../../components/ui';
@@ -25,7 +27,9 @@ import { askConfirm } from '../../components/confirm';
 import { InstallHint } from './InstallHint';
 import { TrainingCard } from './TrainingCard';
 import { LanguageToggle } from '../../components/LanguageToggle';
-import { locale, t } from '../../i18n';
+import { locale, t, useLang } from '../../i18n';
+import { SWATCHES } from '../../lib/theme';
+import { shareApp } from '../../lib/shareApp';
 
 const ALL_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
 
@@ -36,10 +40,17 @@ export function ProfilePage() {
   const profile = useLiveQuery(() => getProfile(user.id), [user.id]);
   const prMap = usePRMap();
   const data = useLiveQuery(async () => ({ workouts: await db.workouts.toArray(), sets: await db.sets.toArray() }), []);
+  const [range, setRange] = useRange();
   const stats = useMemo(() => {
     if (!data) return null;
-    return { ...lifetime(data.workouts, data.sets), longest: longestStreak(data.workouts, profile?.weekly_target ?? 3) };
-  }, [data, profile?.weekly_target]);
+    // Tallene gjelder valgt tidsrom (samme valg som grafene ellers i appen).
+    const b = rangeBounds(range);
+    const workouts = data.workouts.filter((w) => inRange(w.started_at, b));
+    const ids = new Set(workouts.map((w) => w.id));
+    const sets = data.sets.filter((s) => ids.has(s.workout_id));
+    const records = sets.filter((s) => prMap.has(s.id)).length;
+    return { ...lifetime(workouts, sets), records, longest: longestStreak(workouts, profile?.weekly_target ?? 3), years: yearsWithData(data.workouts.map((w) => w.started_at)) };
+  }, [data, profile?.weekly_target, range, prMap]);
 
   const since = new Date(profile?.created_at ?? user.created_at).toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
   const tonnes = stats ? toDisplay(stats.volume, unit) / 1000 : 0;
@@ -58,10 +69,13 @@ export function ProfilePage() {
         </Button>
       </section>
 
-      <div className="grid grid-cols-2 gap-2">
-        <BigStat icon="dumbbell" label={t('Økter totalt', 'Total workouts')} value={num(stats?.workouts ?? 0, 0)} />
+      <div className="mb-2">
+        <RangePicker value={range} onChange={setRange} years={stats?.years ?? [new Date().getFullYear()]} />
+      </div>
+      <div className="grid grid-cols-2 gap-2" aria-label={rangeLabel(range)}>
+        <BigStat icon="dumbbell" label={t('Økter', 'Workouts')} value={num(stats?.workouts ?? 0, 0)} />
         <BigStat icon="scale" label={`${t('Tonn løftet', 'Tonnes lifted')}${unit === 'lbs' ? ' (1000 lbs)' : ''}`} value={num(tonnes, tonnes < 10 ? 1 : 0)} />
-        <BigStat icon="trophy" label={t('Rekorder', 'Records')} value={num(prMap.size, 0)} />
+        <BigStat icon="trophy" label={t('Rekorder', 'Records')} value={num(stats?.records ?? 0, 0)} />
         <BigStat icon="flame" label={t('Lengste streak (uker)', 'Longest streak (weeks)')} value={num(stats?.longest ?? 0, 0)} />
       </div>
 
@@ -70,14 +84,11 @@ export function ProfilePage() {
 
       <InstallHint />
 
-      <SectionTitle>{t('Data og backup', 'Data and backup')}</SectionTitle>
-      <DataSection />
+      <SectionTitle>{t('Innstillinger', 'Settings')}</SectionTitle>
+      <SettingsSection />
 
       <SectionTitle>{t('Konto', 'Account')}</SectionTitle>
       <AccountSection />
-
-      <SectionTitle>{t('Innstillinger', 'Settings')}</SectionTitle>
-      <SettingsSection />
 
       <div className="mt-10 flex flex-col items-center gap-1.5 text-center text-xs text-faint">
         <Logo size={22} className="text-sm text-muted" />
@@ -312,6 +323,25 @@ function RestPushSetting() {
   );
 }
 
+/** Innstillingsgruppe som foldes ut: ikon, tittel og et kort sammendrag av hva som er valgt. */
+function Group({ icon, title, summary, children, open, onToggle }: { icon: IconName; title: string; summary?: string; children: ReactNode; open: boolean; onToggle: () => void }) {
+  return (
+    <div>
+      <button type="button" aria-expanded={open} onClick={onToggle} className="flex min-h-14 w-full items-center gap-3 px-3.5 py-2 text-left active:bg-raised">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-raised text-muted">
+          <Icon name={icon} size={18} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-medium">{title}</span>
+          {summary && <span className="block truncate text-xs text-faint">{summary}</span>}
+        </span>
+        <Icon name="down" size={18} className={`shrink-0 text-faint transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <div className="flex animate-fade flex-col gap-4 px-3.5 pt-1 pb-4">{children}</div>}
+    </div>
+  );
+}
+
 function SettingsSection() {
   const unit = useSetting('unit');
   const defaultRest = useSetting('defaultRest');
@@ -320,46 +350,89 @@ function SettingsSection() {
   const sound = useSetting('sound');
   const haptics = useSetting('haptics');
   const keepAwake = useSetting('keepAwake');
+  const restPush = useSetting('restPush');
+  const lang = useLang();
+  const [open, setOpen] = useState<string | null>(null);
+  const toggle = (k: string) => setOpen((o) => (o === k ? null : k));
+  const user = useUser();
+  const profile = useLiveQuery(() => getProfile(user.id), [user.id]);
+  const colour = SWATCHES.find((sw) => sw.hex === profile?.color);
+  const on = (v: boolean) => (v ? t('på', 'on') : t('av', 'off'));
   return (
-    <Card className="flex flex-col gap-4 p-3.5">
-      <div className="flex items-center justify-between gap-3">
-        <span>Språk / Language</span>
-        <LanguageToggle size="md" />
-      </div>
-      <AccentSetting />
-      <div className="flex items-center justify-between gap-3">
-        <span>{t('Vektenhet', 'Weight unit')}</span>
-        <div className="flex gap-2">
-          <Chip active={unit === 'kg'} onClick={() => void setSetting('unit', 'kg')}>
-            kg
-          </Chip>
-          <Chip active={unit === 'lbs'} onClick={() => void setSetting('unit', 'lbs')}>
-            lbs
-          </Chip>
+    <Card className="divide-y divide-line overflow-hidden">
+      <Group icon="sparkle" title={t('Design', 'Design')} summary={`${lang === 'nb' ? 'Norsk' : 'English'}${colour ? ` · ${t(colour.nb, colour.en)}` : ''}`} open={open === 'design'} onToggle={() => toggle('design')}>
+        <div className="flex items-center justify-between gap-3">
+          <span>Språk / Language</span>
+          <LanguageToggle size="md" />
         </div>
-      </div>
-      <div>
-        <div className="mb-2">{t('Standard hviletid', 'Default rest time')}</div>
-        <NumberStepper label={t('Standard hviletid', 'Default rest time')} value={defaultRest} step={15} min={0} max={600} format={(v) => (v ? duration(v * 1000) : t('Av', 'Off'))} onChange={(v) => void setSetting('defaultRest', v)} />
-      </div>
-      <div>
-        <div className="mb-2">{t('Stangvekt (platekalkulator)', 'Bar weight (plate calculator)')}</div>
-        <NumberStepper label={t('Stangvekt', 'Bar weight')} value={barWeight} step={2.5} min={0} max={30} format={(v) => `${num(v)} kg`} onChange={(v) => void setSetting('barWeight', v)} />
-      </div>
-      <div>
-        <div className="mb-2">{t('Skiver på gymmen (kg)', 'Plates at your gym (kg)')}</div>
-        <div className="flex flex-wrap gap-2">
-          {ALL_PLATES.map((p) => (
-            <Chip key={p} active={plates.includes(p)} onClick={() => void setSetting('plates', plates.includes(p) ? plates.filter((x) => x !== p) : [...plates, p].sort((a, b) => b - a))}>
-              {num(p, 2)}
+        <AccentSetting />
+      </Group>
+
+      <Group
+        icon="dumbbell"
+        title={t('Trening', 'Training')}
+        summary={`${unit} · ${t('hvile', 'rest')} ${defaultRest ? duration(defaultRest * 1000) : t('av', 'off')} · ${t('stang', 'bar')} ${num(barWeight)} kg`}
+        open={open === 'training'}
+        onToggle={() => toggle('training')}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <span>{t('Vektenhet', 'Weight unit')}</span>
+          <div className="flex gap-2">
+            <Chip active={unit === 'kg'} onClick={() => void setSetting('unit', 'kg')}>
+              kg
             </Chip>
-          ))}
+            <Chip active={unit === 'lbs'} onClick={() => void setSetting('unit', 'lbs')}>
+              lbs
+            </Chip>
+          </div>
         </div>
-      </div>
-      <Toggle label={t('Lyd når hvilen er over', 'Sound when rest is over')} checked={sound} onChange={(v) => void setSetting('sound', v)} />
-      <RestPushSetting />
-      <Toggle label={t('Vibrasjon (Android)', 'Vibration (Android)')} checked={haptics} onChange={(v) => void setSetting('haptics', v)} />
-      <Toggle label={t('Hold skjermen på under økt', 'Keep screen on during workouts')} checked={keepAwake} onChange={(v) => void setSetting('keepAwake', v)} />
+        <div>
+          <div className="mb-2">{t('Standard hviletid', 'Default rest time')}</div>
+          <NumberStepper label={t('Standard hviletid', 'Default rest time')} value={defaultRest} step={15} min={0} max={600} format={(v) => (v ? duration(v * 1000) : t('Av', 'Off'))} onChange={(v) => void setSetting('defaultRest', v)} />
+        </div>
+        <div>
+          <div className="mb-2">{t('Stangvekt (platekalkulator)', 'Bar weight (plate calculator)')}</div>
+          <NumberStepper label={t('Stangvekt', 'Bar weight')} value={barWeight} step={2.5} min={0} max={30} format={(v) => `${num(v)} kg`} onChange={(v) => void setSetting('barWeight', v)} />
+        </div>
+        <div>
+          <div className="mb-2">{t('Skiver på gymmen (kg)', 'Plates at your gym (kg)')}</div>
+          <div className="flex flex-wrap gap-2">
+            {ALL_PLATES.map((p) => (
+              <Chip key={p} active={plates.includes(p)} onClick={() => void setSetting('plates', plates.includes(p) ? plates.filter((x) => x !== p) : [...plates, p].sort((a, b) => b - a))}>
+                {num(p, 2)}
+              </Chip>
+            ))}
+          </div>
+        </div>
+      </Group>
+
+      <Group
+        icon="timer"
+        title={t('Lyd og varsler', 'Sound and notifications')}
+        summary={`${t('Lyd', 'Sound')} ${on(sound)} · ${t('varsel', 'notification')} ${on(restPush)} · ${t('skjerm på', 'screen on')} ${on(keepAwake)}`}
+        open={open === 'alerts'}
+        onToggle={() => toggle('alerts')}
+      >
+        <Toggle label={t('Lyd når hvilen er over', 'Sound when rest is over')} checked={sound} onChange={(v) => void setSetting('sound', v)} />
+        <RestPushSetting />
+        <Toggle label={t('Vibrasjon (Android)', 'Vibration (Android)')} checked={haptics} onChange={(v) => void setSetting('haptics', v)} />
+        <Toggle label={t('Hold skjermen på under økt', 'Keep screen on during workouts')} checked={keepAwake} onChange={(v) => void setSetting('keepAwake', v)} />
+      </Group>
+
+      <Group icon="download" title={t('Data og backup', 'Data and backup')} summary={t('Backup, regneark og import fra andre apper', 'Backup, spreadsheet and import from other apps')} open={open === 'data'} onToggle={() => toggle('data')}>
+        <DataSection />
+      </Group>
+
+      <button type="button" onClick={() => void shareApp()} className="flex min-h-14 w-full items-center gap-3 px-3.5 py-2 text-left active:bg-raised">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-strong">
+          <Icon name="share" size={18} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-medium">{t('Del RepGrade', 'Share RepGrade')}</span>
+          <span className="block truncate text-xs text-faint">{t('Send appen til en venn. Gratis, uten reklame.', 'Send the app to a friend. Free, no ads.')}</span>
+        </span>
+        <Icon name="chevron" size={18} className="shrink-0 text-faint" />
+      </button>
     </Card>
   );
 }
@@ -381,50 +454,32 @@ function DataSection() {
   };
 
   return (
-    <Card className="flex flex-col gap-3 p-3.5">
-      {cloud ? (
-        <div className="flex items-start gap-3 rounded-xl bg-raised px-3 py-2.5 text-sm" role="status">
-          <Icon name="check" size={18} className="mt-0.5 shrink-0 text-accent" />
-          <div className="min-w-0 flex-1">
-            <div className="font-semibold">{t('Dataene dine ligger trygt på nett', 'Your data is stored safely online')}</div>
-            <div className="text-xs text-muted">
-              {t(
-                'Alt synkes til kontoen din, så du mister ingenting om du bytter eller mister telefonen. Last gjerne ned en kopi innimellom.',
-                'Everything syncs to your account, so you lose nothing if you switch or lose your phone. Feel free to download a copy now and then.',
-              )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-start gap-3 rounded-xl bg-raised px-3 py-2.5 text-sm" role="status">
-        <Icon name={storage?.persisted ? 'check' : 'info'} size={18} className={`mt-0.5 shrink-0 ${storage?.persisted ? 'text-accent' : 'text-warn'}`} />
-        <div className="min-w-0 flex-1">
-          <div className="font-semibold">
-            {storage?.persisted ? t('Lagringen er beskyttet', 'Storage is protected') : t('Lagringen kan slettes av nettleseren', 'Storage can be cleared by the browser')}
-          </div>
-          <div className="text-xs text-muted">
-            {storage?.persisted
-              ? t('Nettleseren sletter ikke dataene dine automatisk.', 'The browser will not clear your data automatically.')
-              : t('Installer appen på Hjem-skjermen og ta jevnlig backup.', 'Install the app on your home screen and back up regularly.')}{' '}
-            {last
-              ? t(`Siste backup: ${dateShort(last)}.`, `Last backup: ${dateShort(last)}.`)
-              : t('Ingen backup tatt ennå.', 'No backup taken yet.')}
-          </div>
-        </div>
-        {storage && !storage.persisted && storage.supported && (
-          <button type="button" className="shrink-0 text-xs font-semibold text-accent" onClick={async () => { await requestPersist(); await refreshStorage(); }}>
-            {t('Beskytt', 'Protect')}
-          </button>
-        )}
+    <div className="flex flex-col gap-2.5">
+      <p className="flex items-start gap-2 text-xs text-muted" role="status">
+        <Icon name={cloud || storage?.persisted ? 'check' : 'info'} size={14} className={`mt-0.5 shrink-0 ${cloud || storage?.persisted ? 'text-accent' : 'text-warn'}`} />
+        <span>
+          {cloud
+            ? t('Alt synkes trygt til kontoen din. Last gjerne ned en kopi innimellom.', 'Everything syncs safely to your account. Feel free to download a copy now and then.')
+            : storage?.persisted
+              ? t('Lagringen er beskyttet på denne enheten.', 'Storage is protected on this device.')
+              : t('Nettleseren kan slette data. Installer appen og ta jevnlig backup.', 'The browser may clear data. Install the app and back up regularly.')}{' '}
+          {last ? t(`Siste backup: ${dateShort(last)}.`, `Last backup: ${dateShort(last)}.`) : ''}
+          {!cloud && storage && !storage.persisted && storage.supported && (
+            <button type="button" className="ml-1 font-semibold text-accent" onClick={async () => { await requestPersist(); await refreshStorage(); }}>
+              {t('Beskytt', 'Protect')}
+            </button>
+          )}
+        </span>
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="secondary" icon="download" className="min-h-10 px-2 text-sm" onClick={() => void exportJSON()} aria-label={t('Last ned backup (JSON)', 'Download backup (JSON)')}>
+          {t('Backup', 'Backup')}
+        </Button>
+        <Button variant="secondary" icon="download" className="min-h-10 px-2 text-sm" onClick={() => void exportSheet()} aria-label={t('Eksporter sets til regneark (CSV)', 'Export sets to spreadsheet (CSV)')}>
+          {t('Regneark', 'Spreadsheet')}
+        </Button>
       </div>
-      )}
-      <Button icon="download" full onClick={() => void exportJSON()}>
-        {t('Last ned backup (JSON)', 'Download backup (JSON)')}
-      </Button>
-      <Button variant="secondary" icon="download" full onClick={() => void exportSheet()}>
-        {t('Eksporter sets til regneark (CSV)', 'Export sets to spreadsheet (CSV)')}
-      </Button>
-      <ImportButton label={t('Gjenopprett eller importer', 'Restore or import')} />
+      <ImportButton compact label={t('Gjenopprett eller importer', 'Restore or import')} />
       <p className="text-xs text-faint">{t('Godtar backup fra RepGrade og eksport fra Lyfto, Hevy og Strong.', 'Accepts RepGrade backups and exports from Lyfto, Hevy and Strong.')}</p>
       <ImportHelp />
       {msg && (
@@ -432,7 +487,7 @@ function DataSection() {
           {msg}
         </p>
       )}
-    </Card>
+    </div>
   );
 }
 

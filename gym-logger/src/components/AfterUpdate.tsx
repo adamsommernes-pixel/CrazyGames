@@ -19,7 +19,7 @@ export function AfterUpdateNews() {
       if (!shouldShowAfterUpdate(version, seen, hasWorkouts)) return markVersionSeen(version);
       const news = await fetchWhatsNew();
       if (cancelled || !news || news.version !== version) return markVersionSeen(version);
-      showWhatsNew(news, () => {}, () => markVersionSeen(version), 'info');
+      showWhatsNew(news, () => {}, () => markVersionSeen(version), 'info', seen);
     })();
     return () => {
       cancelled = true;

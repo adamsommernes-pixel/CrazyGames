@@ -8,7 +8,9 @@ import { Icon } from '../../components/Icon';
 import { useExerciseMap } from '../workout/ExercisePicker';
 import { useSetting } from '../../lib/settings';
 import { best1RM, countsAsWork } from '../../lib/calc';
-import { muscleSplit, weeklySeries } from '../../lib/stats';
+import { muscleSplit } from '../../lib/stats';
+import { RangePicker, useRange } from '../../components/RangePicker';
+import { inRange, periodSeries, rangeBounds, rangeLabel, yearsWithData } from '../../lib/range';
 import { dateShort, duration, num, plural, toDisplay } from '../../lib/format';
 import { kindOf } from '../../lib/kinds';
 import { MUSCLE_COLOR } from '../../lib/muscles';
@@ -48,13 +50,18 @@ export function ProgressList() {
   }, []);
   const sets = data?.sets ?? [];
 
-  const series = useMemo(() => (data ? weeklySeries(data.workouts, data.sets, 12) : []), [data]);
-  const split = useMemo(() => muscleSplit(sets, exMap, 30), [sets, exMap]);
+  const [range, setRange] = useRange();
+  const bounds = useMemo(() => rangeBounds(range), [range]);
+  const years = useMemo(() => yearsWithData((data?.workouts ?? []).map((w) => w.started_at)), [data]);
+  const series = useMemo(() => (data ? periodSeries(data.workouts, data.sets, range) : []), [data, range]);
+  const split = useMemo(() => muscleSplit(sets, exMap, bounds), [sets, exMap, bounds]);
+  const inPeriod = useMemo(() => sets.filter((s) => inRange(s.completed_at, bounds)), [sets, bounds]);
+  const perBucket = bounds.bucket === 'day' ? t('per dag', 'per day') : t('per måned', 'per month');
   const splitMax = split[0]?.[1] ?? 1;
 
   const rows = useMemo(() => {
     const by = new Map<string, WorkoutSet[]>();
-    for (const s of sets) {
+    for (const s of inPeriod) {
       const l = by.get(s.exercise_id) ?? [];
       l.push(s);
       by.set(s.exercise_id, l);
@@ -69,7 +76,7 @@ export function ProgressList() {
       }))
       .filter((r) => r.exercise && (!group || r.exercise.muscle_group === group))
       .sort((a, b) => (a.last < b.last ? 1 : -1));
-  }, [sets, exMap, group, unit]);
+  }, [inPeriod, exMap, group, unit]);
 
   const groups = useMemo(() => [...new Set(sets.map((s) => exMap.get(s.exercise_id)?.muscle_group).filter(Boolean))] as string[], [sets, exMap]);
 
@@ -90,9 +97,12 @@ export function ProgressList() {
         <EmptyState icon="chart" title={t('Ingen data ennå', 'No data yet')} text={t('Når du har logget noen økter ser du grafer, rekorder og fordeling på muskelgrupper her.', 'Once you have logged a few workouts you will see charts, records and muscle group split here.')} />
       ) : (
         <>
+          <div className="mb-3">
+            <RangePicker value={range} onChange={setRange} years={years} />
+          </div>
           <Card className="p-3.5">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <h2 className="font-semibold">{t('Siste 12 uker', 'Last 12 weeks')}</h2>
+              <h2 className="font-semibold">{rangeLabel(range)}</h2>
               <div className="flex gap-1.5">
                 <Chip active={view === 'volume'} onClick={() => setView('volume')}>
                   {t('Volum', 'Volume')}
@@ -103,15 +113,15 @@ export function ProgressList() {
               </div>
             </div>
             <BarTrend
-              data={series.map((w) => ({ x: `${w.start.getDate()}.${w.start.getMonth() + 1}`, y: view === 'volume' ? Math.round(toDisplay(w.volume, unit)) : w.workouts }))}
-              label={view === 'volume' ? t('Volum per uke', 'Volume per week') : t('Økter per uke', 'Workouts per week')}
+              data={series.map((w) => ({ x: w.x, y: view === 'volume' ? Math.round(toDisplay(w.volume, unit)) : w.workouts }))}
+              label={view === 'volume' ? `${t('Volum', 'Volume')} ${perBucket}` : `${t('Økter', 'Workouts')} ${perBucket}`}
               unit={view === 'volume' ? unit : t('økter', 'workouts')}
             />
           </Card>
 
           {split.length > 0 && (
             <>
-              <SectionTitle>{t('Muskelgrupper siste 30 dager', 'Muscle groups, last 30 days')}</SectionTitle>
+              <SectionTitle>{t('Muskelgrupper', 'Muscle groups')} · {rangeLabel(range).toLowerCase()}</SectionTitle>
               <Card className="flex flex-col gap-2.5 p-3.5">
                 {split.map(([g, n]) => (
                   <div key={g} className="grid grid-cols-[6rem_1fr_2.5rem] items-center gap-3 text-sm">
@@ -130,7 +140,8 @@ export function ProgressList() {
             </>
           )}
 
-          <SectionTitle>{t('Øvelser', 'Exercises')}</SectionTitle>
+          <SectionTitle>{t('Øvelser', 'Exercises')} · {rangeLabel(range).toLowerCase()}</SectionTitle>
+          {rows.length === 0 && <p className="text-sm text-muted">{t('Ingen øvelser i denne perioden.', 'No exercises in this period.')}</p>}
           {groups.length > 1 && (
             <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1">
               <Chip active={!group} onClick={() => setGroup(null)}>

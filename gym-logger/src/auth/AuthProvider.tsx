@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { unregisterPushDevice } from '../lib/push';
 import type { AuthBackend, AuthUser } from './types';
 import { createLocalBackend } from './local';
 import { createCloudBackend } from './cloud';
@@ -53,6 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStatus('signed-in');
       },
       async signOut() {
+        // Telefonen skal ikke få pausevarsler for kontoen etter utlogging.
+        await unregisterPushDevice();
         await backend.signOut();
         setUser(null);
         setStatus('signed-out');

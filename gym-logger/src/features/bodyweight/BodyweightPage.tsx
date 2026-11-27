@@ -1,4 +1,6 @@
-import { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
+import { RangePicker, useRange } from '../../components/RangePicker';
+import { inRange, rangeBounds, yearsWithData } from '../../lib/range';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/dexie';
 import { deleteBodyweight, logBodyweight, restore } from '../../db/repo';
@@ -14,9 +16,17 @@ export function BodyweightPage() {
   const unit = useSetting('unit');
   const [value, setValue] = useState('');
   const entries = useLiveQuery(async () => (await db.bodyweights.toArray()).filter((b) => !b.deleted).sort((a, b) => (a.date < b.date ? 1 : -1)), [], []);
+  const [range, setRange] = useRange();
   const latest = entries[0];
-  const oldest = entries[entries.length - 1];
-  const change = latest && oldest && latest !== oldest ? latest.weight_kg - oldest.weight_kg : null;
+  // Endring og graf gjelder valgt tidsrom.
+  const period = useMemo(() => {
+    const b = rangeBounds(range);
+    return entries.filter((e) => inRange(e.date, b));
+  }, [entries, range]);
+  const years = useMemo(() => yearsWithData(entries.map((e) => e.date)), [entries]);
+  const pLatest = period[0];
+  const oldest = period[period.length - 1];
+  const change = pLatest && oldest && pLatest !== oldest ? pLatest.weight_kg - oldest.weight_kg : null;
 
   const save = async () => {
     const v = parseNum(value);
@@ -50,7 +60,10 @@ export function BodyweightPage() {
         <EmptyState icon="scale" title={t('Ingen målinger', 'No entries')} text={t('Vei deg gjerne til samme tid på dagen, for eksempel om morgenen.', 'Try to weigh yourself at the same time of day, for example in the morning.')} />
       ) : (
         <>
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-4">
+            <RangePicker value={range} onChange={setRange} years={years} />
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
             <div className="card rounded-xl p-4">
               <div className="text-xs text-muted">{t('Nå', 'Now')}</div>
               <div className="font-num text-3xl font-bold">
@@ -58,18 +71,20 @@ export function BodyweightPage() {
               </div>
             </div>
             <div className="card rounded-xl p-4">
-              <div className="text-xs text-muted">{t('Endring siden', 'Change since')} {dateShort(oldest.date)}</div>
+              <div className="text-xs text-muted">{oldest ? `${t('Endring siden', 'Change since')} ${dateShort(oldest.date)}` : t('Endring', 'Change')}</div>
               <div className={`font-num text-3xl font-bold ${change === null ? 'text-faint' : ''}`}>
                 {change === null ? '–' : `${change > 0 ? '+' : change < 0 ? '−' : ''}${num(Math.abs(toDisplay(change, unit)))}`}
               </div>
             </div>
           </div>
-          {entries.length >= 2 && (
+          {period.length >= 2 ? (
             <Card className="mt-3 p-2 pt-4">
               <Suspense fallback={<div className="h-52" />}>
-                <LineTrend data={[...entries].reverse().map((e) => ({ x: dateShort(e.date), y: Math.round(toDisplay(e.weight_kg, unit) * 10) / 10 }))} label={t('Kroppsvekt', 'Bodyweight')} unit={unit} />
+                <LineTrend data={[...period].reverse().map((e) => ({ x: dateShort(e.date), y: Math.round(toDisplay(e.weight_kg, unit) * 10) / 10 }))} label={t('Kroppsvekt', 'Bodyweight')} unit={unit} />
               </Suspense>
             </Card>
+          ) : (
+            entries.length >= 2 && <p className="mt-3 text-sm text-muted">{t('For få målinger i denne perioden til en graf.', 'Too few entries in this period for a chart.')}</p>
           )}
           <SectionTitle>{t('Målinger', 'Entries')}</SectionTitle>
           <Card className="divide-y divide-line">
