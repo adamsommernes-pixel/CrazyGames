@@ -1,4 +1,6 @@
 import { ColorPicker } from '../../components/ColorPicker';
+import { ImportButton, ImportHelp } from '../import/ImportButton';
+import { IMPORT_OFFER_KEY } from '../home/ImportBanner';
 import { applyAccent } from '../../lib/theme';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -49,6 +51,7 @@ export function Onboarding({ user }: { user: AuthUser }) {
     setBusy(true);
     await setSetting('unit', unit);
     if (legacy > 0 && moveLegacy) await importLegacy(db);
+    await db.kv.put({ key: IMPORT_OFFER_KEY, value: now() });
     if (program !== 'none') await applyProgram(program, goal);
     else await db.kv.put({ key: PROGRAMS_SEEN_KEY, value: now() });
     const bw = parseNum(bodyweight);
@@ -164,6 +167,12 @@ export function Onboarding({ user }: { user: AuthUser }) {
           >
             <ProgramList days={perWeek} experience={experience} goal={goal} selected={program} onSelect={setPicked} allowNone />
             <div className="mt-2 flex flex-col gap-2">
+              <div className="mt-2 flex flex-col gap-2 rounded-xl border border-line bg-surface p-4">
+                <div className="font-semibold">{t('Bytter du fra en annen app?', 'Switching from another app?')}</div>
+                <p className="text-sm text-muted">{t('Importer øktene dine fra Hevy, Strong eller Lyfto, så er historikken og rekordene med fra start.', 'Import your workouts from Hevy, Strong or Lyfto so your history and records come with you.')}</p>
+                <ImportButton label={t('Importer data', 'Import data')} />
+                <ImportHelp />
+              </div>
               {legacy > 0 && (
                 <Toggle checked={moveLegacy} onChange={setMoveLegacy} title={t(`Flytt ${legacy} økt${legacy === 1 ? '' : 'er'} fra før`, `Move ${legacy} earlier workout${legacy === 1 ? '' : 's'}`)} text={t('Det finnes treningsdata på denne enheten fra før du hadde konto.', 'There is training data on this device from before you had an account.')} />
               )}

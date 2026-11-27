@@ -1,0 +1,7 @@
+"title","start_time","end_time","description","exercise_title","superset_id","exercise_notes","set_index","set_type","weight_kg","reps","distance_km","duration_seconds","rpe"
+"Push","15 Jan 2026, 10:30","15 Jan 2026, 11:30","","Bench Press (Barbell)","","Tung dag","0","warmup","40","10","","",""
+"Push","15 Jan 2026, 10:30","15 Jan 2026, 11:30","","Bench Press (Barbell)","","","1","normal","80","5","","","8"
+"Push","15 Jan 2026, 10:30","15 Jan 2026, 11:30","","Triceps Pushdown (Cable)","","","0","normal","30","12","","",""
+"Push","15 Jan 2026, 10:30","15 Jan 2026, 11:30","","Weird Machine Thing","","","0","normal","50","10","","",""
+"Legs","17 Jan 2026, 09:00","17 Jan 2026, 10:00","","Squat (Barbell)","","","0","normal","100","5","","",""
+"Legs","17 Jan 2026, 09:00","17 Jan 2026, 10:00","","Running","","","0","normal","","","5","1800",""

@@ -22,6 +22,7 @@ import { InstallHint } from '../profile/InstallHint';
 import { BackupReminder } from './BackupReminder';
 import { NewsCard } from './NewsCard';
 import { ProgramsBanner } from './ProgramsBanner';
+import { ImportBanner } from './ImportBanner';
 import { RoutinesSection } from './RoutinesSection';
 import { exerciseName } from '../../lib/exerciseName';
 import { formatSetShort, kindOf } from '../../lib/kinds';
@@ -112,6 +113,7 @@ export function Home() {
       <main className="flex flex-col gap-4 px-4 pt-5 pb-44">
         <InstallHint />
         <ProgramsBanner days={target} />
+        <ImportBanner />
         <BackupReminder />
 
         {active && isLongAgo(active.started_at, now) && !keepGoing && (
