@@ -31,6 +31,7 @@ import { formatSetShort, kindOf } from '../../lib/kinds';
 import { locale, t } from '../../i18n';
 import { useStrength } from '../../lib/strengthLive';
 import { LevelBadge } from '../level/LevelBadge';
+import { LevelNudge } from '../level/LevelNudge';
 
 function greeting(d = new Date()) {
   const h = d.getHours();
@@ -103,6 +104,7 @@ export function Home() {
               {greeting()}, {first}
             </h1>
             {strength && <LevelBadge strength={strength.profile} />}
+            {strength && <LevelNudge profile={strength.profile} />}
           </div>
           <Link to="/profile" aria-label={t('Profil', 'Profile')}>
             <Avatar name={profile?.name || user.name} color={profile?.color ?? '#34c56a'} size={44} />
