@@ -121,7 +121,7 @@ export function parseBackup(json: unknown): Backup {
   if (isLyfto(json)) return lyftoToBackup(json);
   const b = json as Partial<Backup>;
   if (!b || !KNOWN_APPS.has(b.app ?? '') || !b.tables || typeof b.tables !== 'object') {
-    throw new Error(t('Filen er ikke en backup fra Repgrade eller en eksport fra Lyfto.', 'The file is not a Repgrade backup or a Lyfto export.'));
+    throw new Error(t('Filen er ikke en backup fra RepGrade eller en eksport fra Lyfto.', 'The file is not a RepGrade backup or a Lyfto export.'));
   }
   return b as Backup;
 }

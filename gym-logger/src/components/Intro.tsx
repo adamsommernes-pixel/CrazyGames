@@ -60,7 +60,7 @@ export function Intro() {
   if (phase === 'done') return null;
   const flying = phase === 'fly';
   return (
-    <div className="pointer-events-none fixed inset-0 z-[100]" role="status" aria-label={t('Laster Repgrade', 'Loading Repgrade')} data-intro={phase}>
+    <div className="pointer-events-none fixed inset-0 z-[100]" role="status" aria-label={t('Laster RepGrade', 'Loading RepGrade')} data-intro={phase}>
       <div
         className="absolute inset-0 bg-bg"
         style={{ opacity: flying ? 0 : 1, transition: `opacity ${FLY_MS}ms ease-in ${flying ? 120 : 0}ms` }}
@@ -72,7 +72,7 @@ export function Intro() {
             <img src={`${import.meta.env.BASE_URL}favicon.svg`} width={88} height={88} alt="" className="intro-logo block rounded-[22%]" />
           </span>
           <span className="mt-4" style={{ opacity: flying ? 0 : 1, transition: 'opacity 200ms' }}>
-            <span className="intro-name font-num block text-3xl font-bold tracking-tight">Repgrade</span>
+            <span className="intro-name font-num block text-3xl font-bold tracking-tight">RepGrade</span>
           </span>
           <span className="mt-6 h-0.5 w-28 overflow-hidden rounded-full bg-line" style={{ opacity: flying ? 0 : 1, transition: 'opacity 200ms' }}>
             <span className="intro-bar block h-full rounded-full bg-accent" />

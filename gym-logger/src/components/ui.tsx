@@ -2,6 +2,7 @@ import { lockScroll, unlockScroll } from '../lib/scrollLock';
 import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon, type IconName } from './Icon';
+import { Logo } from './Logo';
 import { t } from '../i18n';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -64,11 +65,14 @@ export function Page({
   title,
   back,
   actions,
+  brand,
   children,
 }: {
   title: ReactNode;
   back?: boolean;
   actions?: ReactNode;
+  /** Liten logo og «RepGrade» over tittelen (økt og øvelsesside, synlig i skjermbilder som deles). */
+  brand?: boolean;
   children: ReactNode;
 }) {
   const navigate = useNavigate();
@@ -81,7 +85,14 @@ export function Page({
           ) : (
             <span className="w-2" />
           )}
-          <h1 className="min-w-0 flex-1 truncate text-xl font-bold">{title}</h1>
+          {brand ? (
+            <div className="min-w-0 flex-1">
+              <Logo size={11} className="text-[10px] leading-none text-faint" />
+              <h1 className="truncate text-xl font-bold">{title}</h1>
+            </div>
+          ) : (
+            <h1 className="min-w-0 flex-1 truncate text-xl font-bold">{title}</h1>
+          )}
           {actions}
         </div>
       </header>

@@ -1,5 +1,5 @@
 // Import fra Lyfto (JSON-eksporten, schema «lyfto-export»). Filen gjøres om til en vanlig
-// Repgrade-backup og leses inn med importBackup, så forhåndsvisning, sammenslåing og synk er de
+// RepGrade-backup og leses inn med importBackup, så forhåndsvisning, sammenslåing og synk er de
 // samme som for egne backuper. Id-ene er faste («lyfto-…»), så samme fil kan leses inn flere ganger
 // uten duplikater.
 import type { Backup } from './backup';
@@ -7,7 +7,7 @@ import { BUILTIN_EXERCISES } from './library';
 import type { Equipment, ExerciseKind, MuscleGroup, Row } from './types';
 import { MUSCLE_LABEL } from './types';
 
-/** Lyfto-øvelse → Repgrade-slug. Øvelser som mangler her blir egne øvelser. */
+/** Lyfto-øvelse → RepGrade-slug. Øvelser som mangler her blir egne øvelser. */
 export const LYFTO_MAP: Record<string, string> = {
   'bench-press': 'benkpress',
   'incline-bench-press': 'skrabenk',
@@ -164,7 +164,7 @@ export const isLyfto = (json: unknown): json is LyftoExport => (json as { schema
 
 const BUILTIN = new Map(BUILTIN_EXERCISES.map((e) => [e.id, e]));
 
-/** Gjør en Lyfto-eksport om til en Repgrade-backup. Bare fullførte sets tas med. */
+/** Gjør en Lyfto-eksport om til en RepGrade-backup. Bare fullførte sets tas med. */
 export function lyftoToBackup(data: LyftoExport): Backup {
   const stamp = data.exportedAt ?? new Date().toISOString();
   const row = (id: string): Row => ({ id, updated_at: stamp, deleted: 0, dirty: 1 });
@@ -172,7 +172,7 @@ export function lyftoToBackup(data: LyftoExport): Backup {
   const exercises: Row[] = [];
   const made = new Map<string, { id: string; group: MuscleGroup; kind: ExerciseKind }>();
 
-  /** Repgrade-øvelsen for en Lyfto-id (lager en egen øvelse første gang den trengs). */
+  /** RepGrade-øvelsen for en Lyfto-id (lager en egen øvelse første gang den trengs). */
   const exerciseFor = (lid: string) => {
     const hit = made.get(lid);
     if (hit) return hit;

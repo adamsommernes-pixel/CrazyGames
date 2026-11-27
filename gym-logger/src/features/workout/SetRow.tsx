@@ -15,13 +15,8 @@ import { buzz } from '../../lib/haptics';
 import { Icon } from '../../components/Icon';
 import { PRBadge } from '../../components/ui';
 import { t } from '../../i18n';
+import { SET_TYPE_COLOR } from '../../lib/setTypes';
 
-const TYPE_COLOR: Record<WorkoutSet['set_type'], string> = {
-  normal: 'text-muted',
-  warmup: 'text-warn',
-  drop: 'text-sky-400',
-  failure: 'text-danger',
-};
 
 /**
  * Felt som holder egen tekst mens du skriver. Lagrer kort etter siste tastetrykk (og straks
@@ -187,7 +182,8 @@ export function SetRow({
           type="button"
           onClick={onMenu}
           aria-label={`Set ${label}, ${t('rediger', 'edit')}`}
-          className={`font-num h-11 rounded-xl text-center text-lg font-bold active:bg-raised ${TYPE_COLOR[set.set_type]}`}
+          className="font-num h-11 rounded-xl text-center text-lg font-bold active:bg-raised"
+          style={{ color: set.set_type === 'normal' ? 'var(--color-muted)' : SET_TYPE_COLOR[set.set_type] }}
         >
           {short || label}
         </button>

@@ -19,7 +19,7 @@ export function Welcome() {
     <div className="pt-safe pb-safe mx-auto flex min-h-full max-w-xl flex-col px-5">
       <header className="flex items-center gap-2 pt-6">
         <Logo size={36} anchor name={false} />
-        <span className="font-num flex-1 text-lg font-bold tracking-tight">Repgrade</span>
+        <span className="font-num flex-1 text-lg font-bold tracking-tight">RepGrade</span>
         <LanguageToggle />
       </header>
 

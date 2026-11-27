@@ -4,7 +4,7 @@
 @import '@fontsource/space-grotesk/latin-700.css';
 
 /*
- * Repgrade — nøytralt mørkt, med én aksentfarge som brukeren velger selv (src/lib/theme.ts).
+ * RepGrade — nøytralt mørkt, med én aksentfarge som brukeren velger selv (src/lib/theme.ts).
  * Aksenten brukes sparsomt: hovedhandlinger, valgt tilstand og data. Space Grotesk bare til tall.
  */
 @theme {

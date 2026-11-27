@@ -104,7 +104,7 @@ export function pushStatusText(s: PushStatus): string {
     case 'unsupported':
       return t('Nettleseren din støtter ikke varsler.', 'Your browser does not support notifications.');
     case 'denied':
-      return t('Varsler er blokkert. Slå dem på for Repgrade i telefonens innstillinger.', 'Notifications are blocked. Turn them on for Repgrade in your phone’s settings.');
+      return t('Varsler er blokkert. Slå dem på for RepGrade i telefonens innstillinger.', 'Notifications are blocked. Turn them on for RepGrade in your phone’s settings.');
     default:
       return '';
   }

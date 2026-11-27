@@ -411,7 +411,7 @@ function DataSection() {
         {t('Eksporter sets til regneark (CSV)', 'Export sets to spreadsheet (CSV)')}
       </Button>
       <ImportButton label={t('Gjenopprett eller importer', 'Restore or import')} />
-      <p className="text-xs text-faint">{t('Godtar backup fra Repgrade og eksport fra Lyfto, Hevy og Strong.', 'Accepts Repgrade backups and exports from Lyfto, Hevy and Strong.')}</p>
+      <p className="text-xs text-faint">{t('Godtar backup fra RepGrade og eksport fra Lyfto, Hevy og Strong.', 'Accepts RepGrade backups and exports from Lyfto, Hevy and Strong.')}</p>
       <ImportHelp />
       {msg && (
         <p className="text-sm text-accent-strong" role="status">

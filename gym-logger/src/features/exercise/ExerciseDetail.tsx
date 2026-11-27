@@ -87,6 +87,7 @@ export function ExerciseDetail() {
 
   return (
     <Page
+      brand
       title={exerciseName(exercise)}
       back
       actions={

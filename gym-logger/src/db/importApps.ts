@@ -1,5 +1,5 @@
 // Import fra andre apper: Hevy og Strong (CSV-eksport). Radene gjøres om til en vanlig
-// Repgrade-backup (som Lyfto-importen), så sammenslåing og synk er de samme. Id-ene lages fra
+// RepGrade-backup (som Lyfto-importen), så sammenslåing og synk er de samme. Id-ene lages fra
 // innholdet, så samme fil kan leses inn flere ganger uten duplikater.
 import type { Backup } from './backup';
 import { isLyfto, lyftoToBackup, guess, LYFTO_MAP, prettify } from './importLyfto';
@@ -8,7 +8,7 @@ import type { ExerciseKind, MuscleGroup, Row, SetType } from './types';
 import { t } from '../i18n';
 
 export type ImportSource = 'repgrade' | 'lyfto' | 'hevy' | 'strong';
-export const SOURCE_LABEL: Record<ImportSource, string> = { repgrade: 'Repgrade', lyfto: 'Lyfto', hevy: 'Hevy', strong: 'Strong' };
+export const SOURCE_LABEL: Record<ImportSource, string> = { repgrade: 'RepGrade', lyfto: 'Lyfto', hevy: 'Hevy', strong: 'Strong' };
 
 // ---------- CSV ----------
 
@@ -319,7 +319,7 @@ export function strongToBackup(rows: Record<string, string>[], unit: 'kg' | 'lbs
 
 // ---------- Hva slags fil? ----------
 
-/** Leser en fil fra Repgrade, Lyfto, Hevy eller Strong og gir data som parseBackup/importBackup forstår. */
+/** Leser en fil fra RepGrade, Lyfto, Hevy eller Strong og gir data som parseBackup/importBackup forstår. */
 export function convertImport(text: string, unit: 'kg' | 'lbs'): { source: ImportSource; data: unknown } {
   const trimmed = text.replace(/^﻿/, '').trimStart();
   if (trimmed.startsWith('{')) {
@@ -329,5 +329,5 @@ export function convertImport(text: string, unit: 'kg' | 'lbs'): { source: Impor
   const rows = parseCSV(trimmed);
   if (isHevy(rows)) return { source: 'hevy', data: hevyToBackup(rows) };
   if (isStrong(rows)) return { source: 'strong', data: strongToBackup(rows, unit) };
-  throw new Error(t('Fant ikke ut hvilken app filen kommer fra. Bruk eksporten fra Repgrade, Lyfto, Hevy eller Strong.', 'Could not tell which app the file is from. Use the export from Repgrade, Lyfto, Hevy or Strong.'));
+  throw new Error(t('Fant ikke ut hvilken app filen kommer fra. Bruk eksporten fra RepGrade, Lyfto, Hevy eller Strong.', 'Could not tell which app the file is from. Use the export from RepGrade, Lyfto, Hevy or Strong.'));
 }

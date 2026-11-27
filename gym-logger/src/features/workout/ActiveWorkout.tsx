@@ -112,6 +112,7 @@ export function ActiveWorkout({ workout }: { workout: Workout }) {
 
   return (
     <Page
+      brand
       title={
         <label className="flex min-w-0 items-center gap-1.5">
           <input

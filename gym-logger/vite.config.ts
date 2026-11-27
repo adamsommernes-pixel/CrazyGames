@@ -37,8 +37,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Repgrade',
-        short_name: 'Repgrade',
+        name: 'RepGrade',
+        short_name: 'RepGrade',
         description: 'Logg treningen din og klatre fra Nybegynner til Olympia. Log your training and climb from Newbie to Olympia.',
         lang: 'nb',
         theme_color: '#0A0A0A',

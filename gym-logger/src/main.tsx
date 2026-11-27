@@ -26,7 +26,7 @@ if (!__ARTIFACT__) {
         void updateSW(true);
       };
       const toast = () =>
-        showToast(t('En ny versjon av Repgrade er klar.', 'A new version of Repgrade is ready.'), { label: t('Oppdater', 'Update'), onClick: update }, 60_000);
+        showToast(t('En ny versjon av RepGrade er klar.', 'A new version of RepGrade is ready.'), { label: t('Oppdater', 'Update'), onClick: update }, 60_000);
       // Vis hva som er nytt før oppdatering. Uten nyhetsfil (eller uten nett): bare varselet som før.
       void fetchWhatsNew().then((news) => (news ? showWhatsNew(news, update, toast) : toast()));
     },

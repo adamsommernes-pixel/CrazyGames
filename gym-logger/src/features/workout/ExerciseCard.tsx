@@ -22,10 +22,11 @@ import {
 import type { PRKind } from '../../lib/calc';
 import { stepFor, suggestNext, warmupSets } from '../../lib/progression';
 import { kindColumns } from '../../lib/kinds';
-import { ActionList, Button, Card, Chip, IconButton, NumberStepper, Sheet } from '../../components/ui';
+import { ActionList, Button, Card, IconButton, NumberStepper, Sheet } from '../../components/ui';
 import { PlateCalculator } from '../../components/PlateCalculator';
 import { MuscleDot } from '../../components/MuscleTag';
 import { SwipeToDelete } from '../../components/SwipeToDelete';
+import { SET_TYPE_COLOR, setTypeSoft } from '../../lib/setTypes';
 import { undoToast } from '../../components/toast';
 import { Icon } from '../../components/Icon';
 import { SET_GRID, SetRow } from './SetRow';
@@ -320,6 +321,17 @@ function SetEditor({ set, unit, kind, onClose }: { set: WorkoutSet | null; unit:
   const secondLabel = kind === 'time' ? t('Sekunder', 'Seconds') : cardio ? t('Minutter', 'Minutes') : 'Reps';
   return (
     <Sheet open onClose={() => void save()} title={t('Rediger set', 'Edit set')}>
+      <div
+        className="mb-4 flex items-center gap-2.5 rounded-xl border-l-4 px-3 py-2"
+        style={{ borderColor: SET_TYPE_COLOR[set.set_type], background: setTypeSoft(set.set_type, 12) }}
+        data-set-type={set.set_type}
+      >
+        <span className="size-2.5 rounded-full" style={{ background: SET_TYPE_COLOR[set.set_type] }} />
+        <span className="text-sm font-semibold" style={{ color: SET_TYPE_COLOR[set.set_type] }}>
+          {SET_TYPE_LABEL[set.set_type]}
+        </span>
+        <span className="text-sm text-muted">{set.completed_at ? t('· fullført', '· done') : t('· ikke fullført', '· not done')}</span>
+      </div>
       <div className="grid grid-cols-1 gap-3">
         <div>
           <div className="mb-1.5 text-sm text-muted">{firstLabel}</div>
@@ -348,11 +360,26 @@ function SetEditor({ set, unit, kind, onClose }: { set: WorkoutSet | null; unit:
       </div>
       <div className="mt-5 mb-2 text-sm text-muted">{t('Type set', 'Set type')}</div>
       <div className="flex flex-wrap gap-2">
-        {SET_TYPES.map((t) => (
-          <Chip key={t} active={set.set_type === t} onClick={() => void updateSet(set.id, { set_type: t, ...values() }).then(onClose)}>
-            {SET_TYPE_LABEL[t]}
-          </Chip>
-        ))}
+        {SET_TYPES.map((type) => {
+          const active = set.set_type === type;
+          return (
+            <button
+              key={type}
+              type="button"
+              aria-pressed={active}
+              onClick={() => void updateSet(set.id, { set_type: type, ...values() }).then(onClose)}
+              className="flex min-h-9 items-center gap-2 rounded-full border px-3 text-sm font-medium transition-colors"
+              style={{
+                borderColor: active ? SET_TYPE_COLOR[type] : 'var(--color-line)',
+                background: active ? setTypeSoft(type, 22) : 'var(--color-raised)',
+                color: active ? SET_TYPE_COLOR[type] : 'var(--color-muted)',
+              }}
+            >
+              <span className="size-2 rounded-full" style={{ background: SET_TYPE_COLOR[type] }} />
+              {SET_TYPE_LABEL[type]}
+            </button>
+          );
+        })}
       </div>
       <div className="mt-6 flex gap-2">
         <Button

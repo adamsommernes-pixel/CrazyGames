@@ -23,7 +23,7 @@ export function ImportHelp() {
 }
 
 /**
- * Knapp som leser inn en backup fra Repgrade eller en eksport fra Lyfto, Hevy eller Strong.
+ * Knapp som leser inn en backup fra RepGrade eller en eksport fra Lyfto, Hevy eller Strong.
  * Viser et sammendrag og spør før noe legges inn.
  */
 export function ImportButton({ label, variant = 'secondary', onDone }: { label?: string; variant?: 'primary' | 'secondary'; onDone?: (rows: number) => void }) {
@@ -40,11 +40,11 @@ export function ImportButton({ label, variant = 'secondary', onDone }: { label?:
       const sum = summarizeBackup(backup);
       if (!sum.workouts && !sum.routines && !sum.bodyweights) throw new Error(t('Fant ingen økter i fila.', 'No workouts found in the file.'));
       const from = source === 'repgrade' ? t(`Backup fra ${dateShort(sum.exportedAt)}`, `Backup from ${dateShort(sum.exportedAt)}`) : t(`Eksport fra ${SOURCE_LABEL[source]}`, `Export from ${SOURCE_LABEL[source]}`);
-      const unitNote = source === 'strong' ? ' ' + t(`Vektene leses som ${unit} (samme enhet som i Repgrade).`, `Weights are read as ${unit} (the same unit as in Repgrade).`) : '';
+      const unitNote = source === 'strong' ? ' ' + t(`Vektene leses som ${unit} (samme enhet som i RepGrade).`, `Weights are read as ${unit} (the same unit as in RepGrade).`) : '';
       const ok = await askConfirm(
         t(
-          `${from}: ${sum.workouts} økter og ${sum.sets} sets${sum.routines ? `, ${sum.routines} rutiner` : ''}${sum.bodyweights ? `, ${sum.bodyweights} kroppsvekter` : ''}. Legge det til i Repgrade? Ingenting slettes.${unitNote}`,
-          `${from}: ${sum.workouts} workouts and ${sum.sets} sets${sum.routines ? `, ${sum.routines} routines` : ''}${sum.bodyweights ? `, ${sum.bodyweights} bodyweights` : ''}. Add it to Repgrade? Nothing is deleted.${unitNote}`,
+          `${from}: ${sum.workouts} økter og ${sum.sets} sets${sum.routines ? `, ${sum.routines} rutiner` : ''}${sum.bodyweights ? `, ${sum.bodyweights} kroppsvekter` : ''}. Legge det til i RepGrade? Ingenting slettes.${unitNote}`,
+          `${from}: ${sum.workouts} workouts and ${sum.sets} sets${sum.routines ? `, ${sum.routines} routines` : ''}${sum.bodyweights ? `, ${sum.bodyweights} bodyweights` : ''}. Add it to RepGrade? Nothing is deleted.${unitNote}`,
         ),
         { confirmLabel: t('Importer', 'Import'), danger: false },
       );

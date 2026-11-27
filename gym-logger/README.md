@@ -1,4 +1,4 @@
-# Repgrade
+# RepGrade
 
 *Tidligere «Gym Logger». Mappen i repoet heter fortsatt `gym-logger/`, og databasen og gamle backupfiler fungerer som før.*
 
@@ -159,7 +159,7 @@ Når appen bygges med Supabase-nøkler, lagres alle kontoer og all trening på n
 6. GitHub → repoet → **Settings → Secrets and variables → Actions → New repository secret**:
    - `VITE_SUPABASE_URL` = Project URL
    - `VITE_SUPABASE_ANON_KEY` = Publishable key
-7. GitHub → **Actions** → «Repgrade → GitHub Pages» → **Run workflow**. Når den er grønn, er kontoene på nett.
+7. GitHub → **Actions** → «RepGrade → GitHub Pages» → **Run workflow**. Når den er grønn, er kontoene på nett.
 
 Lokalt utviklingsoppsett: legg de samme to verdiene i `.env.local` (se `.env.example`).
 
@@ -195,13 +195,13 @@ tests/         e2e-skript (Playwright)
 
 ## Navn og varemerke (sjekk før lansering)
 
-Navnet **Repgrade** ble valgt etter et søk i App Store, Google Play og på nettet (november 2026): ingen app med det navnet ble funnet. Nisjen «rangert styrketrening» har flere apper (Liftoff – Ranked Gym Workouts, IronRank, WeLift), derfor ble navn med «rank» droppet.
+Navnet **RepGrade** ble valgt etter et søk i App Store, Google Play og på nettet (november 2026): ingen app med det navnet ble funnet. Nisjen «rangert styrketrening» har flere apper (Liftoff – Ranked Gym Workouts, IronRank, WeLift), derfor ble navn med «rank» droppet.
 
 Ikke sjekket ennå (gjør dette selv før lansering, det tar noen minutter):
 
 - **Domener:** søk etter `repgrade.com`, `repgrade.app` og `repgrade.no` hos en registrar, eller på [norid.no](https://www.norid.no/no/domenenavn/sok/) for .no.
 - **Brukernavn:** `instagram.com/repgrade` og `tiktok.com/@repgrade`.
-- **Varemerke:** søk «Repgrade» i [TMview](https://www.tmdn.org/tmview/) (EU og mange land) og i [Patentstyrets søk](https://search.patentstyret.no/), klasse 9 (programvare) og 41 (trening). Ved treff som ligner, eller før du bruker penger på merkevaren, bør du spørre en varemerkerådgiver.
+- **Varemerke:** søk «RepGrade» i [TMview](https://www.tmdn.org/tmview/) (EU og mange land) og i [Patentstyrets søk](https://search.patentstyret.no/), klasse 9 (programvare) og 41 (trening). Ved treff som ligner, eller før du bruker penger på merkevaren, bør du spørre en varemerkerådgiver.
 
 ## Personvern (GDPR)
 

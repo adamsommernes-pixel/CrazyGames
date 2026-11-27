@@ -34,7 +34,7 @@ const features = (): { icon: IconName; title: string; text: string; points: stri
   {
     icon: 'calendar',
     title: t('Åpne eventer', 'Public events'),
-    text: t('Bli med på konkurranser for alle som bruker Repgrade.', 'Join competitions open to everyone using Repgrade.'),
+    text: t('Bli med på konkurranser for alle som bruker RepGrade.', 'Join competitions open to everyone using RepGrade.'),
     points: [
       t('F.eks. «Løft mest i desember»', 'For example “Lift the most in December”'),
       t('Se hvor du ligger på topplisten', 'See where you rank on the leaderboard'),
@@ -65,7 +65,7 @@ export function NewsCard() {
               <span className="rounded-full bg-raised px-2 py-0.5 text-[10px] font-semibold text-muted">{t('Kommer snart', 'Coming soon')}</span>
             </div>
             <p className="mt-0.5 text-sm text-muted">
-              {t('Venner, utfordringer og åpne eventer er på vei til Repgrade.', 'Friends, challenges and public events are coming to Repgrade.')}
+              {t('Venner, utfordringer og åpne eventer er på vei til RepGrade.', 'Friends, challenges and public events are coming to RepGrade.')}
             </p>
             <button type="button" className="mt-2 text-sm font-semibold text-accent" onClick={() => setOpen(true)}>
               {t('Les mer', 'Read more')}
