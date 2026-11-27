@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card, Page, SectionTitle } from '../../components/ui';
 import { TierEmblem, tierAccent } from '../../components/TierBadge';
 import { useStrength } from '../../lib/strengthLive';
-import { CATEGORIES, CATEGORY_LABEL, TIER_COUNT, tierAt, tierFor } from '../../lib/strength';
+import { CATEGORIES, CATEGORY_LABEL, TIER_COUNT, tierAt, tierFor, type Category } from '../../lib/strength';
 import { useExerciseMap } from '../workout/ExercisePicker';
 import { exerciseName } from '../../lib/exerciseName';
 import { useSetting } from '../../lib/settings';
@@ -22,13 +22,13 @@ export function LevelPage() {
 
   return (
     <Page title={t('Styrkenivå', 'Strength level')} back>
-      <div className="flex flex-col items-center pt-2 pb-6 text-center">
+      <div className="flex flex-col items-center pt-1 pb-2 text-center">
         <div className="relative grid place-items-center">
           <span className="relative">
-            <TierEmblem index={s.tier.index} size={128} />
+            <TierEmblem index={s.tier.index} size={96} />
           </span>
         </div>
-        <h2 className="mt-4 text-3xl font-bold" style={{ color: accent }}>
+        <h2 className="mt-3 text-2xl font-bold" style={{ color: accent }}>
           {s.tier.name}
         </h2>
         <p className="mt-1 text-sm text-muted">
@@ -44,9 +44,75 @@ export function LevelPage() {
             </p>
           </div>
         )}
+        <a href="#levels" onClick={(e) => { e.preventDefault(); document.getElementById('levels')?.scrollIntoView({ behavior: 'smooth' }); }} className="mt-3 text-xs font-medium text-accent">
+          {t('Slik fungerer nivåene ↓', 'How the levels work ↓')}
+        </a>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <SectionTitle>{t('Dine løft', 'Your lifts')}</SectionTitle>
+      {s.lifts.length === 0 ? (
+        <Card className="p-3.5 text-sm text-muted">
+          {t('Logg benkpress, knebøy, markløft, roing eller pull-ups for å få et nivå.', 'Log bench press, squat, deadlift, rows or pull-ups to get a level.')}
+        </Card>
+      ) : (
+        <Card className="divide-y divide-line" data-lift-levels>
+          {s.lifts.map((l) => {
+            const nextT = l.tier.index < TIER_COUNT - 1 ? tierAt(l.tier.index + 1) : null;
+            const shown = (v: number) => (l.bodyweightLoad ? `+${kg(Math.max(0, v - bw))}` : kg(v));
+            const color = tierAccent(l.tier.index);
+            const progress = nextT ? Math.max(0, Math.min(1, (l.score - l.tier.min) / 10)) : 1;
+            return (
+              <Link key={l.exerciseId} to={`/exercise/${l.exerciseId}`} className="flex items-center gap-3 px-3.5 py-3 active:bg-raised">
+                <TierEmblem index={l.tier.index} size={40} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate font-semibold">{exerciseName(exMap.get(l.exerciseId))}</span>
+                    <span className="shrink-0 text-sm font-semibold" style={{ color }}>
+                      {l.tier.name}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-raised">
+                    <div className="h-full rounded-full" style={{ width: `${progress * 100}%`, background: color }} />
+                  </div>
+                  <div className="mt-1 text-xs text-muted">
+                    {l.capped
+                      ? t('Høyeste nivå for denne varianten. Hovedløftet gir høyere nivå.', 'Highest level for this variant. The main lift can go higher.')
+                      : nextT && l.nextTierKg
+                        ? t(`1RM nå ${shown(l.e1rm)}. Klarer du ${shown(l.nextTierKg)}, blir du ${nextT.name}.`, `1RM now ${shown(l.e1rm)}. Lift ${shown(l.nextTierKg)} to reach ${nextT.name}.`)
+                        : t(`1RM ${shown(l.e1rm)} · toppnivået`, `1RM ${shown(l.e1rm)} · top level`)}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </Card>
+      )}
+
+      <SectionTitle>{t('Kategorier', 'Categories')}</SectionTitle>
+      <Card className="flex flex-col gap-3 p-3.5">
+        {CATEGORIES.map((c) => {
+          const score = s.categories[c];
+          const tier = tierFor(score);
+          return (
+            <div key={c}>
+              <div className="flex items-baseline justify-between text-sm">
+                <span>
+                  <span className="font-semibold">{CATEGORY_LABEL[c]}</span>{' '}
+                  <span className="text-xs text-faint">{CATEGORY_LIFTS[c]()}</span>
+                </span>
+                <span className="text-muted">
+                  {s.missing.includes(c) ? t('Ikke logget', 'Not logged') : `${tier.name} · ${num(score, 0)}`}
+                </span>
+              </div>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-raised">
+                <div className="h-full rounded-full" style={{ width: `${score}%`, background: tierAccent(tier.index) }} />
+              </div>
+            </div>
+          );
+        })}
+      </Card>
+
+      <div className="mt-4 flex flex-col gap-2">
         {s.missing.length > 0 && (
           <Note>
             {t(
@@ -73,59 +139,7 @@ export function LevelPage() {
         )}
       </div>
 
-      <SectionTitle>{t('Kategorier', 'Categories')}</SectionTitle>
-      <Card className="flex flex-col gap-3 p-3.5">
-        {CATEGORIES.map((c) => {
-          const score = s.categories[c];
-          const tier = tierFor(score);
-          return (
-            <div key={c}>
-              <div className="flex items-baseline justify-between text-sm">
-                <span className="font-semibold">{CATEGORY_LABEL[c]}</span>
-                <span className="text-muted">
-                  {s.missing.includes(c) ? t('Ikke logget', 'Not logged') : `${tier.name} · ${num(score, 0)}`}
-                </span>
-              </div>
-              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-raised">
-                <div className="h-full rounded-full" style={{ width: `${score}%`, background: tierAccent(tier.index) }} />
-              </div>
-            </div>
-          );
-        })}
-      </Card>
-
-      <SectionTitle>{t('Dine løft', 'Your lifts')}</SectionTitle>
-      {s.lifts.length === 0 ? (
-        <Card className="p-3.5 text-sm text-muted">
-          {t('Logg benkpress, knebøy, markløft, roing eller pull-ups for å få et nivå.', 'Log bench press, squat, deadlift, rows or pull-ups to get a level.')}
-        </Card>
-      ) : (
-        <Card className="divide-y divide-line">
-          {s.lifts.map((l) => {
-            const nextT = l.tier.index < TIER_COUNT - 1 ? tierAt(l.tier.index + 1) : null;
-            const shown = (v: number) => (l.bodyweightLoad ? `+${kg(Math.max(0, v - bw))}` : kg(v));
-            return (
-              <Link key={l.exerciseId} to={`/exercise/${l.exerciseId}`} className="flex items-center gap-3 px-4 py-3">
-                <TierEmblem index={l.tier.index} size={36} />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-semibold">{exerciseName(exMap.get(l.exerciseId))}</div>
-                  <div className="text-xs text-muted">
-                    <span style={{ color: tierAccent(l.tier.index) }}>{l.tier.name}</span> · 1RM ≈ {shown(l.e1rm)}
-                  </div>
-                </div>
-                {l.capped && <div className="text-right text-xs text-faint">{t('Maks for varianter', 'Max for variants')}</div>}
-                {nextT && l.nextTierKg && (
-                  <div className="text-right text-xs text-muted">
-                    <div className="font-num font-semibold text-ink">{shown(l.nextTierKg)}</div>
-                    {t('til', 'for')} {nextT.name}
-                  </div>
-                )}
-              </Link>
-            );
-          })}
-        </Card>
-      )}
-
+      <div id="levels" className="scroll-mt-16" />
       <SectionTitle>{t('Nivåene', 'The levels')}</SectionTitle>
       <Card className="divide-y divide-line">
         {Array.from({ length: TIER_COUNT }, (_, i) => TIER_COUNT - 1 - i).map((i) => {
@@ -173,6 +187,13 @@ export function LevelPage() {
     </Page>
   );
 }
+
+/** Hvilke løft som teller i hver kategori. */
+const CATEGORY_LIFTS: Record<Category, () => string> = {
+  push: () => t('benk, skulderpress, dips', 'bench, overhead press, dips'),
+  pull: () => t('roing, pull-ups', 'rows, pull-ups'),
+  legs: () => t('knebøy, markløft', 'squat, deadlift'),
+};
 
 function Note({ children }: { children: React.ReactNode }) {
   return <p className="rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">{children}</p>;

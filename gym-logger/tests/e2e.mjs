@@ -354,6 +354,9 @@ try {
   await page.getByRole('heading', { name: 'Styrkenivå' }).waitFor();
   await page.getByText('Olympia', { exact: true }).waitFor();
   await page.getByText(/Logg (press|trekk).*-øvelser/).waitFor();
+  const levelHeads = await page.locator('main h2').allInnerTexts();
+  assert.ok(levelHeads.indexOf('Dine løft') >= 0 && levelHeads.indexOf('Dine løft') < levelHeads.indexOf('Kategorier'), `løftene står over kategoriene (${levelHeads.join(' | ')})`);
+  await page.getByText(/Klarer du .* blir du/).first().waitFor();
   await shot('styrkeniva');
   await btn('Tilbake').click();
   await page.getByText('Siste rekorder').waitFor();
