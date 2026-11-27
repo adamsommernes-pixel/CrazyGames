@@ -211,7 +211,7 @@ function buildBackup(source: ImportSource, rows: FlatSet[]): Backup {
           exercise_id: ex.id,
           position: i,
           weight: Math.round(r.weightKg * 100) / 100,
-          reps,
+          reps: Math.round(reps),
           distance_km: ex.kind === 'cardio' && r.km ? r.km : null,
           set_type: r.type,
           completed_at: r.end ?? r.start,

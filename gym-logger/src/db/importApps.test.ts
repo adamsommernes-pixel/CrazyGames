@@ -60,6 +60,7 @@ describe('Hevy', () => {
     const sets = b.tables.sets as unknown as { exercise_id: string; set_type: string; reps: number; distance_km: number | null }[];
     expect(sets.filter((s) => s.exercise_id === 'ex-benkpress').map((s) => s.set_type)).toEqual(['warmup', 'normal']);
     expect(sets.find((s) => s.exercise_id === 'ex-loping')).toMatchObject({ reps: 30, distance_km: 5 });
+    expect(sets.every((s) => Number.isInteger(s.reps))).toBe(true);
     const ex = b.tables.exercises as unknown as { name: string; custom: number }[];
     expect(ex.map((e) => e.name)).toEqual(['Weird Machine Thing']);
     expect((b.tables.workouts as unknown as { name: string }[]).map((w) => w.name)).toEqual(['Push', 'Legs']);

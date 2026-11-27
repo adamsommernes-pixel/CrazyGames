@@ -197,7 +197,7 @@ export function lyftoToBackup(data: LyftoExport): Backup {
           exercise_id: ex.id,
           position: i,
           weight: Math.round((s.weight ?? 0) * kg * 100) / 100,
-          reps: s.reps ?? 0,
+          reps: Math.round(s.reps ?? 0),
           distance_km: null,
           set_type: s.isWarmup ? 'warmup' : 'normal',
           completed_at: s.completedAt ?? w.date,

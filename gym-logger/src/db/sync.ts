@@ -5,7 +5,7 @@ import { SYNCED_TABLES, type Row, type SyncedTable } from './types';
 import { normalizeRemote, remoteWins } from './merge';
 import { supabase } from '../lib/supabase';
 import { t } from '../i18n';
-import { cloudPayload, hasHealthConsent, keepLocalSensitive, SENSITIVE_TABLES } from './consent';
+import { cloudPayload, fitIntegers, hasHealthConsent, keepLocalSensitive, SENSITIVE_TABLES } from './consent';
 
 // ---------- Status (enkel global store) ----------
 
@@ -51,7 +51,7 @@ async function push(userId: string) {
     for (let i = 0; i < rows.length; i += PAGE) {
       const chunk = rows.slice(i, i + PAGE);
       const payload = chunk
-        .map(({ dirty: _dirty, ...r }) => cloudPayload(t, r as Record<string, unknown>, consent))
+        .map(({ dirty: _dirty, ...r }) => cloudPayload(t, fitIntegers(t, r as Record<string, unknown>), consent))
         .filter((r) => r !== null)
         .map((r) => ({ ...r, user_id: userId }));
       const { error } = await supabase!.from(t).upsert(payload, { onConflict: 'id' });
