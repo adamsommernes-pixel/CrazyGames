@@ -106,6 +106,28 @@ export const LYFTO_MAP: Record<string, string> = {
   treadmill: 'tredemolle',
   'rowing-machine': 'romaskin',
   running: 'loping',
+  // Nye øvelser i v1.1
+  'bayesian-cable-curl': 'bayesian-curl',
+  'cable-wrist-curl': 'kabel-handleddscurl',
+  'assisted-pull-up-machine': 'assistert-pull-up',
+  'reverse-wrist-curl-dumbbell': 'omvendt-handleddscurl',
+  'smith-machine-row': 'smith-roing',
+  'machine-preacher-curl': 'maskin-preacher',
+  'smith-machine-calf-raise': 'smith-tahev',
+  'landmine-180': 'landmine-180',
+  'reverse-grip-pushdown': 'omvendt-pushdown',
+  'band-pull-apart': 'band-pull-apart',
+  'rear-delt-machine': 'bakre-skulder-maskin',
+  'smith-machine-squat': 'smith-kneboy',
+  'belt-squat': 'beltekneboy',
+  'pendulum-squat': 'pendel-kneboy',
+  'reverse-lunge': 'omvendt-utfall',
+  'cable-woodchop': 'kabel-woodchop',
+  'push-press': 'push-press',
+  'floor-press': 'gulvpress',
+  'dumbbell-pullover': 'pullover-manual',
+  'seal-row': 'seal-row',
+  'meadows-row': 'meadows-roing',
 };
 
 const MUSCLE: Record<string, MuscleGroup> = {

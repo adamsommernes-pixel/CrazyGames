@@ -4,6 +4,7 @@ import { BACK, CHEST, SHOULDERS } from './upper';
 import { BICEPS, FOREARMS, TRICEPS } from './arms';
 import { GLUTES, LEGS } from './lower';
 import { CARDIO, CORE } from './core';
+import { EXTRA } from './extra';
 import { EN } from './en';
 import { getLang } from '../../i18n';
 
@@ -21,6 +22,7 @@ export const LIBRARY: LibraryEntry[] = [
   ...GLUTES,
   ...CORE,
   ...CARDIO,
+  ...EXTRA,
 ];
 
 export const BUILTIN_EXERCISES: Exercise[] = LIBRARY.map((e) => ({
