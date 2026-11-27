@@ -7,7 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { db } from '../../db/dexie';
 import { getProfile, saveProfile } from '../../db/repo';
 import { ImportButton, ImportHelp } from '../import/ImportButton';
-import { disableRestPush, enableRestPush, pushStatus, pushStatusText } from '../../lib/push';
+import { disableRestPush, enableRestPush, lastPushError, pushStatus, pushStatusText, sendTestAlarm } from '../../lib/push';
 import { backupFileName, downloadBlob, downloadJSON, exportBackup, exportCSV, lastBackupAt, markBackedUp } from '../../db/backup';
 import { requestPersist, useStorageStatus } from '../../lib/storage';
 import { syncNow, useSyncStatus } from '../../db/sync';
@@ -288,8 +288,22 @@ function RestPushSetting() {
           <div className="text-xs text-muted">{t('Krever konto på nett.', 'Requires an online account.')}</div>
         </div>
       )}
+      {on && user.kind === 'cloud' && (
+        <button
+          type="button"
+          className="mb-1 text-sm font-semibold text-accent"
+          onClick={async () => {
+            setMsg(t('Sender … lås telefonen nå, varselet kommer om ca. 15 sekunder.', 'Sending … lock your phone now, the notification arrives in about 15 seconds.'));
+            const err = await sendTestAlarm();
+            if (err) setMsg(t(`Feil fra serveren: ${err}`, `Server error: ${err}`));
+          }}
+        >
+          {t('Send testvarsel', 'Send test notification')}
+        </button>
+      )}
       <p className="text-xs text-muted">
         {msg ??
+          (lastPushError() ? t(`Siste feil: ${lastPushError()}`, `Last error: ${lastPushError()}`) : null) ??
           (status === 'ready'
             ? t('Telefonen spiller av lyd og vibrerer etter innstillingene for varsler.', 'Your phone plays sound and vibrates according to its notification settings.')
             : pushStatusText(status))}
