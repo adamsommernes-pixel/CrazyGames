@@ -772,6 +772,52 @@ try {
       await page.getByRole('tab', { name: 'Utfordringer' }).waitFor();
       assert.ok(!(await fakeStore()).challenges.some((c) => c.title === 'Flest økter – 2 uker'), 'utfordringen er avlyst');
     }
+
+    // ===== Steg 10: innboks =====
+    {
+      const iso = (ms) => new Date(Date.now() + ms).toISOString();
+      const st = await fakeStore();
+      // Gamle varsler fra stegene over regnes som lest, så vi ser bare de nye.
+      for (const n of st.notifications) n.read_at ??= iso(-1000);
+      st.profiles.push({ ...zara, user_id: 'kim-id', handle: 'kim_test', display_name: 'Kim', visibility: 1 });
+      st.follows.push({ follower: 'kim-id', followee: me, status: 'pending', created_at: iso(-60_000), accepted_at: null });
+      st.challenges.push({ id: 'duell-1', creator: 'open-1', kind: 'volume', exercise_id: null, target: null, title: 'Ny duell', starts_at: iso(-1000), ends_at: iso(7 * 86_400_000), created_at: iso(-1000) });
+      st.members.push({ challenge_id: 'duell-1', user_id: 'open-1', status: 'joined', invited_at: iso(-1000), joined_at: iso(-1000) }, { challenge_id: 'duell-1', user_id: me, status: 'invited', invited_at: iso(-1000), joined_at: null });
+      const note = (kind, actor, payload, ago) => ({ id: `n-${kind}`, user_id: me, kind, actor, payload, read_at: null, created_at: iso(-ago) });
+      st.notifications.push(
+        note('follow_request', 'kim-id', {}, 60_000),
+        note('reaction', 'open-1', { activity_id: 'x', emoji: '🔥' }, 120_000),
+        note('challenge_invite', 'open-1', { challenge_id: 'duell-1', title: 'Ny duell' }, 30_000),
+      );
+      await putFake(st);
+      await page.reload();
+      // Merke på Sosialt i bunnmenyen og på bjella
+      await nav().getByLabel('3 nye varsler').waitFor();
+      await nav().getByRole('link', { name: /Sosialt/ }).click();
+      await btn('Varsler, 3 nye').click();
+      await page.getByRole('heading', { name: 'Varsler' }).waitFor();
+      const list = page.getByRole('list', { name: 'Varsler' });
+      await list.getByText('Åpen 1 utfordret deg: «Ny duell»').waitFor();
+      await list.getByText('Åpen 1 ga 🔥 på økta di').waitFor();
+      await shot('varsler');
+      // Godta forespørselen rett i innboksen
+      await list.locator('[data-notification="follow_request"]').getByRole('button', { name: 'Godta' }).click();
+      await page.getByText('Godtatt', { exact: true }).waitFor();
+      assert.equal((await fakeStore()).follows.find((f) => f.follower === 'kim-id').status, 'accepted', 'Kim er godtatt');
+      // Åpnet = lest: merkene er borte
+      for (let i = 0; i < 20 && (await fakeStore()).notifications.some((n) => n.user_id === me && !n.read_at); i++) await page.waitForTimeout(100);
+      assert.ok(!(await fakeStore()).notifications.some((n) => n.user_id === me && !n.read_at), 'alt er lest');
+      assert.equal(await nav().getByLabel(/nye varsler/).count(), 0, 'ingen merke i bunnmenyen');
+      // Trykk på invitasjonen: åpner utfordringen
+      await list.getByText('Åpen 1 utfordret deg: «Ny duell»').click();
+      await page.getByRole('heading', { name: 'Ny duell' }).waitFor();
+      await btn('Bli med').waitFor();
+      // Kudos-varselet åpner feeden
+      await page.goBack();
+      await list.getByText('Åpen 1 ga 🔥 på økta di').click();
+      await page.getByRole('tab', { name: 'Feed', selected: true }).waitFor();
+      assert.equal(await btn('Varsler', { exact: true }).count(), 1, 'bjella uten nye');
+    }
     await nav().getByRole('link', { name: 'Fremgang' }).click();
     const tabs = page.getByRole('navigation', { name: 'Fremgang og historikk' });
     await tabs.getByRole('link', { name: 'Historikk' }).click();

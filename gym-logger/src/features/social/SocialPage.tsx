@@ -6,6 +6,8 @@ import { PeopleTab } from './PeopleTab';
 import { FeedList } from './FeedList';
 import { LeaderboardTab } from './LeaderboardTab';
 import { ChallengesTab } from './ChallengesTab';
+import { useInbox } from '../../social/inbox';
+import { Icon } from '../../components/Icon';
 import { Button, Card, EmptyState, Page } from '../../components/ui';
 import { socialAvailable } from '../../social';
 import { useMySocial } from '../../social/store';
@@ -74,9 +76,19 @@ function SocialHome() {
 type Tab = 'feed' | 'people' | 'boards' | 'challenges';
 const TAB_KEY = 'repgrade-social-tab';
 
+/** Åpne en bestemt fane neste gang Sosialt vises (f.eks. fra et varsel). */
+export function openSocialTab(tab: Tab) {
+  try {
+    sessionStorage.setItem(TAB_KEY, tab);
+  } catch {
+    /* ignorer */
+  }
+}
+
 function SocialTabs() {
   const { profile } = useMySocial();
   const g = useGraph();
+  const inbox = useInbox();
   const navigate = useNavigate();
   const location = useLocation();
   const [tab, setTab] = useState<Tab>(() => {
@@ -103,8 +115,18 @@ function SocialTabs() {
   if (!profile) return null;
   const requests = g.rel.requests.length;
   const tabClass = (on: boolean) => `relative flex min-h-9 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-1 text-[13px] font-semibold transition-colors ${on ? 'bg-raised text-ink' : 'text-muted'}`;
+  const bell = (
+    <button type="button" onClick={() => navigate('/inbox')} aria-label={inbox.unread ? t(`Varsler, ${inbox.unread} nye`, `Notifications, ${inbox.unread} new`) : t('Varsler', 'Notifications')} className="relative grid size-11 place-items-center rounded-lg text-muted active:bg-raised">
+      <Icon name="bell" />
+      {inbox.unread > 0 && (
+        <span className="absolute top-1.5 right-1.5 grid min-w-4.5 place-items-center rounded-full bg-accent px-1 text-[10px] leading-4.5 font-bold text-on-accent" aria-hidden="true">
+          {inbox.unread > 9 ? '9+' : inbox.unread}
+        </span>
+      )}
+    </button>
+  );
   return (
-    <Page title={t('Sosialt', 'Social')}>
+    <Page title={t('Sosialt', 'Social')} actions={bell}>
       <Card className="mb-3 p-3.5">
         <SocialProfileHeader profile={profile} />
       </Card>

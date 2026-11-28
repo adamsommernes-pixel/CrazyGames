@@ -44,6 +44,8 @@ import { resetGraph } from './social/graph';
 import { rememberInvite, takeInvite } from './social/invite';
 import { PersonPage } from './features/social/PersonPage';
 import { ChallengePage } from './features/social/ChallengePage';
+import { InboxPage } from './features/social/InboxPage';
+import { InboxPoller, resetInbox } from './social/inbox';
 import { StrengthSync } from './social/StrengthSync';
 import { ActivitySync } from './social/ActivitySync';
 import { useSocialMode } from './lib/socialMode';
@@ -131,6 +133,7 @@ function SignedIn({ user }: { user: AuthUser }) {
     bindSocialUser(user);
     resetMySocial();
     resetGraph();
+    resetInbox();
   }, [user]);
   const socialMode = useSocialMode();
   // Invitasjonslenke åpnet før innlogging: åpne profilen nå.
@@ -159,6 +162,7 @@ function SignedIn({ user }: { user: AuthUser }) {
         <>
           <StrengthSync />
           <ActivitySync />
+          <InboxPoller />
         </>
       )}
       <PushPrompt />
@@ -171,6 +175,7 @@ function SignedIn({ user }: { user: AuthUser }) {
         <Route path="/social" element={<SocialPage />} />
         <Route path="/u/:handle" element={<PersonPage />} />
         <Route path="/challenge/:id" element={<ChallengePage />} />
+        <Route path="/inbox" element={<InboxPage />} />
         <Route path="/summary/:id" element={<Summary />} />
         <Route path="/routines" element={<RoutineList />} />
         <Route path="/routines/new" element={<RoutineEditor />} />

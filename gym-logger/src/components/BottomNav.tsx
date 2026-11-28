@@ -6,6 +6,7 @@ import { openStartSheet } from '../features/workout/StartSheet';
 import { useNow } from '../features/workout/restTimer';
 import { duration, isLongAgo } from '../lib/format';
 import { useSocialMode } from '../lib/socialMode';
+import { useInbox } from '../social/inbox';
 import { t } from '../i18n';
 
 // Sosial konto: Sosialt tar plassen til Historikk, og Historikk ligger under Fremgang.
@@ -18,7 +19,7 @@ const right = (): { to: string; label: string; icon: IconName }[] => [
   { to: '/profile', label: t('Profil', 'Profile'), icon: 'user' },
 ];
 
-function Tab({ to, label, icon, alsoActive }: { to: string; label: string; icon: IconName; alsoActive?: boolean }) {
+function Tab({ to, label, icon, alsoActive, badge }: { to: string; label: string; icon: IconName; alsoActive?: boolean; badge?: number }) {
   return (
     <li className="flex-1">
       <NavLink
@@ -28,7 +29,14 @@ function Tab({ to, label, icon, alsoActive }: { to: string; label: string; icon:
           `flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${isActive || alsoActive ? 'text-accent' : 'text-faint'}`
         }
       >
-        <Icon name={icon} size={23} />
+        <span className="relative">
+          <Icon name={icon} size={23} />
+          {!!badge && (
+            <span className="absolute -top-1 -right-2 grid min-w-4 place-items-center rounded-full bg-accent px-1 text-[10px] leading-4 font-bold text-on-accent" aria-label={t(`${badge} nye varsler`, `${badge} new notifications`)}>
+              {badge > 9 ? '9+' : badge}
+            </span>
+          )}
+        </span>
         {label}
       </NavLink>
     </li>
@@ -40,6 +48,7 @@ export function BottomNav() {
   const active = useLiveQuery(() => getActiveWorkout(), []);
   const now = useNow(1000, !!active);
   const social = useSocialMode();
+  const { unread } = useInbox();
   const { pathname } = useLocation();
   // Historikk hører til Fremgang-fanen på en sosial konto.
   const historyInProgress = social && pathname.startsWith('/history');
@@ -47,7 +56,7 @@ export function BottomNav() {
     <nav className="pb-safe border-t border-line bg-bg" aria-label={t('Hovedmeny', 'Main menu')}>
       <ul className="mx-auto flex max-w-xl items-end">
         {left(social).map((t) => (
-          <Tab key={t.to} {...t} />
+          <Tab key={t.to} {...t} badge={t.to === '/social' ? unread : undefined} />
         ))}
         <li className="flex flex-1 justify-center">
           <button

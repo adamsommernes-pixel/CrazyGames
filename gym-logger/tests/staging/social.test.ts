@@ -91,6 +91,10 @@ describe('staging: ekte Supabase', () => {
     expect((await A.s.notifications()).some((n) => n.kind === 'follow_request' && n.actor === B.id)).toBe(true);
     await A.s.acceptFollower(B.id);
     expect(await sees(B, A)).toBe(true);
+    // Innboks: merk som lest, og B ser ikke As varsler
+    await A.s.markRead();
+    expect((await A.s.notifications()).every((n) => n.read_at)).toBe(true);
+    expect((await B.s.notifications()).some((n) => n.user_id === A.id)).toBe(false);
     await B.s.react(A.id, 'A-1', '🔥');
     expect((await A.s.reactions([{ owner: A.id, id: 'A-1' }])).map((r) => r.emoji)).toEqual(['🔥']);
     // Bytt reaksjon (oppdatering), så fjern den
