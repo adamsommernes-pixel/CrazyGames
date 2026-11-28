@@ -194,7 +194,7 @@ select pg_temp.as_user(:'C');
 update public.social_profiles set share_from = now() - interval '7 days' where user_id = auth.uid();
 select test.ok((select share_from from public.social_profiles where user_id = auth.uid()) is not null, 'deling fra-dato lagres');
 select pg_temp.as_user(:'B');
-select test.ok(test.n($q$select * from public.discover()$q$) = 2, 'Oppdag viser bare åpne kontoer (C og E)');
+select test.ok((select array_agg(handle order by handle) from public.discover()) = array['anna', 'cecilie', 'eva'], 'Oppdag: åpne kontoer og private 16+ (A, C, E), ikke under 16 (K) eller uten 16+ (D)');
 select test.ok(test.n($q$select * from public.discover('cec')$q$) = 1, 'søk i Oppdag');
 select pg_temp.as_user(:'X');
 select test.ok(test.n($q$select * from public.discover()$q$) = 0, 'Oppdag krever sosial profil');

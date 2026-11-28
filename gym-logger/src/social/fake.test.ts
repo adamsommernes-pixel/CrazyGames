@@ -172,12 +172,12 @@ describe('ledertavler og Oppdag', () => {
     await profile('E', 3);
     await profile('F', 3);
     await publish('F', 'f1', 1);
-    expect((await as('D').discover()).map((p) => p.user_id)).toEqual(['F', 'C', 'E']);
+    expect((await as('D').discover()).map((p) => p.user_id)).toEqual(['F', 'C', 'E', 'B']);
     expect((await as('D').discover('user_e')).map((p) => p.user_id)).toEqual(['E']);
   });
 
-  it('Oppdag viser bare åpne kontoer', async () => {
-    expect((await as('D').discover()).map((p) => p.user_id)).toEqual(['C']);
+  it('Oppdag viser åpne kontoer først, så andre 16+ (ikke under 16)', async () => {
+    expect((await as('D').discover()).map((p) => p.user_id)).toEqual(['C', 'B']);
     expect(await as('D').discover('finnes-ikke')).toEqual([]);
     expect(await as('X').discover()).toEqual([]);
   });
@@ -223,5 +223,76 @@ describe('utfordringer', () => {
     await as('A').leaveChallenge(goal);
     await as('A').leaveChallenge(weekly);
     expect((await as('A').challenges()).challenges.map((c) => c.id)).toEqual([lift]);
+  });
+});
+
+// Samme scenarioer som supabase/tests/2_suggestions.sql.
+describe('forslag', () => {
+  beforeEach(async () => {
+    store = memoryStore();
+    const mk = (u: string, name: string, visibility: Visibility, is_16_plus = true) =>
+      as(u).saveProfile({ handle: name.toLowerCase(), display_name: name, color: '#34c56a', visibility, is_16_plus, tier_index: 4 });
+    await mk('M', 'Meg', 1);
+    await mk('F', 'Frida', 3);
+    await mk('G', 'Geir', 3);
+    await mk('S', 'Sara', 1);
+    await mk('T', 'Tor', 1);
+    await mk('O', 'Ola', 3);
+    await mk('N', 'Nina', 1);
+    await as('N').setSuggestable(false);
+    await mk('U', 'Ung', 1, false);
+    await mk('Q', 'Quinn', 1);
+    await mk('BL', 'Blokk', 3);
+    await mk('W', 'Walter', 3);
+    await as('W').setActive(false);
+    await as('M').follow('F');
+    await as('M').follow('G');
+    for (const f of ['F', 'G']) {
+      await as(f).follow('S');
+      await as('S').acceptFollower(f);
+    }
+    await as('F').follow('O');
+    await as('T').follow('M');
+    await as('M').acceptFollower('T');
+    await as('M').follow('Q');
+    await as('F').follow('U');
+    await as('U').acceptFollower('F');
+    await as('M').block('BL');
+  });
+
+  it('felles venner først, så de som følger deg; ikke fulgte, blokkerte, under 16, avslåtte eller skjulte', async () => {
+    const list = await as('M').suggestions();
+    expect(list.map((p) => p.handle)).toEqual(['sara', 'ola', 'tor']);
+    expect(list[0]).toMatchObject({ mutual_count: 2, mutual_names: ['Frida', 'Geir'], follows_you: false, tier_index: null, visibility: 1 });
+    expect(list[1]).toMatchObject({ mutual_count: 1, tier_index: 4 });
+    expect(list[2]).toMatchObject({ mutual_count: 0, follows_you: true });
+    expect(await as('M').suggestions(1)).toHaveLength(1);
+    expect(await seesFeed('M', 'S')).toBe(false);
+  });
+
+  it('søk finner private som kan foreslås, men ikke nivået deres', async () => {
+    expect((await as('M').discover('sara')).map((p) => [p.handle, p.tier_index])).toEqual([['sara', null]]);
+    expect(await as('M').discover('nina')).toEqual([]);
+    expect(await as('M').discover('ung')).toEqual([]);
+    expect(await as('M').discover('blokk')).toEqual([]);
+  });
+
+  it('kan slås av for private, men åpne vises uansett', async () => {
+    await as('S').setSuggestable(false);
+    await as('O').setSuggestable(false);
+    expect((await as('M').suggestions()).map((p) => p.handle)).toEqual(['ola', 'tor']);
+  });
+
+  it('antall følgere og fulgte', async () => {
+    expect(await as('M').followCounts('S')).toEqual({ followers: 2, following: 0 });
+    expect(await as('M').followCounts('M')).toEqual({ followers: 1, following: 2 });
+    expect(await as('M').followCounts('BL')).toBeNull();
+    expect(await as('M').followCounts('W')).toBeNull();
+  });
+
+  it('navnet på den som ga kudos vises, men ikke nivået', async () => {
+    await as('F').publish({ id: 'f1', name: 'f1', started_at: ago(2), ended_at: ago(1), data: data(1) });
+    await as('N').react('F', 'f1', '🔥');
+    expect((await as('M').people(['N'])).map((p) => [p.handle, p.tier_index])).toEqual([['nina', null]]);
   });
 });

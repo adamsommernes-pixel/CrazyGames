@@ -7,6 +7,7 @@ import type {
   ChallengeMember,
   Emoji,
   Follow,
+  FollowCounts,
   FollowStatus,
   LeaderboardRow,
   NewChallenge,
@@ -16,6 +17,7 @@ import type {
   SocialProfile,
   SocialProfileInput,
   Standing,
+  Suggestion,
 } from './types';
 
 /**
@@ -34,6 +36,8 @@ export interface SocialBackend {
   /** Lager eller oppdaterer din sosiale profil. */
   saveProfile(input: SocialProfileInput): Promise<SocialProfile>;
   handleAvailable(handle: string): Promise<boolean>;
+  /** «Vis meg i forslag» (private kontoer; åpne vises uansett). Eget kall, så profilen kan lagres også før 013. */
+  setSuggestable(on: boolean): Promise<void>;
   /** Kontotypen. På Supabase styres den av profiles.social (synk); den falske setter den direkte. */
   setActive(active: boolean): Promise<void>;
   /** Profilene du kan se (følger, åpne, ledertavle). */
@@ -43,6 +47,10 @@ export interface SocialBackend {
   findByHandle(handle: string): Promise<Person | null>;
   discover(query?: string): Promise<Person[]>;
   people(ids: string[]): Promise<Person[]>;
+  /** Folk å følge: felles venner først, så de som følger deg, så de sist aktive. Også private (bare navn). */
+  suggestions(limit?: number): Promise<Suggestion[]>;
+  /** Følgere og hvor mange de følger. null hvis du ikke kan se profilen. */
+  followCounts(userId: string): Promise<FollowCounts | null>;
 
   // Følging
   follows(): Promise<Follow[]>;

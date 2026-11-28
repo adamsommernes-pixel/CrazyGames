@@ -17,6 +17,8 @@ export interface SocialProfile {
   lift_scores: Record<string, number>;
   /** Økter fra og med dette tidspunktet deles (valgt ved oppstart). null = fra profilen ble laget. */
   share_from: string | null;
+  /** «Vis meg i forslag» (013). Mangler før migrasjonen er kjørt = på. */
+  suggestable?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -35,6 +37,20 @@ export interface Person {
   tier_index?: number | null;
   /** Bare fra Oppdag: om du allerede følger (eller har spurt). */
   following?: boolean;
+}
+
+/** Forslag til folk å følge (suggestions i 013_suggestions.sql). */
+export interface Suggestion extends Person {
+  /** Hvor mange du følger som følger dem. */
+  mutual_count: number;
+  /** Opptil to av dem, til «Følges av Frida og Geir». */
+  mutual_names: string[];
+  follows_you: boolean;
+}
+
+export interface FollowCounts {
+  followers: number;
+  following: number;
 }
 
 export type FollowStatus = 'pending' | 'accepted';

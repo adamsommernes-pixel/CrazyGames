@@ -12,6 +12,7 @@ import {
   type SocialNotification,
   type SocialProfile,
   type Standing,
+  type Suggestion,
 } from './types';
 import { t } from '../i18n';
 import { nameProblem } from './names';
@@ -98,6 +99,13 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
   const notify = (s: Store, target: string, kind: SocialNotification['kind'], actor: string, payload: Record<string, unknown> = {}) => {
     if (target !== actor) s.notifications.push({ id: id(), user_id: target, kind, actor, payload, read_at: null, created_at: iso() });
   };
+  // Kan `owner` foreslås for `viewer` (suggestable_for i 013)? Aktiv, 16+, ikke blokkert, åpen eller sagt ja.
+  const suggestableFor = (s: Store, viewer: string, owner: string) => {
+    const o = prof(s, owner);
+    return viewer !== owner && hasSocial(s, viewer) && !!o?.active && o.is_16_plus && (o.visibility === 3 || o.suggestable !== false) && !isBlocked(s, viewer, owner);
+  };
+  const lastActive = (s: Store, owner: string) => s.activities.filter((a) => a.user_id === owner).reduce((m, a) => (a.started_at > m ? a.started_at : m), '');
+  const tierFor = (s: Store, viewer: string, p: SocialProfile) => (p.visibility >= 2 || canSee(s, viewer, p.user_id) ? p.tier_index : null);
   const person = (p: SocialProfile): Person => ({ user_id: p.user_id, handle: p.handle, display_name: p.display_name, color: p.color, visibility: p.visibility });
   const profileVisible = (s: Store, viewer: string, p: SocialProfile) =>
     p.user_id === viewer || canSee(s, viewer, p.user_id) || (p.active && p.visibility >= 2 && !isBlocked(s, viewer, p.user_id) && hasSocial(s, viewer));
@@ -151,6 +159,13 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
       const h = handle.toLowerCase();
       return HANDLE.test(h) && !nameProblem(h, '') && !read().profiles.some((p) => p.handle === h && p.user_id !== u);
     },
+    async setSuggestable(on) {
+      const u = me();
+      tx((s) => {
+        const p = prof(s, u);
+        if (p) p.suggestable = on;
+      });
+    },
     async setActive(active) {
       const u = me();
       tx((s) => {
@@ -176,22 +191,63 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
       const u = me();
       if (!hasSocial(s, u)) return [];
       const q = query.trim().toLowerCase();
-      const last = (owner: string) => s.activities.filter((a) => a.user_id === owner).reduce((m, a) => (a.started_at > m ? a.started_at : m), '');
       return s.profiles
-        .filter((p) => p.visibility === 3 && p.active && p.user_id !== u && !isBlocked(s, u, p.user_id))
+        .filter((p) => suggestableFor(s, u, p.user_id))
         .filter((p) => !q || p.handle.includes(q) || p.display_name.toLowerCase().includes(q))
-        .sort((a, b) => last(b.user_id).localeCompare(last(a.user_id)) || a.display_name.localeCompare(b.display_name))
-        .map((p) => ({ ...person(p), tier_index: p.tier_index, following: follows(s, u, p.user_id) }));
+        .sort(
+          (a, b) =>
+            Number(b.visibility === 3) - Number(a.visibility === 3) ||
+            lastActive(s, b.user_id).localeCompare(lastActive(s, a.user_id)) ||
+            a.display_name.localeCompare(b.display_name),
+        )
+        .map((p) => ({ ...person(p), tier_index: tierFor(s, u, p), following: follows(s, u, p.user_id) }));
+    },
+    async suggestions(limit = 20) {
+      const s = read();
+      const u = me();
+      const myFollowing = s.follows.filter((f) => f.follower === u && f.status === 'accepted').map((f) => f.followee);
+      const mutuals = (o: string) =>
+        myFollowing
+          .filter((m) => follows(s, m, o, 'accepted') && prof(s, m)?.active)
+          .map((m) => prof(s, m)!.display_name);
+      return s.profiles
+        .filter((p) => suggestableFor(s, u, p.user_id) && !follows(s, u, p.user_id))
+        .map((p) => {
+          const names = mutuals(p.user_id).sort((a, b) => a.localeCompare(b));
+          return { p, m: names.length, names, fy: follows(s, p.user_id, u) };
+        })
+        .sort(
+          (a, b) =>
+            b.m - a.m ||
+            Number(b.fy) - Number(a.fy) ||
+            lastActive(s, b.p.user_id).localeCompare(lastActive(s, a.p.user_id)) ||
+            a.p.display_name.localeCompare(b.p.display_name),
+        )
+        .slice(0, Math.min(Math.max(limit, 1), 100))
+        .map(({ p, m, names, fy }): Suggestion => ({ ...person(p), tier_index: tierFor(s, u, p), mutual_count: m, mutual_names: names.slice(0, 2), follows_you: fy }));
+    },
+    async followCounts(target) {
+      const s = read();
+      const u = me();
+      const t = prof(s, target);
+      if (!hasSocial(s, u) || isBlocked(s, u, target) || !t || (!t.active && target !== u)) return null;
+      const active = (x: string) => !!prof(s, x)?.active;
+      return {
+        followers: s.follows.filter((f) => f.followee === target && f.status === 'accepted' && active(f.follower)).length,
+        following: s.follows.filter((f) => f.follower === target && f.status === 'accepted' && active(f.followee)).length,
+      };
     },
     async people(ids) {
       const s = read();
       const u = me();
       const related = (o: string) =>
         follows(s, u, o) || follows(s, o, u) || s.members.some((a) => a.user_id === u && s.members.some((b) => b.challenge_id === a.challenge_id && b.user_id === o));
+      // De som har reagert på økter du kan se (så kudos-lista viser navn).
+      const reacted = (o: string) => s.reactions.some((r) => r.user_id === o && canSee(s, u, r.activity_owner));
       return s.profiles
         .filter((p) => ids.includes(p.user_id) && p.active && !isBlocked(s, u, p.user_id))
-        .filter((p) => p.user_id === u || canSee(s, u, p.user_id) || p.visibility >= 2 || related(p.user_id))
-        .map((p) => ({ ...person(p), tier_index: canSee(s, u, p.user_id) || p.visibility >= 2 ? p.tier_index : null }));
+        .filter((p) => p.user_id === u || canSee(s, u, p.user_id) || p.visibility >= 2 || suggestableFor(s, u, p.user_id) || related(p.user_id) || reacted(p.user_id))
+        .map((p) => ({ ...person(p), tier_index: tierFor(s, u, p) }));
     },
 
     async follows() {

@@ -1,6 +1,6 @@
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 import type { SocialBackend } from './backend';
-import { SocialError, type Activity, type Follow, type LeaderboardRow, type Person, type SocialProfile, type Standing } from './types';
+import { SocialError, type Activity, type Follow, type FollowCounts, type LeaderboardRow, type Person, type SocialProfile, type Standing, type Suggestion } from './types';
 import { t } from '../i18n';
 
 /** Gjør databasefeil forståelige. Reglene selv ligger i 012_social.sql. */
@@ -56,6 +56,10 @@ export function createSupabaseSocial(sb: SupabaseClient): SocialBackend {
     async handleAvailable(handle) {
       return !!check(await sb.rpc('handle_available', { h: handle }));
     },
+    async setSuggestable(on) {
+      const id = await me();
+      check(await sb.from('social_profiles').update({ suggestable: on }).eq('user_id', id));
+    },
     // Serveren følger profiles.social, som sendes med vanlig synk.
     async setActive() {},
     async profiles(ids) {
@@ -73,6 +77,13 @@ export function createSupabaseSocial(sb: SupabaseClient): SocialBackend {
     async people(ids) {
       if (!ids.length) return [];
       return (check(await sb.rpc('people', { ids })) as Person[] | null) ?? [];
+    },
+    async suggestions(limit = 20) {
+      return (check(await sb.rpc('suggestions', { lim: limit })) as Suggestion[] | null) ?? [];
+    },
+    async followCounts(userId) {
+      const rows = check(await sb.rpc('follow_counts', { target: userId })) as FollowCounts[] | null;
+      return rows?.[0] ?? null;
     },
 
     async follows() {
