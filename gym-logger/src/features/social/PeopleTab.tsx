@@ -33,15 +33,16 @@ export function PeopleTab() {
     }
   };
 
+  const [q, setQ] = useState('');
+  const query = q.trim().replace(/^@/, '');
+
   return (
     <div className="flex flex-col">
-      <FindPerson />
-      {profile && (
-        <Button variant="secondary" icon="share" full className="mt-3" onClick={() => void shareInvite(profile.handle)}>
-          {t('Inviter venner', 'Invite friends')}
-        </Button>
-      )}
-
+      <SearchField value={q} onChange={setQ} />
+      {query ? (
+        <PeopleResults query={query} />
+      ) : (
+        <>
       {g.error && g.status !== 'ready' && <p className="mt-4 text-sm text-danger">{g.error}</p>}
 
       {g.rel.requests.length > 0 && (
@@ -58,6 +59,14 @@ export function PeopleTab() {
           ))}
         </List>
       )}
+
+      {profile && (
+        <Button variant="secondary" icon="share" full className="mt-4" onClick={() => void shareInvite(profile.handle)}>
+          {t('Inviter venner', 'Invite friends')}
+        </Button>
+      )}
+
+      <PeopleResults query="" />
 
       <List title={t(`Du følger (${g.rel.following.length + g.rel.requested.length})`, `Following (${g.rel.following.length + g.rel.requested.length})`)} empty={t('Du følger ingen ennå. Finn venner på brukernavnet deres, eller send dem en invitasjon.', "You don't follow anyone yet. Find friends by their username, or send them an invite.")}>
         {[...g.rel.requested, ...g.rel.following].map((id) => (
@@ -97,6 +106,8 @@ export function PeopleTab() {
           )}
         </>
       )}
+        </>
+      )}
     </div>
   );
 }
@@ -117,64 +128,95 @@ function List({ title, empty, children }: { title: string; empty?: string; child
   );
 }
 
-/** Finn en person på eksakt @brukernavn (private kontoer finnes bare slik). */
-function FindPerson() {
-  const [q, setQ] = useState('');
-  const [result, setResult] = useState<Person | null | 'none'>(null);
-  const [busy, setBusy] = useState(false);
-  const search = async () => {
-    const h = cleanHandle(q);
-    if (h.length < 3) return;
-    setBusy(true);
-    try {
-      const p = (await social()?.findByHandle(h)) ?? null;
-      if (p) rememberPerson(p);
-      setResult(p ?? 'none');
-    } catch (e) {
-      showToast(errorText(e));
-    } finally {
-      setBusy(false);
-    }
-  };
+function SearchField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="relative">
+      <Icon name="search" size={18} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-faint" />
+      <input
+        type="search"
+        className={`${inputClass} pl-10`}
+        aria-label={t('Søk etter folk', 'Search for people')}
+        placeholder={t('Navn eller @brukernavn', 'Name or @username')}
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
+        enterKeyHint="search"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  );
+}
+
+const DISCOVER_SHOWN = 5;
+
+/**
+ * Tom `query`: Oppdag (åpne kontoer, sist aktive først). Ellers: åpne kontoer som matcher navn eller
+ * brukernavn, og den som har akkurat det brukernavnet (private kontoer finnes bare slik).
+ */
+function PeopleResults({ query }: { query: string }) {
+  const [results, setResults] = useState<Person[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [all, setAll] = useState(false);
+
+  useEffect(() => {
+    const b = social();
+    if (!b) return;
+    let live = true;
+    setError(null);
+    const id = setTimeout(async () => {
+      try {
+        const h = cleanHandle(query);
+        const [found, exact] = await Promise.all([b.discover(query), h.length >= 3 ? b.findByHandle(h) : Promise.resolve(null)]);
+        if (!live) return;
+        const list = exact ? [exact, ...found.filter((p) => p.user_id !== exact.user_id)] : found;
+        for (const p of list) rememberPerson(p);
+        setResults(list);
+      } catch (e) {
+        if (live) setError(errorText(e));
+      }
+    }, query ? 350 : 0);
+    return () => {
+      live = false;
+      clearTimeout(id);
+    };
+  }, [query]);
+
+  const discover = !query;
+  const shown = discover && !all ? (results ?? []).slice(0, DISCOVER_SHOWN) : (results ?? []);
   return (
     <div>
-      <form
-        className="flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void search();
-        }}
-      >
-        <div className="relative min-w-0 flex-1">
-          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-faint">@</span>
-          <input
-            className={`${inputClass} pl-8`}
-            aria-label={t('Finn på brukernavn', 'Find by username')}
-            placeholder={t('brukernavn', 'username')}
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            enterKeyHint="search"
-            value={q}
-            onChange={(e) => {
-              setQ(cleanHandle(e.target.value));
-              setResult(null);
-            }}
-          />
-        </div>
-        <Button type="submit" disabled={busy || cleanHandle(q).length < 3}>
-          {t('Finn', 'Find')}
-        </Button>
-      </form>
-      {result === 'none' && <p className="mt-2 text-sm text-muted">{t(`Fant ingen med brukernavnet @${cleanHandle(q)}.`, `No one found with the username @${cleanHandle(q)}.`)}</p>}
-      {result && result !== 'none' && (
-        <Card className="mt-2">
-          <ul>
-            <PersonRow person={result}>
-              <FollowButton person={result} compact />
-            </PersonRow>
-          </ul>
-        </Card>
+      <SectionTitle>{discover ? t('Oppdag', 'Discover') : t('Treff', 'Results')}</SectionTitle>
+      {discover && <p className="-mt-1 mb-2 text-sm text-faint">{t('Åpne kontoer, sist aktive først.', 'Open accounts, most recently active first.')}</p>}
+      {error ? (
+        <p className="text-sm text-danger">{error}</p>
+      ) : results === null ? (
+        <p className="text-sm text-muted" role="status">
+          {t('Søker …', 'Searching …')}
+        </p>
+      ) : results.length === 0 ? (
+        <p className="text-sm text-muted">
+          {discover
+            ? t('Ingen åpne kontoer å vise ennå.', 'No open accounts to show yet.')
+            : t(`Fant ingen som heter «${query}». Private kontoer finnes bare på hele brukernavnet.`, `No one found for “${query}”. Private accounts can only be found by their full username.`)}
+        </p>
+      ) : (
+        <>
+          <Card>
+            <ul aria-label={discover ? t('Oppdag', 'Discover') : t('Treff', 'Results')} className="divide-y divide-line">
+              {shown.map((p) => (
+                <PersonRow key={p.user_id} person={p}>
+                  <FollowButton person={p} compact />
+                </PersonRow>
+              ))}
+            </ul>
+          </Card>
+          {discover && results.length > DISCOVER_SHOWN && (
+            <button type="button" className="mt-2 text-sm font-medium text-accent" onClick={() => setAll((v) => !v)}>
+              {all ? t('Vis færre', 'Show fewer') : t(`Vis ${results.length - DISCOVER_SHOWN} til`, `Show ${results.length - DISCOVER_SHOWN} more`)}
+            </button>
+          )}
+        </>
       )}
     </div>
   );

@@ -153,6 +153,15 @@ describe('staging: ekte Supabase', () => {
     expect(Date.parse(p.share_from!)).toBe(Date.parse(from));
   });
 
+  it('Oppdag: bare åpne kontoer, søk på navn og brukernavn', async () => {
+    const { A, B, C, D } = users;
+    const ids = (await D.s.discover(`t${run}_`)).map((p) => p.user_id);
+    expect(ids).toEqual([C.id]);
+    expect(ids).not.toContain(A.id);
+    expect(ids).not.toContain(B.id);
+    expect((await D.s.discover(`Test C`)).some((p) => p.user_id === C.id)).toBe(true);
+  });
+
   it('treningskonto skjuler profilen (profiles.social = 0)', async () => {
     const { C, D } = users;
     const now = new Date().toISOString();

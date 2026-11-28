@@ -517,22 +517,21 @@ try {
       await page.getByText('Godtatt', { exact: true }).waitFor();
       await perRow.getByRole('button', { name: 'Følg tilbake' }).waitFor();
       assert.equal((await fakeStore()).follows.find((f) => f.follower === 'per-id').status, 'accepted', 'Per er godtatt');
-      // Finn @zara_test (åpen): følges med en gang
-      const find = page.getByLabel('Finn på brukernavn');
+      // Søk: @zara_test (åpen) følges med en gang
+      const find = page.getByLabel('Søk etter folk');
+      const results = page.getByRole('list', { name: 'Treff' });
       await find.fill('@Zara_Test');
-      await btn('Finn', { exact: true }).click();
-      await page.locator('[data-person="zara_test"]').first().getByRole('button', { name: 'Følg' }).click();
-      await page.locator('[data-person="zara_test"]').first().getByRole('button', { name: 'Følger' }).waitFor();
-      // Finn @liv_test (privat): forespørsel
+      await results.locator('[data-person="zara_test"]').getByRole('button', { name: 'Følg' }).click();
+      await results.locator('[data-person="zara_test"]').getByRole('button', { name: 'Følger' }).waitFor();
+      // Privat konto: finnes bare på hele brukernavnet, og gir forespørsel
       await find.fill('liv_test');
-      await btn('Finn', { exact: true }).click();
-      await page.locator('[data-person="liv_test"]').first().getByRole('button', { name: 'Følg' }).click();
+      await results.locator('[data-person="liv_test"]').getByRole('button', { name: 'Følg' }).click();
       await page.getByText('Forespørsel sendt til Liv').waitFor();
-      await page.locator('[data-person="liv_test"]').first().getByRole('button', { name: 'Forespurt' }).waitFor();
+      await results.locator('[data-person="liv_test"]').getByRole('button', { name: 'Forespurt' }).waitFor();
       // Ingen treff
       await find.fill('finnes_ikke');
-      await btn('Finn', { exact: true }).click();
-      await page.getByText('Fant ingen med brukernavnet @finnes_ikke.').waitFor();
+      await page.getByText('Fant ingen som heter «finnes_ikke».', { exact: false }).waitFor();
+      await find.fill('');
       await shot('folk');
       // Zaras profil: nivå vises (åpen konto), rapporter og blokker
       await page.locator('[data-person="zara_test"]').first().getByRole('link').click();
@@ -668,6 +667,43 @@ try {
       await btn('Følger', { exact: true }).click();
       await page.getByRole('list', { name: 'Sterkest' }).getByText('(deg)').waitFor();
       assert.equal(await page.getByRole('list', { name: 'Sterkest' }).getByText('Zara', { exact: true }).count(), 0, 'bare deg og dem du følger');
+    }
+
+    // ===== Steg 8: Oppdag =====
+    {
+      const st = await fakeStore();
+      for (let i = 1; i <= 6; i++) st.profiles.push({ ...zara, user_id: `open-${i}`, handle: `aapen_${i}`, display_name: `Åpen ${i}`, visibility: 3 });
+      await putFake(st);
+      await nav().getByRole('link', { name: 'Hjem' }).click();
+      await nav().getByRole('link', { name: 'Sosialt' }).click();
+      await page.getByRole('tab', { name: /Folk/ }).click();
+      // Oppdag: 7 åpne kontoer (Zara + 6), 5 vises først. Private (Per, Liv) og du selv er ikke med.
+      const disc = page.getByRole('list', { name: 'Oppdag' });
+      await disc.locator('[data-person]').first().waitFor();
+      assert.equal(await disc.locator('[data-person]').count(), 5, '5 vises først');
+      await btn('Vis 2 til').click();
+      assert.equal(await disc.locator('[data-person]').count(), 7, 'alle åpne kontoer');
+      for (const h of ['per_test', 'liv_test', 'ola.lofter']) assert.equal(await disc.locator(`[data-person="${h}"]`).count(), 0, `${h} er ikke i Oppdag`);
+      await shot('oppdag');
+      // Søk på navn finner åpne kontoer, ikke private
+      const find = page.getByLabel('Søk etter folk');
+      await find.fill('åpen 3');
+      await page.getByRole('list', { name: 'Treff' }).locator('[data-person="aapen_3"]').waitFor();
+      assert.equal(await page.getByRole('list', { name: 'Treff' }).locator('[data-person]').count(), 1, 'ett treff');
+      await find.fill('Liv');
+      await page.getByText('Private kontoer finnes bare på hele brukernavnet.', { exact: false }).waitFor();
+      // Følg rett fra Oppdag
+      await find.fill('');
+      await disc.locator('[data-person="aapen_1"]').getByRole('button', { name: 'Følg' }).click();
+      await disc.locator('[data-person="aapen_1"]').getByRole('button', { name: 'Følger' }).waitFor();
+      // Blokkerte vises ikke i Oppdag
+      const st2 = await fakeStore();
+      st2.blocks.push({ blocker: 'open-2', blocked: me });
+      await putFake(st2);
+      await page.getByRole('tab', { name: 'Feed' }).click();
+      await page.getByRole('tab', { name: /Folk/ }).click();
+      await disc.locator('[data-person]').first().waitFor();
+      assert.equal(await disc.locator('[data-person="aapen_2"]').count(), 0, 'den som blokkerte deg er borte');
     }
     await nav().getByRole('link', { name: 'Fremgang' }).click();
     const tabs = page.getByRole('navigation', { name: 'Fremgang og historikk' });

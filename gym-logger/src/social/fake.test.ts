@@ -160,6 +160,14 @@ describe('ledertavler og Oppdag', () => {
     expect(rows.map((r) => [r.user_id, r.value])).toEqual([['C', 11]]);
   });
 
+  it('Oppdag: sist aktive først, de uten økter sist', async () => {
+    await profile('E', 3);
+    await profile('F', 3);
+    await publish('F', 'f1', 1);
+    expect((await as('D').discover()).map((p) => p.user_id)).toEqual(['F', 'C', 'E']);
+    expect((await as('D').discover('user_e')).map((p) => p.user_id)).toEqual(['E']);
+  });
+
   it('Oppdag viser bare åpne kontoer', async () => {
     expect((await as('D').discover()).map((p) => p.user_id)).toEqual(['C']);
     expect(await as('D').discover('finnes-ikke')).toEqual([]);
