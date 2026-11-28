@@ -55,7 +55,16 @@ beforeAll(async () => {
 
 afterAll(async () => {
   // Slett testkontoene (og alt de laget, via «on delete cascade»).
-  for (const u of Object.values(users)) await u.sb.rpc('delete_user');
+  for (const u of Object.values(users)) {
+    const { error } = await u.sb.rpc('delete_user');
+    if (error) throw new Error(`Klarte ikke å slette testkontoen ${u.name}: ${error.message}`);
+  }
+  // Sjekk at de er borte: en ny innlogging skal feile.
+  for (const u of Object.values(users)) {
+    const email = `rg-staging-${run}-${u.name.toLowerCase()}@example.com`;
+    const { error } = await u.sb.auth.signInWithPassword({ email, password: `Staging-${run}-pw!` });
+    if (!error) throw new Error(`Testkontoen ${u.name} finnes fortsatt`);
+  }
 });
 
 describe('staging: ekte Supabase', () => {
