@@ -69,6 +69,16 @@ describe('publisering til feeden', () => {
     expect((await feed())[0].data.exercises[0].sets[0].weight).toBe(105);
   });
 
+  it('endret økt beholder nivået den ble delt med (så «Fremgang» ikke blir feil)', async () => {
+    const w = await workout();
+    await syncActivities(me, ctx, since);
+    const done = (await setsForWorkout(w)).find((s) => s.exercise_id === 'ex-benkpress' && s.completed_at)!;
+    await new Promise((r) => setTimeout(r, 5));
+    await updateSet(done.id, { reps: 6 });
+    await syncActivities(me, { ...ctx, tier: { index: 6, score: 65 } }, since);
+    expect((await feed())[0].data.tier).toEqual(ctx.tier);
+  });
+
   it('fjerner økter som slettes eller ikke skal deles', async () => {
     const a = await workout();
     const b = await workout();

@@ -118,6 +118,7 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
           tier_index: null,
           score: null,
           lift_scores: {},
+          share_from: null,
           created_at: iso(),
           active: true,
           ...prev,
@@ -333,8 +334,17 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
       const mine = prof(s, u);
       if (!mine?.active || mine.visibility < 2) fail('Ledertavler krever synlighet «Ledertavler» eller «Åpen».', 'Leaderboards need the “Leaderboards” or “Open” setting.');
       const from = since ?? new Date(new Date(clock()).getFullYear(), new Date(clock()).getMonth(), 1).toISOString();
+      const tierScore = (a: Activity) => a.data.tier?.score ?? null;
       const value = (p: SocialProfile): number | null => {
         if (board === 'level') return p.score;
+        if (board === 'gain') {
+          if (p.score === null) return null;
+          const own = s.activities.filter((a) => a.user_id === p.user_id && tierScore(a) !== null).sort((a, b) => a.started_at.localeCompare(b.started_at));
+          const before = own.filter((a) => a.started_at < from).pop();
+          const first = own.find((a) => a.started_at >= from);
+          const base = before ? tierScore(before) : first ? tierScore(first) : null;
+          return base === null ? null : p.score - base;
+        }
         if (board === 'lift') return exercise ? (p.lift_scores[exercise] ?? null) : null;
         return s.activities.filter((a) => a.user_id === p.user_id && a.started_at >= from).length;
       };

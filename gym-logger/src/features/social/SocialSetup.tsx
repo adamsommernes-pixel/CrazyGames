@@ -23,6 +23,8 @@ export function SocialSetup({ existing, onSaved }: { existing?: SocialProfile | 
   const [handle, setHandle] = useState(existing?.handle ?? '');
   const [adult, setAdult] = useState<boolean | null>(existing ? existing.is_16_plus : null);
   const [visibility, setVisibility] = useState<Visibility>(existing?.visibility ?? 1);
+  // Bare ved ny profil: del økter fra de siste 7 dagene, eller start fra null.
+  const [history, setHistory] = useState<'week' | 'none' | null>(existing ? 'none' : null);
   const [check, setCheck] = useState<Check>(existing ? 'free' : 'idle');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export function SocialSetup({ existing, onSaved }: { existing?: SocialProfile | 
     };
   }, [handle, existing]);
 
-  const ready = name.trim().length > 0 && check === 'free' && adult !== null && !saving;
+  const ready = name.trim().length > 0 && check === 'free' && adult !== null && history !== null && !saving;
 
   const save = async () => {
     setSaving(true);
@@ -78,6 +80,7 @@ export function SocialSetup({ existing, onSaved }: { existing?: SocialProfile | 
         color: local?.color ?? existing?.color ?? '#34c56a',
         is_16_plus: !!adult,
         visibility: adult ? visibility : 1,
+        ...(existing ? {} : { share_from: new Date(Date.now() - (history === 'week' ? 7 * 86_400_000 : 0)).toISOString() }),
       });
       onSaved(p, existing?.visibility ?? null);
     } catch (e) {
@@ -175,6 +178,28 @@ export function SocialSetup({ existing, onSaved }: { existing?: SocialProfile | 
           );
         })}
       </div>
+
+      {!existing && (
+        <fieldset role="radiogroup" aria-label={t('Økter du allerede har logget', "Workouts you've already logged")} className="flex flex-col gap-2">
+          <legend className="mb-1.5 text-sm text-muted">{t('Økter du allerede har logget', "Workouts you've already logged")}</legend>
+          {([
+            ['week', t('Del de siste 7 dagene', 'Share the last 7 days'), t('Øktene fra den siste uka vises i feeden med en gang.', "Your workouts from the past week show up in the feed right away.")],
+            ['none', t('Start fra null', 'Start from scratch'), t('Bare økter du fullfører fra nå av deles.', 'Only workouts you finish from now on are shared.')],
+          ] as const).map(([id, title, text]) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={history === id}
+              onClick={() => setHistory(id)}
+              className={`rounded-xl border p-3 text-left transition-colors ${history === id ? 'border-accent bg-accent-soft/40' : 'border-line bg-raised'}`}
+            >
+              <span className="block font-semibold">{title}</span>
+              <span className="block text-sm text-muted">{text}</span>
+            </button>
+          ))}
+        </fieldset>
+      )}
 
       <p className="text-xs text-faint">
         {t(

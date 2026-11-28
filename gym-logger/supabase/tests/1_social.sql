@@ -168,6 +168,17 @@ select test.ok((select handle from public.leaderboard('level') where rank = 1) =
 select test.ok(test.n($q$select * from public.leaderboard('lift', 'all', 'ex-benkpress')$q$) = 2, 'ledertavle per løft');
 select test.ok(test.n($q$select * from public.leaderboard('workouts', 'all', null, now() - interval '1 day')$q$) = 3, 'ledertavle for økter (B, C og E)');
 select test.ok(test.n($q$select * from public.leaderboard('level', 'following')$q$) = 2, 'B følger C: begge på følger-tavla');
+-- Fremgang: C hadde 60 poeng etter en økt før måneden, nå 71 → +11. B har ingen økt med nivå → ikke med.
+select pg_temp.as_user(:'C');
+insert into public.activities (user_id, id, started_at, ended_at, data)
+values (:'C', 'w-c0', now() - interval '40 days', now() - interval '40 days' + interval '1 hour', '{"volume_kg": 1, "tier": {"index": 6, "score": 60}}');
+select pg_temp.as_user(:'B');
+select test.ok((select value from public.leaderboard('gain', 'all', null, now() - interval '30 days') where handle = 'cecilie') = 11, 'fremgang: 71 − 60 = 11 poeng');
+select test.ok(test.n($q$select * from public.leaderboard('gain', 'all', null, now() - interval '30 days') where handle = 'bjorn'$q$) = 0, 'fremgang krever en økt med nivå');
+select pg_temp.as_user(:'C');
+update public.social_profiles set share_from = now() - interval '7 days' where user_id = auth.uid();
+select test.ok((select share_from from public.social_profiles where user_id = auth.uid()) is not null, 'deling fra-dato lagres');
+select pg_temp.as_user(:'B');
 select test.ok(test.n($q$select * from public.discover()$q$) = 2, 'Oppdag viser bare åpne kontoer (C og E)');
 select test.ok(test.n($q$select * from public.discover('cec')$q$) = 1, 'søk i Oppdag');
 select pg_temp.as_user(:'X');

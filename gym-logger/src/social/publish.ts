@@ -9,10 +9,13 @@ import { buildActivity, type BuildContext } from './activity';
 // signatur, så bare endringer sendes. Feiler det (f.eks. uten nett), prøves det igjen neste gang.
 
 const SENT_KEY = 'social-published';
-type Sent = Record<string, string>;
+/** Per økt: signaturen som ble sendt, og nivået økta ble publisert med første gang. */
+type Sent = Record<string, { sig: string; tier: BuildContext['tier'] }>;
 
 async function sentMap(): Promise<Sent> {
-  return ((await db.kv.get(SENT_KEY))?.value as Sent | undefined) ?? {};
+  const raw = ((await db.kv.get(SENT_KEY))?.value as Record<string, unknown> | undefined) ?? {};
+  // Eldre format (bare signatur): uten kjent nivå.
+  return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, typeof v === 'string' ? { sig: v, tier: null } : (v as Sent[string])]));
 }
 
 /** Økter som kan deles: ferdige og startet etter at den sosiale profilen ble laget. */
@@ -61,8 +64,10 @@ export function syncActivities(backend: SocialBackend, ctx: BuildContext, since:
           }
           continue;
         }
-        if (sent[id] === sig) continue;
-        const activity = await buildActivity(id, ctx);
+        if (sent[id]?.sig === sig) continue;
+        // Endres en økt senere, beholder den nivået den hadde da den ble delt (ellers ville «Fremgang» bli feil).
+        const tier = sent[id] ? sent[id].tier : ctx.tier;
+        const activity = await buildActivity(id, { ...ctx, tier });
         if (!activity) {
           if (sent[id] !== undefined) {
             await backend.unpublish(id);
@@ -72,7 +77,7 @@ export function syncActivities(backend: SocialBackend, ctx: BuildContext, since:
           continue;
         }
         await backend.publish(activity);
-        sent[id] = sig;
+        sent[id] = { sig, tier };
         published++;
         // Lagre fortløpende, så det som er sendt ikke sendes igjen om noe senere feiler.
         await db.kv.put({ key: SENT_KEY, value: { ...sent } });

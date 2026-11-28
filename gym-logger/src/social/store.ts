@@ -62,6 +62,7 @@ export const inputOf = (p: SocialProfile): SocialProfileInput => ({
   tier_index: p.tier_index,
   score: p.score,
   lift_scores: p.lift_scores,
+  share_from: p.share_from,
 });
 
 export function useMySocial(): MySocial & { refresh: () => Promise<void> } {

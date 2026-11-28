@@ -15,13 +15,15 @@ export interface SocialProfile {
   tier_index: number | null;
   score: number | null;
   lift_scores: Record<string, number>;
+  /** Økter fra og med dette tidspunktet deles (valgt ved oppstart). null = fra profilen ble laget. */
+  share_from: string | null;
   created_at: string;
   updated_at: string;
 }
 
 /** Det appen selv kan endre på profilen. */
 export type SocialProfileInput = Pick<SocialProfile, 'handle' | 'display_name' | 'color' | 'visibility' | 'is_16_plus'> &
-  Partial<Pick<SocialProfile, 'tier_index' | 'score' | 'lift_scores'>>;
+  Partial<Pick<SocialProfile, 'tier_index' | 'score' | 'lift_scores' | 'share_from'>>;
 
 /** Minste info om en annen bruker (fra people / find_by_handle / discover). */
 export interface Person {
@@ -112,7 +114,7 @@ export interface SocialNotification {
   created_at: string;
 }
 
-export type Board = 'level' | 'lift' | 'workouts';
+export type Board = 'level' | 'gain' | 'workouts' | 'lift';
 export type BoardScope = 'all' | 'following';
 export interface LeaderboardRow {
   rank: number;

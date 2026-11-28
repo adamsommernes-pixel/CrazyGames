@@ -154,6 +154,12 @@ describe('ledertavler og Oppdag', () => {
     expect((await as('B').leaderboard('workouts', 'all', undefined, ago(24))).length).toBe(2);
   });
 
+  it('fremgang: poeng nå minus poeng etter siste økt før perioden', async () => {
+    await as('C').publish({ id: 'c0', name: 'gammel', started_at: ago(40 * 24), ended_at: ago(40 * 24 - 1), data: { ...data(1), tier: { index: 6, score: 60 } } });
+    const rows = await as('B').leaderboard('gain', 'all', undefined, ago(30 * 24));
+    expect(rows.map((r) => [r.user_id, r.value])).toEqual([['C', 11]]);
+  });
+
   it('Oppdag viser bare åpne kontoer', async () => {
     expect((await as('D').discover()).map((p) => p.user_id)).toEqual(['C']);
     expect(await as('D').discover('finnes-ikke')).toEqual([]);

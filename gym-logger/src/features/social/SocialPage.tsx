@@ -4,6 +4,7 @@ import { useUser } from '../../auth/AuthProvider';
 import { useGraph } from '../../social/graph';
 import { PeopleTab } from './PeopleTab';
 import { FeedList } from './FeedList';
+import { LeaderboardTab } from './LeaderboardTab';
 import { Button, Card, EmptyState, Page } from '../../components/ui';
 import { socialAvailable } from '../../social';
 import { useMySocial } from '../../social/store';
@@ -69,7 +70,7 @@ function SocialHome() {
   return <SocialTabs />;
 }
 
-type Tab = 'feed' | 'people';
+type Tab = 'feed' | 'people' | 'boards';
 const TAB_KEY = 'repgrade-social-tab';
 
 function SocialTabs() {
@@ -79,7 +80,8 @@ function SocialTabs() {
   const location = useLocation();
   const [tab, setTab] = useState<Tab>(() => {
     try {
-      return sessionStorage.getItem(TAB_KEY) === 'people' ? 'people' : 'feed';
+      const saved = sessionStorage.getItem(TAB_KEY);
+      return saved === 'people' || saved === 'boards' ? saved : 'feed';
     } catch {
       return 'feed';
     }
@@ -117,9 +119,14 @@ function SocialTabs() {
             </span>
           )}
         </button>
+        <button type="button" role="tab" aria-selected={tab === 'boards'} className={tabClass(tab === 'boards')} onClick={() => choose('boards')}>
+          {t('Topp', 'Top')}
+        </button>
       </div>
       {tab === 'people' ? (
         <PeopleTab />
+      ) : tab === 'boards' ? (
+        <LeaderboardTab />
       ) : (
         <FeedList onFindPeople={() => choose('people')} />
       )}

@@ -11,7 +11,7 @@ export function ActivitySync() {
   const { profile } = useMySocial();
   const strength = useStrength();
   const off = useSetting('socialUnshared');
-  const since = profile?.created_at;
+  const since = profile ? (profile.share_from ?? profile.created_at) : undefined;
   const sig = useLiveQuery(async () => (since ? [...(await signatures(since))].join(';') : ''), [since]);
   const [online, setOnline] = useState(0);
   useEffect(() => {

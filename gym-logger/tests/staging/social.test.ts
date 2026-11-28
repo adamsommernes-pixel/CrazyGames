@@ -142,6 +142,17 @@ describe('staging: ekte Supabase', () => {
     expect(rows.some((r) => r.user_id === A.id)).toBe(false);
   });
 
+  it('ledertavle «Fremgang» og deling fra-dato', async () => {
+    const { B, C } = users;
+    const old = new Date(Date.now() - 40 * 86_400_000).toISOString();
+    await C.s.publish({ id: 'C-old', name: 'gammel', started_at: old, ended_at: old, data: { ...data(1), tier: { index: 6, score: 60 } } });
+    const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
+    expect((await B.s.leaderboard('gain', 'all', undefined, since)).find((r) => r.user_id === C.id)?.value).toBe(11);
+    const from = new Date(Date.now() - 7 * 86_400_000).toISOString();
+    const p = await C.s.saveProfile({ handle: `t${run}_c`, display_name: 'Test C', color: '#34c56a', visibility: 3, is_16_plus: true, score: 71, lift_scores: { 'ex-benkpress': 70 }, share_from: from });
+    expect(Date.parse(p.share_from!)).toBe(Date.parse(from));
+  });
+
   it('treningskonto skjuler profilen (profiles.social = 0)', async () => {
     const { C, D } = users;
     const now = new Date().toISOString();

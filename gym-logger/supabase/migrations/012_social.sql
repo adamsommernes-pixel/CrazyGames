@@ -36,10 +36,15 @@ create table if not exists public.social_profiles (
   score numeric check (score >= 0 and score <= 100),
   -- { "ex-benkpress": 52.3, … } poeng per løft som teller, til ledertavler per løft.
   lift_scores jsonb not null default '{}'::jsonb check (jsonb_typeof(lift_scores) = 'object'),
+  -- Økter fra og med dette tidspunktet deles (valgt ved oppstart: siste 7 dager eller fra nå).
+  share_from timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint under_16_private check (visibility = 1 or is_16_plus)
 );
+
+-- Kolonner lagt til etter første versjon (tabellen finnes kanskje allerede).
+alter table public.social_profiles add column if not exists share_from timestamptz;
 
 create table if not exists public.follows (
   follower uuid not null references auth.users(id) on delete cascade,
@@ -477,7 +482,9 @@ language sql stable security definer set search_path = '' as $$
 $$;
 
 /* Ledertavler. Bare for brukere på nivå 2 eller 3, og viser bare brukere på nivå 2 eller 3.
-   board: 'level' (styrkenivå), 'lift' (poeng på ett løft), 'workouts' (økter siden `since`).
+   board: 'level' (styrkenivå), 'gain' (nivåpoeng økt siden `since`), 'workouts' (økter siden `since`),
+          'lift' (poeng på ett løft).
+   'gain': nåværende poeng minus poengene etter siste økt før `since` (eller første økt etter, om ingen før).
    scope: 'all' eller 'following' (de du følger, og deg selv). */
 create or replace function public.leaderboard(board text, scope text default 'all', exercise text default null,
                                               since timestamptz default date_trunc('month', now()), lim integer default 50)
@@ -501,6 +508,13 @@ begin
         when 'level' then p.score
         when 'lift' then (p.lift_scores ->> exercise)::numeric
         when 'workouts' then (select count(*)::numeric from public.activities a where a.user_id = p.user_id and a.started_at >= since)
+        when 'gain' then p.score - coalesce(
+          (select (a.data -> 'tier' ->> 'score')::numeric from public.activities a
+           where a.user_id = p.user_id and a.started_at < since and a.data -> 'tier' ->> 'score' is not null
+           order by a.started_at desc limit 1),
+          (select (a.data -> 'tier' ->> 'score')::numeric from public.activities a
+           where a.user_id = p.user_id and a.started_at >= since and a.data -> 'tier' ->> 'score' is not null
+           order by a.started_at asc limit 1))
       end as v
     from pool p
   )

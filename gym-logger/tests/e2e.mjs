@@ -466,6 +466,8 @@ try {
     assert.ok(await page.getByRole('radio', { name: /^3\. Åpen/ }).isDisabled(), 'åpen krever 16+');
     await btn('Ja', { exact: true }).click();
     await page.getByRole('radio', { name: /^3\. Åpen/ }).click();
+    assert.ok(await btn('Lag sosial profil').isDisabled(), 'må velge om gamle økter skal deles');
+    await page.getByRole('radio', { name: /^Start fra null/ }).click();
     await shot('sosial-oppsett');
     await btn('Lag sosial profil').click();
     await page.getByText('@ola.lofter').waitFor();
@@ -476,7 +478,7 @@ try {
     await page.getByLabel(/^Nivå: /).waitFor({ timeout: 8000 });
     const published = (await fakeStore()).profiles.find((p) => p.handle === 'ola.lofter');
     assert.ok(published.tier_index !== null && published.score > 0 && published.lift_scores['ex-kneboy'] > 0, 'nivå og knebøy publisert');
-    assert.deepEqual(Object.keys(published).sort(), ['active', 'color', 'created_at', 'display_name', 'handle', 'is_16_plus', 'lift_scores', 'score', 'tier_index', 'updated_at', 'user_id', 'visibility'], 'bare disse feltene deles (ingen kroppsvekt)');
+    assert.deepEqual(Object.keys(published).sort(), ['active', 'color', 'created_at', 'display_name', 'handle', 'is_16_plus', 'lift_scores', 'score', 'share_from', 'tier_index', 'updated_at', 'user_id', 'visibility'], 'bare disse feltene deles (ingen kroppsvekt)');
     await shot('sosialt');
     // Profil → Endre sosial profil: under 16 gir bare privat. Zara følger deg uten at du følger tilbake → «Behold følgerne?»
     const store = await fakeStore();
@@ -628,6 +630,44 @@ try {
       await btn('Slett økt').click();
       for (let i = 0; i < 40 && (await mine()).length > 0; i++) await page.waitForTimeout(250);
       assert.equal((await mine()).length, 0, 'slettet økt er borte fra feeden');
+    }
+
+    // ===== Steg 7: ledertavler =====
+    {
+      const st = await fakeStore();
+      const old = new Date(Date.now() - 40 * 86_400_000).toISOString();
+      st.activities.push({ user_id: 'zara-id', id: 'z0', name: 'Gammel', started_at: old, ended_at: old, created_at: old, updated_at: old, data: { version: 1, duration_s: 60, sets: 1, reps: 1, volume_kg: 1, exercises: [], records: [], muscles: {}, lifts: {}, tier: { index: 4, score: 40 } } });
+      await putFake(st);
+      // Ola er under 16 (valgt tidligere): tavlene er låst
+      await nav().getByRole('link', { name: 'Sosialt' }).click();
+      await page.getByRole('tab', { name: 'Topp' }).click();
+      await page.getByText('Ledertavlene er for deg som er 16 år eller eldre.').waitFor();
+      // 16+ og synlighet «Ledertavler»
+      await nav().getByRole('link', { name: 'Profil' }).click();
+      await btn('Endre sosial profil').click();
+      await btn('Ja', { exact: true }).click();
+      await page.getByRole('dialog').getByRole('radio', { name: /^2\. Ledertavler/ }).click();
+      await btn('Lagre', { exact: true }).click();
+      await page.getByText('Sosial profil lagret').waitFor();
+      await nav().getByRole('link', { name: 'Sosialt' }).click();
+      await page.getByRole('tab', { name: 'Topp' }).click();
+      // Sterkest: Zara (åpen) og Ola (deg). Per og Liv er private og vises ikke.
+      const board = page.getByRole('list', { name: 'Sterkest' });
+      await board.getByText('Zara', { exact: true }).waitFor();
+      await board.getByText('(deg)').waitFor();
+      assert.equal(await board.getByText('Per', { exact: true }).count(), 0, 'private kontoer er ikke på tavla');
+      await shot('ledertavle');
+      // Fremgang: Zara 40 → 45 = +5
+      await btn('Fremgang').click();
+      await page.getByRole('list', { name: 'Fremgang' }).getByText('+5 p', { exact: true }).waitFor();
+      // Flest økter denne måneden
+      await btn('Flest økter').click();
+      await page.getByRole('list', { name: 'Flest økter' }).or(page.getByText('Ingen på denne tavla ennå.')).first().waitFor();
+      // Bare de du følger: Ola følger ikke Zara lenger (blokkert og opphevet tidligere)
+      await btn('Sterkest').click();
+      await btn('Følger', { exact: true }).click();
+      await page.getByRole('list', { name: 'Sterkest' }).getByText('(deg)').waitFor();
+      assert.equal(await page.getByRole('list', { name: 'Sterkest' }).getByText('Zara', { exact: true }).count(), 0, 'bare deg og dem du følger');
     }
     await nav().getByRole('link', { name: 'Fremgang' }).click();
     const tabs = page.getByRole('navigation', { name: 'Fremgang og historikk' });
