@@ -1,29 +1,31 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Icon, type IconName } from './Icon';
 import { getActiveWorkout } from '../db/repo';
 import { openStartSheet } from '../features/workout/StartSheet';
 import { useNow } from '../features/workout/restTimer';
 import { duration, isLongAgo } from '../lib/format';
+import { useSocialMode } from '../lib/socialMode';
 import { t } from '../i18n';
 
-const left = (): { to: string; label: string; icon: IconName }[] => [
+// Sosial konto: Sosialt tar plassen til Historikk, og Historikk ligger under Fremgang.
+const left = (social: boolean): { to: string; label: string; icon: IconName }[] => [
   { to: '/', label: t('Hjem', 'Home'), icon: 'home' },
-  { to: '/history', label: t('Historikk', 'History'), icon: 'history' },
+  social ? { to: '/social', label: t('Sosialt', 'Social'), icon: 'users' } : { to: '/history', label: t('Historikk', 'History'), icon: 'history' },
 ];
 const right = (): { to: string; label: string; icon: IconName }[] => [
   { to: '/progress', label: t('Fremgang', 'Progress'), icon: 'chart' },
   { to: '/profile', label: t('Profil', 'Profile'), icon: 'user' },
 ];
 
-function Tab({ to, label, icon }: { to: string; label: string; icon: IconName }) {
+function Tab({ to, label, icon, alsoActive }: { to: string; label: string; icon: IconName; alsoActive?: boolean }) {
   return (
     <li className="flex-1">
       <NavLink
         to={to}
         end={to === '/'}
         className={({ isActive }) =>
-          `flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${isActive ? 'text-accent' : 'text-faint'}`
+          `flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${isActive || alsoActive ? 'text-accent' : 'text-faint'}`
         }
       >
         <Icon name={icon} size={23} />
@@ -37,10 +39,14 @@ export function BottomNav() {
   const navigate = useNavigate();
   const active = useLiveQuery(() => getActiveWorkout(), []);
   const now = useNow(1000, !!active);
+  const social = useSocialMode();
+  const { pathname } = useLocation();
+  // Historikk hører til Fremgang-fanen på en sosial konto.
+  const historyInProgress = social && pathname.startsWith('/history');
   return (
     <nav className="pb-safe border-t border-line bg-bg" aria-label={t('Hovedmeny', 'Main menu')}>
       <ul className="mx-auto flex max-w-xl items-end">
-        {left().map((t) => (
+        {left(social).map((t) => (
           <Tab key={t.to} {...t} />
         ))}
         <li className="flex flex-1 justify-center">
@@ -59,7 +65,7 @@ export function BottomNav() {
           </button>
         </li>
         {right().map((t) => (
-          <Tab key={t.to} {...t} />
+          <Tab key={t.to} {...t} alsoActive={t.to === '/progress' && historyInProgress} />
         ))}
       </ul>
     </nav>

@@ -429,6 +429,59 @@ try {
   await btn('Kalender').click();
   await shot('kalender');
 
+  // 6a. Kontotype: sosial konto bytter Historikk-fanen med Sosialt, og Historikk ligger under Fremgang
+  {
+    const nav = () => page.getByRole('navigation', { name: 'Hovedmeny' });
+    // Lokal konto: «Sosial» kan ikke velges i Profil.
+    await nav().getByRole('link', { name: 'Profil' }).click();
+    await page.getByRole('radiogroup', { name: 'Kontotype' }).waitFor();
+    await page.getByRole('radiogroup', { name: 'Kontotype' }).scrollIntoViewIfNeeded();
+    await shot('kontotype');
+    assert.equal(await page.getByRole('radio', { name: /Trening/ }).getAttribute('aria-checked'), 'true', 'trening er standard');
+    assert.ok(await page.getByRole('radio', { name: /Sosial/ }).isDisabled(), 'sosial krever konto på nett');
+    // Slå på sosial modus direkte i databasen (sky-kontoer testes mot Supabase senere).
+    const setSocial = (on) =>
+      page.evaluate(async (on) => {
+        const name = (await indexedDB.databases()).map((d) => d.name).find((n) => n?.startsWith('gym-') && n !== 'gym-none');
+        await new Promise((res, rej) => {
+          const r = indexedDB.open(name);
+          r.onerror = () => rej(r.error);
+          r.onsuccess = () => {
+            const tx = r.result.transaction('kv', 'readwrite');
+            tx.objectStore('kv').put({ key: 'socialMode', value: on });
+            tx.oncomplete = () => (r.result.close(), res());
+            tx.onerror = () => rej(tx.error);
+          };
+        });
+      }, on);
+    await setSocial(true);
+    await page.reload();
+    await nav().getByRole('link', { name: 'Sosialt' }).waitFor();
+    assert.equal(await nav().getByRole('link', { name: 'Historikk' }).count(), 0, 'Historikk er ikke i bunnmenyen');
+    await nav().getByRole('link', { name: 'Sosialt' }).click();
+    await page.getByRole('heading', { name: 'Krever konto på nett' }).waitFor();
+    await shot('sosialt-lokal');
+    await nav().getByRole('link', { name: 'Fremgang' }).click();
+    const tabs = page.getByRole('navigation', { name: 'Fremgang og historikk' });
+    await tabs.getByRole('link', { name: 'Historikk' }).click();
+    await btn(/1 øvelse/).first().waitFor();
+    assert.match(await nav().getByRole('link', { name: 'Fremgang' }).getAttribute('class'), /text-accent/, 'Fremgang er aktiv på Historikk');
+    await shot('historikk-under-fremgang');
+    // Åpne en økt og gå tilbake: fortsatt under Fremgang
+    await btn(/1 øvelse/).first().click();
+    await page.goBack();
+    await tabs.getByRole('link', { name: 'Fremgang' }).click();
+    await page.getByRole('heading', { name: 'Fremgang', exact: true }).waitFor();
+    // Tilbake til treningskonto: appen er som før
+    await setSocial(false);
+    await page.reload();
+    await nav().getByRole('link', { name: 'Historikk' }).waitFor();
+    assert.equal(await nav().getByRole('link', { name: 'Sosialt' }).count(), 0, 'ingen Sosialt-fane på treningskonto');
+    assert.equal(await page.getByRole('navigation', { name: 'Fremgang og historikk' }).count(), 0, 'ingen faner på Fremgang');
+    await nav().getByRole('link', { name: 'Historikk' }).click();
+    await btn(/1 øvelse/).first().waitFor();
+  }
+
   // 6b. Etter en oppdatering fra 1.0 (uten nyhetsskjerm): «Nytt i denne versjonen» vises én gang
   // Ny telefon (ingen kjent versjon): ingen nyheter
   await page.evaluate(() => localStorage.removeItem('repgrade-seen-version'));

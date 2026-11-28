@@ -2,7 +2,7 @@ import { useRef, type ReactNode } from 'react';
 import { useLocation, useNavigationType } from 'react-router-dom';
 
 /** Hovedfanene i bunnmenyen: bytte mellom dem tones, alt annet glir. */
-const TABS = new Set(['/', '/history', '/progress', '/profile', '/workout']);
+const TABS = new Set(['/', '/history', '/social', '/progress', '/profile', '/workout']);
 
 export type NavDirection = 'forward' | 'back' | 'fade';
 

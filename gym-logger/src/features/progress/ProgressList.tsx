@@ -18,6 +18,7 @@ import { MuscleDot } from '../../components/MuscleTag';
 import { MUSCLE_LABEL, type ExerciseKind, type WorkoutSet } from '../../db/types';
 import { exerciseName } from '../../lib/exerciseName';
 import { t } from '../../i18n';
+import { ProgressTabs } from './ProgressTabs';
 
 type View = 'volume' | 'workouts';
 
@@ -82,6 +83,7 @@ export function ProgressList() {
 
   return (
     <Page title={t('Fremgang', 'Progress')}>
+      <ProgressTabs />
       <Link to="/bodyweight" className="card mb-4 flex items-center gap-3 rounded-xl p-4 active:bg-raised">
         <span className="grid size-10 place-items-center rounded-xl bg-raised text-accent">
           <Icon name="scale" size={20} />

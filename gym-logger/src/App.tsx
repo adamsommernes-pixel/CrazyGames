@@ -37,6 +37,7 @@ import { BodyweightPage } from './features/bodyweight/BodyweightPage';
 import { LevelPage } from './features/level/LevelPage';
 import { ProgramsPage } from './features/routines/ProgramsPage';
 import { PrivacyPage } from './features/legal/PrivacyPage';
+import { SocialPage } from './features/social/SocialPage';
 
 // Grafbiblioteket er stort, så sider med grafer lastes først når de åpnes.
 const ProgressList = lazy(() => import('./features/progress/ProgressList').then((m) => ({ default: m.ProgressList })));
@@ -132,6 +133,7 @@ function SignedIn({ user }: { user: AuthUser }) {
         <Route path="/workout" element={<WorkoutTab />} />
         <Route path="/history" element={<HistoryList />} />
         <Route path="/history/:id" element={<WorkoutDetail />} />
+        <Route path="/social" element={<SocialPage />} />
         <Route path="/summary/:id" element={<Summary />} />
         <Route path="/routines" element={<RoutineList />} />
         <Route path="/routines/new" element={<RoutineEditor />} />
