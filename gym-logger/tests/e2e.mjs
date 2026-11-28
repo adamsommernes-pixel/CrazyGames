@@ -457,12 +457,13 @@ try {
     const firstCard = await page.locator('main > *').first().getAttribute('aria-labelledby');
     assert.equal(firstCard, 'socials-news', 'Sosialt-kortet ligger øverst på Hjem');
     await shot('hjem-sosialt');
-    assert.equal(await btn('Skjul nyheten').count(), 0, 'kan ikke lukkes før filmen er åpnet');
+    const news = page.locator('section[aria-labelledby="socials-news"]');
+    assert.equal(await news.getByRole('button', { name: 'Skjul', exact: true }).count(), 0, 'kan ikke lukkes før filmen er åpnet');
     await btn('Se filmen', { exact: true }).click();
     await page.getByRole('dialog').locator('video').waitFor();
     await page.getByRole('dialog').getByRole('button', { name: 'Trykk for lyd' }).waitFor();
     await page.keyboard.press('Escape');
-    await btn('Skjul nyheten').waitFor();
+    await news.getByRole('button', { name: 'Skjul', exact: true }).waitFor();
     await nav().getByRole('link', { name: 'Profil' }).click();
     // En annen bruker (Zara, åpen konto) finnes allerede i den falske Sosialt-lagringen.
     const fakeStore = () => page.evaluate(() => JSON.parse(localStorage.getItem('repgrade-fake-social') ?? 'null'));
@@ -798,7 +799,8 @@ try {
       // Filmen ligger fortsatt på Hjem med sosial konto
       await nav().getByRole('link', { name: 'Hjem' }).click();
       await page.getByRole('heading', { name: 'Sosialt er her' }).waitFor();
-      await btn('Åpne Sosialt').click();
+      await btn('Se filmen', { exact: true }).waitFor();
+      await nav().getByRole('link', { name: 'Sosialt' }).click();
       await page.getByRole('tab', { name: 'Feed' }).waitFor();
     }
 
@@ -1103,7 +1105,7 @@ try {
   assert.equal(await page.getByRole('heading', { name: 'Fullkropp A', exact: true }).count(), 0, 'gamle startrutiner er erstattet');
   await page.getByRole('navigation').getByRole('link', { name: 'Hjem' }).click();
   await page.getByRole('heading', { name: 'Dine rutiner' }).waitFor();
-  // Lokal konto uten nett: filmen vises også her, men uten «Prøv Sosialt» (Sosialt krever konto på nett)
+  // Lokal konto uten nett: filmen vises også her; «Prøv Sosialt» finnes ikke i arket (Sosialt krever konto på nett)
   await page.getByRole('heading', { name: 'Sosialt er her' }).waitFor();
   assert.equal(await btn('Prøv Sosialt').count(), 0, 'ingen «Prøv Sosialt» for lokal konto');
   await shot('hjem-rutiner');

@@ -84,23 +84,19 @@ export function NewsCard() {
                 'Follow friends, see their full workouts, climb the leaderboards, challenge each other and win badges. Your bodyweight is never shared.',
               )}
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {canUse && (
-                <Button className="min-h-10 px-4 text-sm" onClick={tryIt}>
-                  {social ? t('Åpne Sosialt', 'Open Socials') : t('Prøv Sosialt', 'Try Socials')}
-                </Button>
-              )}
-              <Button variant="secondary" icon="play" className="min-h-10 px-3.5 text-sm" onClick={watch}>
-                {t('Se filmen', 'Watch the video')}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Button icon="play" className="min-h-10 px-4 text-sm" onClick={watch}>
+                {t('Se filmen', 'Watch video')}
               </Button>
+              {/* «Skjul» først etter at filmen er åpnet. */}
+              {seen.watched && (
+                <button type="button" onClick={close} className="min-h-9 rounded-lg px-2.5 text-xs font-medium text-faint active:bg-raised">
+                  {t('Skjul', 'Dismiss')}
+                </button>
+              )}
             </div>
           </div>
         </div>
-        {seen.watched && (
-          <button type="button" aria-label={t('Skjul nyheten', 'Hide the news')} onClick={close} className="absolute top-1.5 right-1.5 grid size-9 place-items-center rounded-full text-faint">
-            <Icon name="x" size={16} />
-          </button>
-        )}
       </section>
       <SocialsVideoSheet open={video} onClose={() => setVideo(false)} onTry={social || !canUse ? undefined : tryIt} />
     </>
