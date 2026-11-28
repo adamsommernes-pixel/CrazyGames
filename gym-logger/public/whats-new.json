@@ -2,9 +2,24 @@
   "version": "1.3.0",
   "items": [
     {
-      "icon": "sparkle",
-      "nb": "Nytt: Sosialt. Velg kontotype under Profil: «Trening» er appen som før, «Sosial» gir deg en egen fane for venner",
-      "en": "New: Social. Choose an account type under Profile: “Training” is the app as before, “Social” gives you a tab for friends"
+      "icon": "users",
+      "nb": "Velg kontotype under Profil: «Trening» er appen som før, «Sosial» gir deg venner, feed, ledertavler og utfordringer",
+      "en": "Choose an account type under Profile: “Training” is the app as before, “Social” gives you friends, a feed, leaderboards and challenges"
+    },
+    {
+      "icon": "history",
+      "nb": "Følg venner og se hele øktene deres, med kudos 💪 🔥 👏 🏆",
+      "en": "Follow friends and see their full workouts, with kudos 💪 🔥 👏 🏆"
+    },
+    {
+      "icon": "target",
+      "nb": "Utfordre venner: først til en målvekt, flest økter, mest volum, ukemål eller størst fremgang",
+      "en": "Challenge friends: first to a target weight, most workouts, most volume, a weekly goal or the biggest gain"
+    },
+    {
+      "icon": "trophy",
+      "nb": "Globale ledertavler, også bare for ditt styrkenivå. Vinn og få et merke på profilen",
+      "en": "Global leaderboards, also just for your strength level. Win and get a badge on your profile"
     },
     {
       "icon": "lock",
@@ -12,24 +27,9 @@
       "en": "You decide who sees you: Private, Leaderboards or Open. Your bodyweight is never shared"
     },
     {
-      "icon": "history",
-      "nb": "Følg venner og se hele øktene deres i feeden, med kudos 💪 🔥 👏 🏆",
-      "en": "Follow friends and see their full workouts in the feed, with kudos 💪 🔥 👏 🏆"
-    },
-    {
-      "icon": "trophy",
-      "nb": "Ledertavler: Sterkest, Fremgang og Flest økter denne måneden",
-      "en": "Leaderboards: Strongest, Most improved and Most workouts this month"
-    },
-    {
-      "icon": "target",
-      "nb": "Utfordre venner: flest økter, mest volum, ukemål eller et løft",
-      "en": "Challenge friends: most workouts, most volume, a weekly goal or a lift"
-    },
-    {
-      "icon": "chart",
-      "nb": "På en sosial konto ligger Historikk nå under Fremgang",
-      "en": "On a social account, History now lives under Progress"
+      "icon": "sparkle",
+      "nb": "Fortsatt helt gratis",
+      "en": "Still completely free"
     }
   ],
   "history": [
@@ -128,5 +128,13 @@
         }
       ]
     }
-  ]
+  ],
+  "headline": {
+    "nb": "Sosialt er her",
+    "en": "Socials is here"
+  },
+  "video": {
+    "src": "ad/socials.mp4",
+    "poster": "ad/socials-poster.jpg"
+  }
 }

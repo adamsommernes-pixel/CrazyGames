@@ -59,7 +59,13 @@ export function InboxPage() {
                       navigate(d.to);
                     }}
                   >
-                    <Avatar name={actor?.display_name ?? '?'} color={actor?.color ?? '#6c6c72'} size={40} />
+                    {!n.actor ? (
+                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-soft text-lg" aria-hidden="true">
+                        {n.kind === 'badge' ? (n.payload.badge_kind === 'board' ? '🥇' : '🏆') : '🔔'}
+                      </span>
+                    ) : (
+                      <Avatar name={actor?.display_name ?? '?'} color={actor?.color ?? '#6c6c72'} size={40} />
+                    )}
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm">{d.text}</span>
                       <span className="block text-xs text-faint">{timeAgo(n.created_at)}</span>

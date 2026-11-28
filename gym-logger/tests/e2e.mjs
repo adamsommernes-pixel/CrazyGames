@@ -442,6 +442,14 @@ try {
     // Med den falske Sosialt-varianten (alt på enheten) kan en lokal konto velge Sosial.
     await page.evaluate(() => localStorage.setItem('repgrade-social-fake', '1'));
     await page.reload();
+    // Hjem: «Sosialt er her» med filmen, for kontoer som kan bruke Sosialt
+    await nav().getByRole('link', { name: 'Hjem' }).click();
+    await page.getByText('Sosialt er her').waitFor();
+    await btn('Se filmen').click();
+    await page.getByRole('dialog').locator('video').waitFor();
+    await page.getByRole('dialog').getByRole('button', { name: 'Trykk for lyd' }).waitFor();
+    await page.keyboard.press('Escape');
+    await nav().getByRole('link', { name: 'Profil' }).click();
     // En annen bruker (Zara, åpen konto) finnes allerede i den falske Sosialt-lagringen.
     const fakeStore = () => page.evaluate(() => JSON.parse(localStorage.getItem('repgrade-fake-social') ?? 'null'));
     const putFake = (store) => page.evaluate((s) => localStorage.setItem('repgrade-fake-social', JSON.stringify(s)), store);
@@ -876,18 +884,25 @@ try {
   await page.reload();
   await page.getByRole('navigation').first().waitFor();
   await page.waitForTimeout(800);
-  assert.equal(await page.getByRole('heading', { name: 'Nytt i denne versjonen' }).count(), 0, 'ingen nyheter på ny telefon');
+  assert.equal(await page.getByRole('heading', { name: 'Sosialt er her' }).count(), 0, 'ingen nyheter på ny telefon');
   // Oppdatert fra 1.1.0: nyhetene for alle versjoner siden vises, gruppert per versjon
   await page.evaluate(() => localStorage.setItem('repgrade-seen-version', '1.1.0'));
   await page.reload();
-  await page.getByRole('heading', { name: 'Nytt i denne versjonen' }).waitFor();
+  // 1.3: Sosialt er overskriften, og reklamefilmen spilles uten lyd til man trykker
+  await page.getByRole('heading', { name: 'Sosialt er her' }).waitFor();
   await page.getByText('Versjon 1.1.1').waitFor();
+  const adVideo = page.getByRole('dialog').locator('video');
+  await page.waitForFunction(() => { const v = document.querySelector('[role=dialog] video'); return v && v.readyState >= 2 && v.currentTime > 0.2; }, null, { timeout: 15000 });
+  assert.equal(await adVideo.evaluate((v) => v.muted), true, 'starter uten lyd');
   await shot('nytt-etter-oppdatering');
+  await page.getByRole('dialog').getByRole('button', { name: 'Trykk for lyd' }).click();
+  assert.equal(await adVideo.evaluate((v) => v.muted), false, 'lyd etter trykk');
+  assert.ok(await adVideo.evaluate((v) => v.controls), 'kontroller etter trykk');
   await page.getByRole('dialog').getByRole('button', { name: 'Fortsett' }).click();
   await page.reload();
   await page.getByRole('navigation').first().waitFor();
   await page.waitForTimeout(800);
-  assert.equal(await page.getByRole('heading', { name: 'Nytt i denne versjonen' }).count(), 0, 'nyhetene vises bare én gang');
+  assert.equal(await page.getByRole('heading', { name: 'Sosialt er her' }).count(), 0, 'nyhetene vises bare én gang');
 
   // 7. Fremgang og øvelse
   await page.getByRole('navigation').getByRole('link', { name: 'Fremgang' }).click();
@@ -1004,7 +1019,8 @@ try {
   assert.equal(await page.getByRole('heading', { name: 'Fullkropp A', exact: true }).count(), 0, 'gamle startrutiner er erstattet');
   await page.getByRole('navigation').getByRole('link', { name: 'Hjem' }).click();
   await page.getByRole('heading', { name: 'Dine rutiner' }).waitFor();
-  await page.getByRole('heading', { name: 'Nyheter og eventer' }).waitFor();
+  // «Sosialt er her» vises bare for kontoer som kan bruke Sosialt (ikke lokal konto uten nett)
+  assert.equal(await page.getByRole('heading', { name: 'Nyheter', exact: true }).count(), 0, 'ingen Sosialt-nyhet for lokal konto');
   await shot('hjem-rutiner');
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
   await page.getByText('Medlem siden').waitFor();

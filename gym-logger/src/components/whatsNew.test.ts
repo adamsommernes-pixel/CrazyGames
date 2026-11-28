@@ -32,6 +32,15 @@ describe('hva er nytt', () => {
     expect(w.releases[0].version).toBe(pkg.version);
     for (const r of w.releases.slice(1)) expect(compareVersions(r.version, pkg.version)).toBeLessThan(0);
   });
+  it('overskrift og film for lanseringen, bare filer i appen', () => {
+    const w = parseWhatsNew(file)!;
+    expect(w.releases[0].headline?.en).toBe('Socials is here');
+    expect(w.releases[0].video).toEqual({ src: 'ad/socials.mp4', poster: 'ad/socials-poster.jpg' });
+    const bad = (src: string) => parseWhatsNew({ version: '1', items: [{ nb: 'a', en: 'b' }], video: { src } })?.video;
+    expect(bad('https://evil.example/x.mp4')).toBeUndefined();
+    expect(bad('../x.mp4')).toBeUndefined();
+    expect(bad('/x.mp4')).toBeUndefined();
+  });
   it('ugyldig fil gir null', () => {
     expect(parseWhatsNew({ version: '1' })).toBeNull();
     expect(parseWhatsNew(null)).toBeNull();

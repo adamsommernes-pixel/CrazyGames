@@ -4,6 +4,7 @@ import { Button } from './ui';
 import { Icon, isIconName, type IconName } from './Icon';
 import { Logo } from './Logo';
 import { lockScroll, unlockScroll } from '../lib/scrollLock';
+import { AdVideo } from './AdVideo';
 import { t } from '../i18n';
 
 // «Hva er nytt»: når en ny versjon er lastet ned, hentes whats-new.json fra den nye versjonen
@@ -13,6 +14,10 @@ import { t } from '../i18n';
 export interface Release {
   version: string;
   items: { nb: string; en: string; icon?: IconName }[];
+  /** Valgfri stor overskrift (f.eks. «Sosialt er her») i stedet for «Nytt i denne versjonen». */
+  headline?: { nb: string; en: string };
+  /** Valgfri film øverst (sti under appen, f.eks. «ad/socials.mp4»). */
+  video?: { src: string; poster?: string };
 }
 
 /** Nyhetsfila: nyeste versjon øverst (`version`/`items`) og eldre versjoner i `history`. */
@@ -73,13 +78,24 @@ export function shouldShowAfterUpdate(current: string, seen: string | null, hasW
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
+/** Bare filer i appen (ingen adresser til andre nettsteder, ingen «..»). */
+const isLocalPath = (p: unknown): p is string => typeof p === 'string' && /^[\w./-]+$/.test(p) && !p.includes('..') && !p.startsWith('/');
+
 function parseRelease(json: unknown): Release | null {
   const w = json as Partial<Release>;
   if (!w || typeof w.version !== 'string' || !Array.isArray(w.items)) return null;
   const items = w.items
     .filter((i) => i && typeof i.nb === 'string' && typeof i.en === 'string')
     .map((i) => ({ nb: i.nb, en: i.en, icon: typeof i.icon === 'string' && isIconName(i.icon) ? i.icon : undefined }));
-  return items.length ? { version: w.version, items } : null;
+  if (!items.length) return null;
+  const h = (json as { headline?: { nb?: unknown; en?: unknown } }).headline;
+  const v = (json as { video?: { src?: unknown; poster?: unknown } }).video;
+  return {
+    version: w.version,
+    items,
+    ...(h && typeof h.nb === 'string' && typeof h.en === 'string' ? { headline: { nb: h.nb, en: h.en } } : {}),
+    ...(v && isLocalPath(v.src) ? { video: { src: v.src, ...(isLocalPath(v.poster) ? { poster: v.poster } : {}) } } : {}),
+  };
 }
 
 export function parseWhatsNew(json: unknown): WhatsNew | null {
@@ -135,19 +151,26 @@ function WhatsNewScreen({ state }: { state: NonNullable<typeof current> }) {
     close();
     state.later();
   };
+  // Den nyeste versjonen kan ha egen overskrift og film (f.eks. lanseringen av Sosialt).
+  const top = state.releases[0];
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="whats-new-title" className="pt-safe pb-safe fixed inset-0 z-[90] flex animate-fade flex-col bg-bg">
       <div className="mx-auto flex w-full max-w-xl min-h-0 flex-1 flex-col px-5">
-        <div className="flex flex-col items-center pt-8 text-center">
-          <Logo size={56} name={false} />
-          <div className="mt-3 text-sm font-semibold text-muted">
+        <div className={`flex flex-col items-center text-center ${top?.video ? 'pt-4' : 'pt-8'}`}>
+          <Logo size={top?.video ? 32 : 56} name={false} />
+          <div className="mt-2 text-sm font-semibold text-muted">
             RepGrade <span className="font-num">{state.news.version}</span>
           </div>
           <h2 id="whats-new-title" className="mt-1 text-2xl font-bold">
-            {t('Nytt i denne versjonen', 'New in this version')}
+            {top?.headline ? t(top.headline.nb, top.headline.en) : t('Nytt i denne versjonen', 'New in this version')}
           </h2>
         </div>
-        <ul className="mt-6 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-4" data-whats-new>
+        <ul className="mt-4 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-4" data-whats-new>
+          {top?.video && (
+            <li className="flex justify-center">
+              <AdVideo src={top.video.src} poster={top.video.poster} className="h-[52vh] max-h-[560px]" />
+            </li>
+          )}
           {state.releases.map((r, ri) => (
             <li key={r.version} className="flex flex-col gap-3">
               {state.releases.length > 1 && (
