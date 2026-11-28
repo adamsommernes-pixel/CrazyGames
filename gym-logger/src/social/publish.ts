@@ -82,6 +82,13 @@ export function syncActivities(backend: SocialBackend, ctx: BuildContext, since:
         // Lagre fortløpende, så det som er sendt ikke sendes igjen om noe senere feiler.
         await db.kv.put({ key: SENT_KEY, value: { ...sent } });
       }
+      // Delt under en id som ikke finnes lenger (f.eks. økta fikk ny id i synken): fjern den gamle kopien.
+      for (const id of Object.keys(sent)) {
+        if (sigs.has(id)) continue;
+        await backend.unpublish(id);
+        delete sent[id];
+        removed++;
+      }
       await db.kv.put({ key: SENT_KEY, value: sent });
     } finally {
       running = null;

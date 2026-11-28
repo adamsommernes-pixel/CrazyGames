@@ -3,6 +3,8 @@ import { liveQuery } from 'dexie';
 import { db } from './dexie';
 import { SYNCED_TABLES, type Row, type SyncedTable } from './types';
 import { normalizeRemote, remoteWins } from './merge';
+import { rekey } from './rekey';
+import { ownId } from './ownIds';
 import { supabase } from '../lib/supabase';
 import { t } from '../i18n';
 import { cloudPayload, fitIntegers, hasHealthConsent, keepLocalSensitive, SENSITIVE_TABLES } from './consent';
@@ -42,30 +44,71 @@ async function consentFor(userId: string) {
   return hasHealthConsent(await db.profiles.get(userId));
 }
 
-async function push(userId: string) {
-  const consent = await consentFor(userId);
-  for (const t of SYNCED_TABLES) {
-    // Uten samtykke blir kroppsvekt-loggen liggende lokalt (fortsatt markert som ikke synket).
-    if (!consent && SENSITIVE_TABLES.includes(t)) continue;
-    const rows = await table(t).where('dirty').equals(1).toArray();
-    for (let i = 0; i < rows.length; i += PAGE) {
-      const chunk = rows.slice(i, i + PAGE);
-      const payload = chunk
-        .map(({ dirty: _dirty, ...r }) => cloudPayload(t, fitIntegers(t, r as Record<string, unknown>), consent))
-        .filter((r) => r !== null)
-        .map((r) => ({ ...r, user_id: userId }));
-      const { error } = await supabase!.from(t).upsert(payload, { onConflict: 'id' });
-      if (error) throw new Error(`${t}: ${error.message}`);
-      // Fjern dirty bare hvis raden ikke er endret igjen mens vi sendte.
-      await db.transaction('rw', table(t), async () => {
-        for (const r of chunk) {
-          const cur = await table(t).get(r.id);
-          if (cur && cur.updated_at === r.updated_at) await table(t).put({ ...cur, dirty: 0 });
-        }
-      });
-    }
-  }
+/** Det synken trenger av Supabase-klienten (egen type, så den kan testes uten nett). */
+export interface Upserter {
+  from(table: string): { upsert(rows: unknown[], opts: { onConflict: string }): PromiseLike<{ error: { message: string; code?: string } | null }> };
 }
+
+/** Nektet fordi id-en allerede tilhører en annen bruker (sikkerhetsregelen «own rows»). */
+const isForeignId = (e: { message: string }) => /row-level security/i.test(e.message);
+
+/**
+ * Sender lokale endringer. Innebygde øvelser sendes aldri (samme id for alle). Nekter databasen en rad fordi
+ * id-en tilhører en annen bruker (f.eks. to som importerte samme øvelse fra Hevy før id-ene ble merket),
+ * får raden en egen id lokalt (rekey) og sendes på nytt. Gir antall rader som ble reparert.
+ */
+export async function pushWith(client: Upserter, userId: string): Promise<number> {
+  const consent = await consentFor(userId);
+  await db.exercises.where('dirty').equals(1).filter((e) => !e.custom).modify({ dirty: 0 });
+  let repaired = 0;
+  for (let pass = 0; pass < 3; pass++) {
+    let fixed = 0;
+    for (const t of SYNCED_TABLES) {
+      // Uten samtykke blir kroppsvekt-loggen liggende lokalt (fortsatt markert som ikke synket).
+      if (!consent && SENSITIVE_TABLES.includes(t)) continue;
+      const rows = await table(t).where('dirty').equals(1).toArray();
+      const payloadOf = ({ dirty: _dirty, ...r }: Row & Record<string, unknown>) => {
+        const p = cloudPayload(t, fitIntegers(t, r as Record<string, unknown>), consent);
+        return p === null ? null : { ...p, user_id: userId };
+      };
+      for (let i = 0; i < rows.length; i += PAGE) {
+        const chunk = rows.slice(i, i + PAGE);
+        const payload = chunk.map(payloadOf).filter((r) => r !== null);
+        let sent = chunk;
+        const { error } = await client.from(t).upsert(payload, { onConflict: 'id' });
+        if (error) {
+          if (!isForeignId(error) || t === 'profiles') throw new Error(`${t}: ${error.message}`);
+          // Finn radene som tilhører andre, én og én, og gi dem egne id-er.
+          sent = [];
+          for (const r of chunk) {
+            const p = payloadOf(r);
+            if (p === null) {
+              sent.push(r);
+              continue;
+            }
+            const res = await client.from(t).upsert([p], { onConflict: 'id' });
+            if (!res.error) sent.push(r);
+            else if (isForeignId(res.error) && (await rekey(t, r.id, ownId(r.id, userId)))) fixed++;
+            else throw new Error(`${t}: ${res.error.message}`);
+          }
+        }
+        // Fjern dirty bare hvis raden ikke er endret igjen mens vi sendte.
+        await db.transaction('rw', table(t), async () => {
+          for (const r of sent) {
+            const cur = await table(t).get(r.id);
+            if (cur && cur.updated_at === r.updated_at) await table(t).put({ ...cur, dirty: 0 });
+          }
+        });
+      }
+    }
+    repaired += fixed;
+    // Reparerte rader (og det som peker på dem) er endret: send en gang til.
+    if (!fixed) break;
+  }
+  return repaired;
+}
+
+const push = (userId: string) => pushWith(supabase as unknown as Upserter, userId);
 
 async function pull(userId: string) {
   const consent = await consentFor(userId);

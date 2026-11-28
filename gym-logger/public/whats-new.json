@@ -1,38 +1,56 @@
 {
-  "version": "1.3.0",
+  "version": "1.3.1",
   "items": [
     {
-      "icon": "users",
-      "nb": "Velg kontotype under Profil: «Trening» er appen som før, «Sosial» gir deg venner, feed, ledertavler og utfordringer",
-      "en": "Choose an account type under Profile: “Training” is the app as before, “Social” gives you friends, a feed, leaderboards and challenges"
-    },
-    {
-      "icon": "history",
-      "nb": "Følg venner og se hele øktene deres, med kudos 💪 🔥 👏 🏆",
-      "en": "Follow friends and see their full workouts, with kudos 💪 🔥 👏 🏆"
-    },
-    {
-      "icon": "target",
-      "nb": "Utfordre venner: først til en målvekt, flest økter, mest volum, ukemål eller størst fremgang",
-      "en": "Challenge friends: first to a target weight, most workouts, most volume, a weekly goal or the biggest gain"
-    },
-    {
-      "icon": "trophy",
-      "nb": "Globale ledertavler, også bare for ditt styrkenivå. Vinn og få et merke på profilen",
-      "en": "Global leaderboards, also just for your strength level. Win and get a badge on your profile"
-    },
-    {
-      "icon": "lock",
-      "nb": "Du bestemmer hvem som ser deg: Privat, Ledertavler eller Åpen. Kroppsvekten din deles aldri",
-      "en": "You decide who sees you: Private, Leaderboards or Open. Your bodyweight is never shared"
-    },
-    {
-      "icon": "sparkle",
-      "nb": "Fortsatt helt gratis",
-      "en": "Still completely free"
+      "icon": "cloud",
+      "nb": "Fikset: «Tilgang nektet av databasen» ved synk for deg som har importert fra Hevy, Strong eller Lyfto. Øktene dine synkes nå som vanlig.",
+      "en": "Fixed: “Access denied by the database” when syncing, for those who imported from Hevy, Strong or Lyfto. Your workouts now sync as normal."
     }
   ],
   "history": [
+    {
+      "version": "1.3.0",
+      "items": [
+        {
+          "icon": "users",
+          "nb": "Velg kontotype under Profil: «Trening» er appen som før, «Sosial» gir deg venner, feed, ledertavler og utfordringer",
+          "en": "Choose an account type under Profile: “Training” is the app as before, “Social” gives you friends, a feed, leaderboards and challenges"
+        },
+        {
+          "icon": "history",
+          "nb": "Følg venner og se hele øktene deres, med kudos 💪 🔥 👏 🏆",
+          "en": "Follow friends and see their full workouts, with kudos 💪 🔥 👏 🏆"
+        },
+        {
+          "icon": "target",
+          "nb": "Utfordre venner: først til en målvekt, flest økter, mest volum, ukemål eller størst fremgang",
+          "en": "Challenge friends: first to a target weight, most workouts, most volume, a weekly goal or the biggest gain"
+        },
+        {
+          "icon": "trophy",
+          "nb": "Globale ledertavler, også bare for ditt styrkenivå. Vinn og få et merke på profilen",
+          "en": "Global leaderboards, also just for your strength level. Win and get a badge on your profile"
+        },
+        {
+          "icon": "lock",
+          "nb": "Du bestemmer hvem som ser deg: Privat, Ledertavler eller Åpen. Kroppsvekten din deles aldri",
+          "en": "You decide who sees you: Private, Leaderboards or Open. Your bodyweight is never shared"
+        },
+        {
+          "icon": "sparkle",
+          "nb": "Fortsatt helt gratis",
+          "en": "Still completely free"
+        }
+      ],
+      "headline": {
+        "nb": "Sosialt er her",
+        "en": "Socials is here"
+      },
+      "video": {
+        "src": "ad/socials.mp4",
+        "poster": "ad/socials-poster.jpg"
+      }
+    },
     {
       "version": "1.2.0",
       "items": [
@@ -128,13 +146,5 @@
         }
       ]
     }
-  ],
-  "headline": {
-    "nb": "Sosialt er her",
-    "en": "Socials is here"
-  },
-  "video": {
-    "src": "ad/socials.mp4",
-    "poster": "ad/socials-poster.jpg"
-  }
+  ]
 }
