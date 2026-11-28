@@ -129,6 +129,17 @@ const close = () => {
   emit();
 };
 
+/** Vises «Nytt i denne versjonen» akkurat nå? (Andre popuper venter til den er lukket.) */
+export function useWhatsNewOpen(): boolean {
+  return useSyncExternalStore(
+    (l) => {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
+    () => current !== null,
+  );
+}
+
 export function WhatsNewHost() {
   const state = useSyncExternalStore(
     (l) => {

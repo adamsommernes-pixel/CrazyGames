@@ -10,10 +10,30 @@ import { setSocialMode, useSocialMode } from '../../lib/socialMode';
 import { socialAvailable } from '../../social';
 import { t } from '../../i18n';
 
-// «Sosialt er her»: på Hjem for dem som kan bruke Sosialt (konto på nett) men fortsatt har treningskonto.
-// Kan lukkes. Bytt NEWS_ID ved en ny nyhet, så vises kortet igjen for alle.
+// «Sosialt er her»: øverst på Hjem for dem som kan bruke Sosialt (konto på nett) men fortsatt har
+// treningskonto. Bilde fra reklamefilmen med ▶ (filmen åpnes med lyd), og «Prøv Sosialt». Kan lukkes.
+// Bytt NEWS_ID ved en ny nyhet, så vises kortet igjen for alle.
 const NEWS_ID = 'socials-released-1.3';
 const KEY = `news-dismissed:${NEWS_ID}`;
+
+/** Filmen i et ark, med «Prøv Sosialt» under (brukes fra Hjem og fra kontotype-valget). */
+export function SocialsVideoSheet({ open, onClose, onTry }: { open: boolean; onClose: () => void; onTry?: () => void }) {
+  return (
+    <Sheet open={open} onClose={onClose} title={t('Sosialt', 'Socials')} tall>
+      {open && (
+        <div className="flex flex-col items-center gap-4 pb-2">
+          <AdVideo src="ad/socials.mp4" poster="ad/socials-poster.jpg" className="h-[62vh]" />
+          {onTry && (
+            <Button full onClick={onTry}>
+              {t('Prøv Sosialt', 'Try Socials')}
+            </Button>
+          )}
+          <p className="text-center text-xs text-faint">{t('Du kan bytte når som helst under Profil → Kontotype.', 'You can switch any time under Profile → Account type.')}</p>
+        </div>
+      )}
+    </Sheet>
+  );
+}
 
 export function NewsCard() {
   const user = useUser();
@@ -23,54 +43,55 @@ export function NewsCard() {
   const [video, setVideo] = useState(false);
   if (dismissed || social || !socialAvailable(user)) return null;
   const close = () => void db.kv.put({ key: KEY, value: new Date().toISOString() });
+  const tryIt = () => void setSocialMode(user.id, true).then(() => navigate('/social'));
+  const base = import.meta.env.BASE_URL;
 
   return (
     <>
-      <section aria-labelledby="news-title">
-        <h2 id="news-title" className="mb-2 px-1 text-[15px] font-semibold text-ink">
-          {t('Nyheter', 'News')}
-        </h2>
-        <div className="card flex items-start gap-3 rounded-xl border-accent/30 p-4">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-on-accent">
-            <Icon name="users" size={20} />
-          </span>
+      <section aria-labelledby="socials-news" className="card relative overflow-hidden rounded-xl border-accent/40">
+        <div className="flex gap-3.5 p-3.5">
+          <button
+            type="button"
+            onClick={() => setVideo(true)}
+            aria-label={t('Se filmen om Sosialt', 'Watch the Socials video')}
+            className="relative w-24 shrink-0 overflow-hidden rounded-lg border border-line bg-raised"
+            style={{ aspectRatio: '9 / 16' }}
+          >
+            <img src={`${base}ad/socials-poster.jpg`} alt="" className="block h-full w-full object-cover" />
+            <span className="absolute inset-0 grid place-items-center bg-black/25">
+              <span className="grid size-11 place-items-center rounded-full bg-accent text-on-accent shadow-lg">
+                <Icon name="play" size={20} />
+              </span>
+            </span>
+          </button>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="font-semibold">{t('Sosialt er her', 'Socials is here')}</span>
-              <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent-strong">{t('Nytt', 'New')}</span>
+              <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-on-accent uppercase">{t('Nytt', 'New')}</span>
             </div>
-            <p className="mt-0.5 text-sm text-muted">
+            <h2 id="socials-news" className="mt-1.5 text-lg leading-tight font-bold">
+              {t('Sosialt er her', 'Socials is here')}
+            </h2>
+            <p className="mt-1 text-sm text-muted">
               {t(
-                'Følg venner og se hele øktene deres, klatre på ledertavler, utfordre hverandre og vinn merker. Kroppsvekten din deles aldri.',
-                'Follow friends and see their full workouts, climb the leaderboards, challenge each other and win badges. Your bodyweight is never shared.',
+                'Følg venner, se hele øktene deres, klatre på ledertavler, utfordre hverandre og vinn merker. Kroppsvekten din deles aldri.',
+                'Follow friends, see their full workouts, climb the leaderboards, challenge each other and win badges. Your bodyweight is never shared.',
               )}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button className="min-h-10 px-4 text-sm" onClick={() => void setSocialMode(user.id, true).then(() => navigate('/social'))}>
+              <Button className="min-h-10 px-4 text-sm" onClick={tryIt}>
                 {t('Prøv Sosialt', 'Try Socials')}
               </Button>
-              <Button variant="secondary" icon="play" className="min-h-10 px-4 text-sm" onClick={() => setVideo(true)}>
+              <Button variant="secondary" icon="play" className="min-h-10 px-3.5 text-sm" onClick={() => setVideo(true)}>
                 {t('Se filmen', 'Watch the video')}
               </Button>
             </div>
           </div>
-          <button type="button" aria-label={t('Skjul nyheten', 'Hide the news')} onClick={close} className="-mt-1 -mr-1 grid size-9 shrink-0 place-items-center rounded-full text-faint">
-            <Icon name="x" size={16} />
-          </button>
         </div>
+        <button type="button" aria-label={t('Skjul nyheten', 'Hide the news')} onClick={close} className="absolute top-1.5 right-1.5 grid size-9 place-items-center rounded-full text-faint">
+          <Icon name="x" size={16} />
+        </button>
       </section>
-
-      <Sheet open={video} onClose={() => setVideo(false)} title={t('Sosialt', 'Socials')} tall>
-        {video && (
-          <div className="flex flex-col items-center gap-4 pb-2">
-            <AdVideo src="ad/socials.mp4" poster="ad/socials-poster.jpg" className="h-[62vh]" />
-            <Button full onClick={() => void setSocialMode(user.id, true).then(() => navigate('/social'))}>
-              {t('Prøv Sosialt', 'Try Socials')}
-            </Button>
-            <p className="text-center text-xs text-faint">{t('Du kan bytte tilbake under Profil → Kontotype.', 'You can switch back under Profile → Account type.')}</p>
-          </div>
-        )}
-      </Sheet>
+      <SocialsVideoSheet open={video} onClose={() => setVideo(false)} onTry={tryIt} />
     </>
   );
 }

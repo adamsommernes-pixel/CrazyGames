@@ -442,10 +442,22 @@ try {
     // Med den falske Sosialt-varianten (alt på enheten) kan en lokal konto velge Sosial.
     await page.evaluate(() => localStorage.setItem('repgrade-social-fake', '1'));
     await page.reload();
-    // Hjem: «Sosialt er her» med filmen, for kontoer som kan bruke Sosialt
+    // Én gang per konto: velg kontotype. Ola velger Trening (appen som før).
+    const prompt = page.getByRole('dialog', { name: 'Velg kontotype' });
+    await prompt.waitFor();
+    await shot('velg-kontotype');
+    await prompt.getByRole('button', { name: /^Trening/ }).click();
+    await prompt.waitFor({ state: 'detached' });
+    await page.reload();
+    await page.waitForTimeout(800);
+    assert.equal(await page.getByRole('dialog', { name: 'Velg kontotype' }).count(), 0, 'spør bare én gang');
+    // Hjem: «Sosialt er her» med filmen øverst, for kontoer som kan bruke Sosialt
     await nav().getByRole('link', { name: 'Hjem' }).click();
-    await page.getByText('Sosialt er her').waitFor();
-    await btn('Se filmen').click();
+    await page.getByRole('heading', { name: 'Sosialt er her' }).waitFor();
+    const firstCard = await page.locator('main > *').first().getAttribute('aria-labelledby');
+    assert.equal(firstCard, 'socials-news', 'Sosialt-kortet ligger øverst på Hjem');
+    await shot('hjem-sosialt');
+    await btn('Se filmen', { exact: true }).click();
     await page.getByRole('dialog').locator('video').waitFor();
     await page.getByRole('dialog').getByRole('button', { name: 'Trykk for lyd' }).waitFor();
     await page.keyboard.press('Escape');
@@ -1226,8 +1238,8 @@ try {
   // Sosialt på engelsk: oppsett, alle fire faner, varsler og personvern
   await ep.evaluate(() => localStorage.setItem('repgrade-social-fake', '1'));
   await ep.reload();
-  await ep.getByRole('navigation').getByRole('link', { name: 'Profile' }).click();
-  await ep.getByRole('radio', { name: /^Social/ }).click();
+  // Kontotype-valget dukker opp: Sam velger Sosial og kommer rett til oppsettet
+  await ep.getByRole('dialog', { name: 'Choose your account type' }).getByRole('button', { name: /^Social/ }).click();
   await ep.getByRole('heading', { name: 'Create social profile' }).waitFor();
   await ep.getByRole('status').filter({ hasText: 'Available' }).waitFor();
   assert.equal(await ep.getByLabel('Username').inputValue(), 'sam', 'username suggested from the name');

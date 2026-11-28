@@ -46,6 +46,7 @@ import { PersonPage } from './features/social/PersonPage';
 import { ChallengePage } from './features/social/ChallengePage';
 import { InboxPage } from './features/social/InboxPage';
 import { InboxPoller, resetInbox } from './social/inbox';
+import { AccountTypePrompt } from './features/social/AccountTypePrompt';
 import { StrengthSync } from './social/StrengthSync';
 import { ActivitySync } from './social/ActivitySync';
 import { useSocialMode } from './lib/socialMode';
@@ -158,6 +159,7 @@ function SignedIn({ user }: { user: AuthUser }) {
   return (
     <>
       <AfterUpdateNews />
+      <AccountTypePrompt />
       {socialMode && socialAvailable(user) && (
         <>
           <StrengthSync />

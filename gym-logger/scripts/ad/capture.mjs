@@ -72,6 +72,8 @@ try {
   await page.getByRole('radio', { name: /^Full body A\/B / }).click();
   await btn('Start training').click();
   await page.getByText('Muscles trained').waitFor();
+  // Kontotype-valget: Alex starter som treningskonto (byttes til Sosial senere i opptaket)
+  await page.getByRole('dialog', { name: 'Choose your account type' }).getByRole('button', { name: /^Training/ }).click();
 
   // ---------- Alex sine økter (rett i den lokale databasen) ----------
   const me = await page.evaluate(async () => (await indexedDB.databases()).map((d) => d.name).find((n) => n?.startsWith('gym-') && n !== 'gym-none').slice(4));

@@ -115,6 +115,7 @@ export function Home() {
       </header>
 
       <main className="flex flex-col gap-4 px-4 pt-5 pb-44">
+        <NewsCard />
         <InstallHint />
         <ProgramsBanner days={target} />
         <ImportBanner />
@@ -258,7 +259,6 @@ export function Home() {
           </section>
         )}
 
-        <NewsCard />
       </main>
     </div>
   );
