@@ -1,4 +1,8 @@
+import 'fake-indexeddb/auto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { db, openUserDb } from '../../src/db/dexie';
+import { pushWith, type Upserter } from '../../src/db/sync';
+import { ownId } from '../../src/db/ownIds';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createSupabaseSocial } from '../../src/social/supabase';
 import type { SocialBackend } from '../../src/social/backend';
@@ -227,6 +231,26 @@ describe('staging: ekte Supabase', () => {
     expect(await B.s.badges(B.id)).toEqual([]);
     const r = await B.sb.from('badges').insert({ user_id: B.id, kind: 'challenge', ref: 'falsk' });
     expect(r.error?.message).toMatch(/permission denied/);
+  });
+
+  it('synk: id som tilhører en annen bruker får egen id (to som importerte samme Hevy-fil)', async () => {
+    const { A, B } = users;
+    const stamp = new Date().toISOString();
+    const exId = `hevy-ex-staging${run}`;
+    // A har allerede øvelsen i skyen
+    const r = await A.sb.from('exercises').upsert({ id: exId, user_id: A.id, name: 'Smith row', muscle_group: 'Rygg', equipment: 'Maskin', custom: 1, kind: 'weight', updated_at: stamp, deleted: 0 }, { onConflict: 'id' });
+    expect(r.error).toBeNull();
+    // B har samme øvelse og et set lokalt, og synker
+    openUserDb(`staging-${run}-B`);
+    await db.exercises.put({ id: exId, name: 'Smith row', muscle_group: 'Rygg', equipment: 'Maskin', custom: 1, kind: 'weight', updated_at: stamp, deleted: 0, dirty: 1 });
+    await db.sets.put({ id: `set-${run}`, workout_exercise_id: `we-${run}`, workout_id: `w-${run}`, exercise_id: exId, position: 0, weight: 60, reps: 8, set_type: 'normal', completed_at: stamp, updated_at: stamp, deleted: 0, dirty: 1 });
+    expect(await pushWith(B.sb as unknown as Upserter, B.id)).toBe(1);
+    const mine = ownId(exId, B.id);
+    expect((await db.sets.get(`set-${run}`))?.exercise_id).toBe(mine);
+    // I skyen: B har sin egen kopi, A sin er urørt
+    expect((await B.sb.from('exercises').select('id').eq('id', mine)).data?.length).toBe(1);
+    expect((await B.sb.from('sets').select('exercise_id').eq('id', `set-${run}`)).data?.[0]?.exercise_id).toBe(mine);
+    expect((await A.sb.from('exercises').select('name').eq('id', exId)).data?.[0]?.name).toBe('Smith row');
   });
 
   it('løftutfordring regnes fra delte 1RM-tall', async () => {

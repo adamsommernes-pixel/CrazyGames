@@ -162,8 +162,9 @@ function WhatsNewScreen({ state }: { state: NonNullable<typeof current> }) {
     close();
     state.later();
   };
-  // Den nyeste versjonen kan ha egen overskrift og film (f.eks. lanseringen av Sosialt).
-  const top = state.releases[0];
+  // En versjon kan ha egen overskrift og film (f.eks. lanseringen av Sosialt). Hopper noen over den
+  // (f.eks. 1.2 → 1.3.1), vises den likevel, så lenge den er blant versjonene som vises.
+  const top = state.releases.find((r) => r.video || r.headline) ?? state.releases[0];
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="whats-new-title" className="pt-safe pb-safe fixed inset-0 z-[90] flex animate-fade flex-col bg-bg">
       <div className="mx-auto flex w-full max-w-xl min-h-0 flex-1 flex-col px-5">

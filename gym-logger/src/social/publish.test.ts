@@ -101,6 +101,15 @@ describe('publisering til feeden', () => {
     expect((await feed()).map((a) => a.name)).toEqual(['Push']);
   });
 
+  it('fjerner den gamle kopien når økta har fått ny id (reparert i synken)', async () => {
+    const w = await workout();
+    await syncActivities(me, ctx, since);
+    const { rekey } = await import('../db/rekey');
+    await rekey('workouts', w, `${w}-ny`);
+    await syncActivities(me, ctx, since);
+    expect((await feed()).map((a) => a.id)).toEqual([`${w}-ny`]);
+  });
+
   it('prøver igjen etter en feil (f.eks. uten nett)', async () => {
     await workout();
     const failing: SocialBackend = { ...me, publish: async () => { throw new Error('offline'); } };

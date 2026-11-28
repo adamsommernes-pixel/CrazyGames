@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { importBackup, parseBackup, summarizeBackup } from '../../db/backup';
 import { convertImport, SOURCE_LABEL } from '../../db/importApps';
+import { currentUserId, ownImported } from '../../db/ownIds';
 import { getSetting } from '../../lib/settings';
 import { askConfirm } from '../../components/confirm';
 import { Button } from '../../components/ui';
@@ -36,7 +37,9 @@ export function ImportButton({ label, variant = 'secondary', onDone, compact }: 
     try {
       const unit = await getSetting('unit');
       const { source, data } = convertImport(await file.text(), unit);
-      const backup = parseBackup(data);
+      // Importer fra andre apper får id-er merket med kontoen, så de ikke kolliderer med andres i skyen.
+      const uid = currentUserId();
+      const backup = source !== 'repgrade' && uid ? await ownImported(parseBackup(data), uid) : parseBackup(data);
       const sum = summarizeBackup(backup);
       if (!sum.workouts && !sum.routines && !sum.bodyweights) throw new Error(t('Fant ingen økter i fila.', 'No workouts found in the file.'));
       const from = source === 'repgrade' ? t(`Backup fra ${dateShort(sum.exportedAt)}`, `Backup from ${dateShort(sum.exportedAt)}`) : t(`Eksport fra ${SOURCE_LABEL[source]}`, `Export from ${SOURCE_LABEL[source]}`);

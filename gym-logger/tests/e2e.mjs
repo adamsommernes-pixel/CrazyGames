@@ -902,7 +902,7 @@ try {
   await page.reload();
   // 1.3: Sosialt er overskriften, og reklamefilmen spilles uten lyd til man trykker
   await page.getByRole('heading', { name: 'Sosialt er her' }).waitFor();
-  await page.getByText('Versjon 1.1.1').waitFor();
+  await page.getByText('Versjon 1.2.0').waitFor();
   const adVideo = page.getByRole('dialog').locator('video');
   await page.waitForFunction(() => { const v = document.querySelector('[role=dialog] video'); return v && v.readyState >= 2 && v.currentTime > 0.2; }, null, { timeout: 15000 });
   assert.equal(await adVideo.evaluate((v) => v.muted), true, 'starter uten lyd');
