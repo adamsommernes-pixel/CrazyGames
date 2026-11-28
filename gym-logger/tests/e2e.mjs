@@ -439,28 +439,16 @@ try {
     await shot('kontotype');
     assert.equal(await page.getByRole('radio', { name: /Trening/ }).getAttribute('aria-checked'), 'true', 'trening er standard');
     assert.ok(await page.getByRole('radio', { name: /Sosial/ }).isDisabled(), 'sosial krever konto på nett');
-    // Slå på sosial modus direkte i databasen (sky-kontoer testes mot Supabase senere).
-    const setSocial = (on) =>
-      page.evaluate(async (on) => {
-        const name = (await indexedDB.databases()).map((d) => d.name).find((n) => n?.startsWith('gym-') && n !== 'gym-none');
-        await new Promise((res, rej) => {
-          const r = indexedDB.open(name);
-          r.onerror = () => rej(r.error);
-          r.onsuccess = () => {
-            const tx = r.result.transaction('kv', 'readwrite');
-            tx.objectStore('kv').put({ key: 'socialMode', value: on });
-            tx.oncomplete = () => (r.result.close(), res());
-            tx.onerror = () => rej(tx.error);
-          };
-        });
-      }, on);
-    await setSocial(true);
+    // Med den falske Sosialt-varianten (alt på enheten) kan en lokal konto velge Sosial.
+    await page.evaluate(() => localStorage.setItem('repgrade-social-fake', '1'));
     await page.reload();
+    await page.getByRole('radio', { name: /Sosial/ }).click();
+    await page.waitForFunction(() => document.querySelector('[role=radio][aria-checked=true]')?.textContent?.includes('Sosial'));
     await nav().getByRole('link', { name: 'Sosialt' }).waitFor();
     assert.equal(await nav().getByRole('link', { name: 'Historikk' }).count(), 0, 'Historikk er ikke i bunnmenyen');
     await nav().getByRole('link', { name: 'Sosialt' }).click();
-    await page.getByRole('heading', { name: 'Krever konto på nett' }).waitFor();
-    await shot('sosialt-lokal');
+    await page.getByRole('heading', { name: 'Sosialt kommer snart' }).waitFor();
+    await shot('sosialt');
     await nav().getByRole('link', { name: 'Fremgang' }).click();
     const tabs = page.getByRole('navigation', { name: 'Fremgang og historikk' });
     await tabs.getByRole('link', { name: 'Historikk' }).click();
@@ -472,11 +460,17 @@ try {
     await page.goBack();
     await tabs.getByRole('link', { name: 'Fremgang' }).click();
     await page.getByRole('heading', { name: 'Fremgang', exact: true }).waitFor();
-    // Tilbake til treningskonto: appen er som før
-    await setSocial(false);
+    // Kontotypen ligger i profilen og overlever omlasting
     await page.reload();
+    await nav().getByRole('link', { name: 'Sosialt' }).waitFor();
+    // Tilbake til treningskonto: appen er som før
+    await nav().getByRole('link', { name: 'Profil' }).click();
+    await page.getByRole('radio', { name: /Trening/ }).click();
+    await page.evaluate(() => localStorage.removeItem('repgrade-social-fake'));
     await nav().getByRole('link', { name: 'Historikk' }).waitFor();
     assert.equal(await nav().getByRole('link', { name: 'Sosialt' }).count(), 0, 'ingen Sosialt-fane på treningskonto');
+    await nav().getByRole('link', { name: 'Fremgang' }).click();
+    await page.getByRole('heading', { name: 'Fremgang', exact: true }).waitFor();
     assert.equal(await page.getByRole('navigation', { name: 'Fremgang og historikk' }).count(), 0, 'ingen faner på Fremgang');
     await nav().getByRole('link', { name: 'Historikk' }).click();
     await btn(/1 øvelse/).first().waitFor();

@@ -1,13 +1,14 @@
 import { useUser } from '../../auth/AuthProvider';
 import { EmptyState, Page } from '../../components/ui';
 import { t } from '../../i18n';
+import { socialAvailable } from '../../social';
 
 /** Sosialt-fanen. Bygges ut steg for steg (følgere, aktivitet, ledertavler, utfordringer). */
 export function SocialPage() {
   const user = useUser();
   return (
     <Page title={t('Sosialt', 'Social')}>
-      {user.kind === 'cloud' ? (
+      {socialAvailable(user) ? (
         <EmptyState
           icon="users"
           title={t('Sosialt kommer snart', 'Social is coming soon')}

@@ -27,8 +27,6 @@ export interface Settings {
   keepAwake: boolean;
   /** Øvelser merket med stjerne, vises først i øvelsesvelgeren. */
   favorites: string[];
-  /** Kontotype: false = bare trening (appen som før), true = sosial (Sosialt-fanen). */
-  socialMode: boolean;
 }
 
 export const DEFAULTS: Settings = {
@@ -46,7 +44,6 @@ export const DEFAULTS: Settings = {
   dumbbellChecked: [],
   keepAwake: true,
   favorites: [],
-  socialMode: false,
 };
 
 export async function toggleFavorite(exerciseId: string) {

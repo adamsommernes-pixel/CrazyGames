@@ -2,13 +2,14 @@ import { useUser } from '../../auth/AuthProvider';
 import { Card } from '../../components/ui';
 import { Icon, type IconName } from '../../components/Icon';
 import { setSocialMode, useSocialMode } from '../../lib/socialMode';
+import { socialAvailable } from '../../social';
 import { t } from '../../i18n';
 
 /** Velg kontotype i Profil: bare trening (appen som før) eller sosial. */
 export function AccountTypeCard() {
   const user = useUser();
   const social = useSocialMode();
-  const cloud = user.kind === 'cloud';
+  const cloud = socialAvailable(user);
   return (
     <Card className="p-1.5">
       <div role="radiogroup" aria-label={t('Kontotype', 'Account type')} className="flex flex-col gap-1">
@@ -17,7 +18,7 @@ export function AccountTypeCard() {
           title={t('Trening', 'Training')}
           text={t('Bare din egen trening. Appen er som før.', 'Just your own training. The app stays as it is.')}
           checked={!social}
-          onSelect={() => void setSocialMode(false)}
+          onSelect={() => void setSocialMode(user.id, false)}
         />
         <Option
           icon="users"
@@ -29,7 +30,7 @@ export function AccountTypeCard() {
           }
           checked={social}
           disabled={!cloud && !social}
-          onSelect={() => void setSocialMode(true)}
+          onSelect={() => void setSocialMode(user.id, true)}
         />
       </div>
     </Card>
