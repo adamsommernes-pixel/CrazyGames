@@ -13,6 +13,7 @@ import {
   type Standing,
 } from './types';
 import { t } from '../i18n';
+import { nameProblem } from './names';
 
 // Falsk Sosialt: samme regler som 012_social.sql, men lagret på enheten (localStorage).
 // Brukes i e2e-testene og ved utvikling uten Supabase: to lokale kontoer på samme enhet kan
@@ -111,6 +112,7 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
       const handle = input.handle.toLowerCase().trim();
       if (!HANDLE.test(handle)) fail('Brukernavnet kan ha 3–20 tegn: små bokstaver, tall, _ og punktum.', 'Usernames are 3–20 characters: lowercase letters, numbers, _ and dots.');
       if (input.visibility !== 1 && !input.is_16_plus) fail('Under 16 år kan du bare ha privat konto.', 'Under 16 you can only have a private account.');
+      if (nameProblem(handle, input.display_name)) fail('Navnet eller brukernavnet er ikke tillatt.', 'The name or username is not allowed.');
       return tx((s) => {
         if (s.profiles.some((p) => p.handle === handle && p.user_id !== u)) fail('Brukernavnet er tatt.', 'That username is taken.');
         const prev = prof(s, u);
@@ -145,7 +147,7 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
     async handleAvailable(handle) {
       const u = me();
       const h = handle.toLowerCase();
-      return HANDLE.test(h) && !read().profiles.some((p) => p.handle === h && p.user_id !== u);
+      return HANDLE.test(h) && !nameProblem(h, '') && !read().profiles.some((p) => p.handle === h && p.user_id !== u);
     },
     async setActive(active) {
       const u = me();

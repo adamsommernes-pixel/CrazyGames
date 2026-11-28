@@ -8,6 +8,7 @@ export function socialMessage(e: Pick<PostgrestError, 'message' | 'code'>): stri
   const m = e.message.toLowerCase();
   if (m.includes('social_profiles_handle_key')) return t('Brukernavnet er tatt.', 'That username is taken.');
   if (m.includes('handle_check')) return t('Brukernavnet kan ha 3–20 tegn: små bokstaver, tall, _ og punktum.', 'Usernames are 3–20 characters: lowercase letters, numbers, _ and dots.');
+  if (m.includes('ikke tillatt')) return t('Navnet eller brukernavnet er ikke tillatt.', 'The name or username is not allowed.');
   if (m.includes('under_16_private')) return t('Under 16 år kan du bare ha privat konto.', 'Under 16 you can only have a private account.');
   if (m.includes('fant ikke brukeren')) return t('Fant ikke brukeren.', 'User not found.');
   if (m.includes('mangler sosial profil')) return t('Lag en sosial profil først.', 'Create a social profile first.');

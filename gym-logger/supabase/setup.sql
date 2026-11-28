@@ -466,6 +466,25 @@ create index if not exists notifications_user_idx on public.notifications (user_
 
 -- ---------- Hjelpefunksjoner ----------
 
+/* Er navnet lov? null = ok, 'reserved' = brukernavnet er reservert, 'banned' = støtende ord.
+   Samme lister som i src/social/names.ts (testes i begge). Ordene sjekkes som del av teksten, så listen
+   holdes til ord som ikke finnes inni vanlige navn («fittest», «Nazira» og «pikkolo» skal være lov). */
+create or replace function public.name_problem(h text, n text)
+returns text language sql immutable set search_path = '' as $$
+  select case
+    when lower(coalesce(h, '')) like 'repgrade%' or lower(coalesce(h, '')) = any (array[
+      'admin', 'administrator', 'support', 'moderator', 'mod', 'staff', 'official', 'help', 'system',
+      'root', 'null', 'undefined', 'anonymous', 'me', 'settings', 'privacy', 'api'
+    ]) then 'reserved'
+    when exists (
+      select 1 from unnest(array[
+        'nigger', 'nigga', 'faggot', 'retard', 'hitler', 'fuck', 'cunt', 'whore', 'neger', 'hestkuk'
+      ]) w
+      where lower(coalesce(h, '')) like '%' || w || '%' or lower(coalesce(n, '')) like '%' || w || '%'
+    ) then 'banned'
+  end;
+$$;
+
 create or replace function public.is_blocked(a uuid, b uuid)
 returns boolean language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.blocks where (blocker = a and blocked = b) or (blocker = b and blocked = a));
@@ -537,6 +556,9 @@ create trigger profiles_social_active after insert or update of social on public
 create or replace function public.social_profile_rules()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
+  if public.name_problem(new.handle, new.display_name) is not null then
+    raise exception 'navnet er ikke tillatt (%)', public.name_problem(new.handle, new.display_name);
+  end if;
   new.updated_at := now();
   if tg_op = 'INSERT' then
     new.active := coalesce((select pr.social = 1 from public.profiles pr where pr.user_id = new.user_id order by pr.updated_at desc limit 1), true);
@@ -787,6 +809,7 @@ $$;
 create or replace function public.handle_available(h text)
 returns boolean language sql stable security definer set search_path = '' as $$
   select lower(h) ~ '^[a-z0-9_.]{3,20}$'
+     and public.name_problem(lower(h), '') is null
      and not exists (select 1 from public.social_profiles where handle = lower(h) and user_id <> auth.uid());
 $$;
 
@@ -960,7 +983,7 @@ do $$
 declare f text;
 begin
   foreach f in array array[
-    'has_social(uuid)', 'is_blocked(uuid, uuid)', 'can_see(uuid, uuid)', 'mutual(uuid, uuid)', 'can_challenge(uuid, uuid)',
+    'name_problem(text, text)', 'has_social(uuid)', 'is_blocked(uuid, uuid)', 'can_see(uuid, uuid)', 'mutual(uuid, uuid)', 'can_challenge(uuid, uuid)',
     'notify(uuid, text, uuid, jsonb)', 'in_challenge(uuid, uuid)',
     'follow_user(uuid)', 'unfollow_user(uuid)', 'accept_follower(uuid)', 'remove_follower(uuid)',
     'followers_not_followed_back()', 'remove_followers(uuid[])', 'block_user(uuid)', 'unblock_user(uuid)',

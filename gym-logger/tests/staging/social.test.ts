@@ -192,6 +192,26 @@ describe('staging: ekte Supabase', () => {
     expect((await A.s.challenges()).challenges.some((c) => c.id === cid)).toBe(false);
   });
 
+  it('slettet konto tar med seg alt sosialt', async () => {
+    const { D } = users;
+    const E = await makeUser('E');
+    await profile(E, 3);
+    await publish(E, 'E-1');
+    expect((await D.s.findByHandle(`t${run}_e`))?.user_id).toBe(E.id);
+    expect(await sees(D, E)).toBe(true);
+    const { error } = await E.sb.rpc('delete_user');
+    expect(error).toBeNull();
+    expect(await D.s.findByHandle(`t${run}_e`)).toBeNull();
+    expect(await sees(D, E)).toBe(false);
+    expect((await D.s.discover(`t${run}_e`)).length).toBe(0);
+  });
+
+  it('navnefilter i databasen', async () => {
+    const { D } = users;
+    await expect(D.s.saveProfile({ handle: 'repgrade_staff', display_name: 'X', color: '#34c56a', visibility: 1, is_16_plus: false })).rejects.toThrow(/tillatt|allowed/);
+    expect(await D.s.handleAvailable('admin')).toBe(false);
+  });
+
   it('løftutfordring regnes fra delte 1RM-tall', async () => {
     const { A, C } = users;
     const at = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();

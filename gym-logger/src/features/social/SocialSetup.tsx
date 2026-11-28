@@ -7,10 +7,11 @@ import { Icon } from '../../components/Icon';
 import { social, type SocialProfile, type Visibility } from '../../social';
 import { cleanHandle, handleCandidates, isValidHandle, suggestHandle } from '../../social/handle';
 import { errorText, inputOf, saveMySocial } from '../../social/store';
+import { nameProblem } from '../../social/names';
 import { VISIBILITIES, VISIBILITY_ICON, visibilityName, visibilityText } from '../../social/visibility';
 import { t } from '../../i18n';
 
-type Check = 'idle' | 'checking' | 'free' | 'taken' | 'invalid' | 'error';
+type Check = 'idle' | 'checking' | 'free' | 'taken' | 'invalid' | 'reserved' | 'error';
 
 /**
  * Lag eller endre den sosiale profilen: navn, @brukernavn, 16+ og synlighet.
@@ -51,6 +52,7 @@ export function SocialSetup({ existing, onSaved }: { existing?: SocialProfile | 
   useEffect(() => {
     if (!handle) return setCheck('idle');
     if (!isValidHandle(handle)) return setCheck('invalid');
+    if (nameProblem(handle, '')) return setCheck('reserved');
     if (existing && handle === existing.handle) return setCheck('free');
     setCheck('checking');
     let live = true;
@@ -66,7 +68,8 @@ export function SocialSetup({ existing, onSaved }: { existing?: SocialProfile | 
     };
   }, [handle, existing]);
 
-  const ready = name.trim().length > 0 && check === 'free' && adult !== null && history !== null && !saving;
+  const badName = nameProblem('', name) === 'banned';
+  const ready = name.trim().length > 0 && !badName && check === 'free' && adult !== null && history !== null && !saving;
 
   const save = async () => {
     setSaving(true);
@@ -96,6 +99,7 @@ export function SocialSetup({ existing, onSaved }: { existing?: SocialProfile | 
     free: { text: t('Ledig', 'Available'), tone: 'text-accent' },
     taken: { text: t('Opptatt. Prøv et annet.', 'Taken. Try another.'), tone: 'text-danger' },
     invalid: { text: t('3–20 tegn: små bokstaver, tall, _ og punktum.', '3–20 characters: lowercase letters, numbers, _ and dots.'), tone: 'text-warn' },
+    reserved: { text: t('Det brukernavnet kan ikke brukes. Prøv et annet.', "That username can't be used. Try another."), tone: 'text-danger' },
     error: { text: t('Kunne ikke sjekke. Har du nett?', "Couldn't check. Are you online?"), tone: 'text-warn' },
   };
 
@@ -104,6 +108,11 @@ export function SocialSetup({ existing, onSaved }: { existing?: SocialProfile | 
       <label className="flex flex-col gap-1.5">
         <span className="text-sm text-muted">{t('Navn som vises', 'Display name')}</span>
         <input className={inputClass} value={name} maxLength={40} onChange={(e) => setName(e.target.value)} autoComplete="nickname" />
+        {badName && (
+          <span role="status" className="text-xs text-danger">
+            {t('Navnet inneholder et ord som ikke er tillatt.', 'The name contains a word that is not allowed.')}
+          </span>
+        )}
       </label>
 
       <div className="flex flex-col gap-1.5">

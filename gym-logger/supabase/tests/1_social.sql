@@ -30,6 +30,12 @@ select test.ok((select active from public.social_profiles where user_id = :'A'),
 select test.fails(format($q$insert into public.social_profiles (user_id, handle, display_name) values (%L, 'tyv', 'Tyv')$q$, :'B'), 'kan ikke lage profil for en annen', 'row-level security');
 select test.fails($q$update public.social_profiles set handle = 'Ugyldig Navn!' where user_id = auth.uid()$q$, 'brukernavn med ugyldige tegn avvises', 'handle_check');
 select test.fails($q$update public.social_profiles set visibility = 2 where user_id = auth.uid()$q$, 'nivå 2 krever bekreftet 16+', 'under_16_private');
+select test.fails($q$update public.social_profiles set handle = 'repgrade_team' where user_id = auth.uid()$q$, 'reserverte brukernavn avvises', 'ikke tillatt \(reserved\)');
+select test.fails($q$update public.social_profiles set handle = 'admin' where user_id = auth.uid()$q$, 'admin er reservert', 'ikke tillatt');
+select test.fails($q$update public.social_profiles set display_name = 'Big Fuck' where user_id = auth.uid()$q$, 'støtende visningsnavn avvises', 'ikke tillatt \(banned\)');
+select test.ok(not public.handle_available('admin') and not public.handle_available('repgrade'), 'reserverte navn er ikke ledige');
+select test.ok(public.name_problem('anna_b', 'Anna Berg') is null and public.name_problem('nazira', 'Nazira') is null
+               and public.name_problem('fittest_ola', 'Pikkolo') is null, 'vanlige navn og ord er ok');
 
 select pg_temp.as_user(:'B');
 insert into public.social_profiles (user_id, handle, display_name, visibility, is_16_plus, tier_index, score, lift_scores)
