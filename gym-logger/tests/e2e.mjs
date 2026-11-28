@@ -497,6 +497,68 @@ try {
     await page.getByText('1 følger fjernet').waitFor();
     assert.equal((await fakeStore()).follows.length, 0, 'Zara er fjernet som følger');
     assert.equal((await fakeStore()).profiles.find((p) => p.user_id === me).visibility, 1, 'nå privat');
+
+    // ===== Steg 5: følge folk =====
+    {
+      const now = new Date().toISOString();
+      const fake = (id, handle, name, visibility) => ({ ...zara, user_id: id, handle, display_name: name, visibility, is_16_plus: true, tier_index: 2, score: 25 });
+      const st = await fakeStore();
+      st.profiles.push(fake('per-id', 'per_test', 'Per', 1), fake('liv-id', 'liv_test', 'Liv', 1));
+      st.follows.push({ follower: 'per-id', followee: me, status: 'pending', created_at: now, accepted_at: null });
+      await putFake(st);
+      await nav().getByRole('link', { name: 'Sosialt' }).click();
+      await page.getByRole('tab', { name: /Folk/ }).click();
+      // Forespørsel fra Per: godta
+      await page.getByLabel('1 forespørsler').waitFor();
+      const perRow = page.locator('[data-person="per_test"]');
+      await perRow.getByRole('button', { name: 'Godta' }).click();
+      await page.getByText('Godtatt', { exact: true }).waitFor();
+      await perRow.getByRole('button', { name: 'Følg tilbake' }).waitFor();
+      assert.equal((await fakeStore()).follows.find((f) => f.follower === 'per-id').status, 'accepted', 'Per er godtatt');
+      // Finn @zara_test (åpen): følges med en gang
+      const find = page.getByLabel('Finn på brukernavn');
+      await find.fill('@Zara_Test');
+      await btn('Finn', { exact: true }).click();
+      await page.locator('[data-person="zara_test"]').first().getByRole('button', { name: 'Følg' }).click();
+      await page.locator('[data-person="zara_test"]').first().getByRole('button', { name: 'Følger' }).waitFor();
+      // Finn @liv_test (privat): forespørsel
+      await find.fill('liv_test');
+      await btn('Finn', { exact: true }).click();
+      await page.locator('[data-person="liv_test"]').first().getByRole('button', { name: 'Følg' }).click();
+      await page.getByText('Forespørsel sendt til Liv').waitFor();
+      await page.locator('[data-person="liv_test"]').first().getByRole('button', { name: 'Forespurt' }).waitFor();
+      // Ingen treff
+      await find.fill('finnes_ikke');
+      await btn('Finn', { exact: true }).click();
+      await page.getByText('Fant ingen med brukernavnet @finnes_ikke.').waitFor();
+      await shot('folk');
+      // Zaras profil: nivå vises (åpen konto), rapporter og blokker
+      await page.locator('[data-person="zara_test"]').first().getByRole('link').click();
+      await page.getByRole('heading', { name: 'Zara', level: 2 }).waitFor();
+      await page.getByText('Styrkenivå').waitFor();
+      await shot('person');
+      await btn('Valg').click();
+      await btn('Rapporter').click();
+      await btn('Spam', { exact: true }).click();
+      await btn('Send rapport').click();
+      await page.getByText('Takk. Rapporten er sendt.').waitFor();
+      assert.equal((await fakeStore()).reports[0]?.target, 'zara-id', 'rapporten er lagret');
+      await btn('Valg').click();
+      await page.getByRole('dialog').getByRole('button', { name: 'Blokker' }).click();
+      await page.getByRole('dialog').getByRole('button', { name: 'Blokker' }).click();
+      await page.getByText('Zara er blokkert').waitFor();
+      const after = await fakeStore();
+      assert.ok(!after.follows.some((f) => f.follower === 'zara-id' || f.followee === 'zara-id'), 'blokkering fjerner følging');
+      await page.getByRole('tab', { name: /Folk/ }).click();
+      await btn('Blokkerte (1)').click();
+      await btn('Opphev').click();
+      await page.getByText('Blokkering opphevet').waitFor();
+      assert.equal((await fakeStore()).blocks.length, 0, 'blokkering opphevet');
+      // Invitasjonslenke (#/u/brukernavn) åpner profilen
+      await page.goto(page.url().replace(/#.*$/, '#/u/per_test'));
+      await page.getByRole('heading', { name: 'Per', level: 2 }).waitFor();
+      await page.getByText('Følger deg').waitFor();
+    }
     await nav().getByRole('link', { name: 'Fremgang' }).click();
     const tabs = page.getByRole('navigation', { name: 'Fremgang og historikk' });
     await tabs.getByRole('link', { name: 'Historikk' }).click();

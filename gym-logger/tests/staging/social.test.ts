@@ -103,9 +103,20 @@ describe('staging: ekte Supabase', () => {
     expect(r2.error?.message).toMatch(/row-level security/);
   });
 
+  it('folkelister: navn for følgere, forespørsler og rapportering', async () => {
+    const { A, B, D } = users;
+    expect((await A.s.people([B.id])).map((p) => p.handle)).toEqual([`t${run}_b`]);
+    // D har ingen tilknytning til A (privat): får ikke navnet via people()
+    expect(await D.s.people([A.id])).toEqual([]);
+    await D.s.report(A.id, 'spam: test');
+    const r = await D.sb.from('reports').select('*');
+    expect(r.error?.message).toMatch(/permission denied/);
+  });
+
   it('blokkering fjerner tilgangen', async () => {
     const { A, B } = users;
     await A.s.block(B.id);
+    expect(await A.s.blocked()).toEqual([B.id]);
     expect(await sees(B, A)).toBe(false);
     expect(await B.s.findByHandle(`t${run}_a`)).toBeNull();
     await A.s.unblock(B.id);

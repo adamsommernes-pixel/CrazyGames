@@ -1,7 +1,7 @@
 import { Logo } from './components/Logo';
 import { applyAccent } from './lib/theme';
 import { Suspense, lazy, useEffect, useMemo } from 'react';
-import { HashRouter, MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { HashRouter, MemoryRouter, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { t, useLang } from './i18n';
@@ -40,6 +40,9 @@ import { PrivacyPage } from './features/legal/PrivacyPage';
 import { SocialPage } from './features/social/SocialPage';
 import { bindSocialUser, socialAvailable } from './social';
 import { resetMySocial } from './social/store';
+import { resetGraph } from './social/graph';
+import { rememberInvite, takeInvite } from './social/invite';
+import { PersonPage } from './features/social/PersonPage';
 import { StrengthSync } from './social/StrengthSync';
 import { useSocialMode } from './lib/socialMode';
 
@@ -95,6 +98,13 @@ function WelcomeOrConfirmed() {
   return isConfirmedLanding() ? <Navigate to="/login" replace /> : <Welcome />;
 }
 
+/** Invitasjonslenke uten innlogging: husk den, og vis velkomstsiden. Profilen åpnes etter innlogging. */
+function InviteLanding() {
+  const { handle } = useParams();
+  useMemo(() => handle && rememberInvite(handle), [handle]);
+  return <Welcome />;
+}
+
 function Gate() {
   const { status, user } = useAuth();
   if (status === 'loading') return <Splash />;
@@ -104,6 +114,7 @@ function Gate() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/u/:handle" element={<InviteLanding />} />
         <Route path="*" element={<WelcomeOrConfirmed />} />
       </Routes>
     );
@@ -117,8 +128,15 @@ function SignedIn({ user }: { user: AuthUser }) {
   useMemo(() => {
     bindSocialUser(user);
     resetMySocial();
+    resetGraph();
   }, [user]);
   const socialMode = useSocialMode();
+  // Invitasjonslenke åpnet før innlogging: åpne profilen nå.
+  const navigate = useNavigate();
+  useEffect(() => {
+    const h = takeInvite();
+    if (h) navigate(`/u/${h}`);
+  }, [navigate]);
   useAutoSync(user.kind === 'cloud');
   useEffect(() => {
     void requestPersist();
@@ -144,6 +162,7 @@ function SignedIn({ user }: { user: AuthUser }) {
         <Route path="/history" element={<HistoryList />} />
         <Route path="/history/:id" element={<WorkoutDetail />} />
         <Route path="/social" element={<SocialPage />} />
+        <Route path="/u/:handle" element={<PersonPage />} />
         <Route path="/summary/:id" element={<Summary />} />
         <Route path="/routines" element={<RoutineList />} />
         <Route path="/routines/new" element={<RoutineEditor />} />

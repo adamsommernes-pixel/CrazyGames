@@ -1,4 +1,8 @@
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../../auth/AuthProvider';
+import { useGraph } from '../../social/graph';
+import { PeopleTab } from './PeopleTab';
 import { Button, Card, EmptyState, Page } from '../../components/ui';
 import { socialAvailable } from '../../social';
 import { useMySocial } from '../../social/store';
@@ -61,16 +65,71 @@ function SocialHome() {
       </Page>
     );
   }
+  return <SocialTabs />;
+}
+
+type Tab = 'feed' | 'people';
+const TAB_KEY = 'repgrade-social-tab';
+
+function SocialTabs() {
+  const { profile } = useMySocial();
+  const g = useGraph();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [tab, setTab] = useState<Tab>(() => {
+    try {
+      return sessionStorage.getItem(TAB_KEY) === 'people' ? 'people' : 'feed';
+    } catch {
+      return 'feed';
+    }
+  });
+  const choose = (next: Tab) => {
+    setTab(next);
+    try {
+      sessionStorage.setItem(TAB_KEY, next);
+    } catch {
+      /* ignorer */
+    }
+  };
+  // Kom vi hit fra en invitasjon før profilen fantes? Gå videre dit nå.
+  const then = (location.state as { then?: string } | null)?.then;
+  useEffect(() => {
+    if (then) navigate(then, { replace: true });
+  }, [then, navigate]);
+  if (!profile) return null;
+  const requests = g.rel.requests.length;
+  const tabClass = (on: boolean) => `relative flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition-colors ${on ? 'bg-raised text-ink' : 'text-muted'}`;
   return (
     <Page title={t('Sosialt', 'Social')}>
-      <Card className="p-3.5">
+      <Card className="mb-3 p-3.5">
         <SocialProfileHeader profile={profile} />
       </Card>
-      <EmptyState
-        icon="users"
-        title={t('Feeden kommer snart', 'The feed is coming soon')}
-        text={t('Her kommer øktene til dem du følger, ledertavler og utfordringer.', 'Workouts from people you follow, leaderboards and challenges are coming here.')}
-      />
+      <div role="tablist" aria-label={t('Sosialt', 'Social')} className="mb-4 flex gap-1 rounded-xl border border-line bg-surface p-1">
+        <button type="button" role="tab" aria-selected={tab === 'feed'} className={tabClass(tab === 'feed')} onClick={() => choose('feed')}>
+          {t('Feed', 'Feed')}
+        </button>
+        <button type="button" role="tab" aria-selected={tab === 'people'} className={tabClass(tab === 'people')} onClick={() => choose('people')}>
+          {t('Folk', 'People')}
+          {requests > 0 && (
+            <span className="grid min-w-5 place-items-center rounded-full bg-accent px-1.5 text-[11px] font-bold text-on-accent" aria-label={t(`${requests} forespørsler`, `${requests} requests`)}>
+              {requests}
+            </span>
+          )}
+        </button>
+      </div>
+      {tab === 'people' ? (
+        <PeopleTab />
+      ) : (
+        <EmptyState
+          icon="users"
+          title={t('Feeden kommer snart', 'The feed is coming soon')}
+          text={t('Her kommer øktene til dem du følger. Finn venner under Folk.', 'Workouts from people you follow will show up here. Find friends under People.')}
+        >
+          <Button full variant="secondary" onClick={() => choose('people')}>
+            {t('Finn folk', 'Find people')}
+          </Button>
+        </EmptyState>
+      )}
     </Page>
   );
 }
