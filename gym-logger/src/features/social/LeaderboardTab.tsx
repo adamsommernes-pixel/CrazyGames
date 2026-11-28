@@ -6,6 +6,7 @@ import { TierEmblem } from '../../components/TierBadge';
 import { social, type Board, type BoardScope, type LeaderboardRow } from '../../social';
 import { errorText, useMySocial } from '../../social/store';
 import { num } from '../../lib/format';
+import { tierAt } from '../../lib/strength';
 import { locale, t } from '../../i18n';
 
 // Tre ledertavler: sterkest (styrkenivå), størst fremgang denne måneden og flest økter denne måneden.
@@ -92,17 +93,25 @@ export function LeaderboardTab() {
           </Chip>
         ))}
       </div>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="text-sm text-muted">{boardText(board)}</p>
-        <div className="flex shrink-0 gap-1.5">
-          <Chip active={scope === 'all'} onClick={() => setScope('all')}>
-            {t('Alle', 'Everyone')}
-          </Chip>
-          <Chip active={scope === 'following'} onClick={() => setScope('following')}>
-            {t('Følger', 'Following')}
-          </Chip>
-        </div>
+      <p className="mb-2 text-sm text-muted">{boardText(board)}</p>
+      <div className="mb-3 flex gap-1.5" role="radiogroup" aria-label={t('Hvem', 'Who')}>
+        <Chip active={scope === 'all'} onClick={() => setScope('all')}>
+          {t('Alle', 'Everyone')}
+        </Chip>
+        <Chip active={scope === 'tier'} onClick={() => setScope('tier')}>
+          {t('Mitt nivå', 'My level')}
+        </Chip>
+        <Chip active={scope === 'following'} onClick={() => setScope('following')}>
+          {t('Følger', 'Following')}
+        </Chip>
       </div>
+      {scope === 'tier' && (
+        <p className="-mt-1 mb-3 text-xs text-faint">
+          {profile.tier_index !== null
+            ? t(`Bare de på ditt nivå: ${tierAt(profile.tier_index).name}.`, `Only people at your level: ${tierAt(profile.tier_index).name}.`)
+            : t('Du får et nivå når du logger et løft som teller.', 'You get a level when you log a lift that counts.')}
+        </p>
+      )}
 
       {error ? (
         <p className="text-sm text-danger">{error}</p>

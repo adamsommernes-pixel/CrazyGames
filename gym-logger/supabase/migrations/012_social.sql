@@ -522,7 +522,7 @@ $$;
    board: 'level' (styrkenivå), 'gain' (nivåpoeng økt siden `since`), 'workouts' (økter siden `since`),
           'lift' (poeng på ett løft).
    'gain': nåværende poeng minus poengene etter siste økt før `since` (eller første økt etter, om ingen før).
-   scope: 'all' eller 'following' (de du følger, og deg selv). */
+   scope: 'all', 'tier' (bare de på ditt styrkenivå) eller 'following' (de du følger, og deg selv). */
 create or replace function public.leaderboard(board text, scope text default 'all', exercise text default null,
                                               since timestamptz default date_trunc('month', now()), lim integer default 50)
 returns table (rank bigint, user_id uuid, handle text, display_name text, color text, tier_index smallint, value numeric)
@@ -538,7 +538,8 @@ begin
     select p.* from public.social_profiles p
     where p.active and p.visibility >= 2 and not public.is_blocked(me, p.user_id)
       and (scope = 'all' or p.user_id = me
-           or exists (select 1 from public.follows f where f.follower = me and f.followee = p.user_id and f.status = 'accepted'))
+           or (scope = 'tier' and p.tier_index = (select mine.tier_index from public.social_profiles mine where mine.user_id = me))
+           or (scope = 'following' and exists (select 1 from public.follows f where f.follower = me and f.followee = p.user_id and f.status = 'accepted')))
   ), scored as (
     select p.user_id, p.handle, p.display_name, p.color, p.tier_index,
       case board

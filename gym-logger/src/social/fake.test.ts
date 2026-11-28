@@ -152,6 +152,14 @@ describe('ledertavler og Oppdag', () => {
     await as('B').follow('C');
     expect((await as('B').leaderboard('level', 'following')).map((r) => r.user_id)).toEqual(['C', 'B']);
     expect((await as('B').leaderboard('workouts', 'all', undefined, ago(24))).length).toBe(2);
+    // Mitt nivå: B (52 → nivå 5) og C (71 → nivå 7) er på hvert sitt nivå
+    const withTier = (u: string, v: 2 | 3, tier: number, score: number) =>
+      as(u).saveProfile({ handle: `user_${u.toLowerCase()}`, display_name: `User ${u}`, color: '#34c56a', visibility: v, is_16_plus: true, tier_index: tier, score });
+    await withTier('B', 2, 5, 52);
+    await withTier('C', 3, 7, 71);
+    expect((await as('B').leaderboard('level', 'tier')).map((r) => r.user_id)).toEqual(['B']);
+    await withTier('C', 3, 5, 58);
+    expect((await as('B').leaderboard('level', 'tier')).map((r) => r.user_id)).toEqual(['C', 'B']);
   });
 
   it('fremgang: poeng nå minus poeng etter siste økt før perioden', async () => {

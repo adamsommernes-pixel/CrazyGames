@@ -352,7 +352,7 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
       };
       const rows = s.profiles
         .filter((p) => p.active && p.visibility >= 2 && !isBlocked(s, u, p.user_id))
-        .filter((p) => scope === 'all' || p.user_id === u || follows(s, u, p.user_id, 'accepted'))
+        .filter((p) => scope === 'all' || p.user_id === u || (scope === 'tier' ? p.tier_index === mine!.tier_index : follows(s, u, p.user_id, 'accepted')))
         .map((p) => ({ p, v: value(p) }))
         .filter((x): x is { p: SocialProfile; v: number } => x.v !== null && x.v > 0)
         .sort((a, b) => b.v - a.v || a.p.display_name.localeCompare(b.p.display_name));

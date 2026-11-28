@@ -174,6 +174,15 @@ select test.ok((select handle from public.leaderboard('level') where rank = 1) =
 select test.ok(test.n($q$select * from public.leaderboard('lift', 'all', 'ex-benkpress')$q$) = 2, 'ledertavle per løft');
 select test.ok(test.n($q$select * from public.leaderboard('workouts', 'all', null, now() - interval '1 day')$q$) = 3, 'ledertavle for økter (B, C og E)');
 select test.ok(test.n($q$select * from public.leaderboard('level', 'following')$q$) = 2, 'B følger C: begge på følger-tavla');
+-- Mitt nivå: B er nivå 5, C er nivå 7 → bare B. Settes C til nivå 5, er begge med.
+select test.ok((select array_agg(handle) from public.leaderboard('level', 'tier')) = array['bjorn'], 'mitt nivå: bare de på samme nivå');
+reset role;
+update public.social_profiles set tier_index = 5 where user_id = :'C';
+set role authenticated;
+select test.ok(test.n($q$select * from public.leaderboard('level', 'tier')$q$) = 2, 'mitt nivå: C på samme nivå er med');
+reset role;
+update public.social_profiles set tier_index = 7 where user_id = :'C';
+set role authenticated;
 -- Fremgang: C hadde 60 poeng etter en økt før måneden, nå 71 → +11. B har ingen økt med nivå → ikke med.
 select pg_temp.as_user(:'C');
 insert into public.activities (user_id, id, started_at, ended_at, data)

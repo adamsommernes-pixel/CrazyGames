@@ -115,7 +115,7 @@ export interface SocialNotification {
 }
 
 export type Board = 'level' | 'gain' | 'workouts' | 'lift';
-export type BoardScope = 'all' | 'following';
+export type BoardScope = 'all' | 'tier' | 'following';
 export interface LeaderboardRow {
   rank: number;
   user_id: string;
