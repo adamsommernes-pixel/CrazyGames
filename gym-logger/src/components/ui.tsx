@@ -277,7 +277,7 @@ export function NumberStepper({
       <span className={`font-num min-w-12 flex-1 text-center font-bold ${size === 'lg' ? 'text-3xl' : 'text-lg'}`} aria-live="polite">
         {format(value)}
       </span>
-      <button type="button" aria-label={`${label} pluss`} className={`${btn} rounded-r-2xl`} {...plus}>
+      <button type="button" aria-label={`${label} ${t('pluss', 'plus')}`} className={`${btn} rounded-r-2xl`} {...plus}>
         +
       </button>
     </div>

@@ -429,24 +429,492 @@ try {
   await btn('Kalender').click();
   await shot('kalender');
 
+  // 6a. Kontotype: sosial konto bytter Historikk-fanen med Sosialt, og Historikk ligger under Fremgang
+  {
+    const nav = () => page.getByRole('navigation', { name: 'Hovedmeny' });
+    // Lokal konto: «Sosial» kan ikke velges i Profil.
+    await nav().getByRole('link', { name: 'Profil' }).click();
+    await page.getByRole('radiogroup', { name: 'Kontotype' }).waitFor();
+    await page.getByRole('radiogroup', { name: 'Kontotype' }).scrollIntoViewIfNeeded();
+    await shot('kontotype');
+    assert.equal(await page.getByRole('radio', { name: /Trening/ }).getAttribute('aria-checked'), 'true', 'trening er standard');
+    assert.ok(await page.getByRole('radio', { name: /Sosial/ }).isDisabled(), 'sosial krever konto på nett');
+    // Med den falske Sosialt-varianten (alt på enheten) kan en lokal konto velge Sosial.
+    await page.evaluate(() => localStorage.setItem('repgrade-social-fake', '1'));
+    await page.reload();
+    // Én gang per konto: velg kontotype. Ola velger Trening (appen som før).
+    const prompt = page.getByRole('dialog', { name: 'Velg kontotype' });
+    await prompt.waitFor();
+    await shot('velg-kontotype');
+    await prompt.getByRole('button', { name: /^Trening/ }).click();
+    await prompt.waitFor({ state: 'detached' });
+    await page.reload();
+    await page.waitForTimeout(800);
+    assert.equal(await page.getByRole('dialog', { name: 'Velg kontotype' }).count(), 0, 'spør bare én gang');
+    // Hjem: «Sosialt er her» med filmen øverst, for kontoer som kan bruke Sosialt
+    await nav().getByRole('link', { name: 'Hjem' }).click();
+    await page.getByRole('heading', { name: 'Sosialt er her' }).waitFor();
+    const firstCard = await page.locator('main > *').first().getAttribute('aria-labelledby');
+    assert.equal(firstCard, 'socials-news', 'Sosialt-kortet ligger øverst på Hjem');
+    await shot('hjem-sosialt');
+    await btn('Se filmen', { exact: true }).click();
+    await page.getByRole('dialog').locator('video').waitFor();
+    await page.getByRole('dialog').getByRole('button', { name: 'Trykk for lyd' }).waitFor();
+    await page.keyboard.press('Escape');
+    await nav().getByRole('link', { name: 'Profil' }).click();
+    // En annen bruker (Zara, åpen konto) finnes allerede i den falske Sosialt-lagringen.
+    const fakeStore = () => page.evaluate(() => JSON.parse(localStorage.getItem('repgrade-fake-social') ?? 'null'));
+    const putFake = (store) => page.evaluate((s) => localStorage.setItem('repgrade-fake-social', JSON.stringify(s)), store);
+    const zara = { user_id: 'zara-id', handle: 'zara_test', display_name: 'Zara', color: '#4d9bf0', visibility: 3, is_16_plus: true, active: true, tier_index: 4, score: 45, lift_scores: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    await putFake({ profiles: [zara], follows: [], blocks: [], reports: [], activities: [], reactions: [], challenges: [], members: [], notifications: [] });
+    // Velg Sosial: appen går til Sosialt og ber deg lage en sosial profil
+    await page.getByRole('radio', { name: /Sosial/ }).click();
+    await page.getByRole('heading', { name: 'Lag sosial profil' }).waitFor();
+    const handle = page.getByLabel('Brukernavn');
+    await page.getByRole('status').filter({ hasText: 'Ledig' }).waitFor();
+    assert.equal(await handle.inputValue(), 'ola', 'brukernavn foreslås fra navnet');
+    assert.equal(await page.getByLabel('Navn som vises').inputValue(), 'Ola', 'navnet fra profilen');
+    // Opptatt brukernavn, og rydding av det du skriver
+    await handle.fill('Zara_Test');
+    assert.equal(await handle.inputValue(), 'zara_test', 'små bokstaver');
+    await page.getByRole('status').filter({ hasText: 'Opptatt' }).waitFor();
+    await handle.fill('ola.løfter');
+    assert.equal(await handle.inputValue(), 'ola.lofter', 'ø blir o');
+    await page.getByRole('status').filter({ hasText: 'Ledig' }).waitFor();
+    // Uten svar på alder kan profilen ikke lagres; Åpen og Ledertavler krever 16+
+    assert.ok(await btn('Lag sosial profil').isDisabled(), 'må svare på alder');
+    assert.ok(await page.getByRole('radio', { name: /^3\. Åpen/ }).isDisabled(), 'åpen krever 16+');
+    await btn('Ja', { exact: true }).click();
+    await page.getByRole('radio', { name: /^3\. Åpen/ }).click();
+    assert.ok(await btn('Lag sosial profil').isDisabled(), 'må velge om gamle økter skal deles');
+    await page.getByRole('radio', { name: /^Start fra null/ }).click();
+    await shot('sosial-oppsett');
+    await btn('Lag sosial profil').click();
+    await page.getByText('@ola.lofter').waitFor();
+    assert.equal((await fakeStore()).profiles.find((p) => p.handle === 'ola.lofter')?.visibility, 3, 'profilen er lagret som åpen');
+    await nav().getByRole('link', { name: 'Sosialt' }).waitFor();
+    assert.equal(await nav().getByRole('link', { name: 'Historikk' }).count(), 0, 'Historikk er ikke i bunnmenyen');
+    // Styrkenivået regnes ut på telefonen og publiseres i den sosiale profilen (aldri kroppsvekten)
+    await page.getByLabel(/^Nivå: /).waitFor({ timeout: 8000 });
+    const published = (await fakeStore()).profiles.find((p) => p.handle === 'ola.lofter');
+    assert.ok(published.tier_index !== null && published.score > 0 && published.lift_scores['ex-kneboy'] > 0, 'nivå og knebøy publisert');
+    assert.deepEqual(Object.keys(published).sort(), ['active', 'color', 'created_at', 'display_name', 'handle', 'is_16_plus', 'lift_scores', 'score', 'share_from', 'tier_index', 'updated_at', 'user_id', 'visibility'], 'bare disse feltene deles (ingen kroppsvekt)');
+    await shot('sosialt');
+    // Profil → Endre sosial profil: under 16 gir bare privat. Zara følger deg uten at du følger tilbake → «Behold følgerne?»
+    const store = await fakeStore();
+    const me = store.profiles.find((p) => p.handle === 'ola.lofter').user_id;
+    store.follows.push({ follower: 'zara-id', followee: me, status: 'accepted', created_at: new Date().toISOString(), accepted_at: new Date().toISOString() });
+    await putFake(store);
+    await nav().getByRole('link', { name: 'Profil' }).click();
+    await btn('Endre sosial profil').click();
+    await btn('Nei', { exact: true }).click();
+    assert.equal(await page.getByRole('dialog').getByRole('radio', { name: /^1\. Privat/ }).getAttribute('aria-checked'), 'true', 'under 16 blir privat');
+    assert.ok(await page.getByRole('radio', { name: /^3\. Åpen/ }).isDisabled(), 'åpen er låst under 16');
+    await btn('Lagre', { exact: true }).click();
+    await page.getByText('1 person følger deg som du ikke følger tilbake', { exact: false }).waitFor();
+    await shot('behold-folgere');
+    await btn('Velg selv').click();
+    await page.getByLabel('Fjern Zara').check();
+    await btn('Fjern 1 valgte').click();
+    await page.getByText('1 følger fjernet').waitFor();
+    assert.equal((await fakeStore()).follows.length, 0, 'Zara er fjernet som følger');
+    assert.equal((await fakeStore()).profiles.find((p) => p.user_id === me).visibility, 1, 'nå privat');
+
+    // ===== Steg 5: følge folk =====
+    {
+      const now = new Date().toISOString();
+      const fake = (id, handle, name, visibility) => ({ ...zara, user_id: id, handle, display_name: name, visibility, is_16_plus: true, tier_index: 2, score: 25 });
+      const st = await fakeStore();
+      st.profiles.push(fake('per-id', 'per_test', 'Per', 1), fake('liv-id', 'liv_test', 'Liv', 1));
+      st.follows.push({ follower: 'per-id', followee: me, status: 'pending', created_at: now, accepted_at: null });
+      await putFake(st);
+      await nav().getByRole('link', { name: 'Sosialt' }).click();
+      await page.getByRole('tab', { name: /Folk/ }).click();
+      // Forespørsel fra Per: godta
+      await page.getByLabel('1 forespørsler').waitFor();
+      const perRow = page.locator('[data-person="per_test"]');
+      await perRow.getByRole('button', { name: 'Godta' }).click();
+      await page.getByText('Godtatt', { exact: true }).waitFor();
+      await perRow.getByRole('button', { name: 'Følg tilbake' }).waitFor();
+      assert.equal((await fakeStore()).follows.find((f) => f.follower === 'per-id').status, 'accepted', 'Per er godtatt');
+      // Søk: @zara_test (åpen) følges med en gang
+      const find = page.getByLabel('Søk etter folk');
+      const results = page.getByRole('list', { name: 'Treff' });
+      await find.fill('@Zara_Test');
+      await results.locator('[data-person="zara_test"]').getByRole('button', { name: 'Følg' }).click();
+      await results.locator('[data-person="zara_test"]').getByRole('button', { name: 'Følger' }).waitFor();
+      // Privat konto: finnes bare på hele brukernavnet, og gir forespørsel
+      await find.fill('liv_test');
+      await results.locator('[data-person="liv_test"]').getByRole('button', { name: 'Følg' }).click();
+      await page.getByText('Forespørsel sendt til Liv').waitFor();
+      await results.locator('[data-person="liv_test"]').getByRole('button', { name: 'Forespurt' }).waitFor();
+      // Ingen treff
+      await find.fill('finnes_ikke');
+      await page.getByText('Fant ingen som heter «finnes_ikke».', { exact: false }).waitFor();
+      await find.fill('');
+      await shot('folk');
+      // Zaras profil: nivå vises (åpen konto), rapporter og blokker
+      await page.locator('[data-person="zara_test"]').first().getByRole('link').click();
+      await page.getByRole('heading', { name: 'Zara', level: 2 }).waitFor();
+      await page.getByText('Styrkenivå').waitFor();
+      await shot('person');
+      await btn('Valg').click();
+      await btn('Rapporter').click();
+      await btn('Spam', { exact: true }).click();
+      await btn('Send rapport').click();
+      await page.getByText('Takk. Rapporten er sendt.').waitFor();
+      assert.equal((await fakeStore()).reports[0]?.target, 'zara-id', 'rapporten er lagret');
+      await btn('Valg').click();
+      await page.getByRole('dialog').getByRole('button', { name: 'Blokker' }).click();
+      await page.getByRole('dialog').getByRole('button', { name: 'Blokker' }).click();
+      await page.getByText('Zara er blokkert').waitFor();
+      const after = await fakeStore();
+      assert.ok(!after.follows.some((f) => f.follower === 'zara-id' || f.followee === 'zara-id'), 'blokkering fjerner følging');
+      await page.getByRole('tab', { name: /Folk/ }).click();
+      await btn('Blokkerte (1)').click();
+      await btn('Opphev').click();
+      await page.getByText('Blokkering opphevet').waitFor();
+      assert.equal((await fakeStore()).blocks.length, 0, 'blokkering opphevet');
+      // Invitasjonslenke (#/u/brukernavn) åpner profilen
+      await page.goto(page.url().replace(/#.*$/, '#/u/per_test'));
+      await page.getByRole('heading', { name: 'Per', level: 2 }).waitFor();
+      await page.getByText('Følger deg').waitFor();
+    }
+
+    // ===== Steg 6: feed =====
+    {
+      const ago = (h) => new Date(Date.now() - h * 3_600_000).toISOString();
+      const st = await fakeStore();
+      st.activities.push({
+        user_id: 'zara-id', id: 'z1', name: 'Zara push', started_at: ago(5), ended_at: ago(4), created_at: ago(4), updated_at: ago(4),
+        data: { version: 1, duration_s: 3600, sets: 3, reps: 24, volume_kg: 1440, records: [], muscles: { Bryst: 3 }, lifts: {}, tier: { index: 4, score: 45 },
+          exercises: [{ exercise_id: 'ex-benkpress', name: 'Benkpress', kind: 'weight', muscle_group: 'Bryst', sets: [{ weight: 50, reps: 10, set_type: 'warmup' }, { weight: 60, reps: 8, set_type: 'normal' }, { weight: 62.5, reps: 8, set_type: 'normal', pr: true }] }] },
+      });
+      await putFake(st);
+      // Logg en økt som sosial konto: den publiseres av seg selv
+      await btn('Start økt').click();
+      await btn(/Gjenta forrige/).click();
+      await page.getByText('Knebøy').first().waitFor();
+      await logSet(1, 110, 5);
+      await btn('Avslutt', { exact: true }).click();
+      await btn('Lagre økt').click();
+      await btn('Bare denne gangen').click();
+      await page.getByText('Økt fullført').waitFor();
+      const shareSwitch = page.getByRole('switch', { name: 'Del i feeden' });
+      assert.ok(await shareSwitch.isChecked(), 'økta deles som standard');
+      await shot('oppsummering-deling');
+      await btn('Ferdig').click();
+      const mine = async () => (await fakeStore()).activities.filter((a) => a.user_id === me);
+      for (let i = 0; i < 40 && (await mine()).length === 0; i++) await page.waitForTimeout(250);
+      const [act] = await mine();
+      assert.ok(act, 'økta er publisert');
+      assert.equal(act.data.exercises[0].exercise_id, 'ex-kneboy', 'hele økta er med');
+      assert.equal(act.data.exercises[0].sets[0].weight, 110, 'settene er med');
+      // Feeden viser din og Zaras økt; Zaras viser alle sets med oppvarming (W) og rekord
+      await nav().getByRole('link', { name: 'Sosialt' }).click();
+      await page.getByRole('tab', { name: 'Feed' }).click();
+      await page.locator(`[data-activity="${act.id}"]`).waitFor();
+      const z = page.locator('[data-activity="z1"]');
+      await z.getByText('Zara push').waitFor();
+      await z.getByText('62,5 × 8').waitFor();
+      await z.getByText('W', { exact: true }).waitFor();
+      assert.ok(await page.locator(`[data-activity="${act.id}"]`).boundingBox().then((b) => b.y) < (await z.boundingBox()).y, 'nyeste øverst');
+      await shot('feed');
+      // Kudos: trykk 🔥 på Zaras økt, trykk igjen fjerner
+      await z.getByRole('button', { name: '🔥 0' }).click();
+      await z.getByRole('button', { name: '🔥 1', pressed: true }).waitFor();
+      assert.equal((await fakeStore()).reactions.length, 1, 'reaksjonen er lagret');
+      assert.ok((await fakeStore()).notifications.some((n) => n.user_id === 'zara-id' && n.kind === 'reaction'), 'Zara får varsel');
+      await z.getByRole('button', { name: '💪 0' }).click();
+      await z.getByRole('button', { name: '💪 1', pressed: true }).waitFor();
+      assert.equal((await fakeStore()).reactions[0].emoji, '💪', 'bytter reaksjon');
+      await z.getByRole('button', { name: '💪 1' }).click();
+      await z.getByRole('button', { name: '💪 0', pressed: false }).waitFor();
+      assert.equal((await fakeStore()).reactions.length, 0, 'reaksjonen er fjernet');
+      // Egen økt: fjern fra feeden
+      await page.locator(`[data-activity="${act.id}"]`).getByRole('button', { name: 'Valg for økta' }).click();
+      await btn('Fjern fra feeden').click();
+      await page.getByText('Økta er fjernet fra feeden').waitFor();
+      for (let i = 0; i < 40 && (await mine()).length > 0; i++) await page.waitForTimeout(250);
+      assert.equal((await mine()).length, 0, 'fjernet fra serveren');
+      // Fra historikken: del igjen, så slett økta → borte fra feeden
+      await nav().getByRole('link', { name: 'Fremgang' }).click();
+      await page.getByRole('navigation', { name: 'Fremgang og historikk' }).getByRole('link', { name: 'Historikk' }).click();
+      await btn(/1 øvelse/).first().click();
+      assert.equal(await page.getByRole('switch', { name: 'Del i feeden' }).isChecked(), false, 'viser at den ikke er delt');
+      await page.getByRole('switch', { name: 'Del i feeden' }).check();
+      for (let i = 0; i < 40 && (await mine()).length === 0; i++) await page.waitForTimeout(250);
+      assert.equal((await mine()).length, 1, 'delt igjen');
+      await btn('Valg').click();
+      await btn('Slett økt').click();
+      for (let i = 0; i < 40 && (await mine()).length > 0; i++) await page.waitForTimeout(250);
+      assert.equal((await mine()).length, 0, 'slettet økt er borte fra feeden');
+    }
+
+    // ===== Steg 7: ledertavler =====
+    {
+      const st = await fakeStore();
+      const old = new Date(Date.now() - 40 * 86_400_000).toISOString();
+      st.activities.push({ user_id: 'zara-id', id: 'z0', name: 'Gammel', started_at: old, ended_at: old, created_at: old, updated_at: old, data: { version: 1, duration_s: 60, sets: 1, reps: 1, volume_kg: 1, exercises: [], records: [], muscles: {}, lifts: {}, tier: { index: 4, score: 40 } } });
+      await putFake(st);
+      // Ola er under 16 (valgt tidligere): tavlene er låst
+      await nav().getByRole('link', { name: 'Sosialt' }).click();
+      await page.getByRole('tab', { name: 'Topp' }).click();
+      await page.getByText('Ledertavlene er for deg som er 16 år eller eldre.').waitFor();
+      // 16+ og synlighet «Ledertavler»
+      await nav().getByRole('link', { name: 'Profil' }).click();
+      await btn('Endre sosial profil').click();
+      await btn('Ja', { exact: true }).click();
+      await page.getByRole('dialog').getByRole('radio', { name: /^2\. Ledertavler/ }).click();
+      await btn('Lagre', { exact: true }).click();
+      await page.getByText('Sosial profil lagret').waitFor();
+      await nav().getByRole('link', { name: 'Sosialt' }).click();
+      await page.getByRole('tab', { name: 'Topp' }).click();
+      // Sterkest: Zara (åpen) og Ola (deg). Per og Liv er private og vises ikke.
+      const board = page.getByRole('list', { name: 'Sterkest' });
+      await board.getByText('Zara', { exact: true }).waitFor();
+      await board.getByText('(deg)').waitFor();
+      assert.equal(await board.getByText('Per', { exact: true }).count(), 0, 'private kontoer er ikke på tavla');
+      await shot('ledertavle');
+      // Fremgang: Zara 40 → 45 = +5
+      await btn('Fremgang').click();
+      await page.getByRole('list', { name: 'Fremgang' }).getByText('+5 p', { exact: true }).waitFor();
+      // Flest økter denne måneden
+      await btn('Flest økter').click();
+      await page.getByRole('list', { name: 'Flest økter' }).or(page.getByText('Ingen på denne tavla ennå.')).first().waitFor();
+      // Mitt nivå: Ola er Rookie, Zara er Løfter → bare Ola
+      await btn('Sterkest').click();
+      await btn('Mitt nivå').click();
+      await page.getByText('Bare de på ditt nivå: Rookie.').waitFor();
+      await page.getByRole('list', { name: 'Sterkest' }).getByText('(deg)').waitFor();
+      assert.equal(await page.getByRole('list', { name: 'Sterkest' }).getByText('Zara', { exact: true }).count(), 0, 'andre nivåer er ikke med');
+      // Bare de du følger: Ola følger ikke Zara lenger (blokkert og opphevet tidligere)
+      await btn('Følger', { exact: true }).click();
+      await page.getByRole('list', { name: 'Sterkest' }).getByText('(deg)').waitFor();
+      assert.equal(await page.getByRole('list', { name: 'Sterkest' }).getByText('Zara', { exact: true }).count(), 0, 'bare deg og dem du følger');
+    }
+
+    // ===== Steg 8: Oppdag =====
+    {
+      const st = await fakeStore();
+      for (let i = 1; i <= 6; i++) st.profiles.push({ ...zara, user_id: `open-${i}`, handle: `aapen_${i}`, display_name: `Åpen ${i}`, visibility: 3 });
+      await putFake(st);
+      await nav().getByRole('link', { name: 'Hjem' }).click();
+      await nav().getByRole('link', { name: 'Sosialt' }).click();
+      await page.getByRole('tab', { name: /Folk/ }).click();
+      // Oppdag: 7 åpne kontoer (Zara + 6), 5 vises først. Private (Per, Liv) og du selv er ikke med.
+      const disc = page.getByRole('list', { name: 'Oppdag' });
+      await disc.locator('[data-person]').first().waitFor();
+      assert.equal(await disc.locator('[data-person]').count(), 5, '5 vises først');
+      await btn('Vis 2 til').click();
+      assert.equal(await disc.locator('[data-person]').count(), 7, 'alle åpne kontoer');
+      for (const h of ['per_test', 'liv_test', 'ola.lofter']) assert.equal(await disc.locator(`[data-person="${h}"]`).count(), 0, `${h} er ikke i Oppdag`);
+      await shot('oppdag');
+      // Søk på navn finner åpne kontoer, ikke private
+      const find = page.getByLabel('Søk etter folk');
+      await find.fill('åpen 3');
+      await page.getByRole('list', { name: 'Treff' }).locator('[data-person="aapen_3"]').waitFor();
+      assert.equal(await page.getByRole('list', { name: 'Treff' }).locator('[data-person]').count(), 1, 'ett treff');
+      await find.fill('Liv');
+      await page.getByText('Private kontoer finnes bare på hele brukernavnet.', { exact: false }).waitFor();
+      // Følg rett fra Oppdag
+      await find.fill('');
+      await disc.locator('[data-person="aapen_1"]').getByRole('button', { name: 'Følg' }).click();
+      await disc.locator('[data-person="aapen_1"]').getByRole('button', { name: 'Følger' }).waitFor();
+      // Blokkerte vises ikke i Oppdag
+      const st2 = await fakeStore();
+      st2.blocks.push({ blocker: 'open-2', blocked: me });
+      await putFake(st2);
+      await page.getByRole('tab', { name: 'Feed' }).click();
+      await page.getByRole('tab', { name: /Folk/ }).click();
+      await disc.locator('[data-person]').first().waitFor();
+      assert.equal(await disc.locator('[data-person="aapen_2"]').count(), 0, 'den som blokkerte deg er borte');
+    }
+
+    // ===== Steg 9: utfordringer =====
+    {
+      const iso = (msFromNow) => new Date(Date.now() + msFromNow).toISOString();
+      const DAY = 86_400_000;
+      const act = (user, id, at) => ({ user_id: user, id, name: id, started_at: at, ended_at: at, created_at: at, updated_at: at, data: { version: 1, duration_s: 60, sets: 1, reps: 5, volume_kg: 500, exercises: [], records: [], muscles: {}, lifts: {}, tier: null } });
+      await page.getByRole('tab', { name: 'Utfordringer' }).click();
+      await page.getByText('Ingen utfordringer ennå').waitFor();
+      await btn('Ny utfordring').click();
+      // Hvem kan utfordres: Åpen 1 (åpen, du følger). Per følger deg, men du følger ikke Per tilbake.
+      await page.getByLabel('Inviter Åpen 1').waitFor();
+      assert.equal(await page.getByLabel('Inviter Per').count(), 0, 'kan ikke utfordre en du ikke følger gjensidig');
+      assert.ok(await btn('Send utfordring').isDisabled(), 'må invitere noen');
+      // Standard: «Først til målet» med løft og målvekt. Pull-ups kan ikke velges (kroppsvekten ville blitt synlig)
+      const lifts = await page.getByRole('combobox').locator('option').allTextContents();
+      assert.ok(lifts.includes('Knebøy') && !lifts.some((l) => /pull-ups/i.test(l)), 'løft uten pull-ups');
+      await page.getByRole('combobox').selectOption({ label: 'Knebøy' });
+      await btn('Målvekt pluss').click();
+      assert.equal(await page.getByLabel('Navn', { exact: true }).inputValue(), 'Først til 102,5 kg knebøy', 'navn foreslås med målvekt');
+      await page.getByText('Den som først når 102,5 kg i beregnet 1RM i Knebøy, vinner.').waitFor();
+      await btn('Størst fremgang', { exact: true }).click();
+      assert.equal(await page.getByLabel('Navn', { exact: true }).inputValue(), 'Knebøy – 1 uke', 'navn foreslås');
+      // Flest økter, 2 uker
+      await btn('Flest økter', { exact: true }).click();
+      await btn('2 uker', { exact: true }).click();
+      assert.equal(await page.getByLabel('Navn', { exact: true }).inputValue(), 'Flest økter – 2 uker');
+      await page.getByLabel('Inviter Åpen 1').check();
+      await shot('utfordring-ny');
+      await btn('Send utfordring').click();
+      await page.getByRole('heading', { name: 'Flest økter – 2 uker' }).waitFor();
+      await page.getByText('Venter på svar').waitFor();
+      const standings = page.getByRole('list', { name: 'Stilling' });
+      await standings.getByText('(deg)').waitFor();
+      // Åpen 1 blir med og trener: stillingen regnes fra delte økter
+      const st = await fakeStore();
+      const ch = st.challenges.find((c) => c.title === 'Flest økter – 2 uker');
+      assert.equal(ch.creator, me, 'du laget utfordringen');
+      st.members.find((m) => m.challenge_id === ch.id && m.user_id === 'open-1').status = 'joined';
+      st.activities.push(act('open-1', 'o1', iso(60_000)));
+      // Invitasjon til deg fra Åpen 1, og en ferdig utfordring som Åpen 1 vant
+      st.challenges.push({ id: 'inv-1', creator: 'open-1', kind: 'weekly', exercise_id: null, target: 2, title: 'Uka', starts_at: iso(-DAY), ends_at: iso(6 * DAY), created_at: iso(-DAY) });
+      st.members.push({ challenge_id: 'inv-1', user_id: 'open-1', status: 'joined', invited_at: iso(-DAY), joined_at: iso(-DAY) }, { challenge_id: 'inv-1', user_id: me, status: 'invited', invited_at: iso(-DAY), joined_at: null });
+      st.challenges.push({ id: 'done-1', creator: 'open-1', kind: 'workouts', exercise_id: null, target: null, title: 'Forrige uke', starts_at: iso(-10 * DAY), ends_at: iso(-DAY), created_at: iso(-10 * DAY) });
+      st.members.push({ challenge_id: 'done-1', user_id: 'open-1', status: 'joined', invited_at: iso(-10 * DAY), joined_at: iso(-10 * DAY) }, { challenge_id: 'done-1', user_id: me, status: 'joined', invited_at: iso(-10 * DAY), joined_at: iso(-10 * DAY) });
+      st.activities.push(act('open-1', 'o0', iso(-5 * DAY)));
+      await putFake(st);
+      await page.reload();
+      await standings.locator('[data-standing="aapen_1"]').getByText('1 økt').waitFor();
+      assert.equal(await standings.locator('li').first().getAttribute('data-standing'), 'aapen_1', 'Åpen 1 leder');
+      await shot('utfordring');
+      // Invitasjon: bli med
+      await page.goBack();
+      await page.getByRole('tab', { name: 'Utfordringer' }).click();
+      const invite = page.locator('[data-challenge="Uka"]');
+      await invite.getByText('Fra Åpen 1', { exact: false }).waitFor();
+      await shot('utfordringer');
+      await invite.getByRole('button', { name: 'Bli med' }).click();
+      await page.getByText('Du er med!').waitFor();
+      assert.equal((await fakeStore()).members.find((m) => m.challenge_id === 'inv-1' && m.user_id === me).status, 'joined', 'med i Uka');
+      // Ferdig utfordring: vinneren vises
+      await page.locator('[data-challenge="Forrige uke"]').getByRole('link').click();
+      await page.getByText('🏆 Åpen 1 vant').waitFor();
+      await page.goBack();
+      // Avlys din egen utfordring
+      await page.locator('[data-challenge="Flest økter – 2 uker"]').getByRole('link').click();
+      await btn('Avlys utfordringen').click();
+      await page.getByRole('dialog').getByRole('button', { name: 'Avlys' }).click();
+      await page.getByRole('tab', { name: 'Utfordringer' }).waitFor();
+      assert.ok(!(await fakeStore()).challenges.some((c) => c.title === 'Flest økter – 2 uker'), 'utfordringen er avlyst');
+    }
+
+    // ===== Steg 10: innboks =====
+    {
+      const iso = (ms) => new Date(Date.now() + ms).toISOString();
+      const st = await fakeStore();
+      // Gamle varsler fra stegene over regnes som lest, så vi ser bare de nye.
+      for (const n of st.notifications) n.read_at ??= iso(-1000);
+      st.profiles.push({ ...zara, user_id: 'kim-id', handle: 'kim_test', display_name: 'Kim', visibility: 1 });
+      st.follows.push({ follower: 'kim-id', followee: me, status: 'pending', created_at: iso(-60_000), accepted_at: null });
+      st.challenges.push({ id: 'duell-1', creator: 'open-1', kind: 'volume', exercise_id: null, target: null, title: 'Ny duell', starts_at: iso(-1000), ends_at: iso(7 * 86_400_000), created_at: iso(-1000) });
+      st.members.push({ challenge_id: 'duell-1', user_id: 'open-1', status: 'joined', invited_at: iso(-1000), joined_at: iso(-1000) }, { challenge_id: 'duell-1', user_id: me, status: 'invited', invited_at: iso(-1000), joined_at: null });
+      const note = (kind, actor, payload, ago) => ({ id: `n-${kind}`, user_id: me, kind, actor, payload, read_at: null, created_at: iso(-ago) });
+      st.notifications.push(
+        note('follow_request', 'kim-id', {}, 60_000),
+        note('reaction', 'open-1', { activity_id: 'x', emoji: '🔥' }, 120_000),
+        note('challenge_invite', 'open-1', { challenge_id: 'duell-1', title: 'Ny duell' }, 30_000),
+      );
+      await putFake(st);
+      await page.reload();
+      // Merke på Sosialt i bunnmenyen og på bjella
+      await nav().getByLabel('3 nye varsler').waitFor();
+      await nav().getByRole('link', { name: /Sosialt/ }).click();
+      await btn('Varsler, 3 nye').click();
+      await page.getByRole('heading', { name: 'Varsler' }).waitFor();
+      const list = page.getByRole('list', { name: 'Varsler' });
+      await list.getByText('Åpen 1 utfordret deg: «Ny duell»').waitFor();
+      await list.getByText('Åpen 1 ga 🔥 på økta di').waitFor();
+      await shot('varsler');
+      // Godta forespørselen rett i innboksen
+      await list.locator('[data-notification="follow_request"]').getByRole('button', { name: 'Godta' }).click();
+      await page.getByText('Godtatt', { exact: true }).waitFor();
+      assert.equal((await fakeStore()).follows.find((f) => f.follower === 'kim-id').status, 'accepted', 'Kim er godtatt');
+      // Åpnet = lest: merkene er borte
+      for (let i = 0; i < 20 && (await fakeStore()).notifications.some((n) => n.user_id === me && !n.read_at); i++) await page.waitForTimeout(100);
+      assert.ok(!(await fakeStore()).notifications.some((n) => n.user_id === me && !n.read_at), 'alt er lest');
+      assert.equal(await nav().getByLabel(/nye varsler/).count(), 0, 'ingen merke i bunnmenyen');
+      // Trykk på invitasjonen: åpner utfordringen
+      await list.getByText('Åpen 1 utfordret deg: «Ny duell»').click();
+      await page.getByRole('heading', { name: 'Ny duell' }).waitFor();
+      await btn('Bli med').waitFor();
+      // Kudos-varselet åpner feeden
+      await page.goBack();
+      await list.getByText('Åpen 1 ga 🔥 på økta di').click();
+      await page.getByRole('tab', { name: 'Feed', selected: true }).waitFor();
+      assert.equal(await btn('Varsler', { exact: true }).count(), 1, 'bjella uten nye');
+
+      // Merker (deles ut av databasen): vises på egen profil og på andres
+      const st2 = await fakeStore();
+      const badge = (user, id, extra) => ({ id, user_id: user, ref: id, title: null, board: null, tier_index: null, period: null, awarded_at: iso(-1000), ...extra });
+      st2.badges = [
+        badge(me, 'b1', { kind: 'challenge', title: 'Uka' }),
+        badge(me, 'b2', { kind: 'board', board: 'gain', tier_index: 1, period: '2026-10-01' }),
+        badge('open-1', 'b3', { kind: 'board', board: 'level', tier_index: 4, period: '2026-10-01' }),
+      ];
+      await putFake(st2);
+      await page.reload();
+      const mineBadges = page.getByRole('list', { name: 'Merker' });
+      await mineBadges.getByText('Vant «Uka»').waitFor();
+      await mineBadges.getByText('#1 Fremgang · Rookie · okt 2026').waitFor();
+      await shot('merker');
+      await page.goto(page.url().replace(/#.*$/, '#/u/aapen_1'));
+      await page.getByRole('list', { name: 'Merker' }).getByText('#1 Sterkest · Løfter · okt 2026').waitFor();
+    }
+    await nav().getByRole('link', { name: 'Fremgang' }).click();
+    const tabs = page.getByRole('navigation', { name: 'Fremgang og historikk' });
+    await tabs.getByRole('link', { name: 'Historikk' }).click();
+    await btn(/1 øvelse/).first().waitFor();
+    assert.match(await nav().getByRole('link', { name: 'Fremgang' }).getAttribute('class'), /text-accent/, 'Fremgang er aktiv på Historikk');
+    await shot('historikk-under-fremgang');
+    // Åpne en økt og gå tilbake: fortsatt under Fremgang
+    await btn(/1 øvelse/).first().click();
+    await page.goBack();
+    await tabs.getByRole('link', { name: 'Fremgang' }).click();
+    await page.getByRole('heading', { name: 'Fremgang', exact: true }).waitFor();
+    // Kontotypen ligger i profilen og overlever omlasting
+    await page.reload();
+    await nav().getByRole('link', { name: 'Sosialt' }).waitFor();
+    // Tilbake til treningskonto: appen er som før
+    await nav().getByRole('link', { name: 'Profil' }).click();
+    await page.getByRole('radio', { name: /Trening/ }).click();
+    await page.evaluate(() => localStorage.removeItem('repgrade-social-fake'));
+    await nav().getByRole('link', { name: 'Historikk' }).waitFor();
+    assert.equal(await nav().getByRole('link', { name: 'Sosialt' }).count(), 0, 'ingen Sosialt-fane på treningskonto');
+    await nav().getByRole('link', { name: 'Fremgang' }).click();
+    await page.getByRole('heading', { name: 'Fremgang', exact: true }).waitFor();
+    assert.equal(await page.getByRole('navigation', { name: 'Fremgang og historikk' }).count(), 0, 'ingen faner på Fremgang');
+    await nav().getByRole('link', { name: 'Historikk' }).click();
+    await btn(/1 øvelse/).first().waitFor();
+  }
+
   // 6b. Etter en oppdatering fra 1.0 (uten nyhetsskjerm): «Nytt i denne versjonen» vises én gang
   // Ny telefon (ingen kjent versjon): ingen nyheter
   await page.evaluate(() => localStorage.removeItem('repgrade-seen-version'));
   await page.reload();
   await page.getByRole('navigation').first().waitFor();
   await page.waitForTimeout(800);
-  assert.equal(await page.getByRole('heading', { name: 'Nytt i denne versjonen' }).count(), 0, 'ingen nyheter på ny telefon');
+  assert.equal(await page.getByRole('heading', { name: 'Sosialt er her' }).count(), 0, 'ingen nyheter på ny telefon');
   // Oppdatert fra 1.1.0: nyhetene for alle versjoner siden vises, gruppert per versjon
   await page.evaluate(() => localStorage.setItem('repgrade-seen-version', '1.1.0'));
   await page.reload();
-  await page.getByRole('heading', { name: 'Nytt i denne versjonen' }).waitFor();
+  // 1.3: Sosialt er overskriften, og reklamefilmen spilles uten lyd til man trykker
+  await page.getByRole('heading', { name: 'Sosialt er her' }).waitFor();
   await page.getByText('Versjon 1.1.1').waitFor();
+  const adVideo = page.getByRole('dialog').locator('video');
+  await page.waitForFunction(() => { const v = document.querySelector('[role=dialog] video'); return v && v.readyState >= 2 && v.currentTime > 0.2; }, null, { timeout: 15000 });
+  assert.equal(await adVideo.evaluate((v) => v.muted), true, 'starter uten lyd');
   await shot('nytt-etter-oppdatering');
+  await page.getByRole('dialog').getByRole('button', { name: 'Trykk for lyd' }).click();
+  assert.equal(await adVideo.evaluate((v) => v.muted), false, 'lyd etter trykk');
+  assert.ok(await adVideo.evaluate((v) => v.controls), 'kontroller etter trykk');
   await page.getByRole('dialog').getByRole('button', { name: 'Fortsett' }).click();
   await page.reload();
   await page.getByRole('navigation').first().waitFor();
   await page.waitForTimeout(800);
-  assert.equal(await page.getByRole('heading', { name: 'Nytt i denne versjonen' }).count(), 0, 'nyhetene vises bare én gang');
+  assert.equal(await page.getByRole('heading', { name: 'Sosialt er her' }).count(), 0, 'nyhetene vises bare én gang');
 
   // 7. Fremgang og øvelse
   await page.getByRole('navigation').getByRole('link', { name: 'Fremgang' }).click();
@@ -563,7 +1031,8 @@ try {
   assert.equal(await page.getByRole('heading', { name: 'Fullkropp A', exact: true }).count(), 0, 'gamle startrutiner er erstattet');
   await page.getByRole('navigation').getByRole('link', { name: 'Hjem' }).click();
   await page.getByRole('heading', { name: 'Dine rutiner' }).waitFor();
-  await page.getByRole('heading', { name: 'Nyheter og eventer' }).waitFor();
+  // «Sosialt er her» vises bare for kontoer som kan bruke Sosialt (ikke lokal konto uten nett)
+  assert.equal(await page.getByRole('heading', { name: 'Nyheter', exact: true }).count(), 0, 'ingen Sosialt-nyhet for lokal konto');
   await shot('hjem-rutiner');
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
   await page.getByText('Medlem siden').waitFor();
@@ -766,6 +1235,51 @@ try {
   await ep.getByRole('img', { name: /^Trained: .*legs/ }).waitFor();
   await ep.waitForTimeout(350);
   await ep.getByRole('region', { name: 'Muscles trained' }).screenshot({ path: `tests/screens/${String(++n).padStart(2, '0')}-body-map-en.png` });
+  // Sosialt på engelsk: oppsett, alle fire faner, varsler og personvern
+  await ep.evaluate(() => localStorage.setItem('repgrade-social-fake', '1'));
+  await ep.reload();
+  // Kontotype-valget dukker opp: Sam velger Sosial og kommer rett til oppsettet
+  await ep.getByRole('dialog', { name: 'Choose your account type' }).getByRole('button', { name: /^Social/ }).click();
+  await ep.getByRole('heading', { name: 'Create social profile' }).waitFor();
+  await ep.getByRole('status').filter({ hasText: 'Available' }).waitFor();
+  assert.equal(await ep.getByLabel('Username').inputValue(), 'sam', 'username suggested from the name');
+  await ep.getByLabel('Username').fill('admin');
+  await ep.getByText("That username can't be used. Try another.").waitFor();
+  await ep.getByLabel('Username').fill('sam_lifts');
+  await ep.getByRole('status').filter({ hasText: 'Available' }).waitFor();
+  await ebtn('Yes', { exact: true }).click();
+  await ep.getByRole('radio', { name: /^2\. Leaderboards/ }).click();
+  await ep.getByRole('radio', { name: /^Start from scratch/ }).click();
+  await ebtn('Create social profile').click();
+  await ep.getByText('@sam_lifts').waitFor();
+  const enNav = ep.getByRole('navigation', { name: 'Main menu' });
+  await enNav.getByRole('link', { name: 'Social' }).waitFor();
+  assert.equal(await enNav.getByRole('link', { name: 'History' }).count(), 0, 'History moved into Progress');
+  await ep.getByText('No workouts yet').waitFor();
+  await ep.getByRole('tab', { name: 'People' }).click();
+  await ep.getByLabel('Search for people').waitFor();
+  await ep.getByText('Open accounts, most recently active first.').waitFor();
+  await ep.getByRole('tab', { name: 'Top' }).click();
+  await ebtn('Strongest').waitFor();
+  await ebtn('Most improved').waitFor();
+  await ep.getByRole('tab', { name: 'Challenges' }).click();
+  await ep.getByText('No challenges yet').waitFor();
+  await ebtn('New challenge').click();
+  await ep.getByText('What are you competing in?').waitFor();
+  await ebtn('Weekly goal').click();
+  await ep.getByText('Most weeks with at least 3 workouts.').waitFor();
+  await ep.screenshot({ path: `tests/screens/${String(++n).padStart(2, '0')}-challenge-new-en.png` });
+  await ep.getByRole('dialog').getByRole('button', { name: 'Close' }).last().click();
+  await ebtn('Notifications').click();
+  await ep.getByText('No notifications yet').waitFor();
+  await ep.getByRole('button', { name: 'Back' }).click();
+  await enNav.getByRole('link', { name: 'Progress' }).click();
+  await ep.getByRole('navigation', { name: 'Progress and history' }).getByRole('link', { name: 'History' }).click();
+  await ep.getByRole('switch', { name: 'Share to the feed' }).count();
+  await ep.goto(ep.url().replace(/#.*$/, '#/privacy'));
+  await ep.getByRole('heading', { name: 'Social: what others see' }).waitFor();
+  await ep.getByText('Your bodyweight is never shared', { exact: false }).first().waitFor();
+  await ep.getByRole('button', { name: 'Back' }).click();
   await ep.getByRole('navigation').getByRole('link', { name: 'Profile' }).click();
   await ep.getByRole('button', { name: /^Design/ }).click();
   await ep.getByRole('radio', { name: 'Norsk' }).click();

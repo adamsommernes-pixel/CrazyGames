@@ -42,7 +42,7 @@ const INTEGER_COLUMNS: Partial<Record<SyncedTable, string[]>> = {
   routine_exercises: ['position', 'target_sets', 'target_reps', 'rest_seconds'],
   workout_exercises: ['position', 'rest_seconds', 'target_reps'],
   routines: ['position'],
-  profiles: ['weekly_target', 'birth_year'],
+  profiles: ['weekly_target', 'birth_year', 'social'],
 };
 
 /** Runder heltallskolonnene, så én rad med desimal ikke stopper hele synken. */

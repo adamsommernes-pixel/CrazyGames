@@ -15,6 +15,7 @@ import { usePRMap } from '../../lib/prs';
 import { dateLong, durationShort, monthYear, num, plural, toDisplay } from '../../lib/format';
 import { volume } from '../../lib/calc';
 import { t } from '../../i18n';
+import { ProgressTabs } from '../progress/ProgressTabs';
 
 export function HistoryList() {
   const navigate = useNavigate();
@@ -72,6 +73,7 @@ export function HistoryList() {
         </div>
       }
     >
+      <ProgressTabs />
       {view === 'calendar' && workouts.length > 0 && (
         <div className="mb-4">
           <Calendar marked={new Set(workouts.map((w) => dayKey(w.started_at)))} selected={day} onSelect={setDay} />

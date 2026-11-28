@@ -15,6 +15,7 @@ import { formatSetShort, kindOf } from '../../lib/kinds';
 import { exerciseName } from '../../lib/exerciseName';
 import { MUSCLE_LABEL, type MuscleGroup } from '../../db/types';
 import { t } from '../../i18n';
+import { ShareToFollowers } from '../social/ShareToFollowers';
 
 const ShareSheet = lazy(() => import('../share/ShareSheet'));
 
@@ -103,6 +104,7 @@ export function Summary() {
           {diff >= 0 ? '▲' : '▼'} {num(Math.abs(diff), 0)} % {t('volum mot forrige gang', 'volume vs. last time')}
         </p>
       )}
+      <ShareToFollowers workoutId={workout.id} />
 
       {prSets.length > 0 && (
         <>

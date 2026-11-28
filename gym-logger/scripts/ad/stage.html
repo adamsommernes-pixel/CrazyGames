@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>RepGrade Socials – ad stage</title>
+<style>
+  @font-face { font-family: 'Space Grotesk'; font-weight: 700; src: url(fonts/sg-700.woff2) format('woff2'); }
+  @font-face { font-family: 'Space Grotesk'; font-weight: 500; src: url(fonts/sg-500.woff2) format('woff2'); }
+  @font-face { font-family: 'Inter'; font-weight: 100 900; src: url(fonts/inter.woff2) format('woff2'); }
+  :root { --accent: #34c56a; --accent-strong: #7dd89e; --bg: #07090a; --ink: #f2f5f3; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); }
+  #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; color: var(--ink); }
+  .abs { position: absolute; }
+  /* Bakgrunn: mørk med grønne lysflekker og et svakt rutenett */
+  #bg { inset: 0; background: radial-gradient(120% 70% at 50% 0%, #0f1a13 0%, #07090a 60%); }
+  .glow { width: 900px; height: 900px; border-radius: 50%; filter: blur(120px); background: var(--accent); opacity: .18; }
+  #grid { inset: -200px; opacity: .07; background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 72px 72px; }
+  #globe { left: 90px; top: 520px; width: 900px; height: 900px; opacity: 0; }
+  /* Telefonen */
+  .phone { width: 668px; height: 1413px; left: 206px; top: 418px; border-radius: 86px; background: #1a1c1d; padding: 14px;
+    box-shadow: 0 0 0 2px #2e3133, 0 60px 140px rgba(0,0,0,.75), 0 0 120px rgba(52,197,106,.12); transform-origin: 50% 50%; }
+  .screen { position: relative; width: 640px; height: 1385px; border-radius: 72px; overflow: hidden; background: #0b0b0c; }
+  .screen img.layer { position: absolute; left: 0; top: 0; width: 640px; opacity: 0; transform-origin: 0 0; }
+  .statusbar { position: absolute; left: 0; right: 0; top: 0; height: 44px; z-index: 5; display: flex; justify-content: space-between; padding: 14px 44px 0; font: 600 21px 'Inter'; color: #fff; pointer-events: none; }
+  .island { position: absolute; left: 50%; top: 12px; width: 190px; height: 50px; margin-left: -95px; border-radius: 30px; background: #000; z-index: 6; }
+  .ripple { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; background: rgba(255,255,255,.35); border: 4px solid rgba(255,255,255,.7); opacity: 0; z-index: 8; }
+  /* Tekst */
+  .cap { left: 60px; right: 60px; text-align: center; font-family: 'Space Grotesk'; font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+  #cap1 { top: 150px; font-size: 76px; }
+  #cap2 { top: 248px; font-size: 44px; font-weight: 500; color: #a9b4ae; font-family: 'Inter'; letter-spacing: -0.01em; }
+  .accent { color: var(--accent); }
+  .mini { width: 340px; height: 736px; border-radius: 48px; padding: 8px; background: #1a1c1d; box-shadow: 0 0 0 2px #2e3133, 0 30px 80px rgba(0,0,0,.7); opacity: 0; }
+  .mini img { width: 324px; border-radius: 41px; display: block; }
+  .mini .label { position: absolute; left: -40px; right: -40px; bottom: -78px; text-align: center; font: 700 40px 'Space Grotesk'; color: var(--ink); }
+  #topfade { left: 0; right: 0; top: 0; height: 430px; background: linear-gradient(#07090a 62%, rgba(7,9,10,0)); pointer-events: none; }
+  #badge { left: 90px; right: 90px; top: 880px; height: 150px; border-radius: 80px; display: flex; align-items: center; justify-content: center; gap: 22px;
+    font: 700 52px 'Inter'; letter-spacing: -0.01em; color: var(--accent-strong); background: #0f2418; border: 4px solid rgba(52,197,106,.55); overflow: hidden; opacity: 0;
+    box-shadow: 0 30px 90px rgba(0,0,0,.7), 0 0 140px rgba(52,197,106,.45); }
+  #badge .ic { font-size: 70px; }
+  #badge .shine { position: absolute; top: -20px; bottom: -20px; width: 120px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent); transform: skewX(-20deg); left: -200px; }
+  #stamp { left: 160px; top: 700px; width: 760px; height: 300px; border-radius: 40px; border: 8px solid var(--accent); color: var(--accent);
+    display: grid; place-items: center; font: 700 150px 'Space Grotesk'; letter-spacing: -0.04em; background: rgba(7,9,10,.82); opacity: 0; transform: rotate(-8deg); }
+  #stampSub { left: 0; right: 0; top: 1040px; text-align: center; font: 600 44px 'Inter'; color: var(--ink); opacity: 0; }
+  #confetti, #emoji { inset: 0; pointer-events: none; }
+  .bit { position: absolute; width: 18px; height: 30px; border-radius: 4px; }
+  .em { position: absolute; font-size: 96px; }
+  #end { inset: 0; opacity: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; }
+  #end img { width: 260px; height: 260px; border-radius: 58px; box-shadow: 0 30px 120px rgba(52,197,106,.35); }
+  #end .name { font: 700 120px 'Space Grotesk'; letter-spacing: -0.04em; }
+  #end .words { display: flex; gap: 34px; font: 700 76px 'Space Grotesk'; color: var(--accent); }
+  #end .words span { opacity: 0; display: inline-block; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg" class="abs"></div>
+  <div id="grid" class="abs"></div>
+  <div id="glowA" class="abs glow"></div>
+  <div id="glowB" class="abs glow"></div>
+  <svg id="globe" class="abs" viewBox="0 0 900 900"></svg>
+  <div id="minis"></div>
+  <div id="phone" class="abs phone">
+    <div class="screen" id="screen">
+      <div id="ripple" class="ripple"></div>
+    </div>
+  </div>
+  <div id="topfade" class="abs"></div>
+  <div id="badge" class="abs"><span class="ic">🥇</span><span>#1 Strongest · Beast · Nov 2026</span><i class="shine"></i></div>
+  <div id="stamp" class="abs">100% FREE</div>
+  <div id="stampSub" class="abs">No ads · No subscription · No paywall</div>
+  <div id="confetti" class="abs"></div>
+  <div id="emoji" class="abs"></div>
+  <div id="cap1" class="abs cap"></div>
+  <div id="cap2" class="abs cap"></div>
+  <div id="end" class="abs">
+    <img src="logo.svg" alt="" />
+    <div class="name">RepGrade</div>
+    <div class="words"><span>Log.</span><span>Eat.</span><span>Gain.</span></div>
+  </div>
+</div>
+<script src="shots.js"></script>
+<script src="stage.js"></script>
+</body>
+</html>

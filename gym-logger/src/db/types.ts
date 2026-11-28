@@ -194,6 +194,8 @@ export interface Profile extends Row {
   created_at: string;
   /** Satt når oppstartsveiviseren er fullført. */
   onboarded_at: string | null;
+  /** Kontotype: 1 = sosial, 0 eller mangler = bare trening. */
+  social?: Flag;
 }
 
 export interface Bodyweight extends Row {

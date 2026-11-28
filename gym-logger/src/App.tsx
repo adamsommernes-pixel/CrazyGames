@@ -1,7 +1,7 @@
 import { Logo } from './components/Logo';
 import { applyAccent } from './lib/theme';
 import { Suspense, lazy, useEffect, useMemo } from 'react';
-import { HashRouter, MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { HashRouter, MemoryRouter, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { t, useLang } from './i18n';
@@ -37,6 +37,19 @@ import { BodyweightPage } from './features/bodyweight/BodyweightPage';
 import { LevelPage } from './features/level/LevelPage';
 import { ProgramsPage } from './features/routines/ProgramsPage';
 import { PrivacyPage } from './features/legal/PrivacyPage';
+import { SocialPage } from './features/social/SocialPage';
+import { bindSocialUser, socialAvailable } from './social';
+import { resetMySocial } from './social/store';
+import { resetGraph } from './social/graph';
+import { rememberInvite, takeInvite } from './social/invite';
+import { PersonPage } from './features/social/PersonPage';
+import { ChallengePage } from './features/social/ChallengePage';
+import { InboxPage } from './features/social/InboxPage';
+import { InboxPoller, resetInbox } from './social/inbox';
+import { AccountTypePrompt } from './features/social/AccountTypePrompt';
+import { StrengthSync } from './social/StrengthSync';
+import { ActivitySync } from './social/ActivitySync';
+import { useSocialMode } from './lib/socialMode';
 
 // Grafbiblioteket er stort, så sider med grafer lastes først når de åpnes.
 const ProgressList = lazy(() => import('./features/progress/ProgressList').then((m) => ({ default: m.ProgressList })));
@@ -90,6 +103,13 @@ function WelcomeOrConfirmed() {
   return isConfirmedLanding() ? <Navigate to="/login" replace /> : <Welcome />;
 }
 
+/** Invitasjonslenke uten innlogging: husk den, og vis velkomstsiden. Profilen åpnes etter innlogging. */
+function InviteLanding() {
+  const { handle } = useParams();
+  useMemo(() => handle && rememberInvite(handle), [handle]);
+  return <Welcome />;
+}
+
 function Gate() {
   const { status, user } = useAuth();
   if (status === 'loading') return <Splash />;
@@ -99,6 +119,7 @@ function Gate() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/u/:handle" element={<InviteLanding />} />
         <Route path="*" element={<WelcomeOrConfirmed />} />
       </Routes>
     );
@@ -109,6 +130,19 @@ function Gate() {
 function SignedIn({ user }: { user: AuthUser }) {
   // Bytt til brukerens egen database før noe under leser fra den.
   useMemo(() => openUserDb(user.id), [user.id]);
+  useMemo(() => {
+    bindSocialUser(user);
+    resetMySocial();
+    resetGraph();
+    resetInbox();
+  }, [user]);
+  const socialMode = useSocialMode();
+  // Invitasjonslenke åpnet før innlogging: åpne profilen nå.
+  const navigate = useNavigate();
+  useEffect(() => {
+    const h = takeInvite();
+    if (h) navigate(`/u/${h}`);
+  }, [navigate]);
   useAutoSync(user.kind === 'cloud');
   useEffect(() => {
     void requestPersist();
@@ -125,6 +159,14 @@ function SignedIn({ user }: { user: AuthUser }) {
   return (
     <>
       <AfterUpdateNews />
+      <AccountTypePrompt />
+      {socialMode && socialAvailable(user) && (
+        <>
+          <StrengthSync />
+          <ActivitySync />
+          <InboxPoller />
+        </>
+      )}
       <PushPrompt />
       <PageTransition>
       <Routes>
@@ -132,6 +174,10 @@ function SignedIn({ user }: { user: AuthUser }) {
         <Route path="/workout" element={<WorkoutTab />} />
         <Route path="/history" element={<HistoryList />} />
         <Route path="/history/:id" element={<WorkoutDetail />} />
+        <Route path="/social" element={<SocialPage />} />
+        <Route path="/u/:handle" element={<PersonPage />} />
+        <Route path="/challenge/:id" element={<ChallengePage />} />
+        <Route path="/inbox" element={<InboxPage />} />
         <Route path="/summary/:id" element={<Summary />} />
         <Route path="/routines" element={<RoutineList />} />
         <Route path="/routines/new" element={<RoutineEditor />} />

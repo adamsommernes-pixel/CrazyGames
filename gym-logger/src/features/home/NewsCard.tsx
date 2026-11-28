@@ -1,109 +1,97 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useNavigate } from 'react-router-dom';
 import { db } from '../../db/dexie';
+import { useUser } from '../../auth/AuthProvider';
 import { Button, Sheet } from '../../components/ui';
-import { Icon, type IconName } from '../../components/Icon';
+import { Icon } from '../../components/Icon';
+import { AdVideo } from '../../components/AdVideo';
+import { setSocialMode, useSocialMode } from '../../lib/socialMode';
+import { socialAvailable } from '../../social';
 import { t } from '../../i18n';
 
-// «Vi har nyheter»: forteller hva som kommer i neste store oppdatering. Kan lukkes.
-// Bytt NEWS_ID når det kommer en ny nyhet, så vises kortet igjen for alle.
-const NEWS_ID = 'social-events-2026';
+// «Sosialt er her»: øverst på Hjem for dem som kan bruke Sosialt (konto på nett) men fortsatt har
+// treningskonto. Bilde fra reklamefilmen med ▶ (filmen åpnes med lyd), og «Prøv Sosialt». Kan lukkes.
+// Bytt NEWS_ID ved en ny nyhet, så vises kortet igjen for alle.
+const NEWS_ID = 'socials-released-1.3';
 const KEY = `news-dismissed:${NEWS_ID}`;
 
-const features = (): { icon: IconName; title: string; text: string; points: string[] }[] => [
-  {
-    icon: 'user',
-    title: t('Sosial-fane med venner', 'Social tab with friends'),
-    text: t('Følg vennene dine og se øktene deres når de trener.', 'Follow your friends and see their workouts as they train.'),
-    points: [
-      t('Se vennenes økter, rekorder og nye nivåer', "See your friends' workouts, records and new levels"),
-      t('Lik og kommenter økter', 'Like and comment on workouts'),
-      t('Heia hverandre fram', 'Cheer each other on'),
-    ],
-  },
-  {
-    icon: 'trophy',
-    title: t('Utfordringer med venner', 'Challenges with friends'),
-    text: t('Inviter venner til å konkurrere i styrke.', 'Invite friends to compete in strength.'),
-    points: [
-      t('Hvem løfter tyngst i benk, knebøy eller markløft?', 'Who lifts the most in bench, squat or deadlift?'),
-      t('Konkurrer på volum, antall økter eller styrkenivå', 'Compete on volume, number of workouts or strength level'),
-      t('Toppliste som oppdateres mens dere trener', 'A leaderboard that updates as you train'),
-    ],
-  },
-  {
-    icon: 'calendar',
-    title: t('Åpne eventer', 'Public events'),
-    text: t('Bli med på konkurranser for alle som bruker RepGrade.', 'Join competitions open to everyone using RepGrade.'),
-    points: [
-      t('F.eks. «Løft mest i desember»', 'For example “Lift the most in December”'),
-      t('Se hvor du ligger på topplisten', 'See where you rank on the leaderboard'),
-      t('Merker for deg som fullfører', 'Badges for those who finish'),
-    ],
-  },
-];
+/** Filmen i et ark, med «Prøv Sosialt» under (brukes fra Hjem og fra kontotype-valget). */
+export function SocialsVideoSheet({ open, onClose, onTry }: { open: boolean; onClose: () => void; onTry?: () => void }) {
+  return (
+    <Sheet open={open} onClose={onClose} title={t('Sosialt', 'Socials')} tall>
+      {open && (
+        <div className="flex flex-col items-center gap-4 pb-2">
+          <AdVideo src="ad/socials.mp4" poster="ad/socials-poster.jpg" className="h-[62vh]" />
+          {onTry && (
+            <Button full onClick={onTry}>
+              {t('Prøv Sosialt', 'Try Socials')}
+            </Button>
+          )}
+          <p className="text-center text-xs text-faint">{t('Du kan bytte når som helst under Profil → Kontotype.', 'You can switch any time under Profile → Account type.')}</p>
+        </div>
+      )}
+    </Sheet>
+  );
+}
 
 export function NewsCard() {
+  const user = useUser();
+  const social = useSocialMode();
+  const navigate = useNavigate();
   const dismissed = useLiveQuery(async () => !!(await db.kv.get(KEY)), [], true);
-  const [open, setOpen] = useState(false);
-  if (dismissed) return null;
+  const [video, setVideo] = useState(false);
+  if (dismissed || social || !socialAvailable(user)) return null;
   const close = () => void db.kv.put({ key: KEY, value: new Date().toISOString() });
+  const tryIt = () => void setSocialMode(user.id, true).then(() => navigate('/social'));
+  const base = import.meta.env.BASE_URL;
 
   return (
     <>
-      <section aria-labelledby="news-title">
-        <h2 id="news-title" className="mb-2 px-1 text-[15px] font-semibold text-ink">
-          {t('Nyheter og eventer', 'News and events')}
-        </h2>
-        <div className="card flex items-start gap-3 rounded-xl p-4">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent-soft/50 text-accent">
-            <Icon name="calendar" size={20} />
-          </span>
+      <section aria-labelledby="socials-news" className="card relative overflow-hidden rounded-xl border-accent/40">
+        <div className="flex gap-3.5 p-3.5">
+          <button
+            type="button"
+            onClick={() => setVideo(true)}
+            aria-label={t('Se filmen om Sosialt', 'Watch the Socials video')}
+            className="relative w-24 shrink-0 overflow-hidden rounded-lg border border-line bg-raised"
+            style={{ aspectRatio: '9 / 16' }}
+          >
+            <img src={`${base}ad/socials-poster.jpg`} alt="" className="block h-full w-full object-cover" />
+            <span className="absolute inset-0 grid place-items-center bg-black/25">
+              <span className="grid size-11 place-items-center rounded-full bg-accent text-on-accent shadow-lg">
+                <Icon name="play" size={20} />
+              </span>
+            </span>
+          </button>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="font-semibold">{t('Venner og konkurranser', 'Friends and competitions')}</span>
-              <span className="rounded-full bg-raised px-2 py-0.5 text-[10px] font-semibold text-muted">{t('Kommer snart', 'Coming soon')}</span>
+              <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-on-accent uppercase">{t('Nytt', 'New')}</span>
             </div>
-            <p className="mt-0.5 text-sm text-muted">
-              {t('Venner, utfordringer og åpne eventer er på vei til RepGrade.', 'Friends, challenges and public events are coming to RepGrade.')}
+            <h2 id="socials-news" className="mt-1.5 text-lg leading-tight font-bold">
+              {t('Sosialt er her', 'Socials is here')}
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              {t(
+                'Følg venner, se hele øktene deres, klatre på ledertavler, utfordre hverandre og vinn merker. Kroppsvekten din deles aldri.',
+                'Follow friends, see their full workouts, climb the leaderboards, challenge each other and win badges. Your bodyweight is never shared.',
+              )}
             </p>
-            <button type="button" className="mt-2 text-sm font-semibold text-accent" onClick={() => setOpen(true)}>
-              {t('Les mer', 'Read more')}
-            </button>
-          </div>
-          <button type="button" aria-label={t('Skjul nyheten', 'Hide the news')} onClick={close} className="-mt-1 -mr-1 grid size-9 shrink-0 place-items-center rounded-full text-faint">
-            <Icon name="x" size={16} />
-          </button>
-        </div>
-      </section>
-
-      <Sheet open={open} onClose={() => setOpen(false)} title={t('Dette kommer', "What's coming")}>
-        <div className="flex flex-col gap-4 pb-2">
-          {features().map((f) => (
-            <div key={f.title} className="rounded-xl border border-line bg-raised p-4">
-              <div className="flex items-center gap-3">
-                <span className="grid size-10 place-items-center rounded-xl bg-accent text-on-accent">
-                  <Icon name={f.icon} size={20} />
-                </span>
-                <h3 className="font-semibold">{f.title}</h3>
-              </div>
-              <p className="mt-2 text-sm text-muted">{f.text}</p>
-              <ul className="mt-2 flex flex-col gap-1 text-sm">
-                {f.points.map((p) => (
-                  <li key={p} className="flex gap-2">
-                    <Icon name="check" size={16} className="mt-0.5 shrink-0 text-accent" />
-                    {p}
-                  </li>
-                ))}
-              </ul>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button className="min-h-10 px-4 text-sm" onClick={tryIt}>
+                {t('Prøv Sosialt', 'Try Socials')}
+              </Button>
+              <Button variant="secondary" icon="play" className="min-h-10 px-3.5 text-sm" onClick={() => setVideo(true)}>
+                {t('Se filmen', 'Watch the video')}
+              </Button>
             </div>
-          ))}
-          <p className="text-center text-xs text-faint">{t('Vi sier fra her i appen når det er klart.', "We'll let you know here in the app when it's ready.")}</p>
-          <Button full onClick={() => setOpen(false)}>
-            {t('Lukk', 'Close')}
-          </Button>
+          </div>
         </div>
-      </Sheet>
+        <button type="button" aria-label={t('Skjul nyheten', 'Hide the news')} onClick={close} className="absolute top-1.5 right-1.5 grid size-9 place-items-center rounded-full text-faint">
+          <Icon name="x" size={16} />
+        </button>
+      </section>
+      <SocialsVideoSheet open={video} onClose={() => setVideo(false)} onTry={tryIt} />
     </>
   );
 }

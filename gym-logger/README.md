@@ -8,7 +8,8 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
 > - Available in **Norwegian and English**. Switch on the welcome page (NO / EN) or under Profile → Settings → Language. On first visit the app follows the browser language.
 > - Built-in exercises have English names and how-to guides, and search finds them in both languages («squat» finds Knebøy).
 > - **Muscles trained**: a front and back body figure on Home shows which muscle groups you have trained in the last 7 or 30 days. Secondary muscles count half a set. Tap a muscle for sets and the date you last trained it.
-> - **Strength level**: ten levels from Newbie to Olympia, based on your best estimated 1RM in key lifts (bench, squat, deadlift, overhead press, rows, pull-ups, dips and variations) relative to bodyweight, with separate standards for men and women. Push, pull and legs are averaged. A new best lift pops up a record card, and a new overall level shows a full-screen «Level up». The level shows on Home and on its own page.
+> - **Strength level**: ten levels from Newbie to Olympia, based on your best estimated 1RM in the lifts that count (bench, squat, deadlift, overhead press, rows, pull-ups and variations; marked “Level” in the app) relative to bodyweight, with separate standards for men and women. Push, pull and legs are averaged. A new best lift pops up a record card, and a new overall level shows a full-screen «Level up». The level shows on Home and on its own page.
+> - **Social** (1.3, cloud accounts): choose *Training* (the app as before) or *Social* under Profile → Account type. Social adds a tab with a feed of full workouts and kudos, following (Private, Leaderboards or Open), leaderboards, challenges and an in-app inbox. Bodyweight is never shared. On a social account History moves into Progress.
 > - **Share cards**: after a workout (or from History) share an image in four levels: Basic, Stats, Highlights (muscle figure, records, top sets) and Full workout, in story 9:16 or post 4:5.
 > - Development: `npm install`, `npm run dev`, `npm test`, `npm run build && npm run e2e`.
 
@@ -75,7 +76,7 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
 
 **Styrkenivå**
 - Ti nivåer: Nybegynner, Rookie, Stamgjest, Gymrotte, Løfter, Sterk, Beist, Titan, Elite og Olympia.
-- Regnes ut fra beste beregnede 1RM i nøkkelløft (benk, knebøy, markløft, skulderpress, roing, pull-ups, dips og varianter) delt på kroppsvekt, med egne standarder for menn og kvinner (snitt hvis kjønn ikke er valgt). Snittet av press, trekk og bein gir nivået.
+- Regnes ut fra beste beregnede 1RM i løftene som teller (benk, knebøy, markløft, skulderpress, roing, pull-ups og varianter) delt på kroppsvekt, med egne standarder for menn og kvinner (snitt hvis kjønn ikke er valgt). Snittet av press, trekk og bein gir nivået.
 - Disse løftene gir nivå (merket «Nivå» i appen): benkpress, skråbenk, smal benkpress, benk og skråbenk med manualer, militærpress; pull-ups (også med vekt), stangroing, nedtrekk, bicepscurl med manualer; knebøy, markløft, sumo- og trap bar-markløft, rumensk markløft, bulgarsk splittbøy, beinpress, hack squat og beinspark. Manualøvelser regnes per manual. Alt annet logges som vanlig, men teller ikke. Maskinløft (beinpress, hack squat, beinspark, nedtrekk) gir høyst Sterk og vises i egen seksjon. Et løft teller bare hvis det er trent de siste 30 dagene (ellers vises det grått); brukeren varsles en uke før, og kan markere løft de ikke trener lenger. Alle grafer og tall kan vises for 7 dager, 30 dager, 12 måneder eller et bestemt år.
 - Testet mot realistiske løftere (`src/lib/strength.personas.test.ts`), mann 80 kg / kvinne 62 kg:
 
@@ -92,6 +93,19 @@ Treningsapp (PWA) for gymmen: velg øvelse, logg sets, reps og vekt, og følg fr
   | Kvinne, verdensklasse | 100 / 165 / 190 + pull-ups +35 × 5 | Olympia (92) |
 - Nytt beste løft viser et rekordkort med animert poengsum; nytt totalnivå gir fullskjerm «Nivå opp» med konfetti.
 - Merke med fremgang under hilsenen på Hjem, egen nivåside med stigen og hvert løft, og nivå per løft på øvelsessiden.
+
+**Sosialt (1.3, bare konto på nett)**
+- **Kontotype** under Profil: *Trening* (appen som før) eller *Sosial*. Sosial gir fanen Sosialt i stedet for Historikk, og Historikk flyttes inn under Fremgang. Bytter du tilbake til Trening, skjules den sosiale profilen (følgerne beholdes).
+- **Sosial profil**: visningsnavn, @brukernavn (forslag fra navnet, sjekkes mens du skriver, reserverte og støtende navn stoppes), «Er du 16 år eller eldre?» og synlighet:
+  - *Privat*: bare følgere du godtar ser øktene og nivået ditt. Finnes bare på hele brukernavnet.
+  - *Ledertavler*: som Privat, men navn og nivå vises på ledertavlene (og du får se dem).
+  - *Åpen*: alle innloggede ser deg, du vises i Oppdag, og følging skjer uten forespørsel.
+  - Under 16 år: bare Privat. Ved oppstart velger du om øktene fra de siste 7 dagene skal deles, eller om du starter fra null.
+- **Feed**: ferdige økter publiseres automatisk (hele økta med alle sets, rekorder og nivå; aldri kroppsvekt eller notater), oppdateres når de endres og forsvinner når de slettes. «Del i feeden» kan slås av per økt (på oppsummeringen og i historikken). Kudos 💪 🔥 👏 🏆, én per person.
+- **Folk**: ett søkefelt (åpne kontoer på navn/brukernavn, alle på eksakt brukernavn), Oppdag (åpne kontoer, sist aktive først), forespørsler, følger/følgere, invitasjonslenke (`…/app/#/u/brukernavn`, husker lenken gjennom registreringen), blokkering og rapportering. Går du fra Åpen til strengere, spør appen om du vil beholde følgere du ikke følger tilbake.
+- **Topp** (Ledertavler og Åpen): *Sterkest* (styrkenivå), *Fremgang* (nivåpoeng økt denne måneden) og *Flest økter* denne måneden, for alle eller bare dem du følger.
+- **Utfordringer**: flest økter, mest volum, ukemål eller et løft (ikke pull-ups, siden kroppsvekten ville blitt synlig), 1 uke, 2 uker eller 1 måned. Bare gjensidige følgere og åpne kontoer du følger kan inviteres. Stillingen regnes ut av serveren fra delte økter.
+- **Varsler** i appen: bjelle på Sosialt og merke i bunnmenyen (forespørsler, nye følgere, kudos, utfordringer). Ingen push-varsler ennå.
 
 **Delekort**
 - Etter en økt (og fra Historikk) kan du dele et bilde i fire nivåer: Enkel, Tall, Høydepunkter (muskelfigur, rekorder, toppsett) og Hele økta.
@@ -192,6 +206,29 @@ src/
 supabase/      SQL-migreringer
 tests/         e2e-skript (Playwright)
 ```
+
+## Sosialt: oppsett og drift
+
+Alt sosialt ligger i `supabase/migrations/012_social.sql` (tabeller, sikkerhetsregler og funksjonene appen kaller). Venner leser aldri de private treningstabellene; appen legger en kopi av hver delt økt i `activities`. Alle regler for hvem som ser hva går gjennom databasefunksjonen `can_see()`, og følging, blokkering og utfordringer endres bare via funksjoner, så reglene ikke kan omgås fra appen.
+
+**Ta det i bruk (én gang):** kjør hele `012_social.sql` i Supabase → SQL Editor (trygt å kjøre flere ganger) **før** appen med Sosialt publiseres. Appen sender kolonnen `profiles.social`, og en database uten den avviser synken.
+
+**Rapporter** lagres i tabellen `reports` og kan bare leses i Supabase-dashbordet (Table Editor → `reports`, eller SQL Editor):
+
+```sql
+select r.created_at, rp.handle as fra, tp.handle as gjelder, r.reason, r.activity_id
+from public.reports r
+left join public.social_profiles rp on rp.user_id = r.reporter
+left join public.social_profiles tp on tp.user_id = r.target
+order by r.created_at desc;
+```
+
+Skjul en profil som bryter reglene: `update public.profiles set social = 0 where user_id = '<id>';` (den sosiale profilen skjules for alle). Slett kontoen helt under Authentication → Users.
+
+**Tester:**
+- `npm run test:db`: migrasjonene og sikkerhetsreglene mot en midlertidig lokal Postgres (krever Postgres installert), med testbrukere på alle nivåer.
+- `npm test`: blant annet en falsk Sosialt-variant (`src/social/fake.ts`) med de samme reglene, som e2e-testene bruker.
+- `STAGING_SUPABASE_URL=… STAGING_SUPABASE_KEY=<publishable key> npm run test:staging`: den ekte koden mot et eget staging-prosjekt (lager og sletter testkontoer). Krever «Confirm email» slått av i staging.
 
 ## Navn og varemerke (sjekk før lansering)
 
