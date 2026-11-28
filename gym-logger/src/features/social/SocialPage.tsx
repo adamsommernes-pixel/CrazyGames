@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../../auth/AuthProvider';
 import { useGraph } from '../../social/graph';
 import { PeopleTab } from './PeopleTab';
+import { BadgeRow } from './BadgeRow';
 import { FeedList } from './FeedList';
 import { LeaderboardTab } from './LeaderboardTab';
 import { ChallengesTab } from './ChallengesTab';
@@ -129,6 +130,7 @@ function SocialTabs() {
     <Page title={t('Sosialt', 'Social')} actions={bell}>
       <Card className="mb-3 p-3.5">
         <SocialProfileHeader profile={profile} />
+        <BadgeRow userId={profile.user_id} />
       </Card>
       <div role="tablist" aria-label={t('Sosialt', 'Social')} className="mb-4 flex gap-1 rounded-xl border border-line bg-surface p-1">
         <button type="button" role="tab" aria-selected={tab === 'feed'} className={tabClass(tab === 'feed')} onClick={() => choose('feed')}>

@@ -252,6 +252,35 @@ select public.leave_challenge(:'cid2');
 select test.ok(test.n(format('select 1 from public.challenges where id = %L', :'cid2')) = 0, 'den som laget utfordringen kan avlyse den');
 select test.fails($q$insert into public.challenges (creator, kind, title, starts_at, ends_at) values (auth.uid(), 'workouts', 'x', now(), now() + interval '1 day')$q$, 'kan ikke skrive direkte i challenges', 'permission denied');
 
+-- ===== Merker =====
+select pg_temp.as_user(:'A');
+select test.fails('select public.award_challenge_badges()', 'appen kan ikke dele ut merker', 'permission denied');
+select test.fails($q$insert into public.badges (user_id, kind, ref) values (auth.uid(), 'challenge', 'falsk')$q$, 'kan ikke gi seg selv merker', 'permission denied');
+reset role;
+-- En avsluttet utfordring (A og C, begge med én økt i perioden → delt seier) og «Først til målet» (A nådde 110 kg)
+insert into public.challenges (id, creator, kind, title, starts_at, ends_at)
+values ('00000000-0000-0000-0000-0000000000e1', :'A', 'workouts', 'Ferdig', now() - interval '1 day', now() - interval '1 minute');
+insert into public.challenge_members (challenge_id, user_id, status) values
+  ('00000000-0000-0000-0000-0000000000e1', :'A', 'joined'), ('00000000-0000-0000-0000-0000000000e1', :'C', 'joined');
+select test.ok(public.award_challenge_badges() = 3, 'merker: delt seier (A og C) og først til målet (A)');
+select test.ok(public.award_challenge_badges() = 0, 'merker gis aldri to ganger');
+select test.ok((select count(*) from public.notifications where kind = 'badge' and user_id = :'A') = 2, 'varsel om merke');
+-- Månedens tavler: C (71) og B (52) på samme nivå → C vinner «Sterkest» på nivå 5
+update public.social_profiles set tier_index = 5 where user_id = :'C';
+select test.ok(public.award_monthly_badges(current_date) > 0, 'månedsmerker deles ut');
+select test.ok(exists (select 1 from public.badges where user_id = :'C' and ref = 'board:level:5:' || to_char(now(), 'YYYY-MM')), 'C vant Sterkest på nivå 5');
+select test.ok(not exists (select 1 from public.badges where user_id = :'B' and board = 'level'), 'B vant ikke Sterkest');
+select test.ok(public.award_monthly_badges(current_date) = 0, 'månedsmerker gis bare én gang');
+update public.social_profiles set tier_index = 7 where user_id = :'C';
+-- Hvem ser merkene
+set role authenticated;
+select pg_temp.as_user(:'A');
+select test.ok(test.n('select 1 from public.badges where user_id = auth.uid()') = 2, 'egne merker');
+select pg_temp.as_user(:'X');
+select test.ok(test.n('select 1 from public.badges') = 0, 'uten sosial profil ser du ingen merker');
+select pg_temp.as_user(:'D');
+select test.ok(test.n(format('select 1 from public.badges where user_id = %L', :'C')) > 0, 'åpen kontos merker er synlige');
+
 -- ===== Rapportering =====
 select pg_temp.as_user(:'D');
 insert into public.reports (reporter, target, reason) values (:'D', :'C', 'Spam');

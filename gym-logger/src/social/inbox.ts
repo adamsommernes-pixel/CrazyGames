@@ -3,6 +3,7 @@ import { social } from './index';
 import { rememberPerson } from './graph';
 import type { Person, SocialNotification } from './types';
 import { t } from '../i18n';
+import { badgeIcon, badgeText } from './badges';
 
 // Innboksen i appen: varsler fra serveren (notifications-tabellen), delt av bjella, bunnmenyen og innbokssiden.
 
@@ -99,5 +100,16 @@ export function describe(n: SocialNotification, actor: Person | undefined): { te
       return { text: t(`${who} utfordret deg: «${title}»`, `${who} challenged you: “${title}”`), to: `/challenge/${String(n.payload.challenge_id ?? '')}` };
     case 'challenge_joined':
       return { text: t(`${who} ble med i «${title}»`, `${who} joined “${title}”`), to: `/challenge/${String(n.payload.challenge_id ?? '')}` };
+    case 'badge': {
+      const p = n.payload;
+      const b = {
+        kind: p.badge_kind === 'board' ? ('board' as const) : ('challenge' as const),
+        title: typeof p.title === 'string' ? p.title : null,
+        board: (p.board as 'level' | 'gain' | 'workouts' | undefined) ?? null,
+        tier_index: typeof p.tier_index === 'number' ? p.tier_index : null,
+        period: typeof p.period === 'string' ? p.period : null,
+      };
+      return { text: t(`Nytt merke ${badgeIcon(b)} ${badgeText(b)}`, `New badge ${badgeIcon(b)} ${badgeText(b)}`), to: '/social', tab: 'feed' };
+    }
   }
 }

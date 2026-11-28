@@ -431,17 +431,31 @@ create table if not exists public.challenges (
   creator uuid not null references auth.users(id) on delete cascade,
   -- workouts: flest økter · volume: mest volum (kg) · weekly: flest uker med minst `target` økter
   -- lift: størst økning i beregnet 1RM på `exercise_id` fra før start til slutt
-  kind text not null check (kind in ('workouts', 'volume', 'weekly', 'lift')),
+  -- goal: først til `target` kg i beregnet 1RM på `exercise_id` (de andre rangeres etter beste)
+  -- (gyldige typer og regler for felt: se navngitte regler under tabellen)
+  kind text not null,
   exercise_id text,
   target numeric,
   title text not null check (char_length(btrim(title)) between 1 and 60),
   starts_at timestamptz not null,
   ends_at timestamptz not null,
-  created_at timestamptz not null default now(),
-  check (ends_at > starts_at and ends_at <= starts_at + interval '366 days'),
-  check (kind <> 'lift' or exercise_id is not null),
-  check (kind <> 'weekly' or (target is not null and target between 1 and 14))
+  created_at timestamptz not null default now()
 );
+-- Reglene har faste navn, så de kan endres når nye typer kommer (tabellen kan finnes fra før).
+-- challenges_check/_check1/_check2 er navnene fra første versjon (uten navn); de fjernes.
+alter table public.challenges drop constraint if exists challenges_check;
+alter table public.challenges drop constraint if exists challenges_check1;
+alter table public.challenges drop constraint if exists challenges_check2;
+alter table public.challenges drop constraint if exists challenges_kind_check;
+alter table public.challenges drop constraint if exists challenges_period;
+alter table public.challenges drop constraint if exists challenges_lift_exercise;
+alter table public.challenges drop constraint if exists challenges_weekly_target;
+alter table public.challenges drop constraint if exists challenges_goal_target;
+alter table public.challenges add constraint challenges_kind_check check (kind in ('workouts', 'volume', 'weekly', 'lift', 'goal'));
+alter table public.challenges add constraint challenges_period check (ends_at > starts_at and ends_at <= starts_at + interval '366 days');
+alter table public.challenges add constraint challenges_lift_exercise check (kind not in ('lift', 'goal') or exercise_id is not null);
+alter table public.challenges add constraint challenges_weekly_target check (kind <> 'weekly' or (target is not null and target between 1 and 14));
+alter table public.challenges add constraint challenges_goal_target check (kind <> 'goal' or (target is not null and target > 0 and target <= 1000));
 
 create table if not exists public.challenge_members (
   challenge_id uuid not null references public.challenges(id) on delete cascade,
@@ -456,13 +470,33 @@ create index if not exists challenge_members_user_idx on public.challenge_member
 create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  kind text not null check (kind in ('follow_request', 'follow_accepted', 'new_follower', 'reaction', 'challenge_invite', 'challenge_joined')),
+  kind text not null,
   actor uuid references auth.users(id) on delete cascade,
   payload jsonb not null default '{}'::jsonb,
   read_at timestamptz,
   created_at timestamptz not null default now()
 );
 create index if not exists notifications_user_idx on public.notifications (user_id, created_at desc);
+alter table public.notifications drop constraint if exists notifications_kind_check;
+alter table public.notifications add constraint notifications_kind_check
+  check (kind in ('follow_request', 'follow_accepted', 'new_follower', 'reaction', 'challenge_invite', 'challenge_joined', 'badge'));
+
+-- Merker: delt ut av databasen (aldri av appen) til vinnere av utfordringer og til #1 på
+-- månedens ledertavler innenfor hvert styrkenivå. `ref` gjør at samme merke aldri gis to ganger.
+create table if not exists public.badges (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  kind text not null check (kind in ('challenge', 'board')),
+  ref text not null,
+  -- challenge: utfordringens navn og type. board: tavla ('level', 'gain', 'workouts'), nivået og måneden.
+  title text,
+  board text check (board in ('level', 'gain', 'workouts')),
+  tier_index smallint check (tier_index between 0 and 9),
+  period date,
+  awarded_at timestamptz not null default now(),
+  unique (user_id, ref)
+);
+create index if not exists badges_user_idx on public.badges (user_id, awarded_at desc);
 
 -- ---------- Hjelpefunksjoner ----------
 
@@ -532,7 +566,7 @@ $$;
 create or replace function public.notify(target uuid, k text, from_user uuid, extra jsonb default '{}'::jsonb)
 returns void language sql security definer set search_path = '' as $$
   insert into public.notifications (user_id, kind, actor, payload)
-  select target, k, from_user, extra where target <> from_user;
+  select target, k, from_user, extra where from_user is null or target <> from_user;
 $$;
 
 -- ---------- Triggere ----------
@@ -683,6 +717,15 @@ drop policy if exists "se deltakere" on public.challenge_members;
 create policy "se deltakere" on public.challenge_members for select to authenticated
   using (public.in_challenge(challenge_id, (select auth.uid())));
 
+-- Merker: synlige for den som kan se profilen (eller den står på ledertavler). Bare databasen deler ut.
+alter table public.badges enable row level security;
+drop policy if exists "se merker" on public.badges;
+create policy "se merker" on public.badges for select to authenticated
+  using (user_id = (select auth.uid()) or public.can_see((select auth.uid()), user_id)
+         or (public.has_social((select auth.uid())) and exists (
+               select 1 from public.social_profiles p where p.user_id = badges.user_id and p.active and p.visibility >= 2)
+             and not public.is_blocked((select auth.uid()), user_id)));
+
 -- Varsler: bare egne. Kan merkes som lest og slettes.
 drop policy if exists "se egne varsler" on public.notifications;
 create policy "se egne varsler" on public.notifications for select to authenticated
@@ -832,7 +875,7 @@ $$;
    board: 'level' (styrkenivå), 'gain' (nivåpoeng økt siden `since`), 'workouts' (økter siden `since`),
           'lift' (poeng på ett løft).
    'gain': nåværende poeng minus poengene etter siste økt før `since` (eller første økt etter, om ingen før).
-   scope: 'all' eller 'following' (de du følger, og deg selv). */
+   scope: 'all', 'tier' (bare de på ditt styrkenivå) eller 'following' (de du følger, og deg selv). */
 create or replace function public.leaderboard(board text, scope text default 'all', exercise text default null,
                                               since timestamptz default date_trunc('month', now()), lim integer default 50)
 returns table (rank bigint, user_id uuid, handle text, display_name text, color text, tier_index smallint, value numeric)
@@ -848,7 +891,8 @@ begin
     select p.* from public.social_profiles p
     where p.active and p.visibility >= 2 and not public.is_blocked(me, p.user_id)
       and (scope = 'all' or p.user_id = me
-           or exists (select 1 from public.follows f where f.follower = me and f.followee = p.user_id and f.status = 'accepted'))
+           or (scope = 'tier' and p.tier_index = (select mine.tier_index from public.social_profiles mine where mine.user_id = me))
+           or (scope = 'following' and exists (select 1 from public.follows f where f.follower = me and f.followee = p.user_id and f.status = 'accepted')))
   ), scored as (
     select p.user_id, p.handle, p.display_name, p.color, p.tier_index,
       case board
@@ -921,13 +965,14 @@ begin
 end $$;
 
 /* Stillingen i en utfordring, regnet ut fra publiserte økter (ikke tall appen sender inn). */
-create or replace function public.challenge_standings(challenge uuid)
-returns table (rank bigint, user_id uuid, value numeric)
+drop function if exists public.challenge_standings(uuid);
+/* Stillingen uten tilgangssjekk (brukes av databasen selv, f.eks. når merker deles ut). */
+create or replace function public.standings_of(challenge uuid)
+returns table (rank bigint, user_id uuid, value numeric, reached_at timestamptz)
 language plpgsql stable security definer set search_path = '' as $$
 #variable_conflict use_column
 declare c public.challenges;
 begin
-  if not public.in_challenge(challenge, auth.uid()) then raise exception 'ikke med i utfordringen'; end if;
   select * into c from public.challenges where id = challenge;
   return query
   with m as (
@@ -950,10 +995,106 @@ begin
                      (select max((i.data -> 'lifts' ->> c.exercise_id)::numeric) from inside i where i.user_id = m.user_id
                       and i.started_at = (select min(j.started_at) from inside j where j.user_id = m.user_id
                                           and j.data -> 'lifts' ? c.exercise_id)), 0))
-      end as val
+        when 'goal' then coalesce((select max((i.data -> 'lifts' ->> c.exercise_id)::numeric) from inside i where i.user_id = m.user_id), 0)
+      end as val,
+      -- Første økt der målet ble nådd (bare «goal»).
+      case when c.kind = 'goal' then (select min(i.started_at) from inside i where i.user_id = m.user_id
+                                      and (i.data -> 'lifts' ->> c.exercise_id)::numeric >= c.target) end as reached
     from m
   )
-  select rank() over (order by v.val desc), v.user_id, round(v.val, 1) from v order by v.val desc;
+  select rank() over (order by v.reached asc nulls last, v.val desc), v.user_id, round(v.val, 1), v.reached
+  from v order by v.reached asc nulls last, v.val desc;
+end $$;
+
+/* Stillingen for deltakerne (appen kaller denne). */
+create or replace function public.challenge_standings(challenge uuid)
+returns table (rank bigint, user_id uuid, value numeric, reached_at timestamptz)
+language plpgsql stable security definer set search_path = '' as $$
+begin
+  if not public.in_challenge(challenge, auth.uid()) then raise exception 'ikke med i utfordringen'; end if;
+  return query select * from public.standings_of(challenge);
+end $$;
+
+/* Verdier på en ledertavle for én periode (alle på nivå 2 og 3), uten tilgangssjekk. */
+create or replace function public.board_values(board text, since timestamptz, until timestamptz)
+returns table (user_id uuid, tier_index smallint, value numeric)
+language sql stable security definer set search_path = '' as $$
+  select p.user_id, p.tier_index,
+    case board
+      when 'level' then p.score
+      when 'workouts' then (select count(*)::numeric from public.activities a where a.user_id = p.user_id and a.started_at >= since and a.started_at < until)
+      when 'gain' then p.score - coalesce(
+        (select (a.data -> 'tier' ->> 'score')::numeric from public.activities a
+         where a.user_id = p.user_id and a.started_at < since and a.data -> 'tier' ->> 'score' is not null order by a.started_at desc limit 1),
+        (select (a.data -> 'tier' ->> 'score')::numeric from public.activities a
+         where a.user_id = p.user_id and a.started_at >= since and a.started_at < until and a.data -> 'tier' ->> 'score' is not null order by a.started_at asc limit 1))
+    end
+  from public.social_profiles p
+  where p.active and p.visibility >= 2 and p.tier_index is not null;
+$$;
+
+/* Merker til vinnerne av utfordringer som er avgjort: ferdige (høyest verdi) eller «Først til målet»
+   (den som nådde det først). Bare utfordringer med minst to deltakere. Trygg å kjøre ofte. */
+create or replace function public.award_challenge_badges()
+returns integer language plpgsql security definer set search_path = '' as $$
+declare c public.challenges; w record; n integer := 0;
+begin
+  for c in
+    select ch.* from public.challenges ch
+    where (select count(*) from public.challenge_members m where m.challenge_id = ch.id and m.status = 'joined') >= 2
+      and ((ch.kind <> 'goal' and ch.ends_at <= now()) or ch.kind = 'goal')
+  loop
+    for w in select * from public.standings_of(c.id) s
+             where s.rank = 1 and (case when c.kind = 'goal' then s.reached_at is not null else s.value > 0 end)
+    loop
+      insert into public.badges (user_id, kind, ref, title)
+      values (w.user_id, 'challenge', 'challenge:' || c.id, c.title)
+      on conflict (user_id, ref) do nothing;
+      if found then
+        n := n + 1;
+        perform public.notify(w.user_id, 'badge', null, jsonb_build_object('badge_kind', 'challenge', 'title', c.title, 'challenge_id', c.id));
+      end if;
+    end loop;
+  end loop;
+  return n;
+end $$;
+
+/* Merker til #1 på hver ledertavle innenfor hvert styrkenivå for måneden som begynner `month`.
+   Krever minst to på samme nivå med en verdi over 0. Trygg å kjøre flere ganger. */
+create or replace function public.award_monthly_badges(month date)
+returns integer language plpgsql security definer set search_path = '' as $$
+declare b text; w record; n integer := 0;
+  since timestamptz := date_trunc('month', month::timestamptz);
+  until timestamptz := date_trunc('month', month::timestamptz) + interval '1 month';
+begin
+  foreach b in array array['level', 'gain', 'workouts'] loop
+    for w in
+      with v as (select * from public.board_values(b, since, until) x where x.value > 0),
+      ranked as (select v.*, rank() over (partition by v.tier_index order by v.value desc) r,
+                        count(*) over (partition by v.tier_index) cnt from v)
+      select * from ranked where r = 1 and cnt >= 2
+    loop
+      insert into public.badges (user_id, kind, ref, board, tier_index, period)
+      values (w.user_id, 'board', format('board:%s:%s:%s', b, w.tier_index, to_char(since, 'YYYY-MM')), b, w.tier_index, since::date)
+      on conflict (user_id, ref) do nothing;
+      if found then
+        n := n + 1;
+        perform public.notify(w.user_id, 'badge', null,
+          jsonb_build_object('badge_kind', 'board', 'board', b, 'tier_index', w.tier_index, 'period', to_char(since, 'YYYY-MM')));
+      end if;
+    end loop;
+  end loop;
+  return n;
+end $$;
+
+-- Planlagte jobber (bare der pg_cron finnes, som i Supabase): utfordringer hver time, ledertavler den 1. hver måned.
+do $$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.unschedule(jobname) from cron.job where jobname in ('social-challenge-badges', 'social-monthly-badges');
+    perform cron.schedule('social-challenge-badges', '7 * * * *', 'select public.award_challenge_badges()');
+    perform cron.schedule('social-monthly-badges', '15 0 1 * *', $j$select public.award_monthly_badges((date_trunc('month', now()) - interval '1 day')::date)$j$);
+  end if;
 end $$;
 
 /* Reaksjon gir varsel til eieren (høyst ett per person og økt). */
@@ -972,10 +1113,11 @@ create trigger reaction_notify after insert on public.reactions for each row exe
 -- ---------- Tilganger ----------
 
 grant select, insert, update, delete on public.social_profiles, public.activities, public.reactions, public.notifications to authenticated;
-grant select on public.follows, public.blocks, public.challenges, public.challenge_members to authenticated;
+grant select on public.follows, public.blocks, public.challenges, public.challenge_members, public.badges to authenticated;
 grant insert on public.reports to authenticated;
 revoke all on public.social_profiles, public.follows, public.blocks, public.reports, public.activities, public.reactions,
-  public.challenges, public.challenge_members, public.notifications from anon;
+  public.challenges, public.challenge_members, public.notifications, public.badges from anon;
+grant select, insert, update, delete on public.badges to service_role;
 grant select, insert, update, delete on public.social_profiles, public.follows, public.blocks, public.reports, public.activities,
   public.reactions, public.challenges, public.challenge_members, public.notifications to service_role;
 
@@ -995,6 +1137,9 @@ begin
     execute format('revoke all on function public.%s from public, anon', f);
     execute format('grant execute on function public.%s to authenticated', f);
   end loop;
-  -- notify() skal bare kalles av databasen selv, ikke av appen.
+  -- Disse skal bare kalles av databasen selv (og planlagte jobber), ikke av appen.
   execute 'revoke execute on function public.notify(uuid, text, uuid, jsonb) from authenticated';
+  foreach f in array array['standings_of(uuid)', 'board_values(text, timestamptz, timestamptz)', 'award_challenge_badges()', 'award_monthly_badges(date)'] loop
+    execute format('revoke all on function public.%s from public, anon, authenticated', f);
+  end loop;
 end $$;

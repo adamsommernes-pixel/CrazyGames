@@ -212,6 +212,23 @@ describe('staging: ekte Supabase', () => {
     expect(await D.s.handleAvailable('admin')).toBe(false);
   });
 
+  it('«Først til målet», «Mitt nivå» og merker', async () => {
+    const { A, B, C } = users;
+    const at = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
+    await A.s.publish({ id: 'A-goal', name: 'mål', started_at: at(2), ended_at: at(1), data: { ...data(1), lifts: { 'ex-benkpress': 105 } } });
+    const cid = await A.s.createChallenge({ kind: 'goal', title: 'Først til 100', exercise_id: 'ex-benkpress', target: 100, starts_at: at(24), ends_at: new Date(Date.now() + 86_400_000).toISOString(), invitees: [C.id] });
+    const st = await A.s.standings(cid);
+    expect(st[0]).toMatchObject({ user_id: A.id, rank: 1, value: 105 });
+    expect(st[0].reached_at).toBeTruthy();
+    await A.s.leaveChallenge(cid);
+    // Mitt nivå: B har ikke satt nivå i testen → bare B selv (eller ingen) på B sitt nivå, aldri C
+    expect((await B.s.leaderboard('level', 'tier')).some((r) => r.user_id === C.id)).toBe(false);
+    // Merker kan leses (deles bare ut av databasen)
+    expect(await B.s.badges(B.id)).toEqual([]);
+    const r = await B.sb.from('badges').insert({ user_id: B.id, kind: 'challenge', ref: 'falsk' });
+    expect(r.error?.message).toMatch(/permission denied/);
+  });
+
   it('løftutfordring regnes fra delte 1RM-tall', async () => {
     const { A, C } = users;
     const at = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();

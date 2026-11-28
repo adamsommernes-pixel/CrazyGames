@@ -16,6 +16,7 @@ import { setSocialMode, useSocialMode } from '../../lib/socialMode';
 import { FollowButton } from './FollowButton';
 import { ReportSheet } from './ReportSheet';
 import { FeedList } from './FeedList';
+import { BadgeRow } from './BadgeRow';
 import { t } from '../../i18n';
 
 /** Profilen til en annen bruker (/u/brukernavn), også målet for invitasjonslenker. */
@@ -100,6 +101,7 @@ export function PersonPage() {
           </span>
         )}
         {followsMe && <span className="mt-2 text-xs text-faint">{t('Følger deg', 'Follows you')}</span>}
+        <BadgeRow userId={person.user_id} />
         <div className="mt-4">
           <FollowButton person={person} />
         </div>

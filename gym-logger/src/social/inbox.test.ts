@@ -15,6 +15,11 @@ group('innboks', () => {
     expect(describe(n('challenge_joined', { challenge_id: 'c1', title: 'Uka' }), zara).text).toBe('Zara ble med i «Uka»');
   });
 
+  it('merke', () => {
+    const b = { ...n('badge', { badge_kind: 'challenge', title: 'Uka' }), actor: null };
+    expect(describe(b, undefined)).toEqual({ text: 'Nytt merke 🏆 Vant «Uka»', to: '/social', tab: 'feed' });
+  });
+
   it('ukjent avsender (f.eks. blokkert eller slettet)', () => {
     expect(describe(n('new_follower'), undefined)).toEqual({ text: 'Noen følger deg nå', to: '/social' });
   });

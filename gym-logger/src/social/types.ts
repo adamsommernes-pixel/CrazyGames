@@ -103,7 +103,7 @@ export interface Reaction {
   created_at: string;
 }
 
-export type NotificationKind = 'follow_request' | 'follow_accepted' | 'new_follower' | 'reaction' | 'challenge_invite' | 'challenge_joined';
+export type NotificationKind = 'follow_request' | 'follow_accepted' | 'new_follower' | 'reaction' | 'challenge_invite' | 'challenge_joined' | 'badge';
 export interface SocialNotification {
   id: string;
   user_id: string;
@@ -162,6 +162,19 @@ export interface NewChallenge {
   invitees: string[];
   exercise_id?: string | null;
   target?: number | null;
+}
+
+/** Merke delt ut av databasen: vinner av en utfordring, eller #1 på en månedstavle innenfor et nivå. */
+export interface Badge {
+  id: string;
+  user_id: string;
+  kind: 'challenge' | 'board';
+  ref: string;
+  title: string | null;
+  board: 'level' | 'gain' | 'workouts' | null;
+  tier_index: number | null;
+  period: string | null;
+  awarded_at: string;
 }
 
 /** Feil med en melding som kan vises direkte. */

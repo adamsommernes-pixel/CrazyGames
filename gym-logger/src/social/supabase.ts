@@ -139,6 +139,9 @@ export function createSupabaseSocial(sb: SupabaseClient): SocialBackend {
       check(await sb.from('reactions').upsert({ activity_owner: owner, activity_id: activityId, user_id: id, emoji }, { onConflict: 'activity_owner,activity_id,user_id' }));
     },
 
+    async badges(userId) {
+      return (check(await sb.from('badges').select('*').eq('user_id', userId).order('awarded_at', { ascending: false })) ?? []) as import('./types').Badge[];
+    },
     async notifications() {
       return (check(await sb.from('notifications').select('*').order('created_at', { ascending: false }).limit(100)) ?? []) as import('./types').SocialNotification[];
     },

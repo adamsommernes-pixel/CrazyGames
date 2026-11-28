@@ -2,6 +2,7 @@ import type { SocialBackend } from './backend';
 import {
   SocialError,
   type Activity,
+  type Badge,
   type Challenge,
   type ChallengeMember,
   type Follow,
@@ -29,9 +30,10 @@ interface Store {
   challenges: Challenge[];
   members: ChallengeMember[];
   notifications: SocialNotification[];
+  badges: Badge[];
 }
 
-const empty = (): Store => ({ profiles: [], follows: [], blocks: [], reports: [], activities: [], reactions: [], challenges: [], members: [], notifications: [] });
+const empty = (): Store => ({ profiles: [], follows: [], blocks: [], reports: [], activities: [], reactions: [], challenges: [], members: [], notifications: [], badges: [] });
 
 export interface FakeStorage {
   load(): Store | null;
@@ -70,7 +72,7 @@ const fail = (nb: string, en: string): never => {
 };
 
 export function createFakeSocial(uid: () => string | null, storage: FakeStorage = localStorageStore, clock: () => number = Date.now): SocialBackend {
-  const read = () => storage.load() ?? empty();
+  const read = () => ({ ...empty(), ...(storage.load() ?? {}) });
   const tx = <T>(fn: (s: Store) => T): T => {
     const s = read();
     const r = fn(s);
@@ -316,6 +318,13 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
       });
     },
 
+    async badges(userId) {
+      const s = read();
+      const u = me();
+      const p = prof(s, userId);
+      const visible = userId === u || (!!p && profileVisible(s, u, p));
+      return visible ? s.badges.filter((b) => b.user_id === userId).sort((a, b) => b.awarded_at.localeCompare(a.awarded_at)) : [];
+    },
     async notifications() {
       const u = me();
       return read()

@@ -825,6 +825,23 @@ try {
       await list.getByText('Åpen 1 ga 🔥 på økta di').click();
       await page.getByRole('tab', { name: 'Feed', selected: true }).waitFor();
       assert.equal(await btn('Varsler', { exact: true }).count(), 1, 'bjella uten nye');
+
+      // Merker (deles ut av databasen): vises på egen profil og på andres
+      const st2 = await fakeStore();
+      const badge = (user, id, extra) => ({ id, user_id: user, ref: id, title: null, board: null, tier_index: null, period: null, awarded_at: iso(-1000), ...extra });
+      st2.badges = [
+        badge(me, 'b1', { kind: 'challenge', title: 'Uka' }),
+        badge(me, 'b2', { kind: 'board', board: 'gain', tier_index: 1, period: '2026-10-01' }),
+        badge('open-1', 'b3', { kind: 'board', board: 'level', tier_index: 4, period: '2026-10-01' }),
+      ];
+      await putFake(st2);
+      await page.reload();
+      const mineBadges = page.getByRole('list', { name: 'Merker' });
+      await mineBadges.getByText('Vant «Uka»').waitFor();
+      await mineBadges.getByText('#1 Fremgang · Rookie · okt 2026').waitFor();
+      await shot('merker');
+      await page.goto(page.url().replace(/#.*$/, '#/u/aapen_1'));
+      await page.getByRole('list', { name: 'Merker' }).getByText('#1 Sterkest · Løfter · okt 2026').waitFor();
     }
     await nav().getByRole('link', { name: 'Fremgang' }).click();
     const tabs = page.getByRole('navigation', { name: 'Fremgang og historikk' });

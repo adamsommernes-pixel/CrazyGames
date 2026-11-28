@@ -1,5 +1,6 @@
 import type {
   Activity,
+  Badge,
   Board,
   BoardScope,
   Challenge,
@@ -66,6 +67,9 @@ export interface SocialBackend {
   reactions(keys: { owner: string; id: string }[]): Promise<Reaction[]>;
   /** null fjerner reaksjonen din. */
   react(owner: string, activityId: string, emoji: Emoji | null): Promise<void>;
+
+  // Merker (deles ut av databasen)
+  badges(userId: string): Promise<Badge[]>;
 
   // Varsler
   notifications(): Promise<SocialNotification[]>;
