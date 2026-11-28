@@ -10,11 +10,12 @@ import { setSocialMode, useSocialMode } from '../../lib/socialMode';
 import { socialAvailable } from '../../social';
 import { t } from '../../i18n';
 
-// «Sosialt er her»: øverst på Hjem for dem som kan bruke Sosialt (konto på nett) men fortsatt har
-// treningskonto. Bilde fra reklamefilmen med ▶ (filmen åpnes med lyd), og «Prøv Sosialt». Kan lukkes.
-// Bytt NEWS_ID ved en ny nyhet, så vises kortet igjen for alle.
+// «Sosialt er her»: øverst på Hjem for alle som kan bruke Sosialt (konto på nett), både med trenings-
+// og sosial konto. Bilde fra reklamefilmen med ▶ (filmen åpnes med lyd), og «Prøv Sosialt» / «Åpne Sosialt».
+// Kan først lukkes (×) etter at filmen er åpnet. Bytt NEWS_ID ved en ny nyhet, så vises kortet igjen for alle.
 const NEWS_ID = 'socials-released-1.3';
 const KEY = `news-dismissed:${NEWS_ID}`;
+const WATCHED = `news-watched:${NEWS_ID}`;
 
 /** Filmen i et ark, med «Prøv Sosialt» under (brukes fra Hjem og fra kontotype-valget). */
 export function SocialsVideoSheet({ open, onClose, onTry }: { open: boolean; onClose: () => void; onTry?: () => void }) {
@@ -39,11 +40,15 @@ export function NewsCard() {
   const user = useUser();
   const social = useSocialMode();
   const navigate = useNavigate();
-  const dismissed = useLiveQuery(async () => !!(await db.kv.get(KEY)), [], true);
+  const seen = useLiveQuery(async () => ({ dismissed: !!(await db.kv.get(KEY)), watched: !!(await db.kv.get(WATCHED)) }), [], { dismissed: true, watched: false });
   const [video, setVideo] = useState(false);
-  if (dismissed || social || !socialAvailable(user)) return null;
+  if (seen.dismissed || !socialAvailable(user)) return null;
   const close = () => void db.kv.put({ key: KEY, value: new Date().toISOString() });
-  const tryIt = () => void setSocialMode(user.id, true).then(() => navigate('/social'));
+  const watch = () => {
+    setVideo(true);
+    void db.kv.put({ key: WATCHED, value: new Date().toISOString() });
+  };
+  const tryIt = () => void (social ? Promise.resolve() : setSocialMode(user.id, true)).then(() => navigate('/social'));
   const base = import.meta.env.BASE_URL;
 
   return (
@@ -52,7 +57,7 @@ export function NewsCard() {
         <div className="flex gap-3.5 p-3.5">
           <button
             type="button"
-            onClick={() => setVideo(true)}
+            onClick={watch}
             aria-label={t('Se filmen om Sosialt', 'Watch the Socials video')}
             className="relative w-24 shrink-0 overflow-hidden rounded-lg border border-line bg-raised"
             style={{ aspectRatio: '9 / 16' }}
@@ -79,19 +84,21 @@ export function NewsCard() {
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button className="min-h-10 px-4 text-sm" onClick={tryIt}>
-                {t('Prøv Sosialt', 'Try Socials')}
+                {social ? t('Åpne Sosialt', 'Open Socials') : t('Prøv Sosialt', 'Try Socials')}
               </Button>
-              <Button variant="secondary" icon="play" className="min-h-10 px-3.5 text-sm" onClick={() => setVideo(true)}>
+              <Button variant="secondary" icon="play" className="min-h-10 px-3.5 text-sm" onClick={watch}>
                 {t('Se filmen', 'Watch the video')}
               </Button>
             </div>
           </div>
         </div>
-        <button type="button" aria-label={t('Skjul nyheten', 'Hide the news')} onClick={close} className="absolute top-1.5 right-1.5 grid size-9 place-items-center rounded-full text-faint">
-          <Icon name="x" size={16} />
-        </button>
+        {seen.watched && (
+          <button type="button" aria-label={t('Skjul nyheten', 'Hide the news')} onClick={close} className="absolute top-1.5 right-1.5 grid size-9 place-items-center rounded-full text-faint">
+            <Icon name="x" size={16} />
+          </button>
+        )}
       </section>
-      <SocialsVideoSheet open={video} onClose={() => setVideo(false)} onTry={tryIt} />
+      <SocialsVideoSheet open={video} onClose={() => setVideo(false)} onTry={social ? undefined : tryIt} />
     </>
   );
 }

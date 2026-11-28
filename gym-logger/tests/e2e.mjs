@@ -457,10 +457,12 @@ try {
     const firstCard = await page.locator('main > *').first().getAttribute('aria-labelledby');
     assert.equal(firstCard, 'socials-news', 'Sosialt-kortet ligger øverst på Hjem');
     await shot('hjem-sosialt');
+    assert.equal(await btn('Skjul nyheten').count(), 0, 'kan ikke lukkes før filmen er åpnet');
     await btn('Se filmen', { exact: true }).click();
     await page.getByRole('dialog').locator('video').waitFor();
     await page.getByRole('dialog').getByRole('button', { name: 'Trykk for lyd' }).waitFor();
     await page.keyboard.press('Escape');
+    await btn('Skjul nyheten').waitFor();
     await nav().getByRole('link', { name: 'Profil' }).click();
     // En annen bruker (Zara, åpen konto) finnes allerede i den falske Sosialt-lagringen.
     const fakeStore = () => page.evaluate(() => JSON.parse(localStorage.getItem('repgrade-fake-social') ?? 'null'));
@@ -793,6 +795,11 @@ try {
       await page.getByRole('tab', { name: /Folk/ }).click();
       await sugg.locator('[data-person]').first().waitFor();
       assert.equal(await sugg.locator('[data-person="aapen_2"]').count(), 0, 'den som blokkerte deg er borte');
+      // Filmen ligger fortsatt på Hjem med sosial konto
+      await nav().getByRole('link', { name: 'Hjem' }).click();
+      await page.getByRole('heading', { name: 'Sosialt er her' }).waitFor();
+      await btn('Åpne Sosialt').click();
+      await page.getByRole('tab', { name: 'Feed' }).waitFor();
     }
 
     // ===== Steg 9: utfordringer =====
@@ -960,12 +967,12 @@ try {
   await page.reload();
   await page.getByRole('navigation').first().waitFor();
   await page.waitForTimeout(800);
-  assert.equal(await page.getByRole('heading', { name: 'Sosialt er her' }).count(), 0, 'ingen nyheter på ny telefon');
+  assert.equal(await page.getByRole('dialog').getByRole('heading', { name: 'Sosialt er her' }).count(), 0, 'ingen nyheter på ny telefon');
   // Oppdatert fra 1.2.0: nyhetene for versjonene siden (opptil 3) vises, gruppert per versjon
   await page.evaluate(() => localStorage.setItem('repgrade-seen-version', '1.2.0'));
   await page.reload();
   // 1.3: Sosialt er overskriften, og reklamefilmen spilles uten lyd til man trykker
-  await page.getByRole('heading', { name: 'Sosialt er her' }).waitFor();
+  await page.getByRole('dialog').getByRole('heading', { name: 'Sosialt er her' }).waitFor();
   await page.getByText('Versjon 1.3.0').waitFor();
   await page.getByText('Versjon 1.4.0').waitFor();
   const adVideo = page.getByRole('dialog').locator('video');
@@ -979,7 +986,7 @@ try {
   await page.reload();
   await page.getByRole('navigation').first().waitFor();
   await page.waitForTimeout(800);
-  assert.equal(await page.getByRole('heading', { name: 'Sosialt er her' }).count(), 0, 'nyhetene vises bare én gang');
+  assert.equal(await page.getByRole('dialog').getByRole('heading', { name: 'Sosialt er her' }).count(), 0, 'nyhetene vises bare én gang');
 
   // 7. Fremgang og øvelse
   await page.getByRole('navigation').getByRole('link', { name: 'Fremgang' }).click();
