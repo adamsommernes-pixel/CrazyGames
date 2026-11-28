@@ -1103,8 +1103,9 @@ try {
   assert.equal(await page.getByRole('heading', { name: 'Fullkropp A', exact: true }).count(), 0, 'gamle startrutiner er erstattet');
   await page.getByRole('navigation').getByRole('link', { name: 'Hjem' }).click();
   await page.getByRole('heading', { name: 'Dine rutiner' }).waitFor();
-  // «Sosialt er her» vises bare for kontoer som kan bruke Sosialt (ikke lokal konto uten nett)
-  assert.equal(await page.getByRole('heading', { name: 'Nyheter', exact: true }).count(), 0, 'ingen Sosialt-nyhet for lokal konto');
+  // Lokal konto uten nett: filmen vises også her, men uten «Prøv Sosialt» (Sosialt krever konto på nett)
+  await page.getByRole('heading', { name: 'Sosialt er her' }).waitFor();
+  assert.equal(await btn('Prøv Sosialt').count(), 0, 'ingen «Prøv Sosialt» for lokal konto');
   await shot('hjem-rutiner');
   await page.getByRole('navigation').getByRole('link', { name: 'Profil' }).click();
   await page.getByText('Medlem siden').waitFor();

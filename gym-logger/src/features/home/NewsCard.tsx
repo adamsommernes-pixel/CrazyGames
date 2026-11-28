@@ -10,10 +10,11 @@ import { setSocialMode, useSocialMode } from '../../lib/socialMode';
 import { socialAvailable } from '../../social';
 import { t } from '../../i18n';
 
-// «Sosialt er her»: øverst på Hjem for alle som kan bruke Sosialt (konto på nett), både med trenings-
-// og sosial konto. Bilde fra reklamefilmen med ▶ (filmen åpnes med lyd), og «Prøv Sosialt» / «Åpne Sosialt».
+// «Sosialt er her»: øverst på Hjem for alle kontoer, både trenings- og sosial konto (lokale kontoer
+// uten nett ser filmen, men ikke «Prøv Sosialt»). Bilde fra reklamefilmen med ▶ (filmen åpnes med lyd), og «Prøv Sosialt» / «Åpne Sosialt».
 // Kan først lukkes (×) etter at filmen er åpnet. Bytt NEWS_ID ved en ny nyhet, så vises kortet igjen for alle.
-const NEWS_ID = 'socials-released-1.3';
+// 1.4: ny id, så kortet vises igjen også for dem som lukket det i 1.3 (nesten ingen så filmen da).
+const NEWS_ID = 'socials-video-1.4';
 const KEY = `news-dismissed:${NEWS_ID}`;
 const WATCHED = `news-watched:${NEWS_ID}`;
 
@@ -42,7 +43,8 @@ export function NewsCard() {
   const navigate = useNavigate();
   const seen = useLiveQuery(async () => ({ dismissed: !!(await db.kv.get(KEY)), watched: !!(await db.kv.get(WATCHED)) }), [], { dismissed: true, watched: false });
   const [video, setVideo] = useState(false);
-  if (seen.dismissed || !socialAvailable(user)) return null;
+  if (seen.dismissed) return null;
+  const canUse = socialAvailable(user);
   const close = () => void db.kv.put({ key: KEY, value: new Date().toISOString() });
   const watch = () => {
     setVideo(true);
@@ -83,9 +85,11 @@ export function NewsCard() {
               )}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button className="min-h-10 px-4 text-sm" onClick={tryIt}>
-                {social ? t('Åpne Sosialt', 'Open Socials') : t('Prøv Sosialt', 'Try Socials')}
-              </Button>
+              {canUse && (
+                <Button className="min-h-10 px-4 text-sm" onClick={tryIt}>
+                  {social ? t('Åpne Sosialt', 'Open Socials') : t('Prøv Sosialt', 'Try Socials')}
+                </Button>
+              )}
               <Button variant="secondary" icon="play" className="min-h-10 px-3.5 text-sm" onClick={watch}>
                 {t('Se filmen', 'Watch the video')}
               </Button>
@@ -98,7 +102,7 @@ export function NewsCard() {
           </button>
         )}
       </section>
-      <SocialsVideoSheet open={video} onClose={() => setVideo(false)} onTry={social ? undefined : tryIt} />
+      <SocialsVideoSheet open={video} onClose={() => setVideo(false)} onTry={social || !canUse ? undefined : tryIt} />
     </>
   );
 }
