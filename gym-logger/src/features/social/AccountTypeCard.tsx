@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../auth/AuthProvider';
 import { Card } from '../../components/ui';
 import { Icon, type IconName } from '../../components/Icon';
@@ -9,6 +10,7 @@ import { t } from '../../i18n';
 export function AccountTypeCard() {
   const user = useUser();
   const social = useSocialMode();
+  const navigate = useNavigate();
   const cloud = socialAvailable(user);
   return (
     <Card className="p-1.5">
@@ -30,7 +32,7 @@ export function AccountTypeCard() {
           }
           checked={social}
           disabled={!cloud && !social}
-          onSelect={() => void setSocialMode(user.id, true)}
+          onSelect={() => void setSocialMode(user.id, true).then(() => !social && navigate('/social'))}
         />
       </div>
     </Card>

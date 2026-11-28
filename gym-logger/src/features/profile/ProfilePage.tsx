@@ -27,6 +27,7 @@ import { askConfirm } from '../../components/confirm';
 import { InstallHint } from './InstallHint';
 import { TrainingCard } from './TrainingCard';
 import { AccountTypeCard } from '../social/AccountTypeCard';
+import { SocialProfileSection } from '../social/SocialProfileSection';
 import { LanguageToggle } from '../../components/LanguageToggle';
 import { locale, t, useLang } from '../../i18n';
 import { SWATCHES } from '../../lib/theme';
@@ -87,6 +88,7 @@ export function ProfilePage() {
 
       <SectionTitle>{t('Kontotype', 'Account type')}</SectionTitle>
       <AccountTypeCard />
+      <SocialProfileSection />
 
       <SectionTitle>{t('Innstillinger', 'Settings')}</SectionTitle>
       <SettingsSection />

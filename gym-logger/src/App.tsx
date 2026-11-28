@@ -38,7 +38,10 @@ import { LevelPage } from './features/level/LevelPage';
 import { ProgramsPage } from './features/routines/ProgramsPage';
 import { PrivacyPage } from './features/legal/PrivacyPage';
 import { SocialPage } from './features/social/SocialPage';
-import { bindSocialUser } from './social';
+import { bindSocialUser, socialAvailable } from './social';
+import { resetMySocial } from './social/store';
+import { StrengthSync } from './social/StrengthSync';
+import { useSocialMode } from './lib/socialMode';
 
 // Grafbiblioteket er stort, så sider med grafer lastes først når de åpnes.
 const ProgressList = lazy(() => import('./features/progress/ProgressList').then((m) => ({ default: m.ProgressList })));
@@ -111,7 +114,11 @@ function Gate() {
 function SignedIn({ user }: { user: AuthUser }) {
   // Bytt til brukerens egen database før noe under leser fra den.
   useMemo(() => openUserDb(user.id), [user.id]);
-  useMemo(() => bindSocialUser(user), [user]);
+  useMemo(() => {
+    bindSocialUser(user);
+    resetMySocial();
+  }, [user]);
+  const socialMode = useSocialMode();
   useAutoSync(user.kind === 'cloud');
   useEffect(() => {
     void requestPersist();
@@ -128,6 +135,7 @@ function SignedIn({ user }: { user: AuthUser }) {
   return (
     <>
       <AfterUpdateNews />
+      {socialMode && socialAvailable(user) && <StrengthSync />}
       <PushPrompt />
       <PageTransition>
       <Routes>

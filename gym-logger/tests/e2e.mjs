@@ -442,13 +442,61 @@ try {
     // Med den falske Sosialt-varianten (alt på enheten) kan en lokal konto velge Sosial.
     await page.evaluate(() => localStorage.setItem('repgrade-social-fake', '1'));
     await page.reload();
+    // En annen bruker (Zara, åpen konto) finnes allerede i den falske Sosialt-lagringen.
+    const fakeStore = () => page.evaluate(() => JSON.parse(localStorage.getItem('repgrade-fake-social') ?? 'null'));
+    const putFake = (store) => page.evaluate((s) => localStorage.setItem('repgrade-fake-social', JSON.stringify(s)), store);
+    const zara = { user_id: 'zara-id', handle: 'zara_test', display_name: 'Zara', color: '#4d9bf0', visibility: 3, is_16_plus: true, active: true, tier_index: 4, score: 45, lift_scores: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    await putFake({ profiles: [zara], follows: [], blocks: [], reports: [], activities: [], reactions: [], challenges: [], members: [], notifications: [] });
+    // Velg Sosial: appen går til Sosialt og ber deg lage en sosial profil
     await page.getByRole('radio', { name: /Sosial/ }).click();
-    await page.waitForFunction(() => document.querySelector('[role=radio][aria-checked=true]')?.textContent?.includes('Sosial'));
+    await page.getByRole('heading', { name: 'Lag sosial profil' }).waitFor();
+    const handle = page.getByLabel('Brukernavn');
+    await page.getByRole('status').filter({ hasText: 'Ledig' }).waitFor();
+    assert.equal(await handle.inputValue(), 'ola', 'brukernavn foreslås fra navnet');
+    assert.equal(await page.getByLabel('Navn som vises').inputValue(), 'Ola', 'navnet fra profilen');
+    // Opptatt brukernavn, og rydding av det du skriver
+    await handle.fill('Zara_Test');
+    assert.equal(await handle.inputValue(), 'zara_test', 'små bokstaver');
+    await page.getByRole('status').filter({ hasText: 'Opptatt' }).waitFor();
+    await handle.fill('ola.løfter');
+    assert.equal(await handle.inputValue(), 'ola.lofter', 'ø blir o');
+    await page.getByRole('status').filter({ hasText: 'Ledig' }).waitFor();
+    // Uten svar på alder kan profilen ikke lagres; Åpen og Ledertavler krever 16+
+    assert.ok(await btn('Lag sosial profil').isDisabled(), 'må svare på alder');
+    assert.ok(await page.getByRole('radio', { name: /^3\. Åpen/ }).isDisabled(), 'åpen krever 16+');
+    await btn('Ja', { exact: true }).click();
+    await page.getByRole('radio', { name: /^3\. Åpen/ }).click();
+    await shot('sosial-oppsett');
+    await btn('Lag sosial profil').click();
+    await page.getByText('@ola.lofter').waitFor();
+    assert.equal((await fakeStore()).profiles.find((p) => p.handle === 'ola.lofter')?.visibility, 3, 'profilen er lagret som åpen');
     await nav().getByRole('link', { name: 'Sosialt' }).waitFor();
     assert.equal(await nav().getByRole('link', { name: 'Historikk' }).count(), 0, 'Historikk er ikke i bunnmenyen');
-    await nav().getByRole('link', { name: 'Sosialt' }).click();
-    await page.getByRole('heading', { name: 'Sosialt kommer snart' }).waitFor();
+    // Styrkenivået regnes ut på telefonen og publiseres i den sosiale profilen (aldri kroppsvekten)
+    await page.getByLabel(/^Nivå: /).waitFor({ timeout: 8000 });
+    const published = (await fakeStore()).profiles.find((p) => p.handle === 'ola.lofter');
+    assert.ok(published.tier_index !== null && published.score > 0 && published.lift_scores['ex-kneboy'] > 0, 'nivå og knebøy publisert');
+    assert.deepEqual(Object.keys(published).sort(), ['active', 'color', 'created_at', 'display_name', 'handle', 'is_16_plus', 'lift_scores', 'score', 'tier_index', 'updated_at', 'user_id', 'visibility'], 'bare disse feltene deles (ingen kroppsvekt)');
     await shot('sosialt');
+    // Profil → Endre sosial profil: under 16 gir bare privat. Zara følger deg uten at du følger tilbake → «Behold følgerne?»
+    const store = await fakeStore();
+    const me = store.profiles.find((p) => p.handle === 'ola.lofter').user_id;
+    store.follows.push({ follower: 'zara-id', followee: me, status: 'accepted', created_at: new Date().toISOString(), accepted_at: new Date().toISOString() });
+    await putFake(store);
+    await nav().getByRole('link', { name: 'Profil' }).click();
+    await btn('Endre sosial profil').click();
+    await btn('Nei', { exact: true }).click();
+    assert.equal(await page.getByRole('dialog').getByRole('radio', { name: /^1\. Privat/ }).getAttribute('aria-checked'), 'true', 'under 16 blir privat');
+    assert.ok(await page.getByRole('radio', { name: /^3\. Åpen/ }).isDisabled(), 'åpen er låst under 16');
+    await btn('Lagre', { exact: true }).click();
+    await page.getByText('1 person følger deg som du ikke følger tilbake', { exact: false }).waitFor();
+    await shot('behold-folgere');
+    await btn('Velg selv').click();
+    await page.getByLabel('Fjern Zara').check();
+    await btn('Fjern 1 valgte').click();
+    await page.getByText('1 følger fjernet').waitFor();
+    assert.equal((await fakeStore()).follows.length, 0, 'Zara er fjernet som følger');
+    assert.equal((await fakeStore()).profiles.find((p) => p.user_id === me).visibility, 1, 'nå privat');
     await nav().getByRole('link', { name: 'Fremgang' }).click();
     const tabs = page.getByRole('navigation', { name: 'Fremgang og historikk' });
     await tabs.getByRole('link', { name: 'Historikk' }).click();
