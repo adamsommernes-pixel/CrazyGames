@@ -624,6 +624,13 @@ try {
       await z.getByRole('button', { name: '🔥 0' }).click();
       await z.getByRole('button', { name: '🔥 1', pressed: true }).waitFor();
       assert.equal((await fakeStore()).reactions.length, 1, 'reaksjonen er lagret');
+      // Se hvem som reagerte
+      await z.getByRole('button', { name: '1 reaksjon · se hvem' }).click();
+      const who = page.getByRole('list', { name: 'Hvem som reagerte' });
+      await who.locator('[data-person="ola.lofter"]').waitFor();
+      await who.getByLabel('🔥').waitFor();
+      await page.getByRole('dialog').getByRole('button', { name: 'Lukk' }).last().click();
+      await who.waitFor({ state: 'detached' });
       assert.ok((await fakeStore()).notifications.some((n) => n.user_id === 'zara-id' && n.kind === 'reaction'), 'Zara får varsel');
       await z.getByRole('button', { name: '💪 0' }).click();
       await z.getByRole('button', { name: '💪 1', pressed: true }).waitFor();
@@ -694,41 +701,98 @@ try {
       assert.equal(await page.getByRole('list', { name: 'Sterkest' }).getByText('Zara', { exact: true }).count(), 0, 'bare deg og dem du følger');
     }
 
-    // ===== Steg 8: Oppdag =====
+    // ===== Steg 8: Folk du kanskje kjenner (forslag), søk, «Oppdag folk» i feeden og varselet om forslag =====
     {
+      const ago = (h) => new Date(Date.now() - h * 3_600_000).toISOString();
       const st = await fakeStore();
       for (let i = 1; i <= 6; i++) st.profiles.push({ ...zara, user_id: `open-${i}`, handle: `aapen_${i}`, display_name: `Åpen ${i}`, visibility: 3 });
+      // Mia: privat, 16+ (foreslås, uten nivå). Ung: under 16 (foreslås aldri).
+      st.profiles.push({ ...zara, user_id: 'mia-id', handle: 'mia_test', display_name: 'Mia', visibility: 1 }, { ...zara, user_id: 'ung-id', handle: 'ung_test', display_name: 'Ung', visibility: 1, is_16_plus: false });
+      // Du følger Per; Per følger Åpen 3 og Mia → felles venn
+      const acc = (a, b) => ({ follower: a, followee: b, status: 'accepted', created_at: ago(30), accepted_at: ago(30) });
+      st.follows = st.follows.filter((f) => !(f.follower === me && f.followee === 'per-id'));
+      st.follows.push(acc(me, 'per-id'), acc('per-id', 'open-3'), acc('per-id', 'mia-id'));
+      for (let i = 0; i < 5; i++) {
+        st.activities.push({ user_id: 'per-id', id: `p${i}`, name: `Per økt ${i + 1}`, started_at: ago(10 + i), ended_at: ago(9 + i), created_at: ago(9 + i), updated_at: ago(9 + i),
+          data: { version: 1, duration_s: 3600, sets: 1, reps: 8, volume_kg: 480, records: [], muscles: {}, lifts: {}, tier: null,
+            exercises: [{ exercise_id: 'ex-benkpress', name: 'Benkpress', kind: 'weight', muscle_group: 'Bryst', sets: [{ weight: 60, reps: 8, set_type: 'normal' }] }] } });
+      }
       await putFake(st);
-      await nav().getByRole('link', { name: 'Hjem' }).click();
+      await page.reload();
       await nav().getByRole('link', { name: 'Sosialt' }).click();
       await page.getByRole('tab', { name: /Folk/ }).click();
-      // Oppdag: 7 åpne kontoer (Zara + 6), 5 vises først. Private (Per, Liv) og du selv er ikke med.
-      const disc = page.getByRole('list', { name: 'Oppdag' });
-      await disc.locator('[data-person]').first().waitFor();
-      assert.equal(await disc.locator('[data-person]').count(), 5, '5 vises først');
-      await btn('Vis 2 til').click();
-      assert.equal(await disc.locator('[data-person]').count(), 7, 'alle åpne kontoer');
-      for (const h of ['per_test', 'liv_test', 'ola.lofter']) assert.equal(await disc.locator(`[data-person="${h}"]`).count(), 0, `${h} er ikke i Oppdag`);
-      await shot('oppdag');
-      // Søk på navn finner åpne kontoer, ikke private
+      const sugg = page.getByRole('list', { name: 'Folk du kanskje kjenner' });
+      await sugg.locator('[data-person]').first().waitFor();
+      const handles = async () => sugg.locator('[data-person]').evaluateAll((els) => els.map((e) => e.getAttribute('data-person')));
+      // Felles venner først: Mia og Åpen 3 (følges av Per)
+      assert.deepEqual((await handles()).slice(0, 2).sort(), ['aapen_3', 'mia_test'], 'felles venner først');
+      await sugg.locator('[data-person="mia_test"]').getByText('Følges av Per').waitFor();
+      assert.equal((await handles()).length, 5, '5 vises først');
+      await btn(/^Vis \d+ til$/).click();
+      const all = await handles();
+      for (const h of ['ung_test', 'liv_test', 'per_test', 'ola.lofter']) assert.ok(!all.includes(h), `${h} er ikke foreslått`);
+      await shot('folk-forslag');
+      // Søk på navn finner også private 16+, ikke under 16
       const find = page.getByLabel('Søk etter folk');
       await find.fill('åpen 3');
       await page.getByRole('list', { name: 'Treff' }).locator('[data-person="aapen_3"]').waitFor();
       assert.equal(await page.getByRole('list', { name: 'Treff' }).locator('[data-person]').count(), 1, 'ett treff');
-      await find.fill('Liv');
-      await page.getByText('Private kontoer finnes bare på hele brukernavnet.', { exact: false }).waitFor();
-      // Følg rett fra Oppdag
+      await find.fill('Mia');
+      await page.getByRole('list', { name: 'Treff' }).locator('[data-person="mia_test"]').waitFor();
+      await find.fill('Ung');
+      await page.getByText('Fant ingen som heter «Ung».', { exact: false }).waitFor();
       await find.fill('');
-      await disc.locator('[data-person="aapen_1"]').getByRole('button', { name: 'Følg' }).click();
-      await disc.locator('[data-person="aapen_1"]').getByRole('button', { name: 'Følger' }).waitFor();
-      // Blokkerte vises ikke i Oppdag
+      // Følg rett fra forslagene
+      await sugg.locator('[data-person="aapen_1"]').getByRole('button', { name: 'Følg' }).click();
+      await sugg.locator('[data-person="aapen_1"]').getByRole('button', { name: 'Følger' }).waitFor();
+      // Antall følgere på profilkortet (Per følger deg; du følger Per og Åpen 1, Liv venter)
+      await page.locator('[data-follow-counts]').filter({ hasText: '1 følger' }).filter({ hasText: 'følger 2' }).waitFor();
+      // Feeden: «Oppdag folk» etter 4 økter, med nye folk; × skjuler
+      await page.getByRole('tab', { name: 'Feed' }).click();
+      const card = page.getByRole('region', { name: 'Oppdag folk' }).first();
+      await card.waitFor();
+      const before = await card.evaluate((el) => [...document.querySelectorAll('[data-activity]')].filter((a) => a.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).length);
+      assert.equal(before, 4, 'kortet kommer etter 4 økter');
+      const first = await card.locator('[data-person]').first().getAttribute('data-person');
+      await card.getByRole('button', { name: /^Skjul / }).first().click();
+      assert.notEqual(await card.locator('[data-person]').first().getAttribute('data-person'), first, 'skjult person er borte');
+      await card.scrollIntoViewIfNeeded();
+      await shot('feed-oppdag');
+      // Varselet om forslag (vises én gang for private 16+; ny profil har allerede fått forklaringen)
+      await page.evaluate(async (name) => {
+        const db = await new Promise((res, rej) => { const r = indexedDB.open(name); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+        const tx = db.transaction('kv', 'readwrite');
+        tx.objectStore('kv').delete('notice:suggestions-1.4');
+        await new Promise((res) => (tx.oncomplete = res));
+        db.close();
+      }, `gym-${me}`);
+      await page.reload();
+      const notice = page.getByRole('dialog', { name: 'Nytt: Folk du kanskje kjenner' });
+      await notice.waitFor();
+      await shot('varsel-forslag');
+      await notice.getByRole('button', { name: 'Ikke vis meg i forslag' }).click();
+      await notice.waitFor({ state: 'detached' });
+      assert.equal((await fakeStore()).profiles.find((p) => p.user_id === me).suggestable, false, 'slått av fra varselet');
+      // … og på igjen under Profil
+      await nav().getByRole('link', { name: 'Profil' }).click();
+      const sw = page.getByRole('switch', { name: 'Vis meg i forslag' });
+      assert.equal(await sw.getAttribute('aria-checked'), 'false', 'bryteren er av');
+      await sw.click();
+      await page.getByText('Du kan foreslås for andre').waitFor();
+      assert.equal((await fakeStore()).profiles.find((p) => p.user_id === me).suggestable, true, 'slått på igjen');
+      await page.reload();
+      assert.equal(await notice.count(), 0, 'varselet vises bare én gang');
+      // Blokkerte vises ikke i forslag
       const st2 = await fakeStore();
       st2.blocks.push({ blocker: 'open-2', blocked: me });
+      // Steg 9 forventer at du ikke følger Per tilbake
+      st2.follows = st2.follows.filter((f) => !(f.follower === me && f.followee === 'per-id'));
       await putFake(st2);
-      await page.getByRole('tab', { name: 'Feed' }).click();
+      await page.reload();
+      await nav().getByRole('link', { name: 'Sosialt' }).click();
       await page.getByRole('tab', { name: /Folk/ }).click();
-      await disc.locator('[data-person]').first().waitFor();
-      assert.equal(await disc.locator('[data-person="aapen_2"]').count(), 0, 'den som blokkerte deg er borte');
+      await sugg.locator('[data-person]').first().waitFor();
+      assert.equal(await sugg.locator('[data-person="aapen_2"]').count(), 0, 'den som blokkerte deg er borte');
     }
 
     // ===== Steg 9: utfordringer =====
@@ -897,12 +961,13 @@ try {
   await page.getByRole('navigation').first().waitFor();
   await page.waitForTimeout(800);
   assert.equal(await page.getByRole('heading', { name: 'Sosialt er her' }).count(), 0, 'ingen nyheter på ny telefon');
-  // Oppdatert fra 1.1.0: nyhetene for alle versjoner siden vises, gruppert per versjon
-  await page.evaluate(() => localStorage.setItem('repgrade-seen-version', '1.1.0'));
+  // Oppdatert fra 1.2.0: nyhetene for versjonene siden (opptil 3) vises, gruppert per versjon
+  await page.evaluate(() => localStorage.setItem('repgrade-seen-version', '1.2.0'));
   await page.reload();
   // 1.3: Sosialt er overskriften, og reklamefilmen spilles uten lyd til man trykker
   await page.getByRole('heading', { name: 'Sosialt er her' }).waitFor();
-  await page.getByText('Versjon 1.2.0').waitFor();
+  await page.getByText('Versjon 1.3.0').waitFor();
+  await page.getByText('Versjon 1.4.0').waitFor();
   const adVideo = page.getByRole('dialog').locator('video');
   await page.waitForFunction(() => { const v = document.querySelector('[role=dialog] video'); return v && v.readyState >= 2 && v.currentTime > 0.2; }, null, { timeout: 15000 });
   assert.equal(await adVideo.evaluate((v) => v.muted), true, 'starter uten lyd');
@@ -1258,7 +1323,7 @@ try {
   await ep.getByText('No workouts yet').waitFor();
   await ep.getByRole('tab', { name: 'People' }).click();
   await ep.getByLabel('Search for people').waitFor();
-  await ep.getByText('Open accounts, most recently active first.').waitFor();
+  await ep.getByText('People you may know').waitFor();
   await ep.getByRole('tab', { name: 'Top' }).click();
   await ebtn('Strongest').waitFor();
   await ebtn('Most improved').waitFor();

@@ -213,6 +213,8 @@ Alt sosialt ligger i `supabase/migrations/012_social.sql` (tabeller, sikkerhetsr
 
 **Ta det i bruk (én gang):** kjør hele `012_social.sql` i Supabase → SQL Editor (trygt å kjøre flere ganger) **før** appen med Sosialt publiseres. Appen sender kolonnen `profiles.social`, og en database uten den avviser synken.
 
+**Forslag (1.4):** `013_suggestions.sql` legger til «Folk du kanskje kjenner» (`suggestions()`, felles venner først), lar private kontoer på 16+ finnes i navnesøk (bare navn, @brukernavn og farge), kolonnen `social_profiles.suggestable` («Vis meg i forslag») og `follow_counts()`. Kjør den på samme måte før 1.4 publiseres. Uten den viser appen bare ingen forslag; resten virker.
+
 **Rapporter** lagres i tabellen `reports` og kan bare leses i Supabase-dashbordet (Table Editor → `reports`, eller SQL Editor):
 
 ```sql

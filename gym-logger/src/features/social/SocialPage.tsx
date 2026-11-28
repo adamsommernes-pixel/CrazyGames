@@ -4,6 +4,7 @@ import { useUser } from '../../auth/AuthProvider';
 import { useGraph } from '../../social/graph';
 import { PeopleTab } from './PeopleTab';
 import { BadgeRow } from './BadgeRow';
+import { FollowCounts } from './FollowCounts';
 import { FeedList } from './FeedList';
 import { LeaderboardTab } from './LeaderboardTab';
 import { ChallengesTab } from './ChallengesTab';
@@ -130,6 +131,7 @@ function SocialTabs() {
     <Page title={t('Sosialt', 'Social')} actions={bell}>
       <Card className="mb-3 p-3.5">
         <SocialProfileHeader profile={profile} />
+        <FollowCounts userId={profile.user_id} className="mt-2" />
         <BadgeRow userId={profile.user_id} />
       </Card>
       <div role="tablist" aria-label={t('Sosialt', 'Social')} className="mb-4 flex gap-1 rounded-xl border border-line bg-surface p-1">

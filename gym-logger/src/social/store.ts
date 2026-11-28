@@ -52,6 +52,14 @@ export async function saveMySocial(input: SocialProfileInput): Promise<SocialPro
   return profile;
 }
 
+/** «Vis meg i forslag». */
+export async function setMySuggestable(on: boolean): Promise<void> {
+  const b = social();
+  if (!b) throw new SocialError(t('Sosialt er ikke tilgjengelig.', 'Social is not available.'));
+  await b.setSuggestable(on);
+  if (state.profile) set({ profile: { ...state.profile, suggestable: on } });
+}
+
 /** Det appen kan endre, ut fra en lagret profil (til delvise oppdateringer). */
 export const inputOf = (p: SocialProfile): SocialProfileInput => ({
   handle: p.handle,

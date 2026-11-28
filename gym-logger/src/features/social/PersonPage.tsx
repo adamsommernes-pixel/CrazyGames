@@ -16,6 +16,7 @@ import { setSocialMode, useSocialMode } from '../../lib/socialMode';
 import { FollowButton } from './FollowButton';
 import { ReportSheet } from './ReportSheet';
 import { FeedList } from './FeedList';
+import { FollowCounts } from './FollowCounts';
 import { BadgeRow } from './BadgeRow';
 import { t } from '../../i18n';
 
@@ -94,6 +95,7 @@ export function PersonPage() {
         <Avatar name={person.display_name} color={person.color} size={80} />
         <h2 className="mt-3 text-2xl font-bold">{person.display_name}</h2>
         <p className="text-muted">@{person.handle}</p>
+        <FollowCounts userId={person.user_id} className="mt-1" />
         {person.visibility && (
           <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-raised px-2 py-0.5 text-xs text-muted">
             <Icon name={VISIBILITY_ICON[person.visibility]} size={12} />

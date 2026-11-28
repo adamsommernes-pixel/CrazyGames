@@ -7,6 +7,8 @@ import { Icon } from '../../components/Icon';
 import { social, type SocialProfile, type Visibility } from '../../social';
 import { cleanHandle, handleCandidates, isValidHandle, suggestHandle } from '../../social/handle';
 import { errorText, inputOf, saveMySocial } from '../../social/store';
+import { NOTICE_KEY } from './SuggestionsNotice';
+import { db } from '../../db/dexie';
 import { nameProblem } from '../../social/names';
 import { VISIBILITIES, VISIBILITY_ICON, visibilityName, visibilityText } from '../../social/visibility';
 import { t } from '../../i18n';
@@ -85,6 +87,8 @@ export function SocialSetup({ existing, onSaved }: { existing?: SocialProfile | 
         visibility: adult ? visibility : 1,
         ...(existing ? {} : { share_from: new Date(Date.now() - (history === 'week' ? 7 * 86_400_000 : 0)).toISOString() }),
       });
+      // Ny profil: forslag er forklart over, så «Nytt: Folk du kanskje kjenner» trengs ikke.
+      if (!existing) await db.kv.put({ key: NOTICE_KEY, value: { keep: true, at: new Date().toISOString() } });
       onSaved(p, existing?.visibility ?? null);
     } catch (e) {
       setError(errorText(e));
@@ -212,8 +216,8 @@ export function SocialSetup({ existing, onSaved }: { existing?: SocialProfile | 
 
       <p className="text-xs text-faint">
         {t(
-          'Kroppsvekten din deles aldri. Andre ser navnet, brukernavnet, appfargen, styrkenivået og øktene dine etter valget over.',
-          'Your bodyweight is never shared. Others see your name, username, app colour, strength level and workouts as chosen above.',
+          'Kroppsvekten din deles aldri. Andre ser navnet, brukernavnet, appfargen, styrkenivået og øktene dine etter valget over. Er du 16 eller eldre, kan navnet, brukernavnet og fargen din foreslås for andre (kan slås av under Profil).',
+          'Your bodyweight is never shared. Others see your name, username, app colour, strength level and workouts as chosen above. If you are 16 or older, your name, username and colour can be suggested to others (you can turn this off under Profile).',
         )}
       </p>
 

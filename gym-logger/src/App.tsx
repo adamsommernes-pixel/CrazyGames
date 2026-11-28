@@ -48,6 +48,7 @@ import { ChallengePage } from './features/social/ChallengePage';
 import { InboxPage } from './features/social/InboxPage';
 import { InboxPoller, resetInbox } from './social/inbox';
 import { AccountTypePrompt } from './features/social/AccountTypePrompt';
+import { SuggestionsNotice } from './features/social/SuggestionsNotice';
 import { StrengthSync } from './social/StrengthSync';
 import { ActivitySync } from './social/ActivitySync';
 import { useSocialMode } from './lib/socialMode';
@@ -167,6 +168,7 @@ function SignedIn({ user }: { user: AuthUser }) {
           <StrengthSync />
           <ActivitySync />
           <InboxPoller />
+          <SuggestionsNotice />
         </>
       )}
       <PushPrompt />

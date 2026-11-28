@@ -85,7 +85,11 @@ const NB: Section[] = [
           <b>Kroppsvekten din deles aldri</b>, heller ikke høyde, fødselsår eller kjønn. Styrkenivået regnes ut på telefonen, og bare resultatet deles. Løft der kroppsvekten er med i
           tallet (som pull-ups), brukes ikke i utfordringer, så kroppsvekten ikke kan regnes ut.
         </li>
-        <li>Navnet ditt og @brukernavnet kan alltid finnes av den som skriver hele brukernavnet, også når kontoen er privat. Profilen og øktene vises likevel ikke før du godtar.</li>
+        <li>
+          <b>Forslag og navnesøk:</b> er du 16 år eller eldre, kan navnet, @brukernavnet og appfargen din vises for andre sosiale brukere i «Folk du kanskje kjenner», i Oppdag og
+          i navnesøk, også når kontoen er privat. Vi foreslår først folk dere begge følger. Øktene og nivået ditt vises ikke før du godtar. Du kan slå av forslag under Profil → Vis
+          meg i forslag (åpne kontoer vises alltid). Under 16 år blir du aldri foreslått. Den som skriver hele brukernavnet ditt kan alltid finne navnet ditt.
+        </li>
         <li>
           <b>Blokkering og rapportering:</b> blokkerer du noen, slutter dere å følge hverandre og den andre kan ikke finne deg. Rapporter leses bare av RepGrade og brukes til å stoppe
           misbruk. Den du rapporterer, får ikke vite hvem som rapporterte.
@@ -211,7 +215,12 @@ const EN: Section[] = [
           <b>Your bodyweight is never shared</b>, nor your height, year of birth or sex. Your strength level is calculated on your phone and only the result is shared. Lifts where
           bodyweight is part of the number (such as pull-ups) are not used in challenges, so your bodyweight cannot be worked out.
         </li>
-        <li>Anyone who types your full username can find your name and @username, also when your account is private. Your profile and workouts still stay hidden until you accept.</li>
+        <li>
+          <b>Suggestions and name search:</b> if you are 16 or older, your name, @username and app colour can be shown to other social users in “People you may know”, in Discover
+          and in name search, also when your account is private. We suggest people you both follow first. Your workouts and level stay hidden until you accept. You can turn off
+          suggestions under Profile → Show me in suggestions (open accounts always show up). Under 16 you are never suggested. Anyone who types your full username can always find
+          your name.
+        </li>
         <li>
           <b>Blocking and reporting:</b> if you block someone, you stop following each other and they cannot find you. Reports are only read by RepGrade and are used to stop abuse.
           The person you report is not told who reported them.

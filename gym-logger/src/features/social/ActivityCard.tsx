@@ -17,6 +17,7 @@ import { EMOJIS, type Emoji } from '../../social';
 import type { FeedItem } from '../../social/feed';
 import { errorText } from '../../social/store';
 import { setShared } from '../../social/publish';
+import { ReactionsSheet } from './ReactionsSheet';
 import { locale, t } from '../../i18n';
 
 const BUILTIN = new Set(BUILTIN_EXERCISES.map((e) => e.id));
@@ -44,6 +45,7 @@ export function ActivityCard({ item, me, onReact, onRemoved }: { item: FeedItem;
   const d = a.data;
   const [all, setAll] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [who, setWho] = useState(false);
   const own = me === a.user_id;
   const shown = all ? d.exercises : d.exercises.slice(0, SHOWN);
   const prs = d.exercises.reduce((n, e) => n + e.sets.filter((s) => s.pr).length, 0);
@@ -144,6 +146,14 @@ export function ActivityCard({ item, me, onReact, onRemoved }: { item: FeedItem;
         })}
         {d.tier && <span className="ml-auto self-center text-xs text-faint">{tierAt(d.tier.index).name}</span>}
       </div>
+      {item.reactions.length > 0 && (
+        <button type="button" className="mt-2 min-h-8 text-sm text-muted" onClick={() => setWho(true)}>
+          {item.reactions.length === 1
+            ? t('1 reaksjon · se hvem', '1 reaction · see who')
+            : t(`${item.reactions.length} reaksjoner · se hvem`, `${item.reactions.length} reactions · see who`)}
+        </button>
+      )}
+      <ReactionsSheet open={who} onClose={() => setWho(false)} reactions={item.reactions} />
 
       {own && (
         <Sheet open={menu} onClose={() => setMenu(false)} title={a.name}>

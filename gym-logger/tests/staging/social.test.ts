@@ -161,13 +161,38 @@ describe('staging: ekte Supabase', () => {
     expect(Date.parse(p.share_from!)).toBe(Date.parse(from));
   });
 
-  it('Oppdag: bare åpne kontoer, søk på navn og brukernavn', async () => {
+  it('Oppdag: åpne kontoer først, så andre 16+ (ikke under 16), søk på navn og brukernavn', async () => {
     const { A, B, C, D } = users;
     const ids = (await D.s.discover(`t${run}_`)).map((p) => p.user_id);
-    expect(ids).toEqual([C.id]);
+    expect(ids).toEqual([C.id, B.id]);
     expect(ids).not.toContain(A.id);
-    expect(ids).not.toContain(B.id);
     expect((await D.s.discover(`Test C`)).some((p) => p.user_id === C.id)).toBe(true);
+  });
+
+  it('forslag (013): felles venner, kan slås av, antall følgere', async () => {
+    const { A, B, C, D } = users;
+    // D følger C (åpen); C følger B → B foreslås for D med C som felles venn
+    await D.s.follow(C.id);
+    await C.s.follow(B.id);
+    await B.s.acceptFollower(C.id);
+    const list = await D.s.suggestions();
+    const b = list.find((p) => p.user_id === B.id);
+    expect(b?.mutual_count).toBe(1);
+    expect(b?.mutual_names).toEqual(['Test C']);
+    expect(list.map((p) => p.user_id)).not.toContain(A.id);
+    expect(list.map((p) => p.user_id)).not.toContain(C.id);
+    // B slår av forslag: borte fra forslag og navnesøk, men finnes på hele brukernavnet
+    await B.s.setSuggestable(false);
+    expect((await D.s.suggestions()).map((p) => p.user_id)).not.toContain(B.id);
+    expect((await D.s.discover(`t${run}_b`)).map((p) => p.user_id)).not.toContain(B.id);
+    expect((await D.s.findByHandle(`t${run}_b`))?.user_id).toBe(B.id);
+    await B.s.setSuggestable(true);
+    expect((await B.s.myProfile())?.suggestable).toBe(true);
+    // Antall følgere
+    expect((await D.s.followCounts(B.id))?.followers).toBeGreaterThanOrEqual(1);
+    expect((await D.s.followCounts(D.id))?.following).toBeGreaterThanOrEqual(1);
+    await D.s.unfollow(C.id);
+    await C.s.unfollow(B.id);
   });
 
   it('treningskonto skjuler profilen (profiles.social = 0)', async () => {

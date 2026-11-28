@@ -38,15 +38,16 @@ export function ChallengesTab() {
     }
   };
 
-  const row = (c: Challenge, right: React.ReactNode) => (
-    <li key={c.id} className="flex min-h-16 items-center gap-3 px-3 py-2" data-challenge={c.title}>
+  // Invitasjoner (stacked): tittel og info over hele bredden, knappene under, så ingenting kuttes.
+  const row = (c: Challenge, right: React.ReactNode, stacked = false) => (
+    <li key={c.id} className={`flex gap-3 px-3 py-2 ${stacked ? 'flex-col py-3' : 'min-h-16 items-center'}`} data-challenge={c.title}>
       <Link to={`/challenge/${c.id}`} className="flex min-w-0 flex-1 items-center gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-raised text-accent">
           <Icon name="trophy" size={20} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-semibold">{c.title}</span>
-          <span className="block truncate text-xs text-faint">
+          <span className={`block font-semibold ${stacked ? 'line-clamp-2' : 'truncate'}`}>{c.title}</span>
+          <span className={`block text-xs text-faint ${stacked ? '' : 'truncate'}`}>
             {invites.includes(c) ? t(`Fra ${person(c.creator)?.display_name ?? '…'}`, `From ${person(c.creator)?.display_name ?? '…'}`) : kindName(c.kind)} · {t(`${count(c)} med`, `${count(c)} in`)} ·{' '}
             {right === null ? t(`ferdig ${dateShort(c.ends_at)}`, `ended ${dateShort(c.ends_at)}`) : timeLeft(c)}
           </span>
@@ -70,14 +71,15 @@ export function ChallengesTab() {
               {invites.map((c) =>
                 row(
                   c,
-                  <span className="flex shrink-0 gap-1.5">
-                    <Button className="min-h-9 px-3 text-sm" onClick={() => void respond(c, true)}>
+                  <span className="flex gap-2 pl-13">
+                    <Button className="min-h-10 flex-1 px-3 text-sm" onClick={() => void respond(c, true)}>
                       {t('Bli med', 'Join')}
                     </Button>
-                    <button type="button" aria-label={t(`Avslå ${c.title}`, `Decline ${c.title}`)} className="grid size-9 place-items-center rounded-lg text-muted active:bg-raised" onClick={() => void respond(c, false)}>
-                      <Icon name="x" size={18} />
-                    </button>
+                    <Button variant="secondary" aria-label={t(`Avslå ${c.title}`, `Decline ${c.title}`)} className="min-h-10 flex-1 px-3 text-sm" onClick={() => void respond(c, false)}>
+                      {t('Avslå', 'Decline')}
+                    </Button>
                   </span>,
+                  true,
                 ),
               )}
             </ul>
