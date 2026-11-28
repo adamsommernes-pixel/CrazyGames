@@ -559,6 +559,76 @@ try {
       await page.getByRole('heading', { name: 'Per', level: 2 }).waitFor();
       await page.getByText('Følger deg').waitFor();
     }
+
+    // ===== Steg 6: feed =====
+    {
+      const ago = (h) => new Date(Date.now() - h * 3_600_000).toISOString();
+      const st = await fakeStore();
+      st.activities.push({
+        user_id: 'zara-id', id: 'z1', name: 'Zara push', started_at: ago(5), ended_at: ago(4), created_at: ago(4), updated_at: ago(4),
+        data: { version: 1, duration_s: 3600, sets: 3, reps: 24, volume_kg: 1440, records: [], muscles: { Bryst: 3 }, lifts: {}, tier: { index: 4, score: 45 },
+          exercises: [{ exercise_id: 'ex-benkpress', name: 'Benkpress', kind: 'weight', muscle_group: 'Bryst', sets: [{ weight: 50, reps: 10, set_type: 'warmup' }, { weight: 60, reps: 8, set_type: 'normal' }, { weight: 62.5, reps: 8, set_type: 'normal', pr: true }] }] },
+      });
+      await putFake(st);
+      // Logg en økt som sosial konto: den publiseres av seg selv
+      await btn('Start økt').click();
+      await btn(/Gjenta forrige/).click();
+      await page.getByText('Knebøy').first().waitFor();
+      await logSet(1, 110, 5);
+      await btn('Avslutt', { exact: true }).click();
+      await btn('Lagre økt').click();
+      await btn('Bare denne gangen').click();
+      await page.getByText('Økt fullført').waitFor();
+      const shareSwitch = page.getByRole('switch', { name: 'Del i feeden' });
+      assert.ok(await shareSwitch.isChecked(), 'økta deles som standard');
+      await shot('oppsummering-deling');
+      await btn('Ferdig').click();
+      const mine = async () => (await fakeStore()).activities.filter((a) => a.user_id === me);
+      for (let i = 0; i < 40 && (await mine()).length === 0; i++) await page.waitForTimeout(250);
+      const [act] = await mine();
+      assert.ok(act, 'økta er publisert');
+      assert.equal(act.data.exercises[0].exercise_id, 'ex-kneboy', 'hele økta er med');
+      assert.equal(act.data.exercises[0].sets[0].weight, 110, 'settene er med');
+      // Feeden viser din og Zaras økt; Zaras viser alle sets med oppvarming (W) og rekord
+      await nav().getByRole('link', { name: 'Sosialt' }).click();
+      await page.getByRole('tab', { name: 'Feed' }).click();
+      await page.locator(`[data-activity="${act.id}"]`).waitFor();
+      const z = page.locator('[data-activity="z1"]');
+      await z.getByText('Zara push').waitFor();
+      await z.getByText('62,5 × 8').waitFor();
+      await z.getByText('W', { exact: true }).waitFor();
+      assert.ok(await page.locator(`[data-activity="${act.id}"]`).boundingBox().then((b) => b.y) < (await z.boundingBox()).y, 'nyeste øverst');
+      await shot('feed');
+      // Kudos: trykk 🔥 på Zaras økt, trykk igjen fjerner
+      await z.getByRole('button', { name: '🔥 0' }).click();
+      await z.getByRole('button', { name: '🔥 1', pressed: true }).waitFor();
+      assert.equal((await fakeStore()).reactions.length, 1, 'reaksjonen er lagret');
+      assert.ok((await fakeStore()).notifications.some((n) => n.user_id === 'zara-id' && n.kind === 'reaction'), 'Zara får varsel');
+      await z.getByRole('button', { name: '💪 0' }).click();
+      await z.getByRole('button', { name: '💪 1', pressed: true }).waitFor();
+      assert.equal((await fakeStore()).reactions[0].emoji, '💪', 'bytter reaksjon');
+      await z.getByRole('button', { name: '💪 1' }).click();
+      await z.getByRole('button', { name: '💪 0', pressed: false }).waitFor();
+      assert.equal((await fakeStore()).reactions.length, 0, 'reaksjonen er fjernet');
+      // Egen økt: fjern fra feeden
+      await page.locator(`[data-activity="${act.id}"]`).getByRole('button', { name: 'Valg for økta' }).click();
+      await btn('Fjern fra feeden').click();
+      await page.getByText('Økta er fjernet fra feeden').waitFor();
+      for (let i = 0; i < 40 && (await mine()).length > 0; i++) await page.waitForTimeout(250);
+      assert.equal((await mine()).length, 0, 'fjernet fra serveren');
+      // Fra historikken: del igjen, så slett økta → borte fra feeden
+      await nav().getByRole('link', { name: 'Fremgang' }).click();
+      await page.getByRole('navigation', { name: 'Fremgang og historikk' }).getByRole('link', { name: 'Historikk' }).click();
+      await btn(/1 øvelse/).first().click();
+      assert.equal(await page.getByRole('switch', { name: 'Del i feeden' }).isChecked(), false, 'viser at den ikke er delt');
+      await page.getByRole('switch', { name: 'Del i feeden' }).check();
+      for (let i = 0; i < 40 && (await mine()).length === 0; i++) await page.waitForTimeout(250);
+      assert.equal((await mine()).length, 1, 'delt igjen');
+      await btn('Valg').click();
+      await btn('Slett økt').click();
+      for (let i = 0; i < 40 && (await mine()).length > 0; i++) await page.waitForTimeout(250);
+      assert.equal((await mine()).length, 0, 'slettet økt er borte fra feeden');
+    }
     await nav().getByRole('link', { name: 'Fremgang' }).click();
     const tabs = page.getByRole('navigation', { name: 'Fremgang og historikk' });
     await tabs.getByRole('link', { name: 'Historikk' }).click();

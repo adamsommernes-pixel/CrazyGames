@@ -44,6 +44,7 @@ import { resetGraph } from './social/graph';
 import { rememberInvite, takeInvite } from './social/invite';
 import { PersonPage } from './features/social/PersonPage';
 import { StrengthSync } from './social/StrengthSync';
+import { ActivitySync } from './social/ActivitySync';
 import { useSocialMode } from './lib/socialMode';
 
 // Grafbiblioteket er stort, så sider med grafer lastes først når de åpnes.
@@ -153,7 +154,12 @@ function SignedIn({ user }: { user: AuthUser }) {
   return (
     <>
       <AfterUpdateNews />
-      {socialMode && socialAvailable(user) && <StrengthSync />}
+      {socialMode && socialAvailable(user) && (
+        <>
+          <StrengthSync />
+          <ActivitySync />
+        </>
+      )}
       <PushPrompt />
       <PageTransition>
       <Routes>

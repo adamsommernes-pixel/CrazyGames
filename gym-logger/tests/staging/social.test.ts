@@ -93,6 +93,17 @@ describe('staging: ekte Supabase', () => {
     expect(await sees(B, A)).toBe(true);
     await B.s.react(A.id, 'A-1', '🔥');
     expect((await A.s.reactions([{ owner: A.id, id: 'A-1' }])).map((r) => r.emoji)).toEqual(['🔥']);
+    // Bytt reaksjon (oppdatering), så fjern den
+    await B.s.react(A.id, 'A-1', '💪');
+    expect((await A.s.reactions([{ owner: A.id, id: 'A-1' }])).map((r) => r.emoji)).toEqual(['💪']);
+    await B.s.react(A.id, 'A-1', null);
+    expect(await A.s.reactions([{ owner: A.id, id: 'A-1' }])).toEqual([]);
+    // Publiser på nytt (samme id = oppdatering), og fjern fra feeden
+    await publish(A, 'A-1');
+    expect((await B.s.feed({ userId: A.id })).length).toBe(1);
+    await A.s.unpublish('A-1');
+    expect(await sees(B, A)).toBe(false);
+    await publish(A, 'A-1');
   });
 
   it('kan ikke skrive direkte i follows eller late som en annen', async () => {

@@ -27,6 +27,8 @@ export interface Settings {
   keepAwake: boolean;
   /** Øvelser merket med stjerne, vises først i øvelsesvelgeren. */
   favorites: string[];
+  /** Økter brukeren ikke vil dele i den sosiale feeden. */
+  socialUnshared: string[];
 }
 
 export const DEFAULTS: Settings = {
@@ -44,6 +46,7 @@ export const DEFAULTS: Settings = {
   dumbbellChecked: [],
   keepAwake: true,
   favorites: [],
+  socialUnshared: [],
 };
 
 export async function toggleFavorite(exerciseId: string) {

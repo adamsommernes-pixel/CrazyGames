@@ -16,6 +16,7 @@ import { usePRMap } from '../../lib/prs';
 import { dateLong, durationShort, fromDateTimeInputs, fromDisplay, num, toDateInput, toDisplay, toTimeInput } from '../../lib/format';
 import { PR_LABEL, estimate1RM, volume } from '../../lib/calc';
 import { t } from '../../i18n';
+import { ShareToFollowers } from '../social/ShareToFollowers';
 
 const ShareSheet = lazy(() => import('../share/ShareSheet'));
 
@@ -60,6 +61,7 @@ export function WorkoutDetail() {
         <Stat label={`${t('Volum', 'Volume')} (${unit})`} value={num(toDisplay(volume(sets), unit), 0)} />
         <Stat label={t('Rekorder', 'Records')} value={String(prCount)} />
       </div>
+      {workout.ended_at && <ShareToFollowers workoutId={workout.id} />}
       {workout.notes && <Card className="mt-3 p-3 whitespace-pre-wrap text-muted">{workout.notes}</Card>}
 
       <div className="mt-4 flex flex-col gap-3">

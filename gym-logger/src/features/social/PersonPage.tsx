@@ -15,6 +15,7 @@ import { tierAt } from '../../lib/strength';
 import { setSocialMode, useSocialMode } from '../../lib/socialMode';
 import { FollowButton } from './FollowButton';
 import { ReportSheet } from './ReportSheet';
+import { FeedList } from './FeedList';
 import { t } from '../../i18n';
 
 /** Profilen til en annen bruker (/u/brukernavn), også målet for invitasjonslenker. */
@@ -106,7 +107,9 @@ export function PersonPage() {
 
       <PersonLevel personId={person.user_id} />
 
-      {!self && rel !== 'following' && person.visibility !== 3 && (
+      {self || rel === 'following' || person.visibility === 3 ? (
+        <FeedList userId={person.user_id} />
+      ) : (
         <EmptyState icon="lock" title={t('Privat profil', 'Private profile')} text={t('Følg for å se øktene og nivået.', 'Follow to see their workouts and level.')} />
       )}
 

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../../auth/AuthProvider';
 import { useGraph } from '../../social/graph';
 import { PeopleTab } from './PeopleTab';
+import { FeedList } from './FeedList';
 import { Button, Card, EmptyState, Page } from '../../components/ui';
 import { socialAvailable } from '../../social';
 import { useMySocial } from '../../social/store';
@@ -120,15 +121,7 @@ function SocialTabs() {
       {tab === 'people' ? (
         <PeopleTab />
       ) : (
-        <EmptyState
-          icon="users"
-          title={t('Feeden kommer snart', 'The feed is coming soon')}
-          text={t('Her kommer øktene til dem du følger. Finn venner under Folk.', 'Workouts from people you follow will show up here. Find friends under People.')}
-        >
-          <Button full variant="secondary" onClick={() => choose('people')}>
-            {t('Finn folk', 'Find people')}
-          </Button>
-        </EmptyState>
+        <FeedList onFindPeople={() => choose('people')} />
       )}
     </Page>
   );
