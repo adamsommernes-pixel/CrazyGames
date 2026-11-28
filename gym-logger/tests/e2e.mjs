@@ -718,11 +718,14 @@ try {
       await page.getByLabel('Inviter Åpen 1').waitFor();
       assert.equal(await page.getByLabel('Inviter Per').count(), 0, 'kan ikke utfordre en du ikke følger gjensidig');
       assert.ok(await btn('Send utfordring').isDisabled(), 'må invitere noen');
-      // Løft: pull-ups kan ikke velges (kroppsvekten ville blitt synlig)
-      await btn('Løft', { exact: true }).click();
+      // Standard: «Først til målet» med løft og målvekt. Pull-ups kan ikke velges (kroppsvekten ville blitt synlig)
       const lifts = await page.getByRole('combobox').locator('option').allTextContents();
       assert.ok(lifts.includes('Knebøy') && !lifts.some((l) => /pull-ups/i.test(l)), 'løft uten pull-ups');
       await page.getByRole('combobox').selectOption({ label: 'Knebøy' });
+      await btn('Målvekt pluss').click();
+      assert.equal(await page.getByLabel('Navn', { exact: true }).inputValue(), 'Først til 102,5 kg knebøy', 'navn foreslås med målvekt');
+      await page.getByText('Den som først når 102,5 kg i beregnet 1RM i Knebøy, vinner.').waitFor();
+      await btn('Størst fremgang', { exact: true }).click();
       assert.equal(await page.getByLabel('Navn', { exact: true }).inputValue(), 'Knebøy – 1 uke', 'navn foreslås');
       // Flest økter, 2 uker
       await btn('Flest økter', { exact: true }).click();

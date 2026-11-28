@@ -9,7 +9,7 @@ import { kindName, kindText, phaseOf, timeLeft, valueText } from '../../social/c
 import { useChallenges } from '../../social/useChallenges';
 import { errorText } from '../../social/store';
 import { useSetting } from '../../lib/settings';
-import { dateShort } from '../../lib/format';
+import { dateShort, num, toDisplay } from '../../lib/format';
 import { t } from '../../i18n';
 
 /** Én utfordring: hva det gjelder, stillingen (regnet av serveren), hvem som er invitert, forlat/avlys. */
@@ -46,7 +46,10 @@ export function ChallengePage() {
   const mine = data.members.find((m) => m.challenge_id === c.id && m.user_id === me);
   const invited = data.members.filter((m) => m.challenge_id === c.id && m.status === 'invited');
   const creator = c.creator === me;
-  const winner = phase === 'ended' && standings?.[0] && standings[0].value > 0 ? standings.filter((s) => s.rank === 1) : [];
+  // «Først til målet» har en vinner så snart noen når målet; ellers når perioden er over.
+  const goalWinner = c.kind === 'goal' && standings?.[0]?.reached_at ? standings.filter((s) => s.rank === 1) : [];
+  const winner = goalWinner.length ? goalWinner : phase === 'ended' && c.kind !== 'goal' && standings?.[0] && standings[0].value > 0 ? standings.filter((s) => s.rank === 1) : [];
+  const won = (w: Standing) => (w.user_id === me ? t('Du', 'You') : (person(w.user_id)?.display_name ?? '…'));
 
   const leave = async () => {
     const ok = await askConfirm(
@@ -74,7 +77,7 @@ export function ChallengePage() {
 
       {winner.length > 0 && (
         <div className="mt-3 rounded-xl border border-accent/40 bg-accent-soft/40 px-4 py-3 text-center font-semibold text-accent-strong">
-          🏆 {winner.map((w) => (w.user_id === me ? t('Du', 'You') : (person(w.user_id)?.display_name ?? '…'))).join(' & ')} {t('vant', 'won')}
+          🏆 {winner.map(won).join(' & ')} {goalWinner.length ? t('nådde målet først', 'reached the goal first') : t('vant', 'won')}
         </div>
       )}
 
@@ -110,7 +113,10 @@ export function ChallengePage() {
                     {p?.display_name ?? '…'}
                     {you && <span className="text-faint"> ({t('deg', 'you')})</span>}
                   </span>
-                  <span className="font-num font-semibold">{valueText(c, s.value, unit)}</span>
+                  <span className="font-num font-semibold">
+                    {s.reached_at ? `✓ ${dateShort(s.reached_at)}` : valueText(c, s.value, unit)}
+                    {c.kind === 'goal' && !s.reached_at && c.target ? <span className="text-faint"> / {num(toDisplay(c.target, unit), 1)}</span> : null}
+                  </span>
                 </li>
               );
             })}

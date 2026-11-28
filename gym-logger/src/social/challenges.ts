@@ -9,7 +9,7 @@ import type { Challenge, ChallengeKind, ChallengeMember, Person } from './types'
 // Utfordringer: typer, varighet, hvem som kan inviteres og hvordan resultatet skrives.
 // Selve stillingen regnes ut av serveren (challenge_standings i 012_social.sql).
 
-export const KINDS: ChallengeKind[] = ['workouts', 'volume', 'weekly', 'lift'];
+export const KINDS: ChallengeKind[] = ['goal', 'workouts', 'volume', 'weekly', 'lift'];
 
 export function kindName(k: ChallengeKind): string {
   switch (k) {
@@ -19,8 +19,10 @@ export function kindName(k: ChallengeKind): string {
       return t('Mest volum', 'Most volume');
     case 'weekly':
       return t('Ukemål', 'Weekly goal');
+    case 'goal':
+      return t('Først til målet', 'First to the goal');
     default:
-      return t('Løft', 'Lift');
+      return t('Størst fremgang', 'Biggest gain');
   }
 }
 
@@ -32,6 +34,11 @@ export function kindText(k: ChallengeKind, target?: number | null, exerciseId?: 
       return t('Mest løftet vekt (kg × reps) i perioden.', 'Most weight lifted (kg × reps) in the period.');
     case 'weekly':
       return t(`Flest uker med minst ${target ?? 3} økter.`, `Most weeks with at least ${target ?? 3} workouts.`);
+    case 'goal':
+      return t(
+        `Den som først når ${target ? `${num(target, 1)} kg` : 'målvekten'} i beregnet 1RM i ${exerciseId ? liftName(exerciseId) : 'løftet'}, vinner.`,
+        `The first to reach ${target ? `${num(target, 1)} kg` : 'the target'} estimated 1RM in ${exerciseId ? liftName(exerciseId) : 'the lift'} wins.`,
+      );
     default:
       return t(
         `Størst økning i beregnet 1RM i ${exerciseId ? liftName(exerciseId) : 'løftet'}, fra før start til beste i perioden.`,
@@ -56,9 +63,10 @@ export const LENGTHS = [7, 14, 30] as const;
 export type Length = (typeof LENGTHS)[number];
 export const lengthName = (d: Length) => (d === 7 ? t('1 uke', '1 week') : d === 14 ? t('2 uker', '2 weeks') : t('1 måned', '1 month'));
 
-export function defaultTitle(kind: ChallengeKind, days: Length, exerciseId?: string | null): string {
+export function defaultTitle(kind: ChallengeKind, days: Length, exerciseId?: string | null, target?: number | null): string {
   const len = lengthName(days);
   if (kind === 'lift' && exerciseId) return `${liftName(exerciseId)} – ${len}`.slice(0, 60);
+  if (kind === 'goal' && exerciseId) return t(`Først til ${num(target ?? 0, 1)} kg ${liftName(exerciseId).toLowerCase()}`, `First to ${num(target ?? 0, 1)} kg ${liftName(exerciseId).toLowerCase()}`).slice(0, 60);
   return `${kindName(kind)} – ${len}`.slice(0, 60);
 }
 
@@ -78,6 +86,8 @@ export function valueText(c: Pick<Challenge, 'kind'>, v: number, unit: 'kg' | 'l
       return `${num(toDisplay(v, unit), 0)} ${unit}`;
     case 'weekly':
       return t(`${num(v, 0)} ${v === 1 ? 'uke' : 'uker'}`, `${num(v, 0)} ${v === 1 ? 'week' : 'weeks'}`);
+    case 'goal':
+      return `${num(toDisplay(v, unit), 1)} ${unit}`;
     default:
       return `+${num(toDisplay(v, unit), 1)} ${unit}`;
   }

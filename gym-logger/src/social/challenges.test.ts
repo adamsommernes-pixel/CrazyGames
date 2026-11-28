@@ -25,6 +25,8 @@ describe('utfordringer', () => {
     expect(valueText({ kind: 'volume' }, 12500, 'kg')).toMatch(/^12\s500 kg$/);
     expect(valueText({ kind: 'weekly' }, 2, 'kg')).toBe('2 uker');
     expect(valueText({ kind: 'lift' }, 7.5, 'kg')).toBe('+7,5 kg');
+    expect(defaultTitle('goal', 7, 'ex-kneboy', 140)).toBe('Først til 140 kg knebøy');
+    expect(valueText({ kind: 'goal' }, 132.5, 'kg')).toBe('132,5 kg');
   });
 
   it('fase og tid igjen', () => {

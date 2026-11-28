@@ -227,8 +227,18 @@ select test.ok((select value from public.challenge_standings(:'cid3') where user
 -- Ukeutfordring: uker med minst `target` økter
 select public.create_challenge('weekly', 'Hver uke', now() - interval '20 days', now() + interval '7 days', array[:'D']::uuid[], null, 1) as cid4 \gset
 select test.ok((select value from public.challenge_standings(:'cid4') where user_id = :'A') = 2, 'ukeutfordring: to uker med minst én økt');
-select test.fails($q$select public.create_challenge('weekly', 'Feil', now(), now() + interval '7 days', array[auth.uid()]::uuid[])$q$, 'ukeutfordring krever mål', 'check constraint');
-select test.fails($q$select public.create_challenge('workouts', 'For lang', now(), now() + interval '400 days', array[auth.uid()]::uuid[])$q$, 'utfordringer varer høyst ett år', 'check constraint');
+select test.fails($q$select public.create_challenge('weekly', 'Feil', now(), now() + interval '7 days', array[auth.uid()]::uuid[])$q$, 'ukeutfordring krever mål', 'challenges_weekly_target');
+-- Først til 110 kg i knebøy: A har 120 i perioden (w-a1), D har ingen økter
+select public.create_challenge('goal', '110 kg', now() - interval '1 day', now() + interval '7 days', array[:'D']::uuid[], 'ex-kneboy', 110) as cid5 \gset
+select pg_temp.as_user(:'D');
+select public.respond_challenge(:'cid5', true);
+select pg_temp.as_user(:'A');
+select test.ok((select reached_at from public.challenge_standings(:'cid5') where user_id = :'A') is not null
+               and (select rank from public.challenge_standings(:'cid5') where user_id = :'A') = 1, 'mål: A nådde 110 kg og leder');
+select test.ok((select reached_at from public.challenge_standings(:'cid5') where user_id = :'D') is null, 'mål: D har ikke nådd det');
+select test.fails($q$select public.create_challenge('goal', 'Uten mål', now(), now() + interval '7 days', array[auth.uid()]::uuid[], 'ex-kneboy')$q$, 'målutfordring krever målvekt', 'challenges_goal_target');
+select test.fails($q$select public.create_challenge('goal', 'Uten løft', now(), now() + interval '7 days', array[auth.uid()]::uuid[], null, 100)$q$, 'målutfordring krever løft', 'challenges_lift_exercise');
+select test.fails($q$select public.create_challenge('workouts', 'For lang', now(), now() + interval '400 days', array[auth.uid()]::uuid[])$q$, 'utfordringer varer høyst ett år', 'challenges_period');
 select public.leave_challenge(:'cid2');
 select test.ok(test.n(format('select 1 from public.challenges where id = %L', :'cid2')) = 0, 'den som laget utfordringen kan avlyse den');
 select test.fails($q$insert into public.challenges (creator, kind, title, starts_at, ends_at) values (auth.uid(), 'workouts', 'x', now(), now() + interval '1 day')$q$, 'kan ikke skrive direkte i challenges', 'permission denied');

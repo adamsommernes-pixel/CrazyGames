@@ -107,17 +107,31 @@ create table if not exists public.challenges (
   creator uuid not null references auth.users(id) on delete cascade,
   -- workouts: flest økter · volume: mest volum (kg) · weekly: flest uker med minst `target` økter
   -- lift: størst økning i beregnet 1RM på `exercise_id` fra før start til slutt
-  kind text not null check (kind in ('workouts', 'volume', 'weekly', 'lift')),
+  -- goal: først til `target` kg i beregnet 1RM på `exercise_id` (de andre rangeres etter beste)
+  -- (gyldige typer og regler for felt: se navngitte regler under tabellen)
+  kind text not null,
   exercise_id text,
   target numeric,
   title text not null check (char_length(btrim(title)) between 1 and 60),
   starts_at timestamptz not null,
   ends_at timestamptz not null,
-  created_at timestamptz not null default now(),
-  check (ends_at > starts_at and ends_at <= starts_at + interval '366 days'),
-  check (kind <> 'lift' or exercise_id is not null),
-  check (kind <> 'weekly' or (target is not null and target between 1 and 14))
+  created_at timestamptz not null default now()
 );
+-- Reglene har faste navn, så de kan endres når nye typer kommer (tabellen kan finnes fra før).
+-- challenges_check/_check1/_check2 er navnene fra første versjon (uten navn); de fjernes.
+alter table public.challenges drop constraint if exists challenges_check;
+alter table public.challenges drop constraint if exists challenges_check1;
+alter table public.challenges drop constraint if exists challenges_check2;
+alter table public.challenges drop constraint if exists challenges_kind_check;
+alter table public.challenges drop constraint if exists challenges_period;
+alter table public.challenges drop constraint if exists challenges_lift_exercise;
+alter table public.challenges drop constraint if exists challenges_weekly_target;
+alter table public.challenges drop constraint if exists challenges_goal_target;
+alter table public.challenges add constraint challenges_kind_check check (kind in ('workouts', 'volume', 'weekly', 'lift', 'goal'));
+alter table public.challenges add constraint challenges_period check (ends_at > starts_at and ends_at <= starts_at + interval '366 days');
+alter table public.challenges add constraint challenges_lift_exercise check (kind not in ('lift', 'goal') or exercise_id is not null);
+alter table public.challenges add constraint challenges_weekly_target check (kind <> 'weekly' or (target is not null and target between 1 and 14));
+alter table public.challenges add constraint challenges_goal_target check (kind <> 'goal' or (target is not null and target > 0 and target <= 1000));
 
 create table if not exists public.challenge_members (
   challenge_id uuid not null references public.challenges(id) on delete cascade,
@@ -597,8 +611,9 @@ begin
 end $$;
 
 /* Stillingen i en utfordring, regnet ut fra publiserte økter (ikke tall appen sender inn). */
+drop function if exists public.challenge_standings(uuid);
 create or replace function public.challenge_standings(challenge uuid)
-returns table (rank bigint, user_id uuid, value numeric)
+returns table (rank bigint, user_id uuid, value numeric, reached_at timestamptz)
 language plpgsql stable security definer set search_path = '' as $$
 #variable_conflict use_column
 declare c public.challenges;
@@ -626,10 +641,15 @@ begin
                      (select max((i.data -> 'lifts' ->> c.exercise_id)::numeric) from inside i where i.user_id = m.user_id
                       and i.started_at = (select min(j.started_at) from inside j where j.user_id = m.user_id
                                           and j.data -> 'lifts' ? c.exercise_id)), 0))
-      end as val
+        when 'goal' then coalesce((select max((i.data -> 'lifts' ->> c.exercise_id)::numeric) from inside i where i.user_id = m.user_id), 0)
+      end as val,
+      -- Første økt der målet ble nådd (bare «goal»).
+      case when c.kind = 'goal' then (select min(i.started_at) from inside i where i.user_id = m.user_id
+                                      and (i.data -> 'lifts' ->> c.exercise_id)::numeric >= c.target) end as reached
     from m
   )
-  select rank() over (order by v.val desc), v.user_id, round(v.val, 1) from v order by v.val desc;
+  select rank() over (order by v.reached asc nulls last, v.val desc), v.user_id, round(v.val, 1), v.reached
+  from v order by v.reached asc nulls last, v.val desc;
 end $$;
 
 /* Reaksjon gir varsel til eieren (høyst ett per person og økt). */

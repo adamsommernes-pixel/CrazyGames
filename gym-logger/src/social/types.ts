@@ -126,7 +126,7 @@ export interface LeaderboardRow {
   value: number;
 }
 
-export type ChallengeKind = 'workouts' | 'volume' | 'weekly' | 'lift';
+export type ChallengeKind = 'workouts' | 'volume' | 'weekly' | 'lift' | 'goal';
 export interface Challenge {
   id: string;
   creator: string;
@@ -150,6 +150,8 @@ export interface Standing {
   rank: number;
   user_id: string;
   value: number;
+  /** «goal»: når målet ble nådd (første økt), ellers null. */
+  reached_at?: string | null;
 }
 
 export interface NewChallenge {

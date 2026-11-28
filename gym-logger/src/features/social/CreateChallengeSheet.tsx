@@ -7,11 +7,16 @@ import { CHALLENGE_LIFTS, KINDS, LENGTHS, defaultTitle, eligible, kindName, kind
 import { useGraph } from '../../social/graph';
 import { errorText } from '../../social/store';
 import { t } from '../../i18n';
+import { useSetting } from '../../lib/settings';
+import { fromDisplay, num, toDisplay } from '../../lib/format';
 
 /** Ny utfordring: type, (løft eller ukemål), varighet, navn og hvem som inviteres. */
 export function CreateChallengeSheet({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (id: string) => void }) {
   const g = useGraph();
-  const [kind, setKind] = useState<ChallengeKind>('workouts');
+  const unit = useSetting('unit');
+  const [kind, setKind] = useState<ChallengeKind>('goal');
+  /** Målvekt for «Først til målet», i kg. */
+  const [goalKg, setGoalKg] = useState(100);
   const [lift, setLift] = useState(CHALLENGE_LIFTS[0]);
   const [target, setTarget] = useState(3);
   const [days, setDays] = useState<Length>(7);
@@ -19,7 +24,8 @@ export function CreateChallengeSheet({ open, onClose, onCreated }: { open: boole
   const [invited, setInvited] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const candidates = useMemo(() => eligible(g.rel, g.people), [g.rel, g.people]);
-  const shownTitle = title ?? defaultTitle(kind, days, kind === 'lift' ? lift : null);
+  const usesLift = kind === 'lift' || kind === 'goal';
+  const shownTitle = title ?? defaultTitle(kind, days, usesLift ? lift : null, kind === 'goal' ? goalKg : null);
 
   const toggle = (id: string) =>
     setInvited((s) => {
@@ -39,8 +45,8 @@ export function CreateChallengeSheet({ open, onClose, onCreated }: { open: boole
         starts_at: start.toISOString(),
         ends_at: new Date(start.getTime() + days * 86_400_000).toISOString(),
         invitees: [...invited],
-        exercise_id: kind === 'lift' ? lift : null,
-        target: kind === 'weekly' ? target : null,
+        exercise_id: usesLift ? lift : null,
+        target: kind === 'weekly' ? target : kind === 'goal' ? goalKg : null,
       });
       showToast(t('Utfordringen er sendt', 'Challenge sent'));
       setInvited(new Set());
@@ -65,10 +71,10 @@ export function CreateChallengeSheet({ open, onClose, onCreated }: { open: boole
               </Chip>
             ))}
           </div>
-          <p className="mt-2 text-sm text-faint">{kindText(kind, target, kind === 'lift' ? lift : null)}</p>
+          <p className="mt-2 text-sm text-faint">{kindText(kind, kind === 'goal' ? goalKg : target, usesLift ? lift : null)}</p>
         </div>
 
-        {kind === 'lift' && (
+        {usesLift && (
           <label className="flex flex-col gap-1.5">
             <span className="text-sm text-muted">{t('Løft', 'Lift')}</span>
             <select className={inputClass} value={lift} onChange={(e) => setLift(e.target.value)}>
@@ -79,6 +85,21 @@ export function CreateChallengeSheet({ open, onClose, onCreated }: { open: boole
               ))}
             </select>
           </label>
+        )}
+
+        {kind === 'goal' && (
+          <div>
+            <div className="mb-2 text-sm text-muted">{t('Målvekt (beregnet 1RM)', 'Target (estimated 1RM)')}</div>
+            <NumberStepper
+              label={t('Målvekt', 'Target weight')}
+              value={toDisplay(goalKg, unit)}
+              step={unit === 'kg' ? 2.5 : 5}
+              min={unit === 'kg' ? 2.5 : 5}
+              max={unit === 'kg' ? 500 : 1100}
+              format={(v) => `${num(v, 1)} ${unit}`}
+              onChange={(v) => setGoalKg(Math.round(fromDisplay(v, unit) * 100) / 100)}
+            />
+          </div>
         )}
 
         {kind === 'weekly' && (

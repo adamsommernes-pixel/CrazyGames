@@ -204,6 +204,15 @@ describe('utfordringer', () => {
     expect(st.find((s) => s.user_id === 'D')?.value).toBe(0);
     const weekly = await as('A').createChallenge({ kind: 'weekly', title: 'Uke', target: 1, invitees: ['D'], ...period(20) });
     expect((await as('A').standings(weekly)).find((s) => s.user_id === 'A')?.value).toBe(2);
+    // Først til 110 kg: A nådde det (120 for 2 t siden), D har ingen økter
+    const goal = await as('A').createChallenge({ kind: 'goal', title: '110', exercise_id: 'ex-kneboy', target: 110, invitees: ['D'], ...period(1) });
+    await as('D').respondChallenge(goal, true);
+    const gs = await as('A').standings(goal);
+    expect(gs[0]).toMatchObject({ user_id: 'A', rank: 1, value: 120 });
+    expect(gs[0].reached_at).toBeTruthy();
+    expect(gs[1]).toMatchObject({ user_id: 'D', rank: 2, reached_at: null });
+    await expect(as('A').createChallenge({ kind: 'goal', title: 'x', exercise_id: 'ex-kneboy', invitees: ['D'], ...period(1) })).rejects.toThrow();
+    await as('A').leaveChallenge(goal);
     await as('A').leaveChallenge(weekly);
     expect((await as('A').challenges()).challenges.map((c) => c.id)).toEqual([lift]);
   });

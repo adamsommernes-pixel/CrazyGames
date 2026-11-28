@@ -183,7 +183,7 @@ export function createSupabaseSocial(sb: SupabaseClient): SocialBackend {
     },
     async standings(id) {
       const rows = (check(await sb.rpc('challenge_standings', { challenge: id })) ?? []) as Standing[];
-      return rows.map((r) => ({ ...r, rank: Number(r.rank), value: Number(r.value) }));
+      return rows.map((r) => ({ ...r, rank: Number(r.rank), value: Number(r.value), reached_at: r.reached_at ? new Date(r.reached_at).toISOString() : null }));
     },
   };
 }

@@ -382,7 +382,8 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
         const start = Date.parse(c.starts_at);
         const end = Date.parse(c.ends_at);
         if (!(end > start) || end > start + 366 * 86_400_000) fail('Ugyldig periode.', 'Invalid period.');
-        if (c.kind === 'lift' && !c.exercise_id) fail('Velg et løft.', 'Choose a lift.');
+        if ((c.kind === 'lift' || c.kind === 'goal') && !c.exercise_id) fail('Velg et løft.', 'Choose a lift.');
+        if (c.kind === 'goal' && !(c.target && c.target > 0 && c.target <= 1000)) fail('Velg en målvekt.', 'Choose a target weight.');
         if (c.kind === 'weekly' && !(c.target && c.target >= 1 && c.target <= 14)) fail('Velg antall økter per uke.', 'Choose workouts per week.');
         const title = c.title.trim();
         if (!title || title.length > 60) fail('Gi utfordringen et navn.', 'Give the challenge a name.');
@@ -426,9 +427,16 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
       const joined = s.members.filter((m) => m.challenge_id === cid && m.status === 'joined').map((m) => m.user_id);
       const inside = (owner: string) => s.activities.filter((a) => a.user_id === owner && a.started_at >= c.starts_at && a.started_at < c.ends_at);
       const lift = (a: Activity) => (c.exercise_id ? a.data.lifts?.[c.exercise_id] : undefined);
+      const reached = (owner: string): string | null => {
+        if (c.kind !== 'goal') return null;
+        const hit = inside(owner).filter((a) => (lift(a) ?? 0) >= (c.target ?? Infinity)).map((a) => a.started_at).sort();
+        return hit[0] ?? null;
+      };
       const value = (owner: string): number => {
         const acts = inside(owner);
         switch (c.kind) {
+          case 'goal':
+            return Math.max(0, ...acts.map((a) => lift(a) ?? 0));
           case 'workouts':
             return acts.length;
           case 'volume':
@@ -452,8 +460,16 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
           }
         }
       };
-      const rows = joined.map((x) => ({ user_id: x, value: Math.round(value(x) * 10) / 10 })).sort((a, b) => b.value - a.value);
-      return rows.map((r): Standing => ({ ...r, rank: rows.findIndex((x) => x.value === r.value) + 1 }));
+      const rows = joined
+        .map((x) => ({ user_id: x, value: Math.round(value(x) * 10) / 10, reached_at: reached(x) }))
+        .sort((a, b) => {
+          // Nådd målet først (tidligst øverst), så de som ikke har nådd det, etter beste løft.
+          if (a.reached_at && b.reached_at && a.reached_at !== b.reached_at) return a.reached_at < b.reached_at ? -1 : 1;
+          if (!!a.reached_at !== !!b.reached_at) return a.reached_at ? -1 : 1;
+          return b.value - a.value;
+        });
+      const same = (a: (typeof rows)[number], b: (typeof rows)[number]) => a.reached_at === b.reached_at && a.value === b.value;
+      return rows.map((r): Standing => ({ ...r, rank: rows.findIndex((x) => same(x, r)) + 1 }));
     },
   };
 }
