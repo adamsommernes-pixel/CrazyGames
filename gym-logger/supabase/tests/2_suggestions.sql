@@ -39,7 +39,7 @@ insert into public.follows (follower, followee, status) values
   (:'M', :'F', 'accepted'), (:'M', :'G', 'accepted'),
   (:'F', :'S', 'accepted'), (:'G', :'S', 'accepted'), (:'F', :'O', 'accepted'),
   (:'T', :'M', 'accepted'), (:'M', :'Q', 'pending'),
-  (:'F', :'U', 'accepted'), (:'F', :'N', 'accepted');
+  (:'F', :'U', 'accepted'), (:'F', :'N', 'accepted'), (:'O', :'M', 'pending');
 insert into public.blocks (blocker, blocked) values (:'M', :'BL');
 insert into public.activities (user_id, id, started_at, ended_at, data) values (:'S', 'w-s1', now() - interval '2 hours', now() - interval '1 hour', '{}');
 select test.ok(not (select active from public.social_profiles where user_id = :'W'), 'treningskonto er skjult');
@@ -48,6 +48,11 @@ set role authenticated;
 create or replace function pg_temp.as_user(u uuid) returns void language sql as $$ select set_config('request.jwt.claim.sub', u::text, false) $$;
 select pg_temp.as_user(:'M');
 
+select test.ok((select array_agg(handle order by handle) from public.suggestions()) = array['sara', 'tor'],
+               'den som har spurt meg (O) står under Forespørsler, ikke i forslag');
+reset role;
+delete from public.follows where follower = :'O' and followee = :'M';
+set role authenticated;
 select test.ok((select array_agg(handle order by handle) from public.suggestions()) = array['ola', 'sara', 'tor'],
                'forslag: S, T og O. Ikke dem jeg følger/har spurt, ikke blokkert, under 16, avslått eller skjult');
 select test.ok((select array_agg(handle) from public.suggestions()) = array['sara', 'ola', 'tor'],

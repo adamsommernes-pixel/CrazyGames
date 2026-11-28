@@ -211,7 +211,7 @@ export function createFakeSocial(uid: () => string | null, storage: FakeStorage 
           .filter((m) => follows(s, m, o, 'accepted') && prof(s, m)?.active)
           .map((m) => prof(s, m)!.display_name);
       return s.profiles
-        .filter((p) => suggestableFor(s, u, p.user_id) && !follows(s, u, p.user_id))
+        .filter((p) => suggestableFor(s, u, p.user_id) && !follows(s, u, p.user_id) && !follows(s, p.user_id, u, 'pending'))
         .map((p) => {
           const names = mutuals(p.user_id).sort((a, b) => a.localeCompare(b));
           return { p, m: names.length, names, fy: follows(s, p.user_id, u) };

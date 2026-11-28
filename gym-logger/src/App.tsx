@@ -41,6 +41,7 @@ import { SocialPage } from './features/social/SocialPage';
 import { bindSocialUser, socialAvailable } from './social';
 import { resetMySocial } from './social/store';
 import { resetGraph } from './social/graph';
+import { resetSuggestions } from './social/suggestions';
 import { rememberInvite, takeInvite } from './social/invite';
 import { PersonPage } from './features/social/PersonPage';
 import { ChallengePage } from './features/social/ChallengePage';
@@ -135,6 +136,7 @@ function SignedIn({ user }: { user: AuthUser }) {
     resetMySocial();
     resetGraph();
     resetInbox();
+    resetSuggestions();
   }, [user]);
   const socialMode = useSocialMode();
   // Invitasjonslenke åpnet før innlogging: åpne profilen nå.

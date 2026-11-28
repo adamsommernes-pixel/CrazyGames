@@ -7,6 +7,7 @@ import { cleanHandle } from '../../social/handle';
 import { errorText, useMySocial } from '../../social/store';
 import { acceptFollower, rememberPerson, removeFollower, unblock, useGraph } from '../../social/graph';
 import { shareInvite } from '../../social/invite';
+import { refreshSuggestions, suggestionReason, useSuggestions } from '../../social/suggestions';
 import { FollowButton } from './FollowButton';
 import { PersonRow } from './PersonRow';
 import { t } from '../../i18n';
@@ -66,7 +67,7 @@ export function PeopleTab() {
         </Button>
       )}
 
-      <PeopleResults query="" />
+      <SuggestedPeople />
 
       <List title={t(`Du følger (${g.rel.following.length + g.rel.requested.length})`, `Following (${g.rel.following.length + g.rel.requested.length})`)} empty={t('Du følger ingen ennå. Finn venner på brukernavnet deres, eller send dem en invitasjon.', "You don't follow anyone yet. Find friends by their username, or send them an invite.")}>
         {[...g.rel.requested, ...g.rel.following].map((id) => (
@@ -150,9 +151,50 @@ function SearchField({ value, onChange }: { value: string; onChange: (v: string)
 
 const DISCOVER_SHOWN = 5;
 
+/** Forslag (felles venner først). Faller tilbake på Oppdag (sist aktive) om forslag ikke kan hentes. */
+function SuggestedPeople() {
+  const s = useSuggestions();
+  const [all, setAll] = useState(false);
+  useEffect(() => {
+    if (s.status === 'ready') void refreshSuggestions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  if (s.status === 'error') return <PeopleResults query="" />;
+  const shown = all ? s.list : s.list.slice(0, DISCOVER_SHOWN);
+  return (
+    <div>
+      <SectionTitle>{t('Folk du kanskje kjenner', 'People you may know')}</SectionTitle>
+      {s.status !== 'ready' ? (
+        <p className="text-sm text-muted" role="status">
+          {t('Laster …', 'Loading …')}
+        </p>
+      ) : s.list.length === 0 ? (
+        <p className="text-sm text-muted">{t('Ingen forslag akkurat nå. Søk etter navn, eller inviter venner.', 'No suggestions right now. Search by name, or invite friends.')}</p>
+      ) : (
+        <>
+          <Card>
+            <ul aria-label={t('Folk du kanskje kjenner', 'People you may know')} className="divide-y divide-line">
+              {shown.map((p) => (
+                <PersonRow key={p.user_id} person={p} subtitle={suggestionReason(p)}>
+                  <FollowButton person={p} compact />
+                </PersonRow>
+              ))}
+            </ul>
+          </Card>
+          {s.list.length > DISCOVER_SHOWN && (
+            <button type="button" className="mt-2 min-h-9 text-sm font-medium text-accent" onClick={() => setAll((v) => !v)}>
+              {all ? t('Vis færre', 'Show fewer') : t(`Vis ${s.list.length - DISCOVER_SHOWN} til`, `Show ${s.list.length - DISCOVER_SHOWN} more`)}
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 /**
- * Tom `query`: Oppdag (åpne kontoer, sist aktive først). Ellers: åpne kontoer som matcher navn eller
- * brukernavn, og den som har akkurat det brukernavnet (private kontoer finnes bare slik).
+ * Tom `query`: Oppdag (sist aktive først). Ellers: alle som kan foreslås og matcher navn eller
+ * brukernavn, og den som har akkurat det brukernavnet (også de som har slått av forslag).
  */
 function PeopleResults({ query }: { query: string }) {
   const [results, setResults] = useState<Person[] | null>(null);
@@ -187,7 +229,7 @@ function PeopleResults({ query }: { query: string }) {
   return (
     <div>
       <SectionTitle>{discover ? t('Oppdag', 'Discover') : t('Treff', 'Results')}</SectionTitle>
-      {discover && <p className="-mt-1 mb-2 text-sm text-faint">{t('Åpne kontoer, sist aktive først.', 'Open accounts, most recently active first.')}</p>}
+      {discover && <p className="-mt-1 mb-2 text-sm text-faint">{t('Sist aktive først.', 'Most recently active first.')}</p>}
       {error ? (
         <p className="text-sm text-danger">{error}</p>
       ) : results === null ? (
@@ -197,8 +239,8 @@ function PeopleResults({ query }: { query: string }) {
       ) : results.length === 0 ? (
         <p className="text-sm text-muted">
           {discover
-            ? t('Ingen åpne kontoer å vise ennå.', 'No open accounts to show yet.')
-            : t(`Fant ingen som heter «${query}». Private kontoer finnes bare på hele brukernavnet.`, `No one found for “${query}”. Private accounts can only be found by their full username.`)}
+            ? t('Ingen å vise ennå.', 'No one to show yet.')
+            : t(`Fant ingen som heter «${query}». Noen har slått av forslag og finnes bare på hele brukernavnet.`, `No one found for “${query}”. Some people have turned off suggestions and can only be found by their full username.`)}
         </p>
       ) : (
         <>

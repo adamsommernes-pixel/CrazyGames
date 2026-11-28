@@ -76,7 +76,7 @@ try {
   await page.getByRole('dialog', { name: 'Choose your account type' }).getByRole('button', { name: /^Training/ }).click();
 
   // ---------- Alex sine økter (rett i den lokale databasen) ----------
-  const me = await page.evaluate(async () => (await indexedDB.databases()).map((d) => d.name).find((n) => n?.startsWith('gym-') && n !== 'gym-none').slice(4));
+  const me = await page.evaluate(async () => (await indexedDB.databases()).map((d) => d.name).find((n) => n?.startsWith('gym-') && n !== 'gym-none' && n !== 'gym-accounts').slice(4));
   const workouts = [
     { name: 'Push day', ago: 3 * D, mins: 58, ex: [['ex-benkpress', [[85, 6], [90, 5], [90, 5]]], ['ex-militaerpress', [[55, 6], [55, 6]]], ['ex-triceps-pushdown', [[35, 10], [35, 10]]]] },
     { name: 'Pull day', ago: 2 * D, mins: 52, ex: [['ex-stangroing', [[75, 8], [75, 8], [75, 7]]], ['ex-nedtrekk', [[70, 10], [70, 9]]], ['ex-bicepscurl-med-manualer', [[16, 10], [16, 10]]]] },

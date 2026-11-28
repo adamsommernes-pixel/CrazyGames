@@ -261,6 +261,11 @@ describe('forslag', () => {
   });
 
   it('felles venner først, så de som følger deg; ikke fulgte, blokkerte, under 16, avslåtte eller skjulte', async () => {
+    await as('O').saveProfile({ handle: 'ola', display_name: 'Ola', color: '#34c56a', visibility: 1, is_16_plus: true });
+    await as('O').follow('M');
+    expect((await as('M').suggestions()).map((p) => p.handle)).toEqual(['sara', 'tor']);
+    await as('O').unfollow('M');
+    await as('O').saveProfile({ handle: 'ola', display_name: 'Ola', color: '#34c56a', visibility: 3, is_16_plus: true });
     const list = await as('M').suggestions();
     expect(list.map((p) => p.handle)).toEqual(['sara', 'ola', 'tor']);
     expect(list[0]).toMatchObject({ mutual_count: 2, mutual_names: ['Frida', 'Geir'], follows_you: false, tier_index: null, visibility: 1 });

@@ -18,7 +18,7 @@ returns boolean language sql stable security definer set search_path = '' as $$
 $$;
 
 /* Forslag til folk å følge: felles venner først (folk du følger som følger dem), så de som følger deg,
-   så de sist aktive. Viser ikke dem du allerede følger eller har spurt. Nivå bare når du har lov å se det. */
+   så de sist aktive. Viser ikke dem du allerede følger eller har spurt, eller som har spurt deg. Nivå bare når du har lov å se det. */
 create or replace function public.suggestions(lim integer default 20)
 returns table (user_id uuid, handle text, display_name text, color text, visibility smallint, tier_index smallint,
                mutual_count integer, mutual_names text[], follows_you boolean)
@@ -31,6 +31,8 @@ language sql stable security definer set search_path = '' as $$
     select p.* from public.social_profiles p, me
     where public.suggestable_for(me.id, p.user_id)
       and not exists (select 1 from public.follows f where f.follower = me.id and f.followee = p.user_id)
+      -- De som har spurt deg står allerede under Forespørsler.
+      and not exists (select 1 from public.follows f where f.follower = p.user_id and f.followee = me.id and f.status = 'pending')
   ),
   scored as (
     select c.*,
