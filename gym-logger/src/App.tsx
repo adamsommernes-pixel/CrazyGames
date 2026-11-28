@@ -43,6 +43,7 @@ import { resetMySocial } from './social/store';
 import { resetGraph } from './social/graph';
 import { rememberInvite, takeInvite } from './social/invite';
 import { PersonPage } from './features/social/PersonPage';
+import { ChallengePage } from './features/social/ChallengePage';
 import { StrengthSync } from './social/StrengthSync';
 import { ActivitySync } from './social/ActivitySync';
 import { useSocialMode } from './lib/socialMode';
@@ -169,6 +170,7 @@ function SignedIn({ user }: { user: AuthUser }) {
         <Route path="/history/:id" element={<WorkoutDetail />} />
         <Route path="/social" element={<SocialPage />} />
         <Route path="/u/:handle" element={<PersonPage />} />
+        <Route path="/challenge/:id" element={<ChallengePage />} />
         <Route path="/summary/:id" element={<Summary />} />
         <Route path="/routines" element={<RoutineList />} />
         <Route path="/routines/new" element={<RoutineEditor />} />

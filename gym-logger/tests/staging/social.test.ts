@@ -181,5 +181,20 @@ describe('staging: ekte Supabase', () => {
     const st = await A.s.standings(cid);
     expect(st.find((s) => s.user_id === A.id)?.value).toBe(1);
     await expect(D.s.standings(cid)).rejects.toThrow();
+    // Forlat (deltaker) og avlys (den som laget den)
+    await C.s.leaveChallenge(cid);
+    expect((await A.s.challenges()).members.filter((m) => m.challenge_id === cid).map((m) => m.user_id)).toEqual([A.id]);
+    await A.s.leaveChallenge(cid);
+    expect((await A.s.challenges()).challenges.some((c) => c.id === cid)).toBe(false);
+  });
+
+  it('løftutfordring regnes fra delte 1RM-tall', async () => {
+    const { A, C } = users;
+    const at = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
+    await A.s.publish({ id: 'A-lift0', name: 'før', started_at: at(72), ended_at: at(71), data: { ...data(1), lifts: { 'ex-kneboy': 100 } } });
+    await A.s.publish({ id: 'A-lift1', name: 'nå', started_at: at(2), ended_at: at(1), data: { ...data(1), lifts: { 'ex-kneboy': 112.5 } } });
+    const cid = await A.s.createChallenge({ kind: 'lift', title: 'Knebøy', exercise_id: 'ex-kneboy', starts_at: at(24), ends_at: new Date(Date.now() + 86_400_000).toISOString(), invitees: [C.id] });
+    expect((await A.s.standings(cid)).find((s) => s.user_id === A.id)?.value).toBe(12.5);
+    await A.s.leaveChallenge(cid);
   });
 });

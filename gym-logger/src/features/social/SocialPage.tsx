@@ -5,6 +5,7 @@ import { useGraph } from '../../social/graph';
 import { PeopleTab } from './PeopleTab';
 import { FeedList } from './FeedList';
 import { LeaderboardTab } from './LeaderboardTab';
+import { ChallengesTab } from './ChallengesTab';
 import { Button, Card, EmptyState, Page } from '../../components/ui';
 import { socialAvailable } from '../../social';
 import { useMySocial } from '../../social/store';
@@ -70,7 +71,7 @@ function SocialHome() {
   return <SocialTabs />;
 }
 
-type Tab = 'feed' | 'people' | 'boards';
+type Tab = 'feed' | 'people' | 'boards' | 'challenges';
 const TAB_KEY = 'repgrade-social-tab';
 
 function SocialTabs() {
@@ -81,7 +82,7 @@ function SocialTabs() {
   const [tab, setTab] = useState<Tab>(() => {
     try {
       const saved = sessionStorage.getItem(TAB_KEY);
-      return saved === 'people' || saved === 'boards' ? saved : 'feed';
+      return saved === 'people' || saved === 'boards' || saved === 'challenges' ? saved : 'feed';
     } catch {
       return 'feed';
     }
@@ -101,7 +102,7 @@ function SocialTabs() {
   }, [then, navigate]);
   if (!profile) return null;
   const requests = g.rel.requests.length;
-  const tabClass = (on: boolean) => `relative flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition-colors ${on ? 'bg-raised text-ink' : 'text-muted'}`;
+  const tabClass = (on: boolean) => `relative flex min-h-9 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-1 text-[13px] font-semibold transition-colors ${on ? 'bg-raised text-ink' : 'text-muted'}`;
   return (
     <Page title={t('Sosialt', 'Social')}>
       <Card className="mb-3 p-3.5">
@@ -122,11 +123,16 @@ function SocialTabs() {
         <button type="button" role="tab" aria-selected={tab === 'boards'} className={tabClass(tab === 'boards')} onClick={() => choose('boards')}>
           {t('Topp', 'Top')}
         </button>
+        <button type="button" role="tab" aria-selected={tab === 'challenges'} className={tabClass(tab === 'challenges')} onClick={() => choose('challenges')}>
+          {t('Utfordringer', 'Challenges')}
+        </button>
       </div>
       {tab === 'people' ? (
         <PeopleTab />
       ) : tab === 'boards' ? (
         <LeaderboardTab />
+      ) : tab === 'challenges' ? (
+        <ChallengesTab />
       ) : (
         <FeedList onFindPeople={() => choose('people')} />
       )}

@@ -705,6 +705,73 @@ try {
       await disc.locator('[data-person]').first().waitFor();
       assert.equal(await disc.locator('[data-person="aapen_2"]').count(), 0, 'den som blokkerte deg er borte');
     }
+
+    // ===== Steg 9: utfordringer =====
+    {
+      const iso = (msFromNow) => new Date(Date.now() + msFromNow).toISOString();
+      const DAY = 86_400_000;
+      const act = (user, id, at) => ({ user_id: user, id, name: id, started_at: at, ended_at: at, created_at: at, updated_at: at, data: { version: 1, duration_s: 60, sets: 1, reps: 5, volume_kg: 500, exercises: [], records: [], muscles: {}, lifts: {}, tier: null } });
+      await page.getByRole('tab', { name: 'Utfordringer' }).click();
+      await page.getByText('Ingen utfordringer ennå').waitFor();
+      await btn('Ny utfordring').click();
+      // Hvem kan utfordres: Åpen 1 (åpen, du følger). Per følger deg, men du følger ikke Per tilbake.
+      await page.getByLabel('Inviter Åpen 1').waitFor();
+      assert.equal(await page.getByLabel('Inviter Per').count(), 0, 'kan ikke utfordre en du ikke følger gjensidig');
+      assert.ok(await btn('Send utfordring').isDisabled(), 'må invitere noen');
+      // Løft: pull-ups kan ikke velges (kroppsvekten ville blitt synlig)
+      await btn('Løft', { exact: true }).click();
+      const lifts = await page.getByRole('combobox').locator('option').allTextContents();
+      assert.ok(lifts.includes('Knebøy') && !lifts.some((l) => /pull-ups/i.test(l)), 'løft uten pull-ups');
+      await page.getByRole('combobox').selectOption({ label: 'Knebøy' });
+      assert.equal(await page.getByLabel('Navn', { exact: true }).inputValue(), 'Knebøy – 1 uke', 'navn foreslås');
+      // Flest økter, 2 uker
+      await btn('Flest økter', { exact: true }).click();
+      await btn('2 uker', { exact: true }).click();
+      assert.equal(await page.getByLabel('Navn', { exact: true }).inputValue(), 'Flest økter – 2 uker');
+      await page.getByLabel('Inviter Åpen 1').check();
+      await shot('utfordring-ny');
+      await btn('Send utfordring').click();
+      await page.getByRole('heading', { name: 'Flest økter – 2 uker' }).waitFor();
+      await page.getByText('Venter på svar').waitFor();
+      const standings = page.getByRole('list', { name: 'Stilling' });
+      await standings.getByText('(deg)').waitFor();
+      // Åpen 1 blir med og trener: stillingen regnes fra delte økter
+      const st = await fakeStore();
+      const ch = st.challenges.find((c) => c.title === 'Flest økter – 2 uker');
+      assert.equal(ch.creator, me, 'du laget utfordringen');
+      st.members.find((m) => m.challenge_id === ch.id && m.user_id === 'open-1').status = 'joined';
+      st.activities.push(act('open-1', 'o1', iso(60_000)));
+      // Invitasjon til deg fra Åpen 1, og en ferdig utfordring som Åpen 1 vant
+      st.challenges.push({ id: 'inv-1', creator: 'open-1', kind: 'weekly', exercise_id: null, target: 2, title: 'Uka', starts_at: iso(-DAY), ends_at: iso(6 * DAY), created_at: iso(-DAY) });
+      st.members.push({ challenge_id: 'inv-1', user_id: 'open-1', status: 'joined', invited_at: iso(-DAY), joined_at: iso(-DAY) }, { challenge_id: 'inv-1', user_id: me, status: 'invited', invited_at: iso(-DAY), joined_at: null });
+      st.challenges.push({ id: 'done-1', creator: 'open-1', kind: 'workouts', exercise_id: null, target: null, title: 'Forrige uke', starts_at: iso(-10 * DAY), ends_at: iso(-DAY), created_at: iso(-10 * DAY) });
+      st.members.push({ challenge_id: 'done-1', user_id: 'open-1', status: 'joined', invited_at: iso(-10 * DAY), joined_at: iso(-10 * DAY) }, { challenge_id: 'done-1', user_id: me, status: 'joined', invited_at: iso(-10 * DAY), joined_at: iso(-10 * DAY) });
+      st.activities.push(act('open-1', 'o0', iso(-5 * DAY)));
+      await putFake(st);
+      await page.reload();
+      await standings.locator('[data-standing="aapen_1"]').getByText('1 økt').waitFor();
+      assert.equal(await standings.locator('li').first().getAttribute('data-standing'), 'aapen_1', 'Åpen 1 leder');
+      await shot('utfordring');
+      // Invitasjon: bli med
+      await page.goBack();
+      await page.getByRole('tab', { name: 'Utfordringer' }).click();
+      const invite = page.locator('[data-challenge="Uka"]');
+      await invite.getByText('Fra Åpen 1', { exact: false }).waitFor();
+      await shot('utfordringer');
+      await invite.getByRole('button', { name: 'Bli med' }).click();
+      await page.getByText('Du er med!').waitFor();
+      assert.equal((await fakeStore()).members.find((m) => m.challenge_id === 'inv-1' && m.user_id === me).status, 'joined', 'med i Uka');
+      // Ferdig utfordring: vinneren vises
+      await page.locator('[data-challenge="Forrige uke"]').getByRole('link').click();
+      await page.getByText('🏆 Åpen 1 vant').waitFor();
+      await page.goBack();
+      // Avlys din egen utfordring
+      await page.locator('[data-challenge="Flest økter – 2 uker"]').getByRole('link').click();
+      await btn('Avlys utfordringen').click();
+      await page.getByRole('dialog').getByRole('button', { name: 'Avlys' }).click();
+      await page.getByRole('tab', { name: 'Utfordringer' }).waitFor();
+      assert.ok(!(await fakeStore()).challenges.some((c) => c.title === 'Flest økter – 2 uker'), 'utfordringen er avlyst');
+    }
     await nav().getByRole('link', { name: 'Fremgang' }).click();
     const tabs = page.getByRole('navigation', { name: 'Fremgang og historikk' });
     await tabs.getByRole('link', { name: 'Historikk' }).click();
